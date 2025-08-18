@@ -26,7 +26,10 @@ export default class {
     }
 
     protected async getGroup(): Promise<ContentGroupItems<ContentScriptEntrypointOptions>> {
-        const content = await Promise.all(Array.from(this.providers, provider => provider.driver().items()));
+        // prettier-ignore
+        const content = await Promise.all(
+            Array.from(this.providers, provider => provider.driver().items())
+        );
 
         const group: ContentGroupItems<ContentScriptEntrypointOptions> = new Map();
 
@@ -59,9 +62,12 @@ export default class {
         const manifest: ManifestContentScripts = new Set();
 
         for (const [entry, items] of await this.group()) {
-            const options = Array.from(items, ({options}) => options).reduce((acc, opt) => {
-                return {...acc, ...opt};
-            }, {} as ContentScriptEntrypointOptions);
+            // prettier-ignore
+            const options = Array
+                .from(items, ({options}) => options)
+                .reduce((acc, opt) => {
+                    return {...acc, ...opt};
+                }, {} as ContentScriptEntrypointOptions);
 
             manifest.add({entry, ...getContentScriptConfigFromOptions(options)});
         }
@@ -95,7 +101,8 @@ export default class {
         for (const provider of this.providers) {
             try {
                 return provider.virtual(file);
-            } catch {}
+            } catch {
+            }
         }
 
         throw new Error(`Virtual file "${file.file}" not found.`);

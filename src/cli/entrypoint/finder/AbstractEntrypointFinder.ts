@@ -17,9 +17,14 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
     protected constructor(config: ReadonlyConfig) {
         super(config);
 
-        this.fileExtensionsPattern = [...EntrypointFileExtensions].map(ext => ext.replace(".", "\\.")).join("|");
+        // prettier-ignore
+        this.fileExtensionsPattern = [...EntrypointFileExtensions]
+            .map(ext => ext.replace(".", "\\."))
+            .join("|");
 
-        this.possibleIndexFiles = new Set([...EntrypointFileExtensions].map(ext => `index.${ext}`));
+        // prettier-ignore
+        this.possibleIndexFiles = new Set([...EntrypointFileExtensions]
+            .map(ext => `index.${ext}`));
     }
 
     public canMerge(): boolean {

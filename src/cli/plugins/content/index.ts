@@ -23,7 +23,10 @@ export default definePlugin(() => {
             content = new Content(config);
             relay = new Relay(config);
 
-            manager = new ContentManager(config).provider(content).provider(relay);
+            // prettier-ignore
+            manager = new ContentManager(config)
+                .provider(content)
+                .provider(relay);
 
             relayDeclaration = new RelayDeclaration(config);
         },

@@ -79,6 +79,12 @@ export interface EntrypointFinder {
 
     clear(): this;
 
+    /**
+     * Determines if the specified file exists within the current set of files.
+     *
+     * @param {EntrypointFile} file - The file to be checked for existence in the set of files.
+     * @return {boolean} Returns true if the file exists in the set, otherwise false.
+     */
     holds(file: EntrypointFile): boolean;
 }
 
