@@ -1,11 +1,10 @@
-import {getManifestVersion, isAvailableScripting} from "@adnbn/browser";
-
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
 
 import ProxyTransport from "@transport/ProxyTransport";
 
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
+import {isContentScript} from "../utils";
 
 import {RelayGlobalKey, RelayMethod} from "@typing/relay";
 import type {DeepAsyncProxy} from "@typing/helpers";
@@ -98,7 +97,7 @@ export default class ProxyRelay<
     }
 
     public get(): T {
-        if (!isAvailableScripting() && getManifestVersion() !== 2) {
+        if (isContentScript()) {
             throw new Error(
                 `You are trying to get proxy relay "${this.name}" from script content. You can get original relay instead`
             );
