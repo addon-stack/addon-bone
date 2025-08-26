@@ -13,6 +13,7 @@ import {
     ManifestIcons,
     ManifestIncognito,
     ManifestPermissions,
+    ManifestOptionalPermissions,
     ManifestPopup,
     ManifestSidebar,
     ManifestVersion,
@@ -25,6 +26,7 @@ import {SidebarAlternativeBrowsers} from "@typing/sidebar";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
 type ManifestPermission = chrome.runtime.ManifestPermissions;
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissions;
 type CoreManifestIcons = chrome.runtime.ManifestIcons;
 
 export class ManifestError extends Error {
@@ -53,7 +55,9 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected contentScripts: ManifestContentScripts = new Set();
     protected dependencies: ManifestDependencies = new Map();
     protected permissions: ManifestPermissions = new Set();
+    protected optionalPermissions: ManifestOptionalPermissions = new Set();
     protected hostPermissions: ManifestHostPermissions = new Set();
+    protected optionalHostPermissions: ManifestHostPermissions = new Set();
     protected accessibleResources: ManifestAccessibleResources = new Set();
 
     public abstract getManifestVersion(): ManifestVersion;
@@ -62,7 +66,11 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     protected abstract buildPermissions(): Partial<T> | undefined;
 
+    protected abstract buildOptionalPermissions(): Partial<T> | undefined;
+
     protected abstract buildHostPermissions(): Partial<T> | undefined;
+
+    protected abstract buildOptionalHostPermissions(): Partial<T> | undefined;
 
     protected abstract buildWebAccessibleResources(): Partial<T> | undefined;
 
@@ -196,6 +204,26 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
+    public addOptionalPermission(permission: ManifestOptionalPermission): this {
+        this.optionalPermissions.add(permission);
+
+        return this;
+    }
+
+    public setOptionalPermissions(permissions: ManifestOptionalPermissions): this {
+        this.optionalPermissions = permissions;
+
+        return this;
+    }
+
+    public appendOptionalPermissions(permissions: ManifestOptionalPermissions): this {
+        for (const permission of permissions) {
+            this.optionalPermissions.add(permission);
+        }
+
+        return this;
+    }
+
     public addHostPermission(permission: string): this {
         this.hostPermissions.add(permission);
 
@@ -211,6 +239,26 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     public appendHostPermissions(permissions: ManifestHostPermissions): this {
         for (const permission of permissions) {
             this.hostPermissions.add(permission);
+        }
+
+        return this;
+    }
+
+    public addOptionalHostPermission(permission: string): this {
+        this.optionalHostPermissions.add(permission);
+
+        return this;
+    }
+
+    public setOptionalHostPermissions(permissions: ManifestHostPermissions): this {
+        this.optionalHostPermissions = permissions;
+
+        return this;
+    }
+
+    public appendOptionalHostPermissions(permissions: ManifestHostPermissions): this {
+        for (const permission of permissions) {
+            this.optionalHostPermissions.add(permission);
         }
 
         return this;
@@ -275,7 +323,9 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.buildSidebar(),
             this.buildContentScripts(),
             this.buildPermissions(),
+            this.buildOptionalPermissions(),
             this.buildHostPermissions(),
+            this.buildOptionalHostPermissions(),
             this.buildWebAccessibleResources(),
             this.buildBrowserSpecificSettings()
         );

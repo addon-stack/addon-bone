@@ -1,7 +1,7 @@
 import BackgroundEntry from "./BackgroundEntry";
 
 import {BackgroundEntrypointOptions} from "@typing/background";
-import {ManifestPermissions} from "@typing/manifest";
+import {ManifestHostPermissions, ManifestOptionalPermissions, ManifestPermissions} from "@typing/manifest";
 
 export default class {
     protected entries = new Set<BackgroundEntry<BackgroundEntrypointOptions>>();
@@ -36,11 +36,43 @@ export default class {
         const permissions: ManifestPermissions = new Set();
 
         for await (const entry of this.entries) {
-            const entryPermissions = await entry.getPermissions();
-
-            entryPermissions.forEach(permission => permissions.add(permission));
+            (await entry.getPermissions())
+                .forEach(permission => permissions.add(permission));
         }
 
         return permissions;
+    }
+
+    public async getOptionalPermissions(): Promise<ManifestOptionalPermissions> {
+        const optionalPermissions: ManifestOptionalPermissions = new Set();
+
+        for await (const entry of this.entries) {
+            (await entry.getOptionalPermissions())
+                .forEach(permission => optionalPermissions.add(permission));
+        }
+
+        return optionalPermissions;
+    }
+
+    public async getHostPermissions(): Promise<ManifestHostPermissions> {
+        const hostPermissions: ManifestHostPermissions = new Set();
+
+        for await (const entry of this.entries) {
+            (await entry.getHostPermissions())
+                .forEach(permission => hostPermissions.add(permission));
+        }
+
+        return hostPermissions;
+    }
+
+    public async getOptionalHostPermissions(): Promise<ManifestHostPermissions> {
+        const optionalHostPermissions: ManifestHostPermissions = new Set();
+
+        for await (const entry of this.entries) {
+            (await entry.getOptionalHostPermissions())
+                .forEach(permission => optionalHostPermissions.add(permission));
+        }
+
+        return optionalHostPermissions;
     }
 }

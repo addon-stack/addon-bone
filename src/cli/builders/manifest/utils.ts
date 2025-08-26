@@ -1,14 +1,16 @@
 import {ManifestMatchSchemes, ManifestSpecialSchemes} from "@typing/manifest";
 
 type ManifestPermissions = chrome.runtime.ManifestPermissions;
+type ManifestOptionalPermissions = chrome.runtime.ManifestOptionalPermissions;
 
+type Permission = ManifestPermissions | ManifestOptionalPermissions;
 /**
  * Filters and adapts permissions for Manifest V2 compatibility.
  *
  * @param permissions - Set of permissions to filter
  * @returns New set of permissions adapted for Manifest V2
  */
-export const filterPermissionsForMV2 = (permissions: Set<ManifestPermissions>): Set<ManifestPermissions> => {
+export const filterPermissionsForMV2 = <T extends Permission>(permissions: Set<T>): Set<T> => {
     const filteredPermissions = new Set(permissions);
 
     /**
@@ -23,17 +25,17 @@ export const filterPermissionsForMV2 = (permissions: Set<ManifestPermissions>): 
      * // Result: Set(['tabs', 'storage', 'activeTab'])
      * ```
      */
-    if (filteredPermissions.has("scripting")) {
-        filteredPermissions.delete("scripting");
-        filteredPermissions.add("tabs");
+    if (filteredPermissions.has("scripting" as T)) {
+        filteredPermissions.delete("scripting" as T);
+        filteredPermissions.add("tabs" as T);
     }
 
-    filteredPermissions.delete("offscreen");
+    filteredPermissions.delete("offscreen" as T);
 
     return filteredPermissions;
 };
 
-export const filterPermissionsForMV3 = (permissions: Set<ManifestPermissions>): Set<ManifestPermissions> => {
+export const filterPermissionsForMV3 = <T extends Permission>(permissions: Set<T>): Set<T> => {
     const filteredPermissions = new Set(permissions);
 
     /**
@@ -44,9 +46,9 @@ export const filterPermissionsForMV3 = (permissions: Set<ManifestPermissions>): 
      * - `webRequestAuthProvider`: Enabled handling of HTTP authentication (onAuthRequired), but was considered unsafe in the new MV3 architecture due to its ability to interfere with authentication flows.
      * @manifestV3 Removed. These APIs are no longer available in extensions using Manifest V3.
      */
-    filteredPermissions.delete("webAuthenticationProxy");
-    filteredPermissions.delete("webRequestAuthProvider");
-    filteredPermissions.delete("webRequestBlocking");
+    filteredPermissions.delete("webAuthenticationProxy" as T);
+    filteredPermissions.delete("webRequestAuthProvider" as T);
+    filteredPermissions.delete("webRequestBlocking" as T);
 
     return filteredPermissions;
 };

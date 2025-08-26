@@ -76,8 +76,32 @@ export default class extends ManifestBase<ManifestV2> {
         }
     }
 
+    protected buildOptionalPermissions(): Partial<ManifestV2> | undefined {
+        const optionalPermissions: string[] = Array
+            .from(filterPermissionsForMV2(this.optionalPermissions))
+            .filter((permission) => !this.permissions.has(permission));
+
+        const optionalHostPermissions: string[] = Array
+            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
+            .filter((permission) => !this.hostPermissions.has(permission));
+
+        if(optionalHostPermissions.length > 0) {
+            optionalPermissions.push(...optionalHostPermissions)
+        }
+
+        if (optionalPermissions.length > 0) {
+            return {optional_permissions: optionalPermissions};
+        }
+    }
+
     protected buildHostPermissions(): Partial<ManifestV2> | undefined {
         // In Manifest V2, host permissions are declared in the "permissions" array
+
+        return undefined;
+    }
+
+    protected buildOptionalHostPermissions(): Partial<ManifestV2> | undefined {
+        // In Manifest V2, optional host permissions are declared in the "optional_permissions" array
 
         return undefined;
     }

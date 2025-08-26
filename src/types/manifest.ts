@@ -6,6 +6,7 @@ import {Language} from "@typing/locale";
 type ManifestCommon = chrome.runtime.Manifest;
 type ManifestBase = chrome.runtime.ManifestBase;
 type ManifestPermission = chrome.runtime.ManifestPermissions;
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissions;
 
 export const ManifestMatchSchemes: ReadonlySet<string> = new Set<string>(["http", "https", "file", "ftp", "ws", "wss"]);
 
@@ -125,12 +126,26 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     appendPermissions(permissions: ManifestPermissions): this;
 
+    // Optional Permissions
+    addOptionalPermission(permission: ManifestOptionalPermission): this;
+
+    setOptionalPermissions(permissions: ManifestOptionalPermissions): this;
+
+    appendOptionalPermissions(permissions: ManifestOptionalPermissions): this;
+
+    // Host Permissions
     addHostPermission(permission: string): this;
 
     setHostPermissions(permissions: ManifestHostPermissions): this;
 
-    // Host Permissions
     appendHostPermissions(permissions: ManifestHostPermissions): this;
+
+    // Optional Host Permissions
+    addOptionalHostPermission(permission: string): this;
+
+    setOptionalHostPermissions(permissions: ManifestHostPermissions): this;
+
+    appendOptionalHostPermissions(permissions: ManifestHostPermissions): this;
 
     // Web Accessible Resource
     setManifestAccessibleResource(accessibleResources: ManifestAccessibleResources): this;
@@ -211,5 +226,7 @@ export type ManifestIcons = Map<string, ManifestIcon>;
 export type ManifestDependencies = Map<Entry, ManifestDependency>;
 
 export type ManifestPermissions = Set<ManifestPermission>;
+
+export type ManifestOptionalPermissions = Set<ManifestOptionalPermission>;
 
 export type ManifestHostPermissions = Set<string>;

@@ -81,9 +81,29 @@ export default class extends ManifestBase<ManifestV3> {
         }
     }
 
+    protected buildOptionalPermissions(): Partial<ManifestV3> | undefined {
+        const optionalPermissions = Array
+            .from(filterPermissionsForMV3(this.optionalPermissions))
+            .filter((permission) => !this.permissions.has(permission));
+
+        if (optionalPermissions.length > 0) {
+            return {optional_permissions: optionalPermissions};
+        }
+    }
+
     protected buildHostPermissions(): Partial<ManifestV3> | undefined {
         if (this.hostPermissions.size > 0) {
             return {host_permissions: [...filterHostPatterns(this.hostPermissions)]};
+        }
+    }
+
+    protected buildOptionalHostPermissions(): Partial<ManifestV3> | undefined {
+        const optionalHostPermissions = Array
+            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
+            .filter((permission) => !this.hostPermissions.has(permission));
+
+        if (optionalHostPermissions.length > 0) {
+            return {optional_host_permissions: optionalHostPermissions};
         }
     }
 

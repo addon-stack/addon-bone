@@ -129,7 +129,7 @@
     "cross-env": "^7.0.3",
     "depcheck": "^1.4.7",
     "dotenv": "^16.4.7",
-    "esbuild-fix-imports-plugin": "^1.0.21",
+    "esbuild-fix-imports-plugin": "^1.0.22",
     "esbuild-plugin-raw": "^0.1.8",
     "fs-extra": "^11.3.0",
     "globby": "^14.1.0",

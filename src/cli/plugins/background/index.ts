@@ -101,9 +101,24 @@ export default definePlugin(() => {
                 .setCommands(await command.manifest());
 
             const permissions = await mft.getPermissions();
+            const optionalPermissions = await mft.getOptionalPermissions();
+            const hostPermissions = await mft.getHostPermissions();
+            const optionalHostPermissions = await mft.getOptionalHostPermissions();
 
             if (permissions.size > 0) {
                 manifest.appendPermissions(permissions);
+            }
+
+            if (optionalPermissions.size > 0) {
+                manifest.appendOptionalPermissions(optionalPermissions);
+            }
+
+            if (hostPermissions.size > 0) {
+                manifest.appendHostPermissions(hostPermissions);
+            }
+
+            if (optionalHostPermissions.size > 0) {
+                manifest.appendOptionalHostPermissions(optionalHostPermissions);
             }
         },
     };
