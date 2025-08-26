@@ -29,7 +29,7 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
         return virtualRelayModule(file, options.name);
     }
 
-    public async getMethodsMap(): Promise<Record<string, RelayMethod | undefined>> {
+    public async getMethodsMap(): Promise<Record<string, RelayMethod>> {
         const transport = await this.transport();
 
         return Array
@@ -37,7 +37,7 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
             .reduce((map, {options: {name, method}}) => {
                 map[name] = method || RelayMethod.Messaging;
                 return map;
-            }, {} as Record<string, RelayMethod | undefined>);
+            }, {} as Record<string, RelayMethod>);
     }
 
     public clear(): this {
