@@ -82,6 +82,7 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildOptionalPermissions(): Partial<ManifestV3> | undefined {
+        // prettier-ignore
         const optionalPermissions = Array
             .from(filterPermissionsForMV3(this.optionalPermissions))
             .filter((permission) => !this.permissions.has(permission));
@@ -98,6 +99,7 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildOptionalHostPermissions(): Partial<ManifestV3> | undefined {
+        // prettier-ignore
         const optionalHostPermissions = Array
             .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
             .filter((permission) => !this.hostPermissions.has(permission));

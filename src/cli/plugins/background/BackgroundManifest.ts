@@ -36,6 +36,7 @@ export default class {
         const permissions: ManifestPermissions = new Set();
 
         for await (const entry of this.entries) {
+            // prettier-ignore
             (await entry.getPermissions())
                 .forEach(permission => permissions.add(permission));
         }
@@ -47,6 +48,7 @@ export default class {
         const optionalPermissions: ManifestOptionalPermissions = new Set();
 
         for await (const entry of this.entries) {
+            // prettier-ignore
             (await entry.getOptionalPermissions())
                 .forEach(permission => optionalPermissions.add(permission));
         }
@@ -58,6 +60,7 @@ export default class {
         const hostPermissions: ManifestHostPermissions = new Set();
 
         for await (const entry of this.entries) {
+            // prettier-ignore
             (await entry.getHostPermissions())
                 .forEach(permission => hostPermissions.add(permission));
         }
@@ -69,6 +72,7 @@ export default class {
         const optionalHostPermissions: ManifestHostPermissions = new Set();
 
         for await (const entry of this.entries) {
+            // prettier-ignore
             (await entry.getOptionalHostPermissions())
                 .forEach(permission => optionalHostPermissions.add(permission));
         }

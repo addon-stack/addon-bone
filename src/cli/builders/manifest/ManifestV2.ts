@@ -77,16 +77,17 @@ export default class extends ManifestBase<ManifestV2> {
     }
 
     protected buildOptionalPermissions(): Partial<ManifestV2> | undefined {
-        const optionalPermissions: string[] = Array
-            .from(filterPermissionsForMV2(this.optionalPermissions))
-            .filter((permission) => !this.permissions.has(permission));
+        const optionalPermissions: string[] = Array.from(filterPermissionsForMV2(this.optionalPermissions)).filter(
+            permission => !this.permissions.has(permission)
+        );
 
+        // prettier-ignore
         const optionalHostPermissions: string[] = Array
             .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
             .filter((permission) => !this.hostPermissions.has(permission));
 
-        if(optionalHostPermissions.length > 0) {
-            optionalPermissions.push(...optionalHostPermissions)
+        if (optionalHostPermissions.length > 0) {
+            optionalPermissions.push(...optionalHostPermissions);
         }
 
         if (optionalPermissions.length > 0) {
