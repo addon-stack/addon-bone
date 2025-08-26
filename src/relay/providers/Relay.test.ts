@@ -70,7 +70,10 @@ describe("ProxyRelay", () => {
     });
 
     test("accesses primitive value as method on the relay object", async () => {
-        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, RelayMethod.Scripting, {tabId: 1, frameId: 2}).get();
+        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, RelayMethod.Scripting, {
+            tabId: 1,
+            frameId: 2,
+        }).get();
 
         expect(await relay.one()).toBe(1);
         expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
@@ -113,13 +116,13 @@ describe("ProxyRelay", () => {
     test("uses scriptingApply method when RelayMethod is 'scripting'", async () => {
         const proxy = new ProxyRelay(relayName, RelayMethod.Scripting, 1);
         const relay = proxy.get();
-        const scriptingApplySpy = jest.spyOn(proxy as any, 'scriptingApply');
-        scriptingApplySpy.mockResolvedValue('scripting result');
+        const scriptingApplySpy = jest.spyOn(proxy as any, "scriptingApply");
+        scriptingApplySpy.mockResolvedValue("scripting result");
 
         const result = await relay.sum(1, 2);
 
-        expect(scriptingApplySpy).toHaveBeenCalledWith([1, 2], 'sum');
-        expect(result).toBe('scripting result');
+        expect(scriptingApplySpy).toHaveBeenCalledWith([1, 2], "sum");
+        expect(result).toBe("scripting result");
 
         scriptingApplySpy.mockRestore();
     });
@@ -127,17 +130,16 @@ describe("ProxyRelay", () => {
     test("uses messagingApply method when RelayMethod is 'messaging'", async () => {
         const proxy = new ProxyRelay(relayName, RelayMethod.Messaging, 1);
         const relay = proxy.get();
-        const messagingApplySpy = jest.spyOn(proxy as any, 'messagingApply');
-        messagingApplySpy.mockResolvedValue('messaging result');
+        const messagingApplySpy = jest.spyOn(proxy as any, "messagingApply");
+        messagingApplySpy.mockResolvedValue("messaging result");
 
         const result = await relay.sum(1, 2);
 
-        expect(messagingApplySpy).toHaveBeenCalledWith([1, 2], 'sum');
-        expect(result).toBe('messaging result');
+        expect(messagingApplySpy).toHaveBeenCalledWith([1, 2], "sum");
+        expect(result).toBe("messaging result");
 
         messagingApplySpy.mockRestore();
     });
-
 });
 
 describe("RegisterRelay", () => {
@@ -154,20 +156,32 @@ describe("RegisterRelay", () => {
     });
 
     test("returns real relay when called in content script context", () => {
-        const relay = new RegisterRelay<typeof relayName, RelayType>(relayName, RelayMethod.Scripting, () => MatchRelay).get();
+        const relay = new RegisterRelay<typeof relayName, RelayType>(
+            relayName,
+            RelayMethod.Scripting,
+            () => MatchRelay
+        ).get();
 
         expect(relay["__proxy"]).toBe(undefined);
     });
 
     test("calls method directly in content script without chrome.scripting", async () => {
-        const relay = new RegisterRelay<typeof relayName, RelayType>(relayName, RelayMethod.Scripting, () => MatchRelay).get();
+        const relay = new RegisterRelay<typeof relayName, RelayType>(
+            relayName,
+            RelayMethod.Scripting,
+            () => MatchRelay
+        ).get();
 
         expect(relay.sum(1, 2)).toBe(3);
         expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
     });
 
     test("throws an error when attempting to register the same relay twice", async () => {
-        const relay = new RegisterRelay<typeof relayName, RelayType>(relayName, RelayMethod.Scripting, () => MatchRelay);
+        const relay = new RegisterRelay<typeof relayName, RelayType>(
+            relayName,
+            RelayMethod.Scripting,
+            () => MatchRelay
+        );
 
         expect(() => relay.register()).toThrow(
             `A relay with the name "${relayName}" already exists. The relay name must be unique.`
@@ -176,8 +190,8 @@ describe("RegisterRelay", () => {
 
     test("does not call parent register method when RelayMethod is 'scripting'", () => {
         const registerRelay = new RegisterRelay(relayName, RelayMethod.Scripting, () => MatchRelay);
-        const parentRegisterSpy = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(registerRelay)), 'register');
-        jest.spyOn(RelayManager.getInstance(), 'has').mockReturnValue(false);
+        const parentRegisterSpy = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(registerRelay)), "register");
+        jest.spyOn(RelayManager.getInstance(), "has").mockReturnValue(false);
 
         registerRelay.register();
 
@@ -188,7 +202,7 @@ describe("RegisterRelay", () => {
 
     test("calls parent register method when method is 'messaging'", () => {
         const registerRelay = new RegisterRelay(relayName, RelayMethod.Messaging, () => MatchRelay);
-        const parentRegisterSpy = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(registerRelay)), 'register');
+        const parentRegisterSpy = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(registerRelay)), "register");
         parentRegisterSpy.mockReturnValue(MatchRelay);
 
         const result = registerRelay.register();

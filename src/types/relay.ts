@@ -11,7 +11,7 @@ export enum RelayMethod {
 }
 
 export interface RelayConfig extends TransportConfig, ContentScriptConfig {
-    method?: RelayMethod
+    method?: RelayMethod;
 }
 
 export type RelayOptions = RelayConfig & EntrypointOptions;

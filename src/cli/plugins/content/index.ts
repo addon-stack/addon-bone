@@ -1,4 +1,5 @@
-import {Configuration as RspackConfig, DefinePlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, DefinePlugin} from "@rspack/core";
+import {merge as mergeConfig} from "webpack-merge";
 
 import ContentManager from "./ContentManager";
 import Content from "./Content";
@@ -33,21 +34,15 @@ export default definePlugin(() => {
         bundler: async ({config}) => {
             relayDeclaration.dictionary(await relay.dictionary()).build();
 
-            const plugins: Plugins = [];
-            let build: boolean = true;
             let rspack: RspackConfig = {};
-            let relayMethodsMap: Record<string, RelayMethod> = {};
+            let methods: Record<string, RelayMethod> = {};
 
             if (await manager.empty()) {
                 if (config.debug) {
                     console.warn("Content script or relay entries not found");
                 }
-
-                build = false;
-            }
-
-            if (build) {
-                relayMethodsMap = await relay.getMethodsMap();
+            } else {
+                methods = await relay.getMethodsMap();
 
                 // prettier-ignore
                 const plugin = EntrypointPlugin.from(await manager.entries())
@@ -63,9 +58,8 @@ export default definePlugin(() => {
                     });
                 }
 
-                plugins.push(plugin);
-
                 rspack = {
+                    plugins: [plugin],
                     optimization: {
                         splitChunks: {
                             cacheGroups: {
@@ -86,15 +80,13 @@ export default definePlugin(() => {
                 };
             }
 
-            return {
-                ...rspack,
+            return mergeConfig(rspack, {
                 plugins: [
                     new DefinePlugin({
-                        __ADNBN_RELAY_METHODS__: JSON.stringify(relayMethodsMap),
+                        __ADNBN_RELAY_METHODS__: JSON.stringify(methods),
                     }),
-                    ...plugins
                 ],
-            } satisfies RspackConfig;
+            });
         },
         manifest: async ({manifest}) => {
             // prettier-ignore
@@ -102,11 +94,12 @@ export default definePlugin(() => {
                 .setContentScripts(await manager.manifest())
                 .appendHostPermissions(await manager.hostPermissions());
 
-            if (await relay.exists() && await relay.hasMethod(RelayMethod.Scripting)) {
-                // prettier-ignore
-                manifest
-                    .addPermission("scripting")
-                    .addPermission("tabs");
+            if (await relay.exists()) {
+                manifest.addPermission("tabs");
+
+                if (await relay.hasMethod(RelayMethod.Scripting)) {
+                    manifest.addPermission("scripting");
+                }
             }
         },
     };

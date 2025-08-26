@@ -26,7 +26,7 @@ export default class extends ContentParser<RelayEntrypointOptions> {
                         "Key must start with a Unicode letter, `$` or `_`, and may only contain letters, digits, `$` or `_`",
                 })
                 .optional(),
-            method: z.nativeEnum(RelayMethod).optional()
+            method: z.nativeEnum(RelayMethod).optional(),
         });
     }
 

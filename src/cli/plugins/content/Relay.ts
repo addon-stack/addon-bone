@@ -32,12 +32,13 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
     public async getMethodsMap(): Promise<Record<string, RelayMethod>> {
         const transport = await this.transport();
 
-        return Array
-            .from(transport.values())
-            .reduce((map, {options: {name, method}}) => {
+        return Array.from(transport.values()).reduce(
+            (map, {options: {name, method}}) => {
                 map[name] = method || RelayMethod.Messaging;
                 return map;
-            }, {} as Record<string, RelayMethod>);
+            },
+            {} as Record<string, RelayMethod>
+        );
     }
 
     public async hasMethod(method: RelayMethod): Promise<boolean> {

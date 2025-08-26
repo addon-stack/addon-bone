@@ -8,7 +8,6 @@ import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
 
 import {RelayGlobalKey, RelayMethod} from "@typing/relay";
-
 import type {DeepAsyncProxy} from "@typing/helpers";
 import type {MessageSendOptions} from "@typing/message";
 import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
@@ -16,9 +15,9 @@ import type {TransportDictionary, TransportManager, TransportMessage, TransportN
 export type ProxyRelayOptions =
     | number
     | (Omit<InjectScriptOptions, "frameId" | "documentId" | "timeFallback"> & {
-    frameId?: number;
-    documentId?: string;
-});
+          frameId?: number;
+          documentId?: string;
+      });
 
 export default class ProxyRelay<
     N extends TransportName,
@@ -70,10 +69,10 @@ export default class ProxyRelay<
                 const manager: RelayManager = await awaitManager();
 
                 return await manager.property(name, {path, args});
-            } catch (error) {
-                console.error("ProxyRelay.createProxy()", document.location.href, error);
+            } catch (e) {
+                console.error(`ProxyRelay.scriptingApply(): failed to access relay "${name}" at path "${path}" via injected script; manager with key "${key}" is unavailable or property not found. URL: ${document.location.href}`, e);
 
-                throw error;
+                throw e;
             }
         };
 
@@ -83,16 +82,17 @@ export default class ProxyRelay<
     }
 
     private async messagingApply(args: any[], path?: string): Promise<any> {
-        const options: MessageSendOptions = typeof this.options === "number"
-            ? {
-                tabId: this.options,
-                frameId: 0
-            }
-            : {
-                tabId: this.options.tabId,
-                frameId: this.options.frameId || 0,
-                documentId: this.options.documentId,
-            };
+        const options: MessageSendOptions =
+            typeof this.options === "number"
+                ? {
+                      tabId: this.options,
+                      frameId: 0,
+                  }
+                : {
+                      tabId: this.options.tabId,
+                      frameId: this.options.frameId || 0,
+                      documentId: this.options.documentId,
+                  };
 
         return this.message.send({path, args}, options);
     }

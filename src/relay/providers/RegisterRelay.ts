@@ -11,7 +11,7 @@ import {RelayMethod} from "@typing/relay";
 export default class<
     N extends TransportName,
     T extends object = TransportDictionary[N],
-    A extends any[] = []
+    A extends any[] = [],
 > extends RegisterTransport<N, T, A> {
     constructor(
         name: N,
@@ -31,7 +31,6 @@ export default class<
 
     public register(...args: A): T {
         if (this.method === RelayMethod.Scripting) {
-
             if (this.manager().has(this.name)) {
                 throw new Error(`A relay with the name "${this.name}" already exists. The relay name must be unique.`);
             }
