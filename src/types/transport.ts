@@ -1,10 +1,8 @@
 import {Required} from "utility-types";
 
-import {MessageSendOptions} from "@message/providers";
-
 import {EntrypointOptions} from "@typing/entrypoint";
 import {Awaiter, DeepAsyncProxy} from "@typing/helpers";
-import {MessageSender} from "@typing/message";
+import {MessageSender, MessageSendOptions} from "@typing/message";
 
 export type TransportType = ((...args: any[]) => Promise<any>) | {[key: string]: any | TransportType};
 

@@ -1,6 +1,6 @@
-import {Message, MessageSendOptions} from "@message/providers";
+import {Message} from "@message/providers";
 
-import {MessageDictionary, MessageProvider, MessageSender} from "@typing/message";
+import {MessageDictionary, MessageProvider, MessageSender, MessageSendOptions} from "@typing/message";
 import type {TransportMessage as TransportMessageContract, TransportMessageData} from "@typing/transport";
 
 export default abstract class TransportMessage implements TransportMessageContract {

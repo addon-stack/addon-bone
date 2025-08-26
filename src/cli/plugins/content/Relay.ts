@@ -1,5 +1,3 @@
-import path from 'path';
-
 import ContentDriver from "./ContentDriver";
 
 import {ContentProvider} from "./types";
@@ -32,20 +30,14 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
     }
 
     public async getMethodsMap(): Promise<Record<string, RelayMethod | undefined>> {
-        const methodByName: Record<string, RelayMethod | undefined> = {};
+        const transport = await this.transport();
 
-        (await this.options()).forEach((options, file) => {
-            let relayName = options.name;
-
-            if (!relayName) {
-                const fileName = path.basename(file.import);
-                relayName = fileName.includes('.') ? fileName.split('.')[0] : fileName;
-            }
-
-            methodByName[relayName] = options.method || RelayMethod.Scripting;
-        });
-
-        return methodByName;
+        return Array
+            .from(transport.values())
+            .reduce((map, {options: {name, method}}) => {
+                map[name] = method || RelayMethod.Messaging;
+                return map;
+            }, {} as Record<string, RelayMethod | undefined>);
     }
 
     public clear(): this {

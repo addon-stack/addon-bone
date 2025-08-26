@@ -3,7 +3,6 @@ import {getManifestVersion, isAvailableScripting} from "@adnbn/browser";
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
 
 import ProxyTransport from "@transport/ProxyTransport";
-import {MessageSendOptions} from "@message/providers";
 
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
@@ -11,6 +10,7 @@ import RelayMessage from "../RelayMessage";
 import {RelayGlobalKey, RelayMethod} from "@typing/relay";
 
 import type {DeepAsyncProxy} from "@typing/helpers";
+import type {MessageSendOptions} from "@typing/message";
 import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
 export type ProxyRelayOptions =

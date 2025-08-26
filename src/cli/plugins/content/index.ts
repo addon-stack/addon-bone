@@ -57,7 +57,7 @@ export default definePlugin(() => {
             return {
                 plugins: [
                     new DefinePlugin({
-                        __ADNBN_RELAYS_METHODS__: JSON.stringify(await relay.getMethodsMap()),
+                        __ADNBN_RELAY_METHODS__: JSON.stringify(await relay.getMethodsMap()),
                     }),
                     plugin
                 ],

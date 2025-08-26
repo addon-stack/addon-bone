@@ -13,7 +13,7 @@ export default class<T extends TransportType = TransportType> extends AbstractBu
 
         super(options);
 
-        this.method = method || RelayMethod.Scripting;
+        this.method = method || RelayMethod.Messaging;
     }
 
     protected transport(): RegisterRelay<TransportName, T, [RelayOptions]> {
