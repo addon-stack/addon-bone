@@ -7,6 +7,7 @@ import {
     MessageHandler,
     MessageMapHandler,
     MessageResponse,
+    MessageSendOptions,
     MessageTargetHandler,
     MessageType,
 } from "@typing/message";
@@ -15,8 +16,6 @@ import AbstractMessage from "./AbstractMessage";
 import MessageManager from "../MessageManager";
 
 import {GeneralHandler, MapHandler, SingleHandler} from "../handlers";
-
-export type MessageSendOptions = number | {tabId: number; frameId?: number; documentId?: string};
 
 export default class Message<T extends MessageDictionary> extends AbstractMessage<T, MessageSendOptions> {
     private static instance: Message<MessageDictionary> | null = null;

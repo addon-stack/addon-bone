@@ -5,7 +5,7 @@ import {ContentProvider} from "./types";
 import {RelayFinder} from "@cli/entrypoint";
 import {virtualRelayModule} from "@cli/virtual";
 
-import {RelayEntrypointOptions} from "@typing/relay";
+import {RelayEntrypointOptions, RelayMethod} from "@typing/relay";
 import {EntrypointFile} from "@typing/entrypoint";
 
 export default class extends RelayFinder implements ContentProvider<RelayEntrypointOptions> {
@@ -27,6 +27,17 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
         }
 
         return virtualRelayModule(file, options.name);
+    }
+
+    public async getMethodsMap(): Promise<Record<string, RelayMethod>> {
+        const transport = await this.transport();
+
+        return Array
+            .from(transport.values())
+            .reduce((map, {options: {name, method}}) => {
+                map[name] = method || RelayMethod.Messaging;
+                return map;
+            }, {} as Record<string, RelayMethod>);
     }
 
     public clear(): this {

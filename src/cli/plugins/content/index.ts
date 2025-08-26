@@ -1,4 +1,4 @@
-import {Configuration as RspackConfig} from "@rspack/core";
+import {Configuration as RspackConfig, DefinePlugin} from "@rspack/core";
 
 import ContentManager from "./ContentManager";
 import Content from "./Content";
@@ -55,7 +55,12 @@ export default definePlugin(() => {
             }
 
             return {
-                plugins: [plugin],
+                plugins: [
+                    new DefinePlugin({
+                        __ADNBN_RELAY_METHODS__: JSON.stringify(await relay.getMethodsMap()),
+                    }),
+                    plugin
+                ],
                 optimization: {
                     splitChunks: {
                         cacheGroups: {
