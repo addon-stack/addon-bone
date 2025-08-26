@@ -1,4 +1,4 @@
-import {Configuration as RspackConfig, DefinePlugin} from "@rspack/core";
+import {Configuration as RspackConfig, DefinePlugin, Plugins} from "@rspack/core";
 
 import ContentManager from "./ContentManager";
 import Content from "./Content";
@@ -10,6 +10,7 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
 
 import {Command} from "@typing/app";
+import {RelayMethod} from "@typing/relay";
 
 export default definePlugin(() => {
     let content: Content;
@@ -32,52 +33,67 @@ export default definePlugin(() => {
         bundler: async ({config}) => {
             relayDeclaration.dictionary(await relay.dictionary()).build();
 
+            const plugins: Plugins = [];
+            let build: boolean = true;
+            let rspack: RspackConfig = {};
+            let relayMethodsMap: Record<string, RelayMethod> = {};
+
             if (await manager.empty()) {
                 if (config.debug) {
                     console.warn("Content script or relay entries not found");
                 }
 
-                return {};
+                build = false;
             }
 
-            // prettier-ignore
-            const plugin = EntrypointPlugin.from(await manager.entries())
-                .virtual(file => manager.virtual(file));
+            if (build) {
+                relayMethodsMap = await relay.getMethodsMap();
 
-            if (config.command === Command.Watch) {
-                plugin.watch(async () => {
-                    manager.clear();
+                // prettier-ignore
+                const plugin = EntrypointPlugin.from(await manager.entries())
+                    .virtual(file => manager.virtual(file));
 
-                    relayDeclaration.dictionary(await relay.dictionary()).build();
+                if (config.command === Command.Watch) {
+                    plugin.watch(async () => {
+                        manager.clear();
 
-                    return manager.entries();
-                });
-            }
+                        relayDeclaration.dictionary(await relay.dictionary()).build();
 
-            return {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_RELAY_METHODS__: JSON.stringify(await relay.getMethodsMap()),
-                    }),
-                    plugin
-                ],
-                optimization: {
-                    splitChunks: {
-                        cacheGroups: {
-                            frameworkContent: {
-                                minChunks: 2,
-                                name: manager.chunkName(),
-                                test: onlyViaTopLevelEntry(["content", "relay"]),
-                                chunks: (chunk): boolean => {
-                                    return manager.likely(chunk.name);
+                        return manager.entries();
+                    });
+                }
+
+                plugins.push(plugin);
+
+                rspack = {
+                    optimization: {
+                        splitChunks: {
+                            cacheGroups: {
+                                frameworkContent: {
+                                    minChunks: 2,
+                                    name: manager.chunkName(),
+                                    test: onlyViaTopLevelEntry(["content", "relay"]),
+                                    chunks: (chunk): boolean => {
+                                        return manager.likely(chunk.name);
+                                    },
+                                    enforce: false,
+                                    reuseExistingChunk: true,
+                                    priority: 10,
                                 },
-                                enforce: false,
-                                reuseExistingChunk: true,
-                                priority: 10,
                             },
                         },
                     },
-                },
+                };
+            }
+
+            return {
+                ...rspack,
+                plugins: [
+                    new DefinePlugin({
+                        __ADNBN_RELAY_METHODS__: JSON.stringify(relayMethodsMap),
+                    }),
+                    ...plugins
+                ],
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {
@@ -86,7 +102,7 @@ export default definePlugin(() => {
                 .setContentScripts(await manager.manifest())
                 .appendHostPermissions(await manager.hostPermissions());
 
-            if (await relay.exists()) {
+            if (await relay.exists() && await relay.hasMethod(RelayMethod.Scripting)) {
                 // prettier-ignore
                 manifest
                     .addPermission("scripting")

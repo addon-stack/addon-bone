@@ -40,6 +40,10 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
             }, {} as Record<string, RelayMethod>);
     }
 
+    public async hasMethod(method: RelayMethod): Promise<boolean> {
+        return Object.values(await this.getMethodsMap()).includes(method);
+    }
+
     public clear(): this {
         this._driver?.clear();
 
