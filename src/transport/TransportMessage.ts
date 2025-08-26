@@ -8,8 +8,8 @@ export default abstract class TransportMessage implements TransportMessageContra
 
     protected abstract readonly key: string;
 
-    public async send(data: TransportMessageData) {
-        return this.message.send(this.key, data);
+    public async send(data: TransportMessageData, options?: MessageSendOptions) {
+        return this.message.send(this.key, data, options);
     }
 
     public watch(handler: (data: TransportMessageData, sender: MessageSender) => any): void {

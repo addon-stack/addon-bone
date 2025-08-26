@@ -5,7 +5,14 @@ import {Awaiter} from "@typing/helpers";
 
 export const RelayGlobalKey = "adnbnRelay";
 
-export type RelayConfig = TransportConfig & ContentScriptConfig;
+export enum RelayMethod {
+    Scripting = "scripting",
+    Messaging = "messaging",
+}
+
+export interface RelayConfig extends TransportConfig, ContentScriptConfig {
+    method?: RelayMethod
+}
 
 export type RelayOptions = RelayConfig & EntrypointOptions;
 

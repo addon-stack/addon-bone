@@ -3,32 +3,38 @@ import {getManifestVersion, isAvailableScripting} from "@adnbn/browser";
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
 
 import ProxyTransport from "@transport/ProxyTransport";
+import {MessageSendOptions} from "@message/providers";
 
 import RelayManager from "../RelayManager";
+import RelayMessage from "../RelayMessage";
 
-import {RelayGlobalKey} from "@typing/relay";
+import {RelayGlobalKey, RelayMethod} from "@typing/relay";
 
 import type {DeepAsyncProxy} from "@typing/helpers";
-import type {TransportDictionary, TransportManager, TransportName} from "@typing/transport";
+import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
 export type ProxyRelayOptions =
     | number
     | (Omit<InjectScriptOptions, "frameId" | "documentId" | "timeFallback"> & {
-          frameId?: number;
-          documentId?: string;
-      });
+    frameId?: number;
+    documentId?: string;
+});
 
 export default class ProxyRelay<
     N extends TransportName,
     T = DeepAsyncProxy<TransportDictionary[N]>,
 > extends ProxyTransport<N, T> {
     private injectScript: InjectScriptContract;
+    private message: TransportMessage;
 
     constructor(
         name: N,
+        protected method: RelayMethod,
         protected options: ProxyRelayOptions
     ) {
         super(name);
+
+        this.message = new RelayMessage(name);
 
         this.injectScript = injectScriptFactory({
             ...(typeof options === "number" ? {tabId: options} : options),
@@ -41,6 +47,12 @@ export default class ProxyRelay<
     }
 
     protected async apply(args: any[], path?: string): Promise<any> {
+        return this.method === RelayMethod.Scripting
+            ? this.scriptingApply(args, path)
+            : this.messagingApply(args, path);
+    }
+
+    private async scriptingApply(args: any[], path?: string): Promise<any> {
         const func = async (name: string, path: string, args: any[], key: string) => {
             try {
                 const awaitManager = async (maxAttempts = 10, delay = 300): Promise<RelayManager> => {
@@ -68,6 +80,21 @@ export default class ProxyRelay<
         const result = await this.injectScript.run(func, [this.name, path!, args, RelayGlobalKey]);
 
         return result?.[0]?.result;
+    }
+
+    private async messagingApply(args: any[], path?: string): Promise<any> {
+        const options: MessageSendOptions = typeof this.options === "number"
+            ? {
+                tabId: this.options,
+                frameId: 0
+            }
+            : {
+                tabId: this.options.tabId,
+                frameId: this.options.frameId || 0,
+                documentId: this.options.documentId,
+            };
+
+        return this.message.send({path, args}, options);
     }
 
     public get(): T {

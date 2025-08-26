@@ -1,5 +1,7 @@
 import {Required} from "utility-types";
 
+import {MessageSendOptions} from "@message/providers";
+
 import {EntrypointOptions} from "@typing/entrypoint";
 import {Awaiter, DeepAsyncProxy} from "@typing/helpers";
 import {MessageSender} from "@typing/message";
@@ -34,7 +36,7 @@ export interface TransportMessageData {
 }
 
 export interface TransportMessage {
-    send(data: TransportMessageData): any;
+    send(data: TransportMessageData, options?: MessageSendOptions): any;
 
     watch(handler: (data: TransportMessageData, sender: MessageSender) => any): void;
 }
