@@ -1,9 +1,8 @@
-import {isAvailableScripting} from "@adnbn/browser";
-
 import RegisterTransport from "@transport/RegisterTransport";
 
 import RelayMessage from "../RelayMessage";
 import RelayManager from "../RelayManager";
+import {isContentScript} from "../utils";
 
 import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 import {RelayMethod} from "@typing/relay";
@@ -46,7 +45,7 @@ export default class<
     }
 
     public get(): T {
-        if (isAvailableScripting()) {
+        if (!isContentScript()) {
             throw new Error(`Relay "${this.name}" can be getting only from content script`);
         }
 
