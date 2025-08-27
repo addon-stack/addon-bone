@@ -60,9 +60,35 @@ export default abstract class<O extends EntrypointOptions>
     }
 
     protected isValidOptions(options: O): boolean {
-        const {browser, app} = this.config;
+        const {
+            browser,
+            app,
+            mode: configMode,
+            debug: configDebug,
+            manifestVersion: configManifestVersion
+        } = this.config;
 
-        const {includeBrowser = [], includeApp = [], excludeBrowser = [], excludeApp = []} = options;
+        const {
+            mode,
+            debug,
+            manifestVersion,
+            includeBrowser = [],
+            includeApp = [],
+            excludeBrowser = [],
+            excludeApp = [],
+        } = options;
+
+        if (mode && mode !== configMode) {
+            return false;
+        }
+
+        if (debug !== undefined && debug !== configDebug) {
+            return false;
+        }
+
+        if (manifestVersion && manifestVersion !== configManifestVersion) {
+            return false;
+        }
 
         if (includeBrowser.length > 0 && !includeBrowser.includes(browser)) {
             return false;

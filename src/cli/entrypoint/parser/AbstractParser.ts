@@ -3,6 +3,7 @@ import path from "path";
 
 import {ExpressionFile, ImportResolver, OptionFile, TsResolver} from "../file";
 
+import {Mode} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile, EntrypointOptions, EntrypointParser} from "@typing/entrypoint";
@@ -15,6 +16,9 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
         excludeApp: z.array(z.string()).optional(),
         includeBrowser: z.array(z.nativeEnum(Browser)).optional(),
         excludeBrowser: z.array(z.nativeEnum(Browser)).optional(),
+        mode: z.nativeEnum(Mode).optional(),
+        debug: z.boolean().optional(),
+        manifestVersion: z.union([z.literal(2), z.literal(3)]).optional(),
     });
 
     protected abstract schema(): typeof this.CommonPropertiesSchema;
