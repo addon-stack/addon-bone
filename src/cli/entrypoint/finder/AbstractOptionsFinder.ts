@@ -1,6 +1,4 @@
 import AbstractFinder from "./AbstractFinder";
-
-import {Mode} from "@typing/app";
 import {
     EntrypointFile,
     EntrypointOptions,
