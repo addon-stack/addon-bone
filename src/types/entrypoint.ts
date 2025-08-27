@@ -64,7 +64,7 @@ export interface EntrypointOptions {
      *
      * @default undefined
      */
-    manifestVersion?: ManifestVersion
+    manifestVersion?: ManifestVersion;
 
     /**
      * Debug mode flag. If true, entry point will be included only when building
