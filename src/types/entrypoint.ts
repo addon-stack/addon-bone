@@ -56,7 +56,7 @@ export interface EntrypointOptions {
      *
      * @default undefined
      */
-    mode?: Mode
+    mode?: `${Exclude<Mode, Mode.None>}` | Exclude<Mode, Mode.None>;
 
     /**
      * Manifest version constraint for this entry point. Entry point will be included
