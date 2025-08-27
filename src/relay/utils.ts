@@ -35,4 +35,4 @@ export const awaiter = async <T>(
     return defaults;
 };
 
-export const isRelayContext = (): boolean => !!globalThis[RelayGlobalKey]
+export const isRelayContext = (): boolean => !!globalThis[RelayGlobalKey];

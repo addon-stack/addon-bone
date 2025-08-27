@@ -69,7 +69,10 @@ export default class ProxyRelay<
 
                 return await manager.property(name, {path, args});
             } catch (e) {
-                console.error(`ProxyRelay.scriptingApply(): failed to access relay "${name}" at path "${path}" via injected script; manager with key "${key}" is unavailable or property not found. URL: ${document.location.href}`, e);
+                console.error(
+                    `ProxyRelay.scriptingApply(): failed to access relay "${name}" at path "${path}" via injected script; manager with key "${key}" is unavailable or property not found. URL: ${document.location.href}`,
+                    e
+                );
 
                 throw e;
             }

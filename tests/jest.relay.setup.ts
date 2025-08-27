@@ -11,6 +11,6 @@ chrome.scripting = {
     }),
 };
 
-jest.mock('../src/relay/utils', ()=>({
+jest.mock("../src/relay/utils", () => ({
     isRelayContext: jest.fn(),
-}))
+}));
