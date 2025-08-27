@@ -80,7 +80,7 @@ export default abstract class<O extends EntrypointOptions>
             excludeApp = [],
         } = options;
 
-        if (mode && mode !== Mode.None && mode !== configMode) {
+        if (mode && mode !== configMode) {
             return false;
         }
 
