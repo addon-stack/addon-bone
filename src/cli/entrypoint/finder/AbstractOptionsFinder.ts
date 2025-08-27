@@ -27,6 +27,10 @@ export default abstract class<O extends EntrypointOptions>
         return (this._options ??= await this.getOptions());
     }
 
+    public async empty(): Promise<boolean> {
+        return (await this.options()).size === 0;
+    }
+
     public async contracts(): Promise<Map<EntrypointFile, string | undefined>> {
         return (this._contract ??= await this.getContracts());
     }
