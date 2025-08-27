@@ -4,7 +4,7 @@ import ProxyTransport from "@transport/ProxyTransport";
 
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
-import {isContentScript} from "../utils";
+import {isRelayContext} from "../utils";
 
 import {RelayGlobalKey, RelayMethod} from "@typing/relay";
 import type {DeepAsyncProxy} from "@typing/helpers";
@@ -97,7 +97,7 @@ export default class ProxyRelay<
     }
 
     public get(): T {
-        if (isContentScript()) {
+        if (isRelayContext()) {
             throw new Error(
                 `You are trying to get proxy relay "${this.name}" from script content. You can get original relay instead`
             );
