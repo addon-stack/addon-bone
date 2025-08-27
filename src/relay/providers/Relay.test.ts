@@ -1,8 +1,7 @@
-import {isAvailableScripting} from "@adnbn/browser";
-
 import ProxyRelay from "./ProxyRelay";
 import RegisterRelay from "./RegisterRelay";
 import RelayManager from "../RelayManager";
+import {isRelayContext} from "../utils";
 
 import {RelayGlobalKey, RelayMethod} from "@typing/relay";
 import {DeepAsyncProxy} from "@typing/helpers";
@@ -34,11 +33,11 @@ const relayName = "math";
 
 describe("ProxyRelay", () => {
     beforeEach(async () => {
-        (isAvailableScripting as jest.Mock).mockReturnValue(true);
+        (isRelayContext as jest.Mock).mockReturnValue(false);
     });
 
     test("throws an error when get() is called in content script context", async () => {
-        (isAvailableScripting as jest.Mock).mockReturnValue(false);
+        (isRelayContext as jest.Mock).mockReturnValue(true);
 
         const proxy = new ProxyRelay(relayName, RelayMethod.Scripting, 1);
 
@@ -144,11 +143,11 @@ describe("ProxyRelay", () => {
 
 describe("RegisterRelay", () => {
     beforeEach(async () => {
-        (isAvailableScripting as jest.Mock).mockReturnValue(false);
+        (isRelayContext as jest.Mock).mockReturnValue(true);
     });
 
     test("throws if trying to get registered relay from non-content script", async () => {
-        (isAvailableScripting as jest.Mock).mockReturnValue(true);
+        (isRelayContext as jest.Mock).mockReturnValue(false);
 
         const proxy = new RegisterRelay(relayName, RelayMethod.Scripting, () => MatchRelay);
 
