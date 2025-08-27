@@ -1,4 +1,6 @@
+import {Mode} from "@typing/app";
 import {Browser} from "@typing/browser";
+import {ManifestVersion} from "@typing/manifest";
 
 export const EntrypointFileExtensions: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx", "vue", "svelte"]);
 
@@ -47,6 +49,30 @@ export interface EntrypointOptions {
      * @default undefined
      */
     includeApp?: string[];
+
+    /**
+     * Build mode for filtering entry points. Entry point will be included only
+     * if it matches the current build mode (Production or Development).
+     *
+     * @default undefined
+     */
+    mode?: Mode
+
+    /**
+     * Manifest version constraint for this entry point. Entry point will be included
+     * only if it matches the target manifest version.
+     *
+     * @default undefined
+     */
+    manifestVersion?: ManifestVersion
+
+    /**
+     * Debug mode flag. If true, entry point will be included only when building
+     * with DEBUG flag enabled.
+     *
+     * @default undefined
+     */
+    debug?: boolean;
 }
 
 export interface EntrypointFile {
