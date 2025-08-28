@@ -108,15 +108,7 @@ export default class extends ManifestBase<ManifestV2> {
     }
 
     protected buildWebAccessibleResources(): Partial<ManifestV2> | undefined {
-        const resources: string[] = Array.from(this.accessibleResources).flatMap(({resources}) => resources);
-
-        for (const contentScript of this.contentScripts.values()) {
-            const assets = this.dependencies.get(contentScript.entry)?.assets;
-
-            if (assets && assets.size > 0) {
-                resources.push(...assets);
-            }
-        }
+        const resources: string[] = this.getWebAccessibleResources().flatMap(({resources})=> resources);
 
         if (resources.length > 0) {
             return {web_accessible_resources: Array.from(new Set(resources))};

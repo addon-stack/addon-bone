@@ -2,9 +2,8 @@ import ManifestBase, {ManifestError} from "./ManifestBase";
 
 import {filterHostPatterns, filterPermissionsForMV3} from "./utils";
 
-import {CoreManifest, ManifestVersion} from "@typing/manifest";
+import {CoreManifest, ManifestAccessibleResource, ManifestVersion} from "@typing/manifest";
 import {Browser} from "@typing/browser";
-import {ContentScriptMatches} from "@typing/content";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
 
@@ -110,18 +109,7 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildWebAccessibleResources(): Partial<ManifestV3> | undefined {
-        const resources: Array<{resources: string[]; matches: string[]}> = [...this.accessibleResources];
-
-        for (const contentScript of this.contentScripts.values()) {
-            const assets = this.dependencies.get(contentScript.entry)?.assets;
-
-            if (assets && assets.size > 0) {
-                resources.push({
-                    resources: Array.from(assets),
-                    matches: contentScript.matches || ContentScriptMatches,
-                });
-            }
-        }
+        const resources: ManifestAccessibleResource[] = this.getWebAccessibleResources();
 
         if (resources.length > 0) {
             return {web_accessible_resources: resources};
