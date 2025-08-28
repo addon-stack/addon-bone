@@ -1,5 +1,6 @@
 import {Command, Mode, PackageName} from "@typing/app";
 import {Browser} from "@typing/browser";
+import {RelayMethod} from "@typing/relay";
 import {ContentScriptAppend} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
 
@@ -39,6 +40,15 @@ export default (): Injector[] => {
         resolvers.push({
             from: PackageName,
             target: "ContentScriptAppend",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(RelayMethod).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "RelayMethod",
             name: key,
             value,
         });

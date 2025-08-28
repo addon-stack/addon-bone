@@ -1,4 +1,4 @@
-import {Message, MessageSendOptions} from "@message/providers";
+import {Message} from "@message/providers";
 
 import {
     MessageData,
@@ -10,6 +10,7 @@ import {
     MessageTargetHandler,
     MessageType,
     MessageSender,
+    MessageSendOptions,
 } from "@typing/message";
 
 export type {

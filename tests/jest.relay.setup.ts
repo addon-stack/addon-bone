@@ -10,3 +10,7 @@ chrome.scripting = {
         return [{result}];
     }),
 };
+
+jest.mock("../src/relay/utils", () => ({
+    isRelayContext: jest.fn(),
+}));
