@@ -4,6 +4,7 @@ import ContentParser from "./ContentParser";
 
 import {RelayEntrypointOptions, RelayMethod} from "@typing/relay";
 import {EntrypointFile} from "@typing/entrypoint";
+import {ContentScriptDeclarative} from "@typing/content";
 
 export default class extends ContentParser<RelayEntrypointOptions> {
     protected definition(): string {
@@ -31,6 +32,17 @@ export default class extends ContentParser<RelayEntrypointOptions> {
     }
 
     public options(file: EntrypointFile): RelayEntrypointOptions {
-        return {...super.options(file), declarative: true};
+        const {declarative, method, ...options} = super.options(file);
+
+        return {
+            ...options,
+            method,
+            declarative:
+                declarative === undefined
+                    ? method === RelayMethod.Scripting
+                        ? ContentScriptDeclarative.Optional
+                        : undefined
+                    : declarative,
+        };
     }
 }

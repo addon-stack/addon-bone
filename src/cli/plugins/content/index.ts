@@ -92,7 +92,8 @@ export default definePlugin(() => {
             // prettier-ignore
             manifest
                 .setContentScripts(await manager.manifest())
-                .appendHostPermissions(await manager.hostPermissions());
+                .appendHostPermissions(await manager.hostPermissions())
+                .appendOptionalHostPermissions(await manager.optionalHostPermissions());
 
             if (await relay.exists()) {
                 manifest.addPermission("tabs");
