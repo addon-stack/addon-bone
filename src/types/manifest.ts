@@ -154,6 +154,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     addAccessibleResource(accessibleResource: ManifestAccessibleResource): this;
 
+    getWebAccessibleResources(): ManifestAccessibleResource[];
+
     // Getter
     get(): T;
 }

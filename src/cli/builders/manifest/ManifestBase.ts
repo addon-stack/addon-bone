@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import {mergeWebAccessibleResources} from "./utils";
 
 import {
     CoreManifest,
@@ -501,7 +501,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this.build();
     }
 
-    protected getWebAccessibleResources(): ManifestAccessibleResource[] {
+    public getWebAccessibleResources(): ManifestAccessibleResource[] {
         const resources: ManifestAccessibleResource[] = [...this.accessibleResources];
 
         for (const contentScript of this.contentScripts.values()) {
@@ -515,23 +515,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             }
         }
 
-        const mergedResources = new Map<string[], string[]>();
-
-        resources.forEach(resource => {
-            for (const [matches, resources] of mergedResources) {
-                if (_.isEqual(matches, resource.matches)) {
-                    mergedResources.set(matches, [...resources, ...resource.resources]);
-                    return;
-                }
-            }
-            mergedResources.set(resource.matches, resource.resources);
-        });
-
-        return Array.from(mergedResources).map(([matches, resources]) => {
-            return {
-                matches,
-                resources: Array.from(new Set(resources))
-            };
-        });
+        return mergeWebAccessibleResources(resources)
     }
 }
