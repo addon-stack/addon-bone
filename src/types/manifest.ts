@@ -210,7 +210,9 @@ export interface ManifestSidebar {
 
 export interface ManifestAccessibleResource {
     resources: string[];
-    matches: string[];
+    matches?: string[];
+    extensionIds?: string[],
+    useDynamicUrl?: boolean,
 }
 
 export type ManifestAccessibleResources = Set<ManifestAccessibleResource>;
