@@ -111,7 +111,7 @@ export default class extends ManifestBase<ManifestV3> {
     protected buildWebAccessibleResources(): Partial<ManifestV3> | undefined {
         const resources: ManifestAccessibleResource[] = this.getWebAccessibleResources();
 
-        const transformedResources = resources.map((resource) => ({
+        const transformedResources = resources.map(resource => ({
             resources: resource.resources,
             matches: resource.matches || [],
         }));

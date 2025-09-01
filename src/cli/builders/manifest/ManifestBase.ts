@@ -515,6 +515,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             }
         }
 
-        return mergeWebAccessibleResources(resources)
+        return mergeWebAccessibleResources(resources);
     }
 }

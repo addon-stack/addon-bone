@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import _ from "lodash";
 
 import {ManifestAccessibleResource, ManifestMatchSchemes, ManifestSpecialSchemes} from "@typing/manifest";
 
@@ -115,75 +115,16 @@ export const filterHostPatterns = (patterns: Set<string>): Set<string> => {
     return result;
 };
 
-export const mergeWebAccessibleResources_ = (resources: ManifestAccessibleResource[]): ManifestAccessibleResource[] => {
-    if (resources.length === 0) return [];
-
-    // Normalize all resources by applying host pattern filtering to remove redundant or overlapping patterns
-    const simplifiedMatches = resources.map(({resources, matches}) => ({
-        resources,
-        matches: Array.from(filterHostPatterns(new Set(matches))),
-    }));
-
-    // Create a Map to group resources by identical sets of host patterns (matches)
-    const combinedResources = new Map<string[], string[]>();
-
-    simplifiedMatches.forEach(({matches, resources}) => {
-        for (const [matches_, resources_] of combinedResources) {
-            if (_.isEqual(matches_, matches)) {
-                combinedResources.set(matches_, [...resources_, ...resources]);
-                return;
-            }
-        }
-        combinedResources.set(matches, resources);
-    });
-
-    // Handle global patterns ("<all_urls>" and "*://*/*") - remove their resources from other entries
-    let entries = Array.from(combinedResources.entries());
-
-    entries.forEach(([matches, resources]) => {
-        if (matches.includes("<all_urls>") || matches.includes("*://*/*")) {
-            for (const [matches_, resources_] of combinedResources) {
-                if (!_.isEqual(matches, matches_)) {
-                    combinedResources.set(matches_, _.difference(resources_, resources));
-                }
-            }
-        }
-    });
-
-    // Handle scheme-specific wildcard patterns (e.g., "https://*/*", "http://*/*")
-    // Remove resources from entries that have more specific patterns of the same scheme
-    entries = Array.from(combinedResources.entries());
-
-    entries.forEach(([matches, resources]) => {
-        for (const scheme of ManifestMatchSchemes) {
-            if (matches.includes(`${scheme}://*/*`)) {
-                for (const [matches_, resources_] of combinedResources) {
-                    if (!_.isEqual(matches, matches_)) {
-                        if (matches_.some(match_ => match_.includes(`${scheme}://`))) {
-                            combinedResources.set(matches_, _.difference(resources_, resources));
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    // Remove duplicates in resource arrays and filter out entries with empty resource arrays
-    return Array.from(combinedResources)
-        .map(([matches, resources]) => ({matches, resources: Array.from(new Set(resources))}))
-        .filter(({resources}) => resources.length > 0);
-};
-
 export const mergeWebAccessibleResources = (resources: ManifestAccessibleResource[]): ManifestAccessibleResource[] => {
     if (resources.length === 0) return [];
 
-    const simplifiedMatches: ManifestAccessibleResource[] = resources.map((r) => {
+    const simplifiedMatches: ManifestAccessibleResource[] = resources.map(r => {
         const {resources, matches, extensionIds, useDynamicUrl} = r;
         return {
             resources,
             extensionIds,
             useDynamicUrl,
-            matches: matches ? Array.from(filterHostPatterns(new Set(matches))) : matches
+            matches: matches ? Array.from(filterHostPatterns(new Set(matches))) : matches,
         };
     });
 
@@ -196,9 +137,11 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
             extensionIds: normalize(r.extensionIds),
             useDynamicUrl: r.useDynamicUrl,
         };
+
         for (const field of exclude) {
             delete obj[field];
         }
+
         return JSON.stringify(obj);
     };
 
@@ -254,7 +197,6 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
         result = mergeByExtensionIds.result;
     }
 
-    // 1. глобальні патерни
     for (const entry of result) {
         if (!entry.matches) continue;
         if (entry.matches.includes("<all_urls>") || entry.matches.includes("*://*/*")) {
@@ -273,7 +215,6 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
         }
     }
 
-    // 2. схемо-специфічні вайлдкарди
     for (const entry of result) {
         if (!entry.matches) continue;
         for (const scheme of ManifestMatchSchemes) {
