@@ -363,4 +363,65 @@ describe("mergeWebAccessibleResources", () => {
             ])
         );
     });
+
+    test("performs multi-iteration merging across keys (regression for changed accumulation)", () => {
+        const input: ManifestAccessibleResource[] = [
+            {resources: ["a.js"], matches: ["https://m1/*"]},
+            {resources: ["b.js"], matches: ["https://m1/*"]},
+            {resources: ["a.js", "b.js"], matches: ["https://m2/*"]},
+        ];
+
+        const output = sortResources(mergeWebAccessibleResources(input));
+
+        expect(output).toEqual(
+            sortResources([{resources: ["a.js", "b.js"], matches: ["https://m1/*", "https://m2/*"]}])
+        );
+    });
+
+    test("merges by extensionIds when other fields are equal", () => {
+        const input: ManifestAccessibleResource[] = [
+            {resources: ["r.js"], matches: ["https://site/*"], extensionIds: ["id1"]},
+            {resources: ["r.js"], matches: ["https://site/*"], extensionIds: ["id2"]},
+        ];
+
+        const output = sortResources(mergeWebAccessibleResources(input));
+
+        expect(output).toEqual(
+            sortResources([{resources: ["r.js"], matches: ["https://site/*"], extensionIds: ["id1", "id2"]}])
+        );
+    });
+
+    test("cleanup with <all_urls> respects extensionIds and useDynamicUrl", () => {
+        const input: ManifestAccessibleResource[] = [
+            // Global entry for id1, useDynamicUrl true
+            {resources: ["g.js"], matches: ["<all_urls>"], extensionIds: ["id1"], useDynamicUrl: true},
+            // Same id and useDynamic -> removal should happen
+            {resources: ["g.js", "keep1.js"], matches: ["https://site/*"], extensionIds: ["id1"], useDynamicUrl: true},
+            // Different extensionIds -> should NOT be removed
+            {resources: ["g.js", "keep2.js"], matches: ["https://site/*"], extensionIds: ["id2"], useDynamicUrl: true},
+            // Different useDynamicUrl -> should NOT be removed
+            {resources: ["g.js", "keep3.js"], matches: ["https://site/*"], extensionIds: ["id1"], useDynamicUrl: false},
+        ];
+
+        const output = sortResources(mergeWebAccessibleResources(input));
+
+        expect(output).toEqual(
+            sortResources([
+                {resources: ["g.js"], matches: ["<all_urls>"], extensionIds: ["id1"], useDynamicUrl: true},
+                {resources: ["keep1.js"], matches: ["https://site/*"], extensionIds: ["id1"], useDynamicUrl: true},
+                {
+                    resources: ["g.js", "keep2.js"],
+                    matches: ["https://site/*"],
+                    extensionIds: ["id2"],
+                    useDynamicUrl: true,
+                },
+                {
+                    resources: ["g.js", "keep3.js"],
+                    matches: ["https://site/*"],
+                    extensionIds: ["id1"],
+                    useDynamicUrl: false,
+                },
+            ])
+        );
+    });
 });

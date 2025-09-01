@@ -185,16 +185,16 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
         changed = false;
 
         const mergeByResources = merge(result, "resources");
-        changed = mergeByResources.changed;
-        result = mergeByResources.result;
+        const afterResources = mergeByResources.result;
 
-        const mergeByMatches = merge(result, "matches");
-        changed = mergeByMatches.changed;
-        result = mergeByMatches.result;
+        const mergeByMatches = merge(afterResources, "matches");
+        const afterMatches = mergeByMatches.result;
 
-        const mergeByExtensionIds = merge(result, "extensionIds");
-        changed = mergeByExtensionIds.changed;
-        result = mergeByExtensionIds.result;
+        const mergeByExtensionIds = merge(afterMatches, "extensionIds");
+        const afterExtensionIds = mergeByExtensionIds.result;
+
+        changed = mergeByResources.changed || mergeByMatches.changed || mergeByExtensionIds.changed;
+        result = afterExtensionIds;
     }
 
     for (const entry of result) {
