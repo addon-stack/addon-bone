@@ -69,7 +69,7 @@ export default abstract class<O extends EntrypointOptions>
             app,
             mode: configMode,
             debug: configDebug,
-            manifestVersion: configManifestVersion
+            manifestVersion: configManifestVersion,
         } = this.config;
 
         const {
