@@ -1,3 +1,5 @@
+import {mergeWebAccessibleResources} from "./utils";
+
 import {
     CoreManifest,
     FirefoxManifest,
@@ -23,6 +25,7 @@ import {Language} from "@typing/locale";
 import {CommandExecuteActionName} from "@typing/command";
 import {DefaultIconGroupName} from "@typing/icon";
 import {SidebarAlternativeBrowsers} from "@typing/sidebar";
+import {ContentScriptMatches} from "@typing/content";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
 type ManifestPermission = chrome.runtime.ManifestPermissions;
@@ -496,5 +499,22 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public get(): T {
         return this.build();
+    }
+
+    public getWebAccessibleResources(): ManifestAccessibleResource[] {
+        const resources: ManifestAccessibleResource[] = [...this.accessibleResources];
+
+        for (const contentScript of this.contentScripts.values()) {
+            const assets = this.dependencies.get(contentScript.entry)?.assets;
+
+            if (assets && assets.size > 0) {
+                resources.push({
+                    resources: Array.from(assets),
+                    matches: contentScript.matches || ContentScriptMatches,
+                });
+            }
+        }
+
+        return mergeWebAccessibleResources(resources)
     }
 }

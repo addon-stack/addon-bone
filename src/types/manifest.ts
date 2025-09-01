@@ -154,6 +154,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     addAccessibleResource(accessibleResource: ManifestAccessibleResource): this;
 
+    getWebAccessibleResources(): ManifestAccessibleResource[];
+
     // Getter
     get(): T;
 }
@@ -208,7 +210,9 @@ export interface ManifestSidebar {
 
 export interface ManifestAccessibleResource {
     resources: string[];
-    matches: string[];
+    matches?: string[];
+    extensionIds?: string[],
+    useDynamicUrl?: boolean,
 }
 
 export type ManifestAccessibleResources = Set<ManifestAccessibleResource>;

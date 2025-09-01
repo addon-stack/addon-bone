@@ -1,4 +1,6 @@
-import {ManifestMatchSchemes, ManifestSpecialSchemes} from "@typing/manifest";
+import _ from 'lodash';
+
+import {ManifestAccessibleResource, ManifestMatchSchemes, ManifestSpecialSchemes} from "@typing/manifest";
 
 type ManifestPermissions = chrome.runtime.ManifestPermissions;
 type ManifestOptionalPermissions = chrome.runtime.ManifestOptionalPermissions;
@@ -109,6 +111,197 @@ export const filterHostPatterns = (patterns: Set<string>): Set<string> => {
             result.add(pattern);
         }
     }
+
+    return result;
+};
+
+export const mergeWebAccessibleResources_ = (resources: ManifestAccessibleResource[]): ManifestAccessibleResource[] => {
+    if (resources.length === 0) return [];
+
+    // Normalize all resources by applying host pattern filtering to remove redundant or overlapping patterns
+    const simplifiedMatches = resources.map(({resources, matches}) => ({
+        resources,
+        matches: Array.from(filterHostPatterns(new Set(matches))),
+    }));
+
+    // Create a Map to group resources by identical sets of host patterns (matches)
+    const combinedResources = new Map<string[], string[]>();
+
+    simplifiedMatches.forEach(({matches, resources}) => {
+        for (const [matches_, resources_] of combinedResources) {
+            if (_.isEqual(matches_, matches)) {
+                combinedResources.set(matches_, [...resources_, ...resources]);
+                return;
+            }
+        }
+        combinedResources.set(matches, resources);
+    });
+
+    // Handle global patterns ("<all_urls>" and "*://*/*") - remove their resources from other entries
+    let entries = Array.from(combinedResources.entries());
+
+    entries.forEach(([matches, resources]) => {
+        if (matches.includes("<all_urls>") || matches.includes("*://*/*")) {
+            for (const [matches_, resources_] of combinedResources) {
+                if (!_.isEqual(matches, matches_)) {
+                    combinedResources.set(matches_, _.difference(resources_, resources));
+                }
+            }
+        }
+    });
+
+    // Handle scheme-specific wildcard patterns (e.g., "https://*/*", "http://*/*")
+    // Remove resources from entries that have more specific patterns of the same scheme
+    entries = Array.from(combinedResources.entries());
+
+    entries.forEach(([matches, resources]) => {
+        for (const scheme of ManifestMatchSchemes) {
+            if (matches.includes(`${scheme}://*/*`)) {
+                for (const [matches_, resources_] of combinedResources) {
+                    if (!_.isEqual(matches, matches_)) {
+                        if (matches_.some(match_ => match_.includes(`${scheme}://`))) {
+                            combinedResources.set(matches_, _.difference(resources_, resources));
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Remove duplicates in resource arrays and filter out entries with empty resource arrays
+    return Array.from(combinedResources)
+        .map(([matches, resources]) => ({matches, resources: Array.from(new Set(resources))}))
+        .filter(({resources}) => resources.length > 0);
+};
+
+export const mergeWebAccessibleResources = (resources: ManifestAccessibleResource[]): ManifestAccessibleResource[] => {
+    if (resources.length === 0) return [];
+
+    const simplifiedMatches: ManifestAccessibleResource[] = resources.map((r) => {
+        const {resources, matches, extensionIds, useDynamicUrl} = r;
+        return {
+            resources,
+            extensionIds,
+            useDynamicUrl,
+            matches: matches ? Array.from(filterHostPatterns(new Set(matches))) : matches
+        };
+    });
+
+    const normalize = (arr?: string[]) => Array.from(new Set(arr || [])).sort();
+
+    const makeKey = (r: ManifestAccessibleResource, exclude: (keyof ManifestAccessibleResource)[]): string => {
+        const obj: ManifestAccessibleResource = {
+            resources: normalize(r.resources),
+            matches: normalize(r.matches),
+            extensionIds: normalize(r.extensionIds),
+            useDynamicUrl: r.useDynamicUrl,
+        };
+        for (const field of exclude) {
+            delete obj[field];
+        }
+        return JSON.stringify(obj);
+    };
+
+    const mergeTwo = (a: ManifestAccessibleResource, b: ManifestAccessibleResource): ManifestAccessibleResource => ({
+        resources: normalize([...a.resources, ...b.resources]),
+        matches: normalize([...(a.matches || []), ...(b.matches || [])]),
+        extensionIds: normalize([...(a.extensionIds || []), ...(b.extensionIds || [])]),
+        useDynamicUrl: a.useDynamicUrl,
+    });
+
+    const merge = (resources: ManifestAccessibleResource[], mergeBy: keyof ManifestAccessibleResource) => {
+        const map = new Map<string, ManifestAccessibleResource>();
+        let changed = false;
+        for (const r of resources) {
+            const key = makeKey(r, [mergeBy]);
+            if (map.has(key)) {
+                const merged = mergeTwo(map.get(key)!, r);
+                map.set(key, merged);
+                changed = true;
+            } else {
+                map.set(key, r);
+            }
+        }
+
+        return {
+            changed,
+            result: Array.from(map.values()),
+        };
+    };
+
+    let changed = true;
+
+    let result: ManifestAccessibleResource[] = simplifiedMatches.map(r => ({
+        resources: normalize(r.resources),
+        matches: normalize(r.matches),
+        extensionIds: normalize(r.extensionIds),
+        useDynamicUrl: r.useDynamicUrl,
+    }));
+
+    while (changed) {
+        changed = false;
+
+        const mergeByResources = merge(result, "resources");
+        changed = mergeByResources.changed;
+        result = mergeByResources.result;
+
+        const mergeByMatches = merge(result, "matches");
+        changed = mergeByMatches.changed;
+        result = mergeByMatches.result;
+
+        const mergeByExtensionIds = merge(result, "extensionIds");
+        changed = mergeByExtensionIds.changed;
+        result = mergeByExtensionIds.result;
+    }
+
+    // 1. глобальні патерни
+    for (const entry of result) {
+        if (!entry.matches) continue;
+        if (entry.matches.includes("<all_urls>") || entry.matches.includes("*://*/*")) {
+            for (const other of result) {
+                if (other === entry) continue;
+                // збігаються усі крім resources → можна чистити resources
+                if (
+                    _.isEqual(other.matches, entry.matches) ||
+                    other.useDynamicUrl !== entry.useDynamicUrl ||
+                    !_.isEqual(other.extensionIds, entry.extensionIds)
+                ) {
+                    continue;
+                }
+                other.resources = other.resources.filter(r => !entry.resources.includes(r));
+            }
+        }
+    }
+
+    // 2. схемо-специфічні вайлдкарди
+    for (const entry of result) {
+        if (!entry.matches) continue;
+        for (const scheme of ManifestMatchSchemes) {
+            if (entry.matches.includes(`${scheme}://*/*`)) {
+                for (const other of result) {
+                    if (other === entry) continue;
+                    if (
+                        other.useDynamicUrl !== entry.useDynamicUrl ||
+                        !_.isEqual(other.extensionIds, entry.extensionIds)
+                    ) {
+                        continue;
+                    }
+                    if (other.matches?.some(m => m.startsWith(`${scheme}://`))) {
+                        other.resources = other.resources.filter(r => !entry.resources.includes(r));
+                    }
+                }
+            }
+        }
+    }
+
+    result = result
+        .filter(r => r.resources.length > 0)
+        .map(r => {
+            if (r.matches?.length === 0) delete r.matches;
+            if (r.extensionIds?.length === 0) delete r.extensionIds;
+            if (r.useDynamicUrl === undefined) delete r.useDynamicUrl;
+            return r;
+        });
 
     return result;
 };
