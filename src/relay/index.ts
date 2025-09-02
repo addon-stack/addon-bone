@@ -1,4 +1,4 @@
-import {ProxyRelay, RegisterRelay, Relay, type ProxyRelayOptions} from "./providers";
+import {ProxyRelay, RegisterRelay, Relay, type ProxyRelayParams} from "./providers";
 
 import type {
     TransportDictionary,
@@ -7,7 +7,7 @@ import type {
     TransportTarget as RelayTarget,
 } from "@typing/transport";
 
-export {type RelayTarget, type RelayProxyTarget, type ProxyRelayOptions, ProxyRelay, RegisterRelay};
+export {type RelayTarget, type RelayProxyTarget, type ProxyRelayParams, ProxyRelay, RegisterRelay};
 
 export const getRelay = <N extends TransportName>(name: N): TransportDictionary[N] => {
     return new Relay<N>(name).get();

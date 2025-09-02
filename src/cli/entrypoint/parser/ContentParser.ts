@@ -33,7 +33,6 @@ export default class<
         return {
             matches: ContentScriptMatches,
             runAt: "document_idle",
-            declarative: false,
             ...options,
         };
     }
