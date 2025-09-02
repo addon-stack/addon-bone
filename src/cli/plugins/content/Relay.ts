@@ -5,7 +5,8 @@ import {ContentProvider} from "./types";
 import {RelayFinder} from "@cli/entrypoint";
 import {virtualRelayModule} from "@cli/virtual";
 
-import {RelayEntrypointOptions, RelayMethod} from "@typing/relay";
+import {RelayEntrypointOptions, RelayMethod, RelayOptions} from "@typing/relay";
+import {ContentScriptDeclarative} from "@typing/content";
 import {EntrypointFile} from "@typing/entrypoint";
 
 export default class extends RelayFinder implements ContentProvider<RelayEntrypointOptions> {
@@ -29,20 +30,29 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
         return virtualRelayModule(file, options.name);
     }
 
-    public async getMethodsMap(): Promise<Record<string, RelayMethod>> {
+    public async getOptionsMap(): Promise<Record<string, RelayOptions>> {
         const transport = await this.transport();
 
         return Array.from(transport.values()).reduce(
-            (map, {options: {name, method}}) => {
-                map[name] = method || RelayMethod.Messaging;
+            (map, {options}) => {
+                map[options.name] = options;
                 return map;
             },
-            {} as Record<string, RelayMethod>
+            {} as Record<string, RelayOptions>
         );
     }
 
     public async hasMethod(method: RelayMethod): Promise<boolean> {
-        return Object.values(await this.getMethodsMap()).includes(method);
+        return Object.values(await this.getOptionsMap()).map(({method}) => method).includes(method);
+    }
+
+    public async hasDeclarative(declarative: ContentScriptDeclarative): Promise<boolean> {
+        return !!Object.values(await this.getOptionsMap()).filter((options) => {
+               if (declarative === ContentScriptDeclarative.Required && options.declarative === true) {
+                   return true;
+               }
+               return declarative === options.declarative;
+            }).length
     }
 
     public clear(): this {
