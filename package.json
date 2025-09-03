@@ -2,11 +2,11 @@
   "name": "adnbn",
   "type": "module",
   "version": "0.2.9",
-  "description": "Addon 💀 Bone - Cross-browser web extension framework with shared code base",
-  "homepage": "https://github.com/addonbone/addonbone",
+  "description": "Addon Bone - Cross-browser web extension framework with shared code base",
+  "homepage": "https://addonbone.com",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/addonbone/addonbone.git"
+    "url": "git+https://github.com/addon-stack/addon-bone.git"
   },
   "keywords": [
     "addon",
@@ -18,10 +18,13 @@
     "opera",
     "safari"
   ],
-  "author": "Addon Bone",
+  "author": "Addon Stack",
+  "contributors": [
+    "Anjey Tsibylskij <addonbonedev@gmail.com> (https://github.com/atldays)"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/addonbone/addonbone/issues"
+    "url": "https://github.com/addon-stack/addon-bone/issues"
   },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
