@@ -27,6 +27,8 @@ export default class RelayPermission {
 
         onPermissionsAdded(async () => await checkPermissions());
         onPermissionsRemoved(async () => await checkPermissions());
+
+        await checkPermissions();
     }
 
     public set(name: string, value: boolean): void {

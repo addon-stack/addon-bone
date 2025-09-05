@@ -13,6 +13,7 @@ jest.mock("@adnbn/browser", () => ({
     createOffscreen: jest.fn(),
 
     containsPermissions: jest.fn(() => true),
+    requestPermissions: jest.fn(() => true),
 
     executeScript: chrome.scripting.executeScript,
 

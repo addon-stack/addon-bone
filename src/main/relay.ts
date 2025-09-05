@@ -40,8 +40,11 @@ export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
     return new ProxyRelay(name, options, params).get();
 };
 
-const options = getRelayOptionsMap();
+try {
+    const options = getRelayOptionsMap();
 
-if (options.size > 0 && isBackground()) {
-    RelayPermission.init(options).catch(e => console.error("Failed to initialize relay permissions: ", e));
+    if (options.size > 0 && isBackground()) {
+        RelayPermission.init(options).catch(e => console.error("Failed to initialize relay permissions: ", e));
+    }
+} catch (e) {
 }
