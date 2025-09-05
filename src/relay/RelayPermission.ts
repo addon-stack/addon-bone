@@ -1,46 +1,94 @@
-import {containsPermissions, onPermissionsAdded, onPermissionsRemoved} from "@adnbn/browser";
+import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPermissions} from "@adnbn/browser";
 
 import {RelayMethod, RelayOptionsMap} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";
 
+type Permissions = chrome.permissions.Permissions
+
+export interface RelayPermissionValue {
+    allow: boolean;
+    permissions: Permissions;
+}
+
 export default class RelayPermission {
     private static _instance?: RelayPermission;
-    private static permissions = new Map<string, boolean>();
+    private permissions = new Map<string, RelayPermissionValue>();
 
     public static getInstance(): RelayPermission {
         return this._instance ??= new RelayPermission();
     }
 
-    public static async init(optionsMap: RelayOptionsMap) {
-        for (const [name, {declarative}] of optionsMap) {
-            RelayPermission.permissions.set(name, declarative === true || declarative === ContentScriptDeclarative.Required);
+    public static init(relays: RelayOptionsMap) {
+        if (this._instance || relays.size === 0) return;
+
+        const instance = RelayPermission.getInstance();
+
+        for (const [name, {declarative, method, matches}] of relays) {
+            const allow = declarative === true || declarative === ContentScriptDeclarative.Required;
+
+            const permissions: Permissions = {
+                origins: (!declarative || declarative === ContentScriptDeclarative.Optional) ? matches : [],
+                permissions: method === RelayMethod.Scripting ? ["scripting"] : []
+            };
+
+            instance.set(name, {allow, permissions});
         }
 
-        const checkPermissions = async () => {
-            for await (const [name, {matches, method}] of optionsMap) {
-                RelayPermission.permissions.set(name, await containsPermissions({
-                    origins: matches,
-                    permissions: method === RelayMethod.Scripting ? ["scripting"] : []
-                }));
-            }
-        };
+        const checkPermissions = async () => await instance.check();
 
-        onPermissionsAdded(async () => await checkPermissions());
-        onPermissionsRemoved(async () => await checkPermissions());
+        onPermissionsAdded(checkPermissions);
+        onPermissionsRemoved(checkPermissions);
 
-        await checkPermissions();
+        checkPermissions().catch((e) => console.error(e));
     }
 
-    public set(name: string, value: boolean): void {
-        RelayPermission.permissions.set(name, value);
+    public set(name: string, value: Partial<RelayPermissionValue>): this {
+        const relayPermissions = this.get(name) || {allow: false, permissions: {}};
+        this.permissions.set(name, {...relayPermissions, ...value});
+        return this;
     }
 
-    public get(name: string): boolean | undefined {
-        return RelayPermission.permissions.get(name);
+    public get(name: string): RelayPermissionValue | undefined {
+        return this.permissions.get(name);
     }
 
     public has(name: string): boolean {
-        return RelayPermission.permissions.has(name);
+        return this.permissions.has(name);
     }
+
+    public allow(name: string) {
+        return this.get(name)?.allow ?? false;
+    }
+
+    public async contains(name: string): Promise<boolean> {
+        const relayPermissions = this.get(name);
+
+        if (!relayPermissions) {
+            throw new Error(`RelayPermission, relay "${name}" not found`);
+        }
+        const allow = await containsPermissions(relayPermissions.permissions);
+
+        this.set(name, {allow});
+
+        return allow;
+    }
+
+    public async request(name: string): Promise<boolean> {
+        const relayPermissions = this.get(name);
+
+        if (!relayPermissions) {
+            throw new Error(`RelayPermission, relay "${name}" not found`);
+        }
+        const allow = await requestPermissions(relayPermissions.permissions);
+
+        this.set(name, {allow});
+
+        return allow;
+    }
+
+    private async check() {
+        await Promise.allSettled(Object.keys(this.permissions).map(name => this.contains(name)));
+    }
+
 }
 

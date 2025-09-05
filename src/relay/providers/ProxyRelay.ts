@@ -1,5 +1,4 @@
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
-import {requestPermissions} from '@adnbn/browser';
 
 import ProxyTransport from "@transport/ProxyTransport";
 
@@ -12,8 +11,6 @@ import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
 import type {DeepAsyncProxy} from "@typing/helpers";
 import type {MessageSendOptions} from "@typing/message";
 import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
-
-export type Permissions = chrome.permissions.Permissions;
 
 export type ProxyRelayParams =
     | number
@@ -53,16 +50,14 @@ export default class ProxyRelay<
     }
 
     protected async apply(args: any[], path?: string): Promise<any> {
+        console.log('has Permissions',this.name, this.permission().allow(this.name))
+
         try {
-            if (!this.permission().get(this.name)) {
-                if (!(await requestPermissions({
-                    origins: this.options.matches,
-                    permissions: this.options.method === RelayMethod.Scripting ? ['scripting'] : [],
-                }))) {
+            if (!this.permission().allow(this.name)) {
+                if (!(await this.permission().request(this.name))) {
                     console.warn('ProxyRelay: User denied required permissions. Cannot proceed with the operation.');
                     return;
                 }
-                this.permission().set(this.name, true);
             }
         } catch (err) {
             console.error('ProxyRelay: Error while requesting permissions', err);

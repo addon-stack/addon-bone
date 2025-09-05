@@ -1,5 +1,3 @@
-import {isBackground} from "@adnbn/browser";
-
 import RelayPermission from "@relay/RelayPermission";
 import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 
@@ -31,7 +29,11 @@ export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
     name: N,
     params: ProxyRelayParams
 ): DeepAsyncProxy<TransportDictionary[N]> => {
-    const options = getRelayOptionsMap().get(name);
+    const relays = getRelayOptionsMap();
+
+    RelayPermission.init(relays);
+
+    const options = relays.get(name);
 
     if (!options) {
         throw new Error(`Failed to get relay "${name}"`);
@@ -39,12 +41,3 @@ export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
 
     return new ProxyRelay(name, options, params).get();
 };
-
-try {
-    const options = getRelayOptionsMap();
-
-    if (options.size > 0 && isBackground()) {
-        RelayPermission.init(options).catch(e => console.error("Failed to initialize relay permissions: ", e));
-    }
-} catch (e) {
-}
