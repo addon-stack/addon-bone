@@ -1,8 +1,11 @@
+import {isBackground} from "@adnbn/browser";
+
+import RelayPermission from "@relay/RelayPermission";
 import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 
 import {DeepAsyncProxy} from "@typing/helpers";
 import {TransportDictionary, TransportType} from "@typing/transport";
-import {RelayDefinition, RelayMethod, RelayOptions, RelayUnresolvedDefinition} from "@typing/relay";
+import {RelayDefinition, RelayMethod, RelayOptions, RelayOptionsMap, RelayUnresolvedDefinition} from "@typing/relay";
 
 export {RelayMethod};
 export type {RelayDefinition, RelayUnresolvedDefinition};
@@ -10,8 +13,6 @@ export type {RelayDefinition, RelayUnresolvedDefinition};
 export const defineRelay = <T extends TransportType>(options: RelayDefinition<T>): RelayDefinition<T> => {
     return options;
 };
-
-type RelayOptionsMap = Map<string, RelayOptions>;
 
 const getRelayOptionsMap = (): RelayOptionsMap => {
     const relays: RelayOptionsMap = new Map();
@@ -38,3 +39,9 @@ export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
 
     return new ProxyRelay(name, options, params).get();
 };
+
+const options = getRelayOptionsMap();
+
+if (options.size > 0 && isBackground()) {
+    RelayPermission.init(options).catch(e => console.error("Failed to initialize relay permissions: ", e));
+}

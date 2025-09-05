@@ -1,10 +1,11 @@
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
-import {containsPermissions, requestPermissions} from '@adnbn/browser';
+import {requestPermissions} from '@adnbn/browser';
 
 import ProxyTransport from "@transport/ProxyTransport";
 
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
+import RelayPermission from "../RelayPermission";
 import {isRelayContext} from "../utils";
 
 import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
@@ -47,27 +48,28 @@ export default class ProxyRelay<
         return RelayManager.getInstance();
     }
 
+    protected permission(): RelayPermission {
+        return RelayPermission.getInstance();
+    }
+
     protected async apply(args: any[], path?: string): Promise<any> {
-        const isScriptingMethod = this.options.method === RelayMethod.Scripting;
-
-        const permissions: Permissions = {
-            permissions: isScriptingMethod ? ['scripting'] : [],
-            origins: this.options.matches,
-        };
-
         try {
-            if (!(await containsPermissions(permissions))) {
-                if (!(await requestPermissions(permissions))) {
+            if (!this.permission().get(this.name)) {
+                if (!(await requestPermissions({
+                    origins: this.options.matches,
+                    permissions: this.options.method === RelayMethod.Scripting ? ['scripting'] : [],
+                }))) {
                     console.warn('ProxyRelay: User denied required permissions. Cannot proceed with the operation.');
                     return;
                 }
+                this.permission().set(this.name, true);
             }
         } catch (err) {
             console.error('ProxyRelay: Error while requesting permissions', err);
-            return
+            return;
         }
 
-        return isScriptingMethod
+        return this.options.method === RelayMethod.Scripting
             ? this.scriptingApply(args, path)
             : this.messagingApply(args, path);
     }
