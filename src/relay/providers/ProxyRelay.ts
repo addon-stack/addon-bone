@@ -1,18 +1,16 @@
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
-import {containsPermissions, requestPermissions} from '@adnbn/browser';
 
 import ProxyTransport from "@transport/ProxyTransport";
 
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
+import RelayPermission from "../RelayPermission";
 import {isRelayContext} from "../utils";
 
 import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
 import type {DeepAsyncProxy} from "@typing/helpers";
 import type {MessageSendOptions} from "@typing/message";
 import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
-
-export type Permissions = chrome.permissions.Permissions;
 
 export type ProxyRelayParams =
     | number
@@ -47,27 +45,26 @@ export default class ProxyRelay<
         return RelayManager.getInstance();
     }
 
-    protected async apply(args: any[], path?: string): Promise<any> {
-        const isScriptingMethod = this.options.method === RelayMethod.Scripting;
+    protected permission(): RelayPermission {
+        return RelayPermission.getInstance();
+    }
 
-        const permissions: Permissions = {
-            permissions: isScriptingMethod ? ['scripting'] : [],
-            origins: this.options.matches,
-        };
+    protected async apply(args: any[], path?: string): Promise<any> {
+        console.log('has Permissions',this.name, this.permission().allow(this.name))
 
         try {
-            if (!(await containsPermissions(permissions))) {
-                if (!(await requestPermissions(permissions))) {
+            if (!this.permission().allow(this.name)) {
+                if (!(await this.permission().request(this.name))) {
                     console.warn('ProxyRelay: User denied required permissions. Cannot proceed with the operation.');
                     return;
                 }
             }
         } catch (err) {
             console.error('ProxyRelay: Error while requesting permissions', err);
-            return
+            return;
         }
 
-        return isScriptingMethod
+        return this.options.method === RelayMethod.Scripting
             ? this.scriptingApply(args, path)
             : this.messagingApply(args, path);
     }

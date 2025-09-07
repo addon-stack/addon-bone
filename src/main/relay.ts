@@ -1,8 +1,9 @@
+import RelayPermission from "@relay/RelayPermission";
 import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 
 import {DeepAsyncProxy} from "@typing/helpers";
 import {TransportDictionary, TransportType} from "@typing/transport";
-import {RelayDefinition, RelayMethod, RelayOptions, RelayUnresolvedDefinition} from "@typing/relay";
+import {RelayDefinition, RelayMethod, RelayOptions, RelayOptionsMap, RelayUnresolvedDefinition} from "@typing/relay";
 
 export {RelayMethod};
 export type {RelayDefinition, RelayUnresolvedDefinition};
@@ -10,8 +11,6 @@ export type {RelayDefinition, RelayUnresolvedDefinition};
 export const defineRelay = <T extends TransportType>(options: RelayDefinition<T>): RelayDefinition<T> => {
     return options;
 };
-
-type RelayOptionsMap = Map<string, RelayOptions>;
 
 const getRelayOptionsMap = (): RelayOptionsMap => {
     const relays: RelayOptionsMap = new Map();
@@ -30,7 +29,11 @@ export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
     name: N,
     params: ProxyRelayParams
 ): DeepAsyncProxy<TransportDictionary[N]> => {
-    const options = getRelayOptionsMap().get(name);
+    const relays = getRelayOptionsMap();
+
+    RelayPermission.init(relays);
+
+    const options = relays.get(name);
 
     if (!options) {
         throw new Error(`Failed to get relay "${name}"`);

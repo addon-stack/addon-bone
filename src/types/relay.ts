@@ -16,6 +16,8 @@ export interface RelayConfig extends TransportConfig, ContentScriptConfig {
 
 export type RelayOptions = RelayConfig & EntrypointOptions;
 
+export type RelayOptionsMap = Map<string, RelayOptions>;
+
 export type RelayEntrypointOptions = Partial<RelayOptions>;
 
 export type RelayMainHandler<T extends TransportType> = (

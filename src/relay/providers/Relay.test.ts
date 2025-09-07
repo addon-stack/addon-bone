@@ -3,7 +3,7 @@ import RegisterRelay from "./RegisterRelay";
 import RelayManager from "../RelayManager";
 import {isRelayContext} from "../utils";
 
-import {RelayGlobalKey, RelayMethod} from "@typing/relay";
+import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
 import {DeepAsyncProxy} from "@typing/helpers";
 
 beforeEach(async () => {
@@ -31,6 +31,11 @@ type RelayProxyType = DeepAsyncProxy<RelayType>;
 
 const relayName = "math";
 
+const options: RelayOptions = {
+    name: '',
+    method: RelayMethod.Scripting,
+}
+
 describe("ProxyRelay", () => {
     beforeEach(async () => {
         (isRelayContext as jest.Mock).mockReturnValue(false);
@@ -39,7 +44,7 @@ describe("ProxyRelay", () => {
     test("throws an error when get() is called in content script context", async () => {
         (isRelayContext as jest.Mock).mockReturnValue(true);
 
-        const proxy = new ProxyRelay(relayName, RelayMethod.Scripting, 1);
+        const proxy = new ProxyRelay(relayName, options, 1);
 
         expect(() => proxy.get()).toThrow(
             `You are trying to get proxy relay "${relayName}" from script content. You can get original relay instead`
@@ -47,13 +52,13 @@ describe("ProxyRelay", () => {
     });
 
     test("returns a proxy when called not in content script context", () => {
-        const relay = new ProxyRelay(relayName, RelayMethod.Scripting, 1).get();
+        const relay = new ProxyRelay(relayName, options, 1).get();
 
         expect(relay["__proxy"]).toBe(true);
     });
 
     test("invokes remote methods using chrome.scripting", async () => {
-        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, RelayMethod.Scripting, 1).get();
+        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, options, 1).get();
 
         expect(await relay.sum(1, 2)).toBe(3);
 
@@ -69,7 +74,7 @@ describe("ProxyRelay", () => {
     });
 
     test("accesses primitive value as method on the relay object", async () => {
-        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, RelayMethod.Scripting, {
+        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, options, {
             tabId: 1,
             frameId: 2,
         }).get();
@@ -85,7 +90,7 @@ describe("ProxyRelay", () => {
     });
 
     test("accesses nested method or property ", async () => {
-        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, RelayMethod.Scripting, 1).get();
+        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, options, 1).get();
 
         expect(await relay.obj.concat("Hello", "world")).toBe("Hello world");
         expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
@@ -107,13 +112,13 @@ describe("ProxyRelay", () => {
     });
 
     test("calls async method on proxy and returns resolved value", async () => {
-        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, RelayMethod.Scripting, 1).get();
+        const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, options, 1).get();
 
         expect(await relay.asyncSum(1, 2)).toBe(3);
     });
 
     test("uses scriptingApply method when RelayMethod is 'scripting'", async () => {
-        const proxy = new ProxyRelay(relayName, RelayMethod.Scripting, 1);
+        const proxy = new ProxyRelay(relayName, options, 1);
         const relay = proxy.get();
         const scriptingApplySpy = jest.spyOn(proxy as any, "scriptingApply");
         scriptingApplySpy.mockResolvedValue("scripting result");
@@ -127,7 +132,7 @@ describe("ProxyRelay", () => {
     });
 
     test("uses messagingApply method when RelayMethod is 'messaging'", async () => {
-        const proxy = new ProxyRelay(relayName, RelayMethod.Messaging, 1);
+        const proxy = new ProxyRelay(relayName, {...options, method: RelayMethod.Messaging}, 1);
         const relay = proxy.get();
         const messagingApplySpy = jest.spyOn(proxy as any, "messagingApply");
         messagingApplySpy.mockResolvedValue("messaging result");
