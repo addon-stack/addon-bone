@@ -56,7 +56,7 @@ export default class RelayPermission {
         return this.permissions.has(name);
     }
 
-    public allow(name: string) {
+    public allow(name: string): boolean {
         return this.get(name)?.allow ?? false;
     }
 

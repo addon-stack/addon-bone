@@ -1,6 +1,7 @@
 import ProxyRelay from "./ProxyRelay";
 import RegisterRelay from "./RegisterRelay";
 import RelayManager from "../RelayManager";
+import RelayPermission from "../RelayPermission";
 import {isRelayContext} from "../utils";
 
 import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
@@ -12,6 +13,10 @@ beforeEach(async () => {
     RelayManager.getInstance().clear();
 
     new RegisterRelay(relayName, RelayMethod.Scripting, () => MatchRelay).register();
+
+    jest.spyOn(RelayPermission, "getInstance").mockReturnValue({
+        allow: jest.fn().mockReturnValue(true),
+    } as any);
 });
 
 const MatchRelay = {
