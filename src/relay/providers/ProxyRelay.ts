@@ -50,17 +50,15 @@ export default class ProxyRelay<
     }
 
     protected async apply(args: any[], path?: string): Promise<any> {
-        console.log('has Permissions',this.name, this.permission().allow(this.name))
-
         try {
             if (!this.permission().allow(this.name)) {
                 if (!(await this.permission().request(this.name))) {
-                    console.warn('ProxyRelay: User denied required permissions. Cannot proceed with the operation.');
+                    console.warn("ProxyRelay: User denied required permissions. Cannot proceed with the operation.");
                     return;
                 }
             }
         } catch (err) {
-            console.error('ProxyRelay: Error while requesting permissions', err);
+            console.error("ProxyRelay: Error while requesting permissions", err);
             return;
         }
 

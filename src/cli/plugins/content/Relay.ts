@@ -43,16 +43,18 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
     }
 
     public async hasMethod(method: RelayMethod): Promise<boolean> {
-        return Object.values(await this.getOptionsMap()).map(({method}) => method).includes(method);
+        return Object.values(await this.getOptionsMap())
+            .map(({method}) => method)
+            .includes(method);
     }
 
     public async hasDeclarative(declarative: ContentScriptDeclarative): Promise<boolean> {
-        return !!Object.values(await this.getOptionsMap()).filter((options) => {
-               if (declarative === ContentScriptDeclarative.Required && options.declarative === true) {
-                   return true;
-               }
-               return declarative === options.declarative;
-            }).length
+        return !!Object.values(await this.getOptionsMap()).filter(options => {
+            if (declarative === ContentScriptDeclarative.Required && options.declarative === true) {
+                return true;
+            }
+            return declarative === options.declarative;
+        }).length;
     }
 
     public clear(): this {

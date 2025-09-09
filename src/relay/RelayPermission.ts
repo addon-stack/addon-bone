@@ -3,7 +3,7 @@ import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPe
 import {RelayMethod, RelayOptionsMap} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";
 
-type Permissions = chrome.permissions.Permissions
+type Permissions = chrome.permissions.Permissions;
 
 export interface RelayPermissionValue {
     allow: boolean;
@@ -15,7 +15,7 @@ export default class RelayPermission {
     private permissions = new Map<string, RelayPermissionValue>();
 
     public static getInstance(): RelayPermission {
-        return this._instance ??= new RelayPermission();
+        return (this._instance ??= new RelayPermission());
     }
 
     public static init(relays: RelayOptionsMap) {
@@ -27,8 +27,8 @@ export default class RelayPermission {
             const allow = declarative === true || declarative === ContentScriptDeclarative.Required;
 
             const permissions: Permissions = {
-                origins: (!declarative || declarative === ContentScriptDeclarative.Optional) ? matches : [],
-                permissions: method === RelayMethod.Scripting ? ["scripting"] : []
+                origins: !declarative || declarative === ContentScriptDeclarative.Optional ? matches : [],
+                permissions: method === RelayMethod.Scripting ? ["scripting"] : [],
             };
 
             instance.set(name, {allow, permissions});
@@ -39,7 +39,7 @@ export default class RelayPermission {
         onPermissionsAdded(checkPermissions);
         onPermissionsRemoved(checkPermissions);
 
-        checkPermissions().catch((e) => console.error(e));
+        checkPermissions().catch(e => console.error(e));
     }
 
     public set(name: string, value: Partial<RelayPermissionValue>): this {
@@ -89,6 +89,4 @@ export default class RelayPermission {
     private async check() {
         await Promise.allSettled(Object.keys(this.permissions).map(name => this.contains(name)));
     }
-
 }
-
