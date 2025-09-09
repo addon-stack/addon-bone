@@ -4,9 +4,13 @@
   "version": "0.2.9",
   "description": "Addon Bone - Cross-browser web extension framework with shared code base",
   "homepage": "https://addonbone.com",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/addon-stack/addon-bone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/addon-stack/addon-bone/issues"
   },
   "keywords": [
     "addon",
@@ -22,10 +26,6 @@
   "contributors": [
     "Anjey Tsibylskij <addonbonedev@gmail.com> (https://github.com/atldays)"
   ],
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/addon-stack/addon-bone/issues"
-  },
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
