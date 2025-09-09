@@ -11,7 +11,8 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
 
 import {Command} from "@typing/app";
-import {RelayMethod} from "@typing/relay";
+import {RelayMethod, RelayOptions} from "@typing/relay";
+import {ContentScriptDeclarative} from "@typing/content";
 
 export default definePlugin(() => {
     let content: Content;
@@ -35,14 +36,14 @@ export default definePlugin(() => {
             relayDeclaration.dictionary(await relay.dictionary()).build();
 
             let rspack: RspackConfig = {};
-            let methods: Record<string, RelayMethod> = {};
+            let options: Record<string, RelayOptions> = {};
 
             if (await manager.empty()) {
                 if (config.debug) {
                     console.warn("Content script or relay entries not found");
                 }
             } else {
-                methods = await relay.getMethodsMap();
+                options = await relay.getOptionsMap();
 
                 // prettier-ignore
                 const plugin = EntrypointPlugin.from(await manager.entries())
@@ -83,7 +84,7 @@ export default definePlugin(() => {
             return mergeConfig(rspack, {
                 plugins: [
                     new DefinePlugin({
-                        __ADNBN_RELAY_METHODS__: JSON.stringify(methods),
+                        __ADNBN_RELAY_OPTIONS__: JSON.stringify(options),
                     }),
                 ],
             });
@@ -92,13 +93,14 @@ export default definePlugin(() => {
             // prettier-ignore
             manifest
                 .setContentScripts(await manager.manifest())
-                .appendHostPermissions(await manager.hostPermissions());
+                .appendHostPermissions(await manager.hostPermissions())
+                .appendOptionalHostPermissions(await manager.optionalHostPermissions());
 
-            if (await relay.exists()) {
-                manifest.addPermission("tabs");
-
-                if (await relay.hasMethod(RelayMethod.Scripting)) {
+            if ((await relay.exists()) && (await relay.hasMethod(RelayMethod.Scripting))) {
+                if (await relay.hasDeclarative(ContentScriptDeclarative.Required)) {
                     manifest.addPermission("scripting");
+                } else if (await relay.hasDeclarative(ContentScriptDeclarative.Optional)) {
+                    manifest.addOptionalPermission("scripting");
                 }
             }
         },

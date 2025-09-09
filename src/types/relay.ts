@@ -16,6 +16,8 @@ export interface RelayConfig extends TransportConfig, ContentScriptConfig {
 
 export type RelayOptions = RelayConfig & EntrypointOptions;
 
+export type RelayOptionsMap = Map<string, RelayOptions>;
+
 export type RelayEntrypointOptions = Partial<RelayOptions>;
 
 export type RelayMainHandler<T extends TransportType> = (
@@ -27,7 +29,7 @@ export type RelayMainHandler<T extends TransportType> = (
 export interface RelayDefinition<T extends TransportType>
     extends Omit<TransportDefinition<RelayOptions, T>, "main">,
         Omit<ContentScriptDefinition, "main">,
-        Omit<RelayEntrypointOptions, "declarative"> {
+        RelayEntrypointOptions {
     main?: RelayMainHandler<T>;
 }
 

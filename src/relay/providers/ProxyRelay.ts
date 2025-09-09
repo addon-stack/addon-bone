@@ -4,14 +4,16 @@ import ProxyTransport from "@transport/ProxyTransport";
 
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
+import RelayPermission from "../RelayPermission";
+
 import {isRelayContext} from "../utils";
 
-import {RelayGlobalKey, RelayMethod} from "@typing/relay";
-import type {DeepAsyncProxy} from "@typing/helpers";
-import type {MessageSendOptions} from "@typing/message";
-import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
+import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
+import {DeepAsyncProxy} from "@typing/helpers";
+import {MessageSendOptions} from "@typing/message";
+import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
-export type ProxyRelayOptions =
+export type ProxyRelayParams =
     | number
     | (Omit<InjectScriptOptions, "frameId" | "documentId" | "timeFallback"> & {
           frameId?: number;
@@ -27,15 +29,15 @@ export default class ProxyRelay<
 
     constructor(
         name: N,
-        protected method: RelayMethod,
-        protected options: ProxyRelayOptions
+        protected options: RelayOptions,
+        protected params: ProxyRelayParams
     ) {
         super(name);
 
         this.message = new RelayMessage(name);
 
         this.injectScript = injectScriptFactory({
-            ...(typeof options === "number" ? {tabId: options} : options),
+            ...(typeof params === "number" ? {tabId: params} : params),
             timeFallback: 4000,
         });
     }
@@ -44,8 +46,20 @@ export default class ProxyRelay<
         return RelayManager.getInstance();
     }
 
+    protected permission(): RelayPermission {
+        return RelayPermission.getInstance();
+    }
+
     protected async apply(args: any[], path?: string): Promise<any> {
-        return this.method === RelayMethod.Scripting
+        if (!this.permission().allow(this.name)) {
+            if (!(await this.permission().request(this.name))) {
+                throw new Error(
+                    `ProxyRelay: User denied required permissions for relay "${this.name}" at path "${path}". Cannot proceed with the operation.`
+                );
+            }
+        }
+
+        return this.options.method === RelayMethod.Scripting
             ? this.scriptingApply(args, path)
             : this.messagingApply(args, path);
     }
@@ -85,15 +99,15 @@ export default class ProxyRelay<
 
     private async messagingApply(args: any[], path?: string): Promise<any> {
         const options: MessageSendOptions =
-            typeof this.options === "number"
+            typeof this.params === "number"
                 ? {
-                      tabId: this.options,
+                      tabId: this.params,
                       frameId: 0,
                   }
                 : {
-                      tabId: this.options.tabId,
-                      frameId: this.options.frameId || 0,
-                      documentId: this.options.documentId,
+                      tabId: this.params.tabId,
+                      frameId: this.params.frameId || 0,
+                      documentId: this.params.documentId,
                   };
 
         return this.message.send({path, args}, options);
