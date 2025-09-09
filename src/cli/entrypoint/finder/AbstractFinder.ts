@@ -1,15 +1,28 @@
-import path from "path";
-import {createRequire} from "module";
 import _ from "lodash";
+import path from "path";
+import fs from "fs";
+import {createRequire} from "module";
+import {fileURLToPath} from "url";
 
-import {toPosix} from "@cli/utils/path";
-import {getAppPath, getAppSourcePath, getSharedPath, getSourcePath} from "@cli/resolvers/path";
+import {toPosixPath} from "@cli/utils/path";
+import {isFile} from "@cli/utils/fs";
+import {
+    getAppPath,
+    getAppSourcePath,
+    getResolvePath,
+    getSharedPath,
+    getSourcePath,
+    resolveRootPath,
+} from "@cli/resolvers/path";
+import {resolveAssetsPath, resolveEntrypointPath} from "@cli/entrypoint/utils";
 
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile, EntrypointFinder} from "@typing/entrypoint";
 
 export default abstract class implements EntrypointFinder {
     protected _files?: Set<EntrypointFile>;
+
+    private readonly require = createRequire(import.meta.url);
 
     protected readonly priorityDirectories: string[];
 
@@ -63,19 +76,47 @@ export default abstract class implements EntrypointFinder {
     }
 
     protected file(filename: string): EntrypointFile {
-        const {dir, name} = path.parse(filename);
-
-        const result = toPosix(name === "index" ? dir : path.join(dir, name));
-
-        return {file: filename, import: result};
+        return {file: filename, import: toPosixPath(filename)};
     }
 
     protected resolve(name: string, filename: string): EntrypointFile {
-        const spec = path.posix.join(name, filename);
+        let base: string = name.startsWith("file://") ? fileURLToPath(name) : name;
 
-        const require = createRequire(import.meta.url);
+        if (path.isAbsolute(base)) {
+            if (isFile(base)) {
+                base = path.dirname(base);
+            }
 
-        const file = require.resolve(spec, {paths: [process.cwd()]});
+            const absBase = path.join(base, filename);
+
+            let resolved: string | undefined = isFile(absBase)
+                ? absBase
+                : (resolveEntrypointPath(absBase) ?? resolveAssetsPath(absBase));
+
+            if (!resolved) {
+                throw new Error(`Cannot resolve entrypoint file "${filename}" from "${name}"`);
+            }
+
+            resolved = fs.realpathSync.native(resolved);
+
+            const srcDir = getResolvePath(getSourcePath(this.config));
+
+            return {
+                file: resolved,
+                /**
+                 * Global alias "@/":
+                 * baked into the framework by the TypeScript plugin
+                 * (src/cli/plugins/typescript) and points to the sources directory (srcDir).
+                 * Here we build a relative path from srcDir so that the import looks like "@/relative/path".
+                 * @type {string}
+                 */
+                import: "@/" + toPosixPath(path.relative(srcDir, resolved)),
+            };
+        }
+
+        const spec: string = path.posix.join(name, filename);
+
+        const file = this.require.resolve(spec, {paths: [resolveRootPath(this.config)]});
 
         return {
             file,

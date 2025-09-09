@@ -7,6 +7,10 @@ export const getResolvePath = (to: string): string => {
     return path.resolve(process.cwd(), to);
 };
 
+export const resolveRootPath = (config: ReadonlyConfig): string => {
+    return getResolvePath(config.rootDir);
+};
+
 export const fromRootPath = (config: ReadonlyConfig, to?: string): string => {
     return path.join(config.rootDir, to ?? "");
 };

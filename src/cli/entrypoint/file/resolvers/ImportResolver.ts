@@ -1,33 +1,11 @@
 import path from "path";
-import fs from "fs";
 import {createRequire} from "module";
 
 import TsResolver from "./TsResolver";
 
+import {hasEntrypointPath, resolveEntrypointPath} from "@cli/entrypoint";
+
 import {PackageName} from "@typing/app";
-import {EntrypointFileExtensions} from "@typing/entrypoint";
-
-const extPattern = [...EntrypointFileExtensions].map(ext => ext.replace(".", "\\.")).join("|");
-
-const extRegex = new RegExp(`\\.(${extPattern})$`, "i");
-
-const isValid = (filePath: string): boolean => {
-    return extRegex.test(filePath);
-};
-
-const findFile = (basePath: string): string | undefined => {
-    const candidates = [basePath, path.join(basePath, "index")];
-
-    for (const ext of EntrypointFileExtensions) {
-        for (const candidate of candidates) {
-            const pathname = `${candidate}.${ext}`;
-
-            if (fs.existsSync(pathname)) {
-                return pathname;
-            }
-        }
-    }
-};
 
 export default class {
     protected baseDir: string;
@@ -52,11 +30,11 @@ export default class {
         if (importPath.startsWith(".") || importPath.startsWith("/")) {
             let resolvedLocal: string | undefined = path.resolve(this.baseDir, importPath);
 
-            if (isValid(resolvedLocal) && fs.existsSync(resolvedLocal)) {
+            if (hasEntrypointPath(resolvedLocal)) {
                 return resolvedLocal;
             }
 
-            resolvedLocal = findFile(resolvedLocal);
+            resolvedLocal = resolveEntrypointPath(resolvedLocal);
 
             if (resolvedLocal) {
                 return resolvedLocal;
@@ -68,11 +46,11 @@ export default class {
         let aliased = this.ts.matchPath(importPath);
 
         if (aliased) {
-            if (isValid(aliased) && fs.existsSync(aliased)) {
+            if (hasEntrypointPath(aliased)) {
                 return path.resolve(aliased);
             }
 
-            aliased = findFile(aliased);
+            aliased = resolveEntrypointPath(aliased);
 
             if (aliased) {
                 return path.resolve(aliased);
