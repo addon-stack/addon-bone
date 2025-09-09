@@ -125,11 +125,11 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     appendPermissions(permissions: ManifestPermissions): this;
 
+    // Host Permissions
     addHostPermission(permission: string): this;
 
     setHostPermissions(permissions: ManifestHostPermissions): this;
 
-    // Host Permissions
     appendHostPermissions(permissions: ManifestHostPermissions): this;
 
     // Web Accessible Resource

@@ -7,7 +7,7 @@ import offscreenBackground from "./offscreen.background.ts?raw";
 import relay from "./relay.ts?raw";
 import view from "./view.ts?raw";
 
-import {getEntrypointFileFramework} from "@cli/entrypoint";
+import {inferEntrypointFramework} from "@cli/entrypoint";
 
 import {PackageName} from "@typing/app";
 import {EntrypointFile} from "@typing/entrypoint";
@@ -15,7 +15,7 @@ import {EntrypointFile} from "@typing/entrypoint";
 const templates = {background, command, content, offscreen, relay, view, transport};
 
 const getEntryFramework = (file: EntrypointFile, entry: "content" | "view"): string => {
-    return `${PackageName}/entry/${entry}/${getEntrypointFileFramework(file)}`;
+    return `${PackageName}/entry/${entry}/${inferEntrypointFramework(file)}`;
 };
 
 const getVirtualModule = (file: EntrypointFile, template: keyof typeof templates): string => {

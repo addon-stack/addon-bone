@@ -6,7 +6,7 @@ import AssetPluginFinder from "./AssetPluginFinder";
 
 import {EntrypointFile} from "@typing/entrypoint";
 import {ReadonlyConfig} from "@typing/config";
-import {DefaultIconGroupName} from "@typing/icon";
+import {DefaultIconGroupName, IconFileExtensions, IconSizes} from "@typing/icon";
 
 export interface IconName {
     group: string;
@@ -26,8 +26,6 @@ export default class extends AbstractAssetFinder {
     protected _plugin?: AssetPluginFinder;
     protected _icons?: IconGroups;
 
-    protected readonly sizes: ReadonlySet<number> = new Set([16, 32, 48, 64, 128, 256, 512]);
-
     public constructor(config: ReadonlyConfig) {
         super(config);
     }
@@ -41,7 +39,7 @@ export default class extends AbstractAssetFinder {
     }
 
     public getNames(): ReadonlySet<string> {
-        return new Set([...this.sizes].map(String));
+        return new Set([...IconSizes].map(String));
     }
 
     public isValidName(name: string): boolean {
@@ -49,7 +47,7 @@ export default class extends AbstractAssetFinder {
     }
 
     public isValidExtension(extension: string): boolean {
-        return extension === "png";
+        return IconFileExtensions.has(extension);
     }
 
     protected parseName(name: string): IconName | undefined {
@@ -67,7 +65,7 @@ export default class extends AbstractAssetFinder {
 
         const size = matchSize ? parseInt(matchSize[1], 10) : undefined;
 
-        if (!size || !this.sizes.has(size)) {
+        if (!size || !IconSizes.has(size)) {
             return undefined;
         }
 
