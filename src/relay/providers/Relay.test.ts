@@ -37,9 +37,9 @@ type RelayProxyType = DeepAsyncProxy<RelayType>;
 const relayName = "math";
 
 const options: RelayOptions = {
-    name: '',
+    name: "",
     method: RelayMethod.Scripting,
-}
+};
 
 describe("ProxyRelay", () => {
     beforeEach(async () => {

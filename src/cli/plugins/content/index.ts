@@ -96,7 +96,7 @@ export default definePlugin(() => {
                 .appendHostPermissions(await manager.hostPermissions())
                 .appendOptionalHostPermissions(await manager.optionalHostPermissions());
 
-            if (await relay.exists() && await relay.hasMethod(RelayMethod.Scripting)) {
+            if ((await relay.exists()) && (await relay.hasMethod(RelayMethod.Scripting))) {
                 if (await relay.hasDeclarative(ContentScriptDeclarative.Required)) {
                     manifest.addPermission("scripting");
                 } else if (await relay.hasDeclarative(ContentScriptDeclarative.Optional)) {
