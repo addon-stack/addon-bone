@@ -5,12 +5,13 @@ import ProxyTransport from "@transport/ProxyTransport";
 import RelayManager from "../RelayManager";
 import RelayMessage from "../RelayMessage";
 import RelayPermission from "../RelayPermission";
+
 import {isRelayContext} from "../utils";
 
 import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
-import type {DeepAsyncProxy} from "@typing/helpers";
-import type {MessageSendOptions} from "@typing/message";
-import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
+import {DeepAsyncProxy} from "@typing/helpers";
+import {MessageSendOptions} from "@typing/message";
+import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
 export type ProxyRelayParams =
     | number
@@ -50,16 +51,12 @@ export default class ProxyRelay<
     }
 
     protected async apply(args: any[], path?: string): Promise<any> {
-        try {
-            if (!this.permission().allow(this.name)) {
-                if (!(await this.permission().request(this.name))) {
-                    console.warn("ProxyRelay: User denied required permissions. Cannot proceed with the operation.");
-                    return;
-                }
+        if (!this.permission().allow(this.name)) {
+            if (!(await this.permission().request(this.name))) {
+                throw new Error(
+                    `ProxyRelay: User denied required permissions for relay "${this.name}" at path "${path}". Cannot proceed with the operation.`
+                );
             }
-        } catch (err) {
-            console.error("ProxyRelay: Error while requesting permissions", err);
-            return;
         }
 
         return this.options.method === RelayMethod.Scripting
