@@ -26,6 +26,10 @@ export default class RelayPermission {
         for (const [name, {declarative, method, matches}] of relays) {
             if (method === RelayMethod.Messaging) continue;
 
+            if(declarative === false && method === RelayMethod.Scripting) {
+                console.warn(`Relay "${name}" has invalid configuration: "scripting" method cannot work with declarative = false.`);
+            }
+
             const allow = declarative === true || declarative === ContentScriptDeclarative.Required;
 
             const permissions: Permissions = {

@@ -50,8 +50,6 @@ export default class ProxyRelay<
     }
 
     protected async apply(args: any[], path?: string): Promise<any> {
-        console.log('has Permissions',this.name, this.permission().allow(this.name))
-
         try {
             if (!this.permission().allow(this.name)) {
                 if (!(await this.permission().request(this.name))) {
