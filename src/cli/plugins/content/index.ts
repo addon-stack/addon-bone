@@ -99,7 +99,7 @@ export default definePlugin(() => {
             if ((await relay.exists()) && (await relay.hasMethod(RelayMethod.Scripting))) {
                 if (await relay.hasDeclarative(ContentScriptDeclarative.Required)) {
                     manifest.addPermission("scripting");
-                } else {
+                } else if (await relay.hasDeclarative(ContentScriptDeclarative.Optional)) {
                     manifest.addOptionalPermission("scripting");
                 }
             }

@@ -7,7 +7,7 @@ type Permissions = chrome.permissions.Permissions;
 
 export interface RelayPermissionValue {
     allow: boolean;
-    permissions: Permissions;
+    permissions?: Permissions;
 }
 
 export default class RelayPermission {
@@ -24,11 +24,17 @@ export default class RelayPermission {
         const instance = RelayPermission.getInstance();
 
         for (const [name, {declarative, method, matches}] of relays) {
-            const allow = declarative === true || declarative === ContentScriptDeclarative.Required;
+            if (declarative === false && method === RelayMethod.Scripting) {
+                console.warn(`Relay "${name}" has invalid configuration: "scripting" method cannot work with declarative = false.`);
+            }
 
-            const permissions: Permissions = {
+            const allow = declarative === true
+                || declarative === ContentScriptDeclarative.Required
+                || method === RelayMethod.Messaging;
+
+            const permissions: Permissions | undefined = method === RelayMethod.Messaging ? undefined : {
                 origins: !declarative || declarative === ContentScriptDeclarative.Optional ? matches : [],
-                permissions: method === RelayMethod.Scripting ? ["scripting"] : [],
+                permissions: ["scripting"],
             };
 
             instance.set(name, {allow, permissions});
@@ -66,6 +72,9 @@ export default class RelayPermission {
         if (!relayPermissions) {
             throw new Error(`RelayPermission, relay "${name}" not found`);
         }
+
+        if (!relayPermissions.permissions) return true;
+
         const allow = await containsPermissions(relayPermissions.permissions);
 
         this.set(name, {allow});
@@ -79,6 +88,9 @@ export default class RelayPermission {
         if (!relayPermissions) {
             throw new Error(`RelayPermission, relay "${name}" not found`);
         }
+
+        if (!relayPermissions.permissions) return true;
+
         const allow = await requestPermissions(relayPermissions.permissions);
 
         this.set(name, {allow});

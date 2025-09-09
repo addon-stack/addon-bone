@@ -35,7 +35,11 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
 
         return Array.from(transport.values()).reduce(
             (map, {options}) => {
-                map[options.name] = options;
+                map[options.name] = {
+                    ...options,
+                    method: options.method || RelayMethod.Messaging
+                };
+
                 return map;
             },
             {} as Record<string, RelayOptions>
