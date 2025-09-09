@@ -24,6 +24,8 @@ export default class RelayPermission {
         const instance = RelayPermission.getInstance();
 
         for (const [name, {declarative, method, matches}] of relays) {
+            if (method === RelayMethod.Messaging) continue;
+
             const allow = declarative === true || declarative === ContentScriptDeclarative.Required;
 
             const permissions: Permissions = {
@@ -57,7 +59,8 @@ export default class RelayPermission {
     }
 
     public allow(name: string): boolean {
-        return this.get(name)?.allow ?? false;
+        const relayPermissions = this.get(name);
+        return relayPermissions ? relayPermissions.allow : true;
     }
 
     public async contains(name: string): Promise<boolean> {

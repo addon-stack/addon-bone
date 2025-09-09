@@ -37,7 +37,12 @@ export default class extends ContentParser<RelayEntrypointOptions> {
         return {
             ...options,
             method,
-            declarative: declarative || ContentScriptDeclarative.Optional,
+            declarative:
+                declarative === undefined
+                    ? method === RelayMethod.Scripting
+                        ? ContentScriptDeclarative.Optional
+                        : undefined
+                    : declarative,
         };
     }
 }
