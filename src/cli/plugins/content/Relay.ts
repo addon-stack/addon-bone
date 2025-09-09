@@ -37,7 +37,7 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
             (map, {options}) => {
                 map[options.name] = {
                     ...options,
-                    method: options.method || RelayMethod.Messaging
+                    method: options.method || RelayMethod.Messaging,
                 };
 
                 return map;

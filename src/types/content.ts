@@ -70,7 +70,6 @@ export interface ContentScriptConfig {
      *
      * @default undefined
      */
-
     declarative?: boolean | `${ContentScriptDeclarative}` | ContentScriptDeclarative;
 }
 

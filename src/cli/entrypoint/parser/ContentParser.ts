@@ -2,7 +2,7 @@ import z from "zod";
 
 import AbstractParser from "./AbstractParser";
 
-import {ContentScriptEntrypointOptions, ContentScriptMatches} from "@typing/content";
+import {ContentScriptDeclarative, ContentScriptEntrypointOptions, ContentScriptMatches} from "@typing/content";
 import {EntrypointFile} from "@typing/entrypoint";
 
 export default class<
@@ -23,7 +23,7 @@ export default class<
             world: z.enum(["ISOLATED", "MAIN"]).optional(),
             runAt: z.enum(["document_start", "document_end", "document_idle"]).optional(),
             matchOriginAsFallback: z.boolean().optional(),
-            declarative: z.boolean().optional(),
+            declarative: z.union([z.nativeEnum(ContentScriptDeclarative), z.boolean()]).optional(),
         });
     }
 
