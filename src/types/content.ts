@@ -9,6 +9,11 @@ type RunAt = chrome.extensionTypes.RunAt;
 
 export const ContentScriptMatches = ["http://*/*", "https://*/*"];
 
+export enum ContentScriptDeclarative {
+    Required = "required",
+    Optional = "optional",
+}
+
 export interface ContentScriptConfig {
     matches?: string[];
     /**
@@ -51,15 +56,21 @@ export interface ContentScriptConfig {
      */
     matchOriginAsFallback?: boolean;
     /**
-     * Whether this content script requires explicit permission declaration in the extension manifest.
-     * When set to true, the content script must be declared in the manifest.json permissions section
-     * to be allowed to run on the specified pages.
+     * Whether this content script requires explicit host permission declaration in the extension manifest.
+     *
+     * Accepted values:
+     * - ContentScriptDeclarative.Required — adds the corresponding host patterns to manifest.host_permissions.
+     * - ContentScriptDeclarative.Optional — adds the corresponding host patterns to manifest.optional_host_permissions.
+     *
+     * Backward compatibility:
+     * - true ≡ ContentScriptDeclarative.Required
+     * - false ≡ undefined (as if the value is not set)
      *
      * @see https://developer.chrome.com/docs/extensions/mv3/declare_permissions/
      *
-     * @default false
+     * @default undefined
      */
-    declarative?: boolean;
+    declarative?: boolean | `${ContentScriptDeclarative}` | ContentScriptDeclarative;
 }
 
 export type ContentScriptOptions = ContentScriptConfig & EntrypointOptions;

@@ -1,3 +1,5 @@
+import {RelayGlobalKey} from "@typing/relay";
+
 export const sleep = (time: number): Promise<void> => {
     return new Promise(resolve => setTimeout(resolve, time));
 };
@@ -32,3 +34,5 @@ export const awaiter = async <T>(
 
     return defaults;
 };
+
+export const isRelayContext = (): boolean => !!globalThis[RelayGlobalKey];

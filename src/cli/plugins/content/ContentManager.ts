@@ -4,7 +4,7 @@ import {ContentGroupItems, ContentProvider} from "./types";
 import {getContentScriptConfigFromOptions} from "./utils";
 
 import {ReadonlyConfig} from "@typing/config";
-import {ContentScriptEntrypointOptions} from "@typing/content";
+import {ContentScriptDeclarative, ContentScriptEntrypointOptions} from "@typing/content";
 import {EntrypointEntries, EntrypointFile, EntrypointType} from "@typing/entrypoint";
 import {ManifestContentScripts, ManifestHostPermissions} from "@typing/manifest";
 
@@ -14,6 +14,8 @@ export default class {
     protected readonly names: ContentName;
 
     protected _group?: ContentGroupItems<ContentScriptEntrypointOptions>;
+
+    protected _permissions?: [ManifestHostPermissions, ManifestHostPermissions];
 
     constructor(config: ReadonlyConfig) {
         this.names = new ContentName(config);
@@ -76,7 +78,20 @@ export default class {
     }
 
     public async hostPermissions(): Promise<ManifestHostPermissions> {
+        return (await this.calculatePermissions())[0];
+    }
+
+    public async optionalHostPermissions(): Promise<ManifestHostPermissions> {
+        return (await this.calculatePermissions())[1];
+    }
+
+    protected async calculatePermissions(): Promise<[ManifestHostPermissions, ManifestHostPermissions]> {
+        if (this._permissions) {
+            return this._permissions;
+        }
+
         const hostPermissions = new Set<string>();
+        const optionalHostPermissions = new Set<string>();
 
         const group = await this.group();
 
@@ -89,12 +104,22 @@ export default class {
                 }
 
                 for (const match of matches) {
-                    hostPermissions.add(match);
+                    switch (declarative) {
+                        case ContentScriptDeclarative.Optional:
+                            optionalHostPermissions.add(match);
+
+                            break;
+                        case ContentScriptDeclarative.Required:
+                        case true:
+                            hostPermissions.add(match);
+
+                            break;
+                    }
                 }
             }
         }
 
-        return hostPermissions;
+        return (this._permissions = [hostPermissions, optionalHostPermissions]);
     }
 
     public virtual(file: EntrypointFile): string {
@@ -134,6 +159,7 @@ export default class {
         this.names.reset();
 
         this._group = undefined;
+        this._permissions = undefined;
 
         return this;
     }

@@ -6,6 +6,8 @@ export const MessageSenderProperty = "_sender";
 
 export type MessageSender = chrome.runtime.MessageSender;
 
+export type MessageSendOptions = number | {tabId: number; frameId?: number; documentId?: string};
+
 export interface MessageDictionary {
     [key: string]: (data: any) => any;
 }
@@ -55,5 +57,5 @@ export interface MessageHandler<T extends MessageDictionary> {
         type: MessageType<T>,
         data: MessageData<T, MessageType<T>>,
         sender: MessageSender
-    ): MessageResponse<T, MessageType<T>> | undefined;
+    ): MessageResponse<T, MessageType<T>> | undefined | null;
 }

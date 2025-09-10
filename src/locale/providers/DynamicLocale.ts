@@ -22,7 +22,7 @@ export default class<T extends LocaleNativeStructure> extends NativeLocale imple
 
         if (storage) {
             this.storageKey = storage;
-            this.storage = Storage.Sync();
+            this.storage = Storage.Local();
         }
     }
 

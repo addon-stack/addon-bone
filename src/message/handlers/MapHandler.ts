@@ -17,11 +17,12 @@ export default class MapHandler<T extends MessageDictionary> extends AbstractHan
         type: MessageType<T>,
         data: MessageData<T, MessageType<T>>,
         sender: MessageSender
-    ): MessageResponse<T, MessageType<T>> | undefined {
+    ): MessageResponse<T, MessageType<T>> | undefined | null {
         const handler = this.map[type];
+
         if (handler) {
             if (typeof handler === "function") {
-                return handler(data, sender);
+                return handler(data, sender) || null;
             } else {
                 throw new Error(`Handler for type "${type}" in object of handlers must be a function`);
             }

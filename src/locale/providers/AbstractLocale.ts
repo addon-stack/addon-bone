@@ -27,7 +27,9 @@ export default abstract class<S extends LocaleStructure> implements LocaleProvid
         substitutions?: LocaleSubstitutionsFor<S, K>
     ): string {
         const parts = this.get(key, substitutions).split(LocaleValuesSeparator);
+
         const idx = this.getPluralIndex(count);
+
         return parts[idx] ?? parts[0] ?? (key as string);
     }
 
@@ -36,6 +38,7 @@ export default abstract class<S extends LocaleStructure> implements LocaleProvid
 
         if (template === undefined) {
             console.warn(`Locale key "${key}" not found in "${this.lang()}" language.`);
+
             return key as string;
         }
 
@@ -44,9 +47,11 @@ export default abstract class<S extends LocaleStructure> implements LocaleProvid
                 if (placeholder in substitutions) {
                     return substitutions[placeholder]!.toString();
                 }
+
                 console.warn(
                     `Locale substitution "${placeholder}" not found for key "${key}" in "${this.lang()}" language.`
                 );
+
                 return placeholder;
             });
         }

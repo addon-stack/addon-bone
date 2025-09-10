@@ -1,8 +1,10 @@
-import isEmail from "validator/lib/isEmail.js";
+import {z} from "zod";
 
 import AbstractMeta from "./AbstractMeta";
 
 import type {ReadonlyConfig} from "@typing/config";
+
+const emailSchema = z.string().email();
 
 export default class extends AbstractMeta {
     public constructor(config: ReadonlyConfig) {
@@ -14,6 +16,6 @@ export default class extends AbstractMeta {
     }
 
     protected isValid(value?: string): boolean {
-        return value ? isEmail(value) : false;
+        return emailSchema.safeParse(value).success;
     }
 }

@@ -1,8 +1,10 @@
-import isURL from "validator/lib/isURL.js";
+import {z} from "zod";
 
 import AbstractMeta from "./AbstractMeta";
 
 import type {ReadonlyConfig} from "@typing/config";
+
+const urlSchema = z.string().url();
 
 export default class extends AbstractMeta {
     public constructor(config: ReadonlyConfig) {
@@ -14,6 +16,6 @@ export default class extends AbstractMeta {
     }
 
     protected isValid(value?: string): boolean {
-        return value ? isURL(value) : false;
+        return urlSchema.safeParse(value).success;
     }
 }

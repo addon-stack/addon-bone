@@ -12,5 +12,5 @@ export default abstract class AbstractHandler<T extends MessageDictionary> imple
         type: MessageType<T>,
         data: MessageData<T, MessageType<T>>,
         sender: MessageSender
-    ): MessageResponse<T, MessageType<T>> | undefined;
+    ): MessageResponse<T, MessageType<T>> | undefined | null;
 }

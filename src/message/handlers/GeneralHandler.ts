@@ -17,7 +17,7 @@ export default class GeneralHandler<T extends MessageDictionary, K extends Messa
         type: K,
         data: MessageData<T, MessageType<T>>,
         sender: MessageSender
-    ): MessageResponse<T, MessageType<T>> | undefined {
+    ): MessageResponse<T, MessageType<T>> | undefined | null {
         return this.generalHandler(type, data, sender);
     }
 }

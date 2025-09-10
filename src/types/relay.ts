@@ -5,9 +5,18 @@ import {Awaiter} from "@typing/helpers";
 
 export const RelayGlobalKey = "adnbnRelay";
 
-export type RelayConfig = TransportConfig & ContentScriptConfig;
+export enum RelayMethod {
+    Scripting = "scripting",
+    Messaging = "messaging",
+}
+
+export interface RelayConfig extends TransportConfig, ContentScriptConfig {
+    method?: RelayMethod;
+}
 
 export type RelayOptions = RelayConfig & EntrypointOptions;
+
+export type RelayOptionsMap = Map<string, RelayOptions>;
 
 export type RelayEntrypointOptions = Partial<RelayOptions>;
 
@@ -20,7 +29,7 @@ export type RelayMainHandler<T extends TransportType> = (
 export interface RelayDefinition<T extends TransportType>
     extends Omit<TransportDefinition<RelayOptions, T>, "main">,
         Omit<ContentScriptDefinition, "main">,
-        Omit<RelayEntrypointOptions, "declarative"> {
+        RelayEntrypointOptions {
     main?: RelayMainHandler<T>;
 }
 

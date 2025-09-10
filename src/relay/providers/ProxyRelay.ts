@@ -1,17 +1,19 @@
-import {getManifestVersion, isAvailableScripting} from "@adnbn/browser";
-
 import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
 
 import ProxyTransport from "@transport/ProxyTransport";
 
 import RelayManager from "../RelayManager";
+import RelayMessage from "../RelayMessage";
+import RelayPermission from "../RelayPermission";
 
-import {RelayGlobalKey} from "@typing/relay";
+import {isRelayContext} from "../utils";
 
-import type {DeepAsyncProxy} from "@typing/helpers";
-import type {TransportDictionary, TransportManager, TransportName} from "@typing/transport";
+import {RelayGlobalKey, RelayMethod, RelayOptions} from "@typing/relay";
+import {DeepAsyncProxy} from "@typing/helpers";
+import {MessageSendOptions} from "@typing/message";
+import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
-export type ProxyRelayOptions =
+export type ProxyRelayParams =
     | number
     | (Omit<InjectScriptOptions, "frameId" | "documentId" | "timeFallback"> & {
           frameId?: number;
@@ -23,15 +25,19 @@ export default class ProxyRelay<
     T = DeepAsyncProxy<TransportDictionary[N]>,
 > extends ProxyTransport<N, T> {
     private injectScript: InjectScriptContract;
+    private message: TransportMessage;
 
     constructor(
         name: N,
-        protected options: ProxyRelayOptions
+        protected options: RelayOptions,
+        protected params: ProxyRelayParams
     ) {
         super(name);
 
+        this.message = new RelayMessage(name);
+
         this.injectScript = injectScriptFactory({
-            ...(typeof options === "number" ? {tabId: options} : options),
+            ...(typeof params === "number" ? {tabId: params} : params),
             timeFallback: 4000,
         });
     }
@@ -40,7 +46,25 @@ export default class ProxyRelay<
         return RelayManager.getInstance();
     }
 
+    protected permission(): RelayPermission {
+        return RelayPermission.getInstance();
+    }
+
     protected async apply(args: any[], path?: string): Promise<any> {
+        if (!this.permission().allow(this.name)) {
+            if (!(await this.permission().request(this.name))) {
+                throw new Error(
+                    `ProxyRelay: User denied required permissions for relay "${this.name}" at path "${path}". Cannot proceed with the operation.`
+                );
+            }
+        }
+
+        return this.options.method === RelayMethod.Scripting
+            ? this.scriptingApply(args, path)
+            : this.messagingApply(args, path);
+    }
+
+    private async scriptingApply(args: any[], path?: string): Promise<any> {
         const func = async (name: string, path: string, args: any[], key: string) => {
             try {
                 const awaitManager = async (maxAttempts = 10, delay = 300): Promise<RelayManager> => {
@@ -58,10 +82,13 @@ export default class ProxyRelay<
                 const manager: RelayManager = await awaitManager();
 
                 return await manager.property(name, {path, args});
-            } catch (error) {
-                console.error("ProxyRelay.createProxy()", document.location.href, error);
+            } catch (e) {
+                console.error(
+                    `ProxyRelay.scriptingApply(): failed to access relay "${name}" at path "${path}" via injected script; manager with key "${key}" is unavailable or property not found. URL: ${document.location.href}`,
+                    e
+                );
 
-                throw error;
+                throw e;
             }
         };
 
@@ -70,8 +97,24 @@ export default class ProxyRelay<
         return result?.[0]?.result;
     }
 
+    private async messagingApply(args: any[], path?: string): Promise<any> {
+        const options: MessageSendOptions =
+            typeof this.params === "number"
+                ? {
+                      tabId: this.params,
+                      frameId: 0,
+                  }
+                : {
+                      tabId: this.params.tabId,
+                      frameId: this.params.frameId || 0,
+                      documentId: this.params.documentId,
+                  };
+
+        return this.message.send({path, args}, options);
+    }
+
     public get(): T {
-        if (!isAvailableScripting() && getManifestVersion() !== 2) {
+        if (isRelayContext()) {
             throw new Error(
                 `You are trying to get proxy relay "${this.name}" from script content. You can get original relay instead`
             );

@@ -5,7 +5,7 @@ import RegisterTransport from "@transport/RegisterTransport";
 import ServiceMessage from "../ServiceMessage";
 import ServiceManager from "../ServiceManager";
 
-import type {TransportDictionary, TransportName} from "@typing/transport";
+import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
 export default class<
     N extends TransportName,
@@ -19,11 +19,11 @@ export default class<
         super(name, init);
     }
 
-    protected message() {
+    protected message(): TransportMessage {
         return new ServiceMessage(this.name);
     }
 
-    protected manager() {
+    protected manager(): TransportManager {
         return ServiceManager.getInstance();
     }
 

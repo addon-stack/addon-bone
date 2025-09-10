@@ -40,5 +40,5 @@ export const getOffscreen = <N extends Extract<keyof TransportDictionary, string
         throw new Error(`Unable to get offscreen: ${name}`);
     }
 
-    return new ProxyOffscreen(name, parameters).get();
+    return ProxyOffscreen.getInstance(name, parameters).get();
 };

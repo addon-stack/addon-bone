@@ -20,7 +20,7 @@ export default abstract class<
 
     protected abstract message(): TransportMessage;
 
-    public register(...args: A) {
+    public register(...args: A): T {
         if (this.manager().has(this.name)) {
             throw new Error(`A instance with name "${this.name}" already exists. The name must be unique.`);
         }

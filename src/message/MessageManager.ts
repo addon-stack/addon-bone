@@ -79,7 +79,5 @@ export default class MessageManager<T extends MessageDictionary> {
 
             return true;
         }
-
-        sendResponse();
     }
 }
