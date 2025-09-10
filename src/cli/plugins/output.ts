@@ -1,5 +1,5 @@
 import _ from "lodash";
-import {Configuration as RspackConfig, DefinePlugin} from "@rspack/core";
+import {Configuration as RspackConfig} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
 
@@ -29,13 +29,7 @@ export default definePlugin(() => {
                     uniqueName: kebabApp,
                     clean: config.command === Command.Build,
                 },
-                plugins: [
-                    new DefinePlugin({
-                        __ENTRYPOINT_META__: "(0, \"__ADNBN_EM__META__\")",
-                        __ENTRYPOINT_NAME__: "(0, \"__ADNBN_EM__NAME__\")",
-                    }),
-                    new EntrypointMetaPlugin()
-                ],
+                plugins: [new EntrypointMetaPlugin()],
             } satisfies RspackConfig;
         },
     };
