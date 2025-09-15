@@ -53,6 +53,7 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     public async get<K extends keyof T>(key: K): Promise<T[K] | undefined> {
         const fullKey = this.getFullKey(key);
+
         return new Promise((resolve, reject) => {
             this.storage.get(fullKey, result => {
                 try {
@@ -124,6 +125,7 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     protected async triggerChange<P extends T>(key: string, changes: StorageChange, options: StorageWatchOptions<P>) {
         const {newValue, oldValue} = changes;
+
         const originalKey = this.getOriginalKey(key);
 
         if (typeof options === "function") {
@@ -135,6 +137,7 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     protected getOriginalKey(key: string): keyof T {
         const fullKeyParts = key.split(this.separator);
+
         return fullKeyParts.length > 1 ? fullKeyParts[fullKeyParts.length - 1] : key;
     }
 }

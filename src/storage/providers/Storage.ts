@@ -1,24 +1,41 @@
-import {StorageState, StorageWatchOptions} from "@typing/storage";
-
 import AbstractStorage, {StorageOptions} from "./AbstractStorage";
+
+import {StorageProvider, StorageState, StorageWatchOptions} from "@typing/storage";
+import MonoStorage from "./MonoStorage";
 
 type StorageChange = chrome.storage.StorageChange;
 
+export interface StorageFactoryOptions extends StorageOptions {
+    key?: string;
+}
+
 export default class Storage<T extends StorageState> extends AbstractStorage<T> {
-    static Sync<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "sync", namespace});
+    public static make<T extends StorageState>(options: StorageFactoryOptions = {}): StorageProvider<T> {
+        const {key, ...storageOptions} = options;
+
+        const storage = new Storage<T>(storageOptions);
+
+        if (key) {
+            return new MonoStorage(key, storage as StorageProvider<Record<typeof key, Partial<T>>>);
+        }
+
+        return storage;
     }
 
-    static Local<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "local", namespace});
+    public static Sync<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
+        return Storage.make({...(options || {}), area: "sync"});
     }
 
-    static Session<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "session", namespace});
+    public static Local<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
+        return Storage.make({...(options || {}), area: "local"});
     }
 
-    static Managed<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "managed", namespace});
+    public static Session<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
+        return Storage.make({...(options || {}), area: "session"});
+    }
+
+    public static Managed<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
+        return Storage.make({...(options || {}), area: "managed"});
     }
 
     constructor(options: StorageOptions = {}) {

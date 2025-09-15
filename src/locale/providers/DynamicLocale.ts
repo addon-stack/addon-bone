@@ -1,18 +1,19 @@
 import {flattenLocaleMessages, getLocaleFilename} from "../utils";
 
-import {Storage} from "../../storage";
+import {Storage} from "@storage/providers";
 
 import NativeLocale, {LocaleNativeStructure} from "./NativeLocale";
 import CustomLocale, {CustomLocaleData} from "./CustomLocale";
 
 import {Language, LanguageCodes, LocaleDynamicProvider, LocaleMessages} from "@typing/locale";
+import {StorageProvider} from "@typing/storage";
 
 export default class<T extends LocaleNativeStructure> extends NativeLocale implements LocaleDynamicProvider<T> {
     protected cache = new Map<Language, CustomLocaleData>();
 
     protected locale?: CustomLocale<T>;
 
-    protected storage?: Storage<Record<string, Language>>;
+    protected storage?: StorageProvider<Record<string, Language>>;
     protected storageKey?: string;
 
     protected unsubscribe?: () => void;

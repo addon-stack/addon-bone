@@ -44,6 +44,7 @@ export default class MonoStorage<T extends StorageState, K extends string> imple
 
     public async get<KP extends keyof T>(key: KP): Promise<T[KP] | undefined> {
         const bucket = await this.read();
+
         return bucket[key] as T[KP] | undefined;
     }
 
