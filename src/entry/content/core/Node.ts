@@ -1,4 +1,4 @@
-import {contentScriptAnchorAttribute} from "./resolvers/anchor";
+import {contentScriptAnchorAttribute} from "./resolvers";
 
 import {ContentScriptNode} from "@typing/content";
 

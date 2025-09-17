@@ -1,14 +1,14 @@
 import Builder from "@entry/core/Builder";
 
-import {contentScriptMountAppendResolver} from "./resolvers/mount";
-import {contentScriptAnchorResolver} from "./resolvers/anchor";
-import {contentScriptRenderResolver} from "./resolvers/render";
-import {contentScriptContainerResolver} from "./resolvers/container";
 import {
+    contentScriptAnchorResolver,
     contentScriptAwaitFirstResolver,
+    contentScriptContainerResolver,
     contentScriptLocationResolver,
+    contentScriptMountAppendResolver,
     contentScriptMutationObserverResolver,
-} from "./resolvers/watch";
+    contentScriptRenderResolver,
+} from "./resolvers";
 
 import ManagedContext from "./ManagedContext";
 import EventEmitter from "./EventEmitter";
