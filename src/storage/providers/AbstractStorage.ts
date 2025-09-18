@@ -1,5 +1,7 @@
 import {browser, throwRuntimeError} from "@adnbn/browser";
 
+import MonoStorage from "./MonoStorage";
+
 import {StorageProvider, StorageState, StorageWatchOptions} from "@typing/storage";
 
 const storage = () => browser().storage as typeof chrome.storage;
@@ -13,6 +15,25 @@ export interface StorageOptions {
     area?: AreaName;
     namespace?: string;
 }
+
+type OptionsOf<C> = C extends new (options: infer O) => any ? O : never;
+
+type EnsureOptions<O> = Exclude<O, undefined> extends StorageOptions ? O : never;
+
+type AddExtra<O, Extra> = undefined extends O ? (Exclude<O, undefined> & Extra) | undefined : O & Extra;
+
+type WithoutUndef<O, K extends PropertyKey> = undefined extends O
+    ? Omit<Exclude<O, undefined>, K> | undefined
+    : Omit<O, K>;
+
+type FactoryOptions<T> = AddExtra<EnsureOptions<OptionsOf<T>>, {key?: string}>;
+
+type AreaOptions<T> = WithoutUndef<FactoryOptions<T>, "area">;
+
+type StaticMake<S extends StorageState, O extends StorageOptions> = <T extends new (options?: O) => StorageProvider<S>>(
+    this: T,
+    options?: FactoryOptions<T>
+) => StorageProvider<S>;
 
 export default abstract class AbstractStorage<T extends StorageState> implements StorageProvider<T> {
     private storage: StorageArea;
@@ -30,7 +51,67 @@ export default abstract class AbstractStorage<T extends StorageState> implements
         key: string,
         changes: StorageChange,
         options: StorageWatchOptions<P>
-    ): void;
+    ): Promise<void>;
+
+    public static make<
+        S extends StorageState,
+        O extends StorageOptions,
+        T extends new (options?: O) => StorageProvider<S>,
+    >(this: T, options?: FactoryOptions<T>): StorageProvider<S> {
+        const {key, ...rest} = options || {};
+
+        const storage = new this(rest as O);
+
+        if (typeof key === "string" && key.trim() !== "") {
+            return new MonoStorage<S, typeof key>(key, storage as StorageProvider<Record<typeof key, Partial<S>>>);
+        }
+
+        return storage;
+    }
+
+    public static Local<
+        S extends StorageState,
+        O extends StorageOptions,
+        T extends new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "local",
+        } as FactoryOptions<T>);
+    }
+
+    public static Session<
+        S extends StorageState,
+        O extends StorageOptions,
+        T extends new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "session",
+        } as FactoryOptions<T>);
+    }
+
+    public static Sync<
+        S extends StorageState,
+        O extends StorageOptions,
+        T extends new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "sync",
+        } as FactoryOptions<T>);
+    }
+
+    public static Managed<
+        S extends StorageState,
+        O extends StorageOptions,
+        T extends new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "managed",
+        } as FactoryOptions<T>);
+    }
 
     protected constructor({area, namespace}: StorageOptions = {}) {
         this.area = area ?? "local";

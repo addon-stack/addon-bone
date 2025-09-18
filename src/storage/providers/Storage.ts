@@ -1,43 +1,10 @@
 import AbstractStorage, {StorageOptions} from "./AbstractStorage";
 
-import {StorageProvider, StorageState, StorageWatchOptions} from "@typing/storage";
-import MonoStorage from "./MonoStorage";
+import {StorageState, StorageWatchOptions} from "@typing/storage";
 
 type StorageChange = chrome.storage.StorageChange;
 
-export interface StorageFactoryOptions extends StorageOptions {
-    key?: string;
-}
-
 export default class Storage<T extends StorageState> extends AbstractStorage<T> {
-    public static make<T extends StorageState>(options: StorageFactoryOptions = {}): StorageProvider<T> {
-        const {key, ...storageOptions} = options;
-
-        const storage = new Storage<T>(storageOptions);
-
-        if (key) {
-            return new MonoStorage(key, storage as StorageProvider<Record<typeof key, Partial<T>>>);
-        }
-
-        return storage;
-    }
-
-    public static Sync<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
-        return Storage.make({...(options || {}), area: "sync"});
-    }
-
-    public static Local<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
-        return Storage.make({...(options || {}), area: "local"});
-    }
-
-    public static Session<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
-        return Storage.make({...(options || {}), area: "session"});
-    }
-
-    public static Managed<T extends StorageState>(options?: Omit<StorageFactoryOptions, "area">): StorageProvider<T> {
-        return Storage.make({...(options || {}), area: "managed"});
-    }
-
     constructor(options: StorageOptions = {}) {
         super(options);
     }
@@ -56,7 +23,11 @@ export default class Storage<T extends StorageState> extends AbstractStorage<T> 
         return parts.length === 1 || (parts.length === 2 && parts[0] === this.namespace);
     }
 
-    protected async handleChange<P extends T>(key: string, changes: StorageChange, options: StorageWatchOptions<P>) {
+    protected async handleChange<P extends T>(
+        key: string,
+        changes: StorageChange,
+        options: StorageWatchOptions<P>
+    ): Promise<void> {
         await this.triggerChange(key, changes, options);
     }
 

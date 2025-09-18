@@ -13,22 +13,6 @@ export default class SecureStorage<T extends StorageState> extends AbstractStora
 
     private cryptoKey: CryptoKey | null = null;
 
-    static Sync<T extends StorageState>(options: Omit<SecureStorageOptions, "area">): SecureStorage<T> {
-        return new SecureStorage<T>({area: "sync", ...options});
-    }
-
-    static Local<T extends StorageState>(options: Omit<SecureStorageOptions, "area">): SecureStorage<T> {
-        return new SecureStorage<T>({area: "local", ...options});
-    }
-
-    static Session<T extends StorageState>(options: Omit<SecureStorageOptions, "area">): SecureStorage<T> {
-        return new SecureStorage<T>({area: "session", ...options});
-    }
-
-    static Managed<T extends StorageState>(options: Omit<SecureStorageOptions, "area">): SecureStorage<T> {
-        return new SecureStorage<T>({area: "managed", ...options});
-    }
-
     constructor({secureKey, ...options}: SecureStorageOptions = {}) {
         super(options);
         this.secureKey = secureKey?.trim() || "SecureKey";
@@ -121,7 +105,11 @@ export default class SecureStorage<T extends StorageState> extends AbstractStora
         return key.startsWith(`secure${this.separator}`);
     }
 
-    protected async handleChange<P extends T>(key: string, changes: StorageChange, options: StorageWatchOptions<P>) {
+    protected async handleChange<P extends T>(
+        key: string,
+        changes: StorageChange,
+        options: StorageWatchOptions<P>
+    ): Promise<void> {
         const newValue = changes.newValue !== undefined ? await this.decrypt(changes.newValue) : undefined;
         const oldValue = changes.oldValue !== undefined ? await this.decrypt(changes.oldValue) : undefined;
 
