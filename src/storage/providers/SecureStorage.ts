@@ -81,16 +81,16 @@ export default class SecureStorage<T extends StorageState> extends AbstractStora
         return encryptedValue ? this.decrypt(encryptedValue) : undefined;
     }
 
-    public async getAll<P extends T>(): Promise<P> {
-        const encryptedValues = await super.getAll<P>();
+    public async getAll(): Promise<Partial<T>> {
+        const encryptedValues = await super.getAll();
 
-        const decryptedValues: Partial<Record<keyof P, any>> = {};
+        const decryptedValues: Partial<Record<keyof T, any>> = {};
 
-        for (const [key, value] of Object.entries(encryptedValues)) {
-            decryptedValues[key as keyof P] = value ? await this.decrypt(value.toString()) : undefined;
+        for (const [key, value] of Object.entries(encryptedValues as Record<string, any>)) {
+            decryptedValues[key as keyof T] = value ? await this.decrypt(String(value)) : undefined;
         }
 
-        return decryptedValues as P;
+        return decryptedValues as Partial<T>;
     }
 
     public async clear(): Promise<void> {

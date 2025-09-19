@@ -16,19 +16,17 @@ export interface StorageOptions {
     namespace?: string;
 }
 
-type OptionsOf<C> = C extends new (options: infer O) => any ? O : never;
+type CtorOptions<C> = C extends new (options?: infer O) => any ? O : never;
 
-type EnsureOptions<O> = Exclude<O, undefined> extends StorageOptions ? O : never;
+type WithKey<T> = undefined extends T ? (Exclude<T, undefined> & {key?: string}) | undefined : T & {key?: string};
 
-type AddExtra<O, Extra> = undefined extends O ? (Exclude<O, undefined> & Extra) | undefined : O & Extra;
+type OmitUndef<T, K extends PropertyKey> = undefined extends T
+    ? Omit<Exclude<T, undefined>, K> | undefined
+    : Omit<T, K>;
 
-type WithoutUndef<O, K extends PropertyKey> = undefined extends O
-    ? Omit<Exclude<O, undefined>, K> | undefined
-    : Omit<O, K>;
+type FactoryOptions<T> = WithKey<CtorOptions<T>>;
 
-type FactoryOptions<T> = AddExtra<EnsureOptions<OptionsOf<T>>, {key?: string}>;
-
-type AreaOptions<T> = WithoutUndef<FactoryOptions<T>, "area">;
+type AreaOptions<T> = OmitUndef<FactoryOptions<T>, "area">;
 
 type StaticMake<S extends StorageState, O extends StorageOptions> = <T extends new (options?: O) => StorageProvider<S>>(
     this: T,
@@ -55,8 +53,8 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     public static make<
         S extends StorageState,
-        O extends StorageOptions,
-        T extends new (options?: O) => StorageProvider<S>,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
     >(this: T, options?: FactoryOptions<T>): StorageProvider<S> {
         const {key, ...rest} = options || {};
 
@@ -71,8 +69,8 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     public static Local<
         S extends StorageState,
-        O extends StorageOptions,
-        T extends new (options?: O) => StorageProvider<S>,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
     >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
         return this.make({
             ...(options || {}),
@@ -93,8 +91,8 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     public static Sync<
         S extends StorageState,
-        O extends StorageOptions,
-        T extends new (options?: O) => StorageProvider<S>,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
     >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
         return this.make({
             ...(options || {}),
@@ -104,8 +102,8 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     public static Managed<
         S extends StorageState,
-        O extends StorageOptions,
-        T extends new (options?: O) => StorageProvider<S>,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
     >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
         return this.make({
             ...(options || {}),
@@ -147,21 +145,22 @@ export default abstract class AbstractStorage<T extends StorageState> implements
         });
     }
 
-    public async getAll<P extends T>(): Promise<P> {
+    public async getAll(): Promise<Partial<T>> {
         return new Promise((resolve, reject) => {
             this.storage.get(null, result => {
                 try {
                     throwRuntimeError();
 
-                    const formattedResult = {} as P;
+                    const formattedResult: Partial<Record<keyof T, T[keyof T]>> = {};
 
                     for (const [key, value] of Object.entries(result)) {
                         if (this.isKeyValid(key)) {
-                            formattedResult[this.getOriginalKey(key)] = value;
+                            const original = this.getOriginalKey(key) as keyof T;
+                            formattedResult[original] = value as T[keyof T];
                         }
                     }
 
-                    resolve(formattedResult);
+                    resolve(formattedResult as Partial<T>);
                 } catch (e) {
                     reject(e);
                 }
