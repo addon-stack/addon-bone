@@ -1,8 +1,23 @@
-import {contentScriptMountAppendResolver} from "@entry/content";
+import {
+    contentScriptMountAppendResolver,
+    contentScriptAnchorResolver,
+    contentScriptAwaitFirstResolver,
+    contentScriptMutationObserverResolver,
+    contentScriptRenderResolver,
+    contentScriptContainerResolver,
+} from "@entry/content/core/resolvers";
 
 import {ContentScriptAppendDefinition, ContentScriptDefinition} from "@typing/content";
 
-export * from "@entry/content";
+export {
+    contentScriptMountAppendResolver,
+    contentScriptAnchorResolver,
+    contentScriptAwaitFirstResolver,
+    contentScriptMutationObserverResolver,
+    contentScriptRenderResolver,
+    contentScriptContainerResolver,
+};
+
 export * from "@typing/content";
 
 export const defineContentScript = (options: ContentScriptDefinition): ContentScriptDefinition => {

@@ -4,7 +4,7 @@ import MountBuilder from "../../core/MountBuilder";
 import EventNode from "../../core/EventNode";
 import ReactNode from "./Node";
 
-import {contentScriptReactRenderResolver} from "./resolvers/render";
+import {contentScriptReactRenderResolver} from "./resolvers";
 
 import {
     ContentScriptDefinition,

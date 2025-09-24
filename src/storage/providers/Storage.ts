@@ -1,26 +1,10 @@
-import {StorageState, StorageWatchOptions} from "@typing/storage";
-
 import AbstractStorage, {StorageOptions} from "./AbstractStorage";
+
+import {StorageState, StorageWatchOptions} from "@typing/storage";
 
 type StorageChange = chrome.storage.StorageChange;
 
 export default class Storage<T extends StorageState> extends AbstractStorage<T> {
-    static Sync<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "sync", namespace});
-    }
-
-    static Local<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "local", namespace});
-    }
-
-    static Session<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "session", namespace});
-    }
-
-    static Managed<T extends StorageState>(namespace?: string): Storage<T> {
-        return new Storage<T>({area: "managed", namespace});
-    }
-
     constructor(options: StorageOptions = {}) {
         super(options);
     }
@@ -39,7 +23,11 @@ export default class Storage<T extends StorageState> extends AbstractStorage<T> 
         return parts.length === 1 || (parts.length === 2 && parts[0] === this.namespace);
     }
 
-    protected async handleChange<P extends T>(key: string, changes: StorageChange, options: StorageWatchOptions<P>) {
+    protected async handleChange<P extends T>(
+        key: string,
+        changes: StorageChange,
+        options: StorageWatchOptions<P>
+    ): Promise<void> {
         await this.triggerChange(key, changes, options);
     }
 
