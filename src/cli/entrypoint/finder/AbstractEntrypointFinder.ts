@@ -69,7 +69,7 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
                 entries = fs.readdirSync(dir, {withFileTypes: true});
             } catch (e) {
                 if (this.config.debug) {
-                    console.warn(`Error reading ${entrypoint} entrypoint directory: ${dir}`);
+                    console.log(`Failed to read ${entrypoint} entrypoint directory: "${dir}". Skipping.`);
                 }
 
                 return;
@@ -91,7 +91,9 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
                                 }
                             } catch (e) {
                                 if (this.config.debug) {
-                                    console.log(`Error reading ${entrypoint} entrypoint index file: ${indexPath}`);
+                                    console.log(
+                                        `Error reading ${entrypoint} entrypoint index file: "${indexPath}". Skipping.`
+                                    );
                                 }
                             }
                         }

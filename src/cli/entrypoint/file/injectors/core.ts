@@ -1,6 +1,7 @@
 import {Command, Mode, PackageName} from "@typing/app";
 import {Browser} from "@typing/browser";
-import {ContentScriptAppend} from "@typing/content";
+import {RelayMethod} from "@typing/relay";
+import {ContentScriptAppend, ContentScriptDeclarative} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
 
 import {Injector} from "../types";
@@ -35,10 +36,28 @@ export default (): Injector[] => {
         });
     });
 
+    Object.entries(ContentScriptDeclarative).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "ContentScriptDeclarative",
+            name: key,
+            value,
+        });
+    });
+
     Object.entries(ContentScriptAppend).forEach(([key, value]) => {
         resolvers.push({
             from: PackageName,
             target: "ContentScriptAppend",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(RelayMethod).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "RelayMethod",
             name: key,
             value,
         });

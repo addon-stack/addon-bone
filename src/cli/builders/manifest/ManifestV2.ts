@@ -76,22 +76,39 @@ export default class extends ManifestBase<ManifestV2> {
         }
     }
 
+    protected buildOptionalPermissions(): Partial<ManifestV2> | undefined {
+        const optionalPermissions: string[] = Array.from(filterPermissionsForMV2(this.optionalPermissions)).filter(
+            permission => !this.permissions.has(permission)
+        );
+
+        // prettier-ignore
+        const optionalHostPermissions: string[] = Array
+            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
+            .filter((permission) => !this.hostPermissions.has(permission));
+
+        if (optionalHostPermissions.length > 0) {
+            optionalPermissions.push(...optionalHostPermissions);
+        }
+
+        if (optionalPermissions.length > 0) {
+            return {optional_permissions: optionalPermissions};
+        }
+    }
+
     protected buildHostPermissions(): Partial<ManifestV2> | undefined {
         // In Manifest V2, host permissions are declared in the "permissions" array
 
         return undefined;
     }
 
+    protected buildOptionalHostPermissions(): Partial<ManifestV2> | undefined {
+        // In Manifest V2, optional host permissions are declared in the "optional_permissions" array
+
+        return undefined;
+    }
+
     protected buildWebAccessibleResources(): Partial<ManifestV2> | undefined {
-        const resources: string[] = Array.from(this.accessibleResources).flatMap(({resources}) => resources);
-
-        for (const contentScript of this.contentScripts.values()) {
-            const assets = this.dependencies.get(contentScript.entry)?.assets;
-
-            if (assets && assets.size > 0) {
-                resources.push(...assets);
-            }
-        }
+        const resources: string[] = this.getWebAccessibleResources().flatMap(({resources}) => resources);
 
         if (resources.length > 0) {
             return {web_accessible_resources: Array.from(new Set(resources))};

@@ -1,5 +1,7 @@
 import {browser, throwRuntimeError} from "@adnbn/browser";
 
+import MonoStorage from "./MonoStorage";
+
 import {StorageProvider, StorageState, StorageWatchOptions} from "@typing/storage";
 
 const storage = () => browser().storage as typeof chrome.storage;
@@ -13,6 +15,23 @@ export interface StorageOptions {
     area?: AreaName;
     namespace?: string;
 }
+
+type CtorOptions<C> = C extends new (options?: infer O) => any ? O : never;
+
+type WithKey<T> = undefined extends T ? (Exclude<T, undefined> & {key?: string}) | undefined : T & {key?: string};
+
+type OmitUndef<T, K extends PropertyKey> = undefined extends T
+    ? Omit<Exclude<T, undefined>, K> | undefined
+    : Omit<T, K>;
+
+type FactoryOptions<T> = WithKey<CtorOptions<T>>;
+
+type AreaOptions<T> = OmitUndef<FactoryOptions<T>, "area">;
+
+type StaticMake<S extends StorageState, O extends StorageOptions> = <T extends new (options?: O) => StorageProvider<S>>(
+    this: T,
+    options?: FactoryOptions<T>
+) => StorageProvider<S>;
 
 export default abstract class AbstractStorage<T extends StorageState> implements StorageProvider<T> {
     private storage: StorageArea;
@@ -30,7 +49,67 @@ export default abstract class AbstractStorage<T extends StorageState> implements
         key: string,
         changes: StorageChange,
         options: StorageWatchOptions<P>
-    ): void;
+    ): Promise<void>;
+
+    public static make<
+        S extends StorageState,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
+    >(this: T, options?: FactoryOptions<T>): StorageProvider<S> {
+        const {key, ...rest} = options || {};
+
+        const storage = new this(rest as O);
+
+        if (typeof key === "string" && key.trim() !== "") {
+            return new MonoStorage<S, typeof key>(key, storage as StorageProvider<Record<typeof key, Partial<S>>>);
+        }
+
+        return storage;
+    }
+
+    public static Local<
+        S extends StorageState,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "local",
+        } as FactoryOptions<T>);
+    }
+
+    public static Session<
+        S extends StorageState,
+        O extends StorageOptions,
+        T extends new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "session",
+        } as FactoryOptions<T>);
+    }
+
+    public static Sync<
+        S extends StorageState,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "sync",
+        } as FactoryOptions<T>);
+    }
+
+    public static Managed<
+        S extends StorageState,
+        O extends StorageOptions = StorageOptions,
+        T extends new (options?: O) => StorageProvider<S> = new (options?: O) => StorageProvider<S>,
+    >(this: T & {make: StaticMake<S, O>}, options?: AreaOptions<T>): StorageProvider<S> {
+        return this.make({
+            ...(options || {}),
+            area: "managed",
+        } as FactoryOptions<T>);
+    }
 
     protected constructor({area, namespace}: StorageOptions = {}) {
         this.area = area ?? "local";
@@ -53,6 +132,7 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     public async get<K extends keyof T>(key: K): Promise<T[K] | undefined> {
         const fullKey = this.getFullKey(key);
+
         return new Promise((resolve, reject) => {
             this.storage.get(fullKey, result => {
                 try {
@@ -65,21 +145,22 @@ export default abstract class AbstractStorage<T extends StorageState> implements
         });
     }
 
-    public async getAll<P extends T>(): Promise<P> {
+    public async getAll(): Promise<Partial<T>> {
         return new Promise((resolve, reject) => {
             this.storage.get(null, result => {
                 try {
                     throwRuntimeError();
 
-                    const formattedResult = {} as P;
+                    const formattedResult: Partial<Record<keyof T, T[keyof T]>> = {};
 
                     for (const [key, value] of Object.entries(result)) {
                         if (this.isKeyValid(key)) {
-                            formattedResult[this.getOriginalKey(key)] = value;
+                            const original = this.getOriginalKey(key) as keyof T;
+                            formattedResult[original] = value as T[keyof T];
                         }
                     }
 
-                    resolve(formattedResult);
+                    resolve(formattedResult as Partial<T>);
                 } catch (e) {
                     reject(e);
                 }
@@ -124,6 +205,7 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     protected async triggerChange<P extends T>(key: string, changes: StorageChange, options: StorageWatchOptions<P>) {
         const {newValue, oldValue} = changes;
+
         const originalKey = this.getOriginalKey(key);
 
         if (typeof options === "function") {
@@ -135,6 +217,7 @@ export default abstract class AbstractStorage<T extends StorageState> implements
 
     protected getOriginalKey(key: string): keyof T {
         const fullKeyParts = key.split(this.separator);
+
         return fullKeyParts.length > 1 ? fullKeyParts[fullKeyParts.length - 1] : key;
     }
 }

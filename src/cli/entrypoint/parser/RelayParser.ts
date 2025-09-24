@@ -2,8 +2,9 @@ import z from "zod";
 
 import ContentParser from "./ContentParser";
 
-import {RelayEntrypointOptions} from "@typing/relay";
+import {RelayEntrypointOptions, RelayMethod} from "@typing/relay";
 import {EntrypointFile} from "@typing/entrypoint";
+import {ContentScriptDeclarative} from "@typing/content";
 
 export default class extends ContentParser<RelayEntrypointOptions> {
     protected definition(): string {
@@ -26,10 +27,22 @@ export default class extends ContentParser<RelayEntrypointOptions> {
                         "Key must start with a Unicode letter, `$` or `_`, and may only contain letters, digits, `$` or `_`",
                 })
                 .optional(),
+            method: z.nativeEnum(RelayMethod).optional(),
         });
     }
 
     public options(file: EntrypointFile): RelayEntrypointOptions {
-        return {...super.options(file), declarative: true};
+        const {declarative, method, ...options} = super.options(file);
+
+        return {
+            ...options,
+            method,
+            declarative:
+                declarative === undefined
+                    ? method === RelayMethod.Scripting
+                        ? ContentScriptDeclarative.Optional
+                        : undefined
+                    : declarative,
+        };
     }
 }

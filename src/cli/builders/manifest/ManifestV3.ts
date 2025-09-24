@@ -2,9 +2,8 @@ import ManifestBase, {ManifestError} from "./ManifestBase";
 
 import {filterHostPatterns, filterPermissionsForMV3} from "./utils";
 
-import {CoreManifest, ManifestVersion} from "@typing/manifest";
+import {CoreManifest, ManifestAccessibleResource, ManifestVersion} from "@typing/manifest";
 import {Browser} from "@typing/browser";
-import {ContentScriptMatches} from "@typing/content";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
 
@@ -81,28 +80,44 @@ export default class extends ManifestBase<ManifestV3> {
         }
     }
 
+    protected buildOptionalPermissions(): Partial<ManifestV3> | undefined {
+        // prettier-ignore
+        const optionalPermissions = Array
+            .from(filterPermissionsForMV3(this.optionalPermissions))
+            .filter((permission) => !this.permissions.has(permission));
+
+        if (optionalPermissions.length > 0) {
+            return {optional_permissions: optionalPermissions};
+        }
+    }
+
     protected buildHostPermissions(): Partial<ManifestV3> | undefined {
         if (this.hostPermissions.size > 0) {
             return {host_permissions: [...filterHostPatterns(this.hostPermissions)]};
         }
     }
 
-    protected buildWebAccessibleResources(): Partial<ManifestV3> | undefined {
-        const resources: Array<{resources: string[]; matches: string[]}> = [...this.accessibleResources];
+    protected buildOptionalHostPermissions(): Partial<ManifestV3> | undefined {
+        // prettier-ignore
+        const optionalHostPermissions = Array
+            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
+            .filter((permission) => !this.hostPermissions.has(permission));
 
-        for (const contentScript of this.contentScripts.values()) {
-            const assets = this.dependencies.get(contentScript.entry)?.assets;
-
-            if (assets && assets.size > 0) {
-                resources.push({
-                    resources: Array.from(assets),
-                    matches: contentScript.matches || ContentScriptMatches,
-                });
-            }
+        if (optionalHostPermissions.length > 0) {
+            return {optional_host_permissions: optionalHostPermissions};
         }
+    }
+
+    protected buildWebAccessibleResources(): Partial<ManifestV3> | undefined {
+        const resources: ManifestAccessibleResource[] = this.getWebAccessibleResources();
+
+        const transformedResources = resources.map(resource => ({
+            resources: resource.resources,
+            matches: resource.matches || [],
+        }));
 
         if (resources.length > 0) {
-            return {web_accessible_resources: resources};
+            return {web_accessible_resources: transformedResources};
         }
     }
 }

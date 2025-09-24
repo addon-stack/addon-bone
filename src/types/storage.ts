@@ -1,4 +1,4 @@
-export type StorageState = Record<string, unknown>;
+export type StorageState = Record<string, any>;
 
 // prettier-ignore
 export type StorageWatchOptions<T> = {
