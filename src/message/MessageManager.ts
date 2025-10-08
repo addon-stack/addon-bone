@@ -1,4 +1,4 @@
-import {onMessage} from "@adnbn/browser";
+import {onMessage} from "@addon-core/browser";
 
 import {
     MessageBody,

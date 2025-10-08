@@ -1,4 +1,4 @@
-import {setSidebarPath, setSidebarTitle} from "@adnbn/browser";
+import {setSidebarPath, setSidebarTitle} from "@addon-core/browser";
 
 import {__t} from "@locale/helpers";
 
