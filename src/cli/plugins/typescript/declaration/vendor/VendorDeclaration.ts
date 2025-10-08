@@ -1,4 +1,4 @@
-import FileBuilder from "../FileBuilder";
+import FileBuilder from "../../FileBuilder";
 
 import {ReadonlyConfig} from "@typing/config";
 
@@ -11,12 +11,11 @@ export default class extends FileBuilder {
         return "vendor.d.ts";
     }
 
-    protected template(): string {
-        // prettier-ignore
-        const types = [
-            `:package/client-types`
-        ].map(value => `/// <reference types="${value}" />`);
+    protected url(): string {
+        return import.meta.url;
+    }
 
-        return types.join("\n");
+    protected template(): string {
+        return this.readFile();
     }
 }
