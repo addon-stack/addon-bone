@@ -1,4 +1,4 @@
-import {sendMessage, sendTabMessage} from "@adnbn/browser";
+import {sendMessage, sendTabMessage} from "@addon-core/browser";
 
 import {
     MessageData,

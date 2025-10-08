@@ -1,4 +1,4 @@
-import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPermissions} from "@adnbn/browser";
+import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPermissions} from "@addon-core/browser";
 
 import {RelayMethod, RelayOptionsMap} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";

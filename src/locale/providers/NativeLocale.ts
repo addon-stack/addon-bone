@@ -1,4 +1,4 @@
-import {getI18nMessage, getI18nUILanguage} from "@adnbn/browser";
+import {getI18nMessage, getI18nUILanguage} from "@addon-core/browser";
 
 import AbstractLocale from "./AbstractLocale";
 

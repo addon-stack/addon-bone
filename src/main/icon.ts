@@ -1,4 +1,4 @@
-import {setActionIcon} from "@adnbn/browser";
+import {setActionIcon} from "@addon-core/browser";
 
 import {DefaultIconGroupName} from "@typing/icon";
 

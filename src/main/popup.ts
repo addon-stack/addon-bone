@@ -1,4 +1,4 @@
-import {setActionPopup, setActionTitle} from "@adnbn/browser";
+import {setActionPopup, setActionTitle} from "@addon-core/browser";
 
 import {__t} from "@locale/helpers";
 

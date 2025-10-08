@@ -1,4 +1,4 @@
-import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@adnbn/inject-script";
+import injectScriptFactory, {type InjectScriptContract, type InjectScriptOptions} from "@addon-core/inject-script";
 
 import ProxyTransport from "@transport/ProxyTransport";
 
