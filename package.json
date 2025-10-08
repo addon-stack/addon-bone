@@ -22,9 +22,9 @@
     "opera",
     "safari"
   ],
-  "author": "Addon Stack",
+  "author": "Addon Stack <addonbonedev@gmail.com>",
   "contributors": [
-    "Anjey Tsibylskij <addonbonedev@gmail.com> (https://github.com/atldays)"
+    "Anjey Tsibylskij (https://github.com/atldays)"
   ],
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
