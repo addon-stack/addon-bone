@@ -28,10 +28,10 @@ jobs:
       - id: set
         run: |
           if [[ "${{ inputs.full }}" == "true" ]]; then
-            echo 'matrix={"os":["ubuntu-latest","windows-latest"],"node":[18,20,22]}' >> $GITHUB_OUTPUT
+            echo 'matrix={"os":["ubuntu-latest","windows-latest"],"node":[22,24]}' >> $GITHUB_OUTPUT
             echo 'name_suffix=(full matrix)' >> $GITHUB_OUTPUT
           else
-            echo 'matrix={"os":["ubuntu-latest"],"node":[20]}' >> $GITHUB_OUTPUT
+            echo 'matrix={"os":["ubuntu-latest"],"node":[22]}' >> $GITHUB_OUTPUT
             echo 'name_suffix=' >> $GITHUB_OUTPUT
           fi
 

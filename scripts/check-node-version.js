@@ -12,9 +12,7 @@ const required = pkg.engines?.node || ">=22.0.0";
 const current = process.version;
 
 if (!semver.satisfies(semver.clean(current), required)) {
-    console.error(
-        `\nUnsupported Node.js version ${current}. Addon Bone requires Node.js version ${required}.\n`
-    );
+    console.error(`\nUnsupported Node.js version ${current}. Addon Bone requires Node.js version ${required}.\n`);
 
     process.exit(1);
 }
