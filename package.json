@@ -34,6 +34,9 @@
     "types"
   ],
   "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "bin": {
     "adnbn": "bin/adnbn.js"
   },
@@ -93,11 +96,13 @@
   "scripts": {
     "adnbn": "tsx ./src/cli/index.ts",
     "prepare": "husky",
+    "preinstall": "npm run check:node-version",
     "prepublishOnly": "npm run build",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=15046 tsup && node ./scripts/copy-dts.js",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:deps": "depcheck",
+    "check:node-version": "node ./scripts/check-node-version.js",
     "test": "jest",
     "test:ci": "jest --ci --passWithNoTests --coverage",
     "test:watch": "jest --watch",
@@ -164,6 +169,7 @@
     "cross-env": "^7.0.3",
     "depcheck": "^1.4.7",
     "dotenv": "^16.4.7",
+    "esbuild": "^0.20.2",
     "esbuild-fix-imports-plugin": "^1.0.22",
     "esbuild-plugin-raw": "^0.1.8",
     "fs-extra": "^11.3.0",
@@ -179,6 +185,9 @@
     "tsx": "^4.19.2",
     "uglify-js": "^3.19.3",
     "utility-types": "^3.11.0"
+  },
+  "optionalDependencies": {
+    "@esbuild/darwin-arm64": "0.20.2"
   },
   "peerDependencies": {
     "@types/chrome": "*",
