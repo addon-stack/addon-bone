@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - develop
+      - 'feature/**'
+  workflow_call:
+    inputs:
+      full:
+        description: 'Run full OS x Node matrix'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  compute-matrix:
+    name: Compute matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      name_suffix: ${{ steps.set.outputs.name_suffix }}
+    steps:
+      - id: set
+        run: |
+          if [[ "${{ inputs.full }}" == "true" ]]; then
+            echo 'matrix={"os":["ubuntu-latest","windows-latest"],"node":[18,20,22]}' >> $GITHUB_OUTPUT
+            echo 'name_suffix=(full matrix)' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix={"os":["ubuntu-latest"],"node":[20]}' >> $GITHUB_OUTPUT
+            echo 'name_suffix=' >> $GITHUB_OUTPUT
+          fi
+
+  build-and-test:
+    name: Build, Lint, Test ${{ needs.compute-matrix.outputs.name_suffix }}
+    needs: compute-matrix
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test:ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-node${{ matrix.node }}
+          path: coverage
