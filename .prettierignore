@@ -3,4 +3,4 @@ node_modules/
 dist/
 build/
 addon/
-src/cli/entrypoint/file/fixtures/
+src/cli/entrypoint/file/tests/fixtures/

@@ -2,7 +2,7 @@ import path from "path";
 jest.mock("./resolvers", () => require("./resolvers/tests/resolvers.mock"));
 import ExpressionFile from "./ExpressionFile";
 
-const fixtures = path.resolve(__dirname, "fixtures", "expression");
+const fixtures = path.resolve(__dirname, "tests", "fixtures", "expression");
 
 describe("ExpressionFile", () => {
     describe("Class Exports", () => {
