@@ -1,5 +1,21 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.4.1 (2025-10-10)
+
+
+### 🐛 Bug Fixed
+
+* include `scripts` in published files ([7ed4238](https://github.com/addon-stack/addon-bone/commit/7ed4238c0536e46f691c7018254d820888791286))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 1
+- [Addon Stack](mailto:addonbonedev@gmail.com) — commits: 1
+
 ## 🚀 Release `adnbn` v0.4.0 (2025-10-10)
 
 
