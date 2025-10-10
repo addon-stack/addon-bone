@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Exact version to release (e.g. 1.2.3). Leave empty to auto-bump.'
+        required: false
+        type: string
+      preid:
+        description: 'Pre-release identifier (e.g. beta, rc). Optional'
+        required: false
+        type: string
+      npm_tag:
+        description: 'npm dist-tag (e.g. latest, beta)'
+        required: false
+        default: 'latest'
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      full: true
+
+  release:
+    name: Release & Publish
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run release-it
+        env:
+          DEBUG: release-it:*,@release-it/*
+          HUSKY: 0
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          VERSION_ARG=""
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION_ARG="${{ inputs.version }}"
+          fi
+
+          PREID_ARG=""
+          if [ -n "${{ inputs.preid }}" ]; then
+            PREID_ARG="--preRelease=${{ inputs.preid }}"
+          fi
+
+          if [ -n "${{ inputs.npm_tag }}" ]; then
+            NPM_TAG="${{ inputs.npm_tag }}"
+          else
+            NPM_TAG="latest"
+          fi
+          NPM_TAG_ARG="--npm.tag=${NPM_TAG}"
+
+          npm run release -- --ci $PREID_ARG $NPM_TAG_ARG $VERSION_ARG
+
+      - name: Sync main → develop
+        uses: devmasx/merge-branch@v1.4.0
+        with:
+          type: now
+          from_branch: main
+          target_branch: develop
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          HUSKY: 0
+

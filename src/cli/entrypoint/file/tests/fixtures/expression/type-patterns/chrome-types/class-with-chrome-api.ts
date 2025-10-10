@@ -27,7 +27,7 @@ class TabService {
     public captureInfo(): CaptureInfo {
         return {
             tabId: 1,
-            status: 'done',
+            status: 'active',
             fullscreen: false,
         };
     }

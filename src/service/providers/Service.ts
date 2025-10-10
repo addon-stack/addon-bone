@@ -1,4 +1,4 @@
-import {isBackground} from "@adnbn/browser";
+import {isBackground} from "@addon-core/browser";
 
 import BaseTransport from "@transport/BaseTransport";
 

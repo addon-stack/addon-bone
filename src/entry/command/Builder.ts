@@ -1,4 +1,4 @@
-import {onActionClicked, onCommand} from "@adnbn/browser";
+import {onActionClicked, onSpecificCommand} from "@addon-core/browser";
 
 import Builder from "@entry/core/Builder";
 
@@ -51,10 +51,8 @@ export default class extends Builder implements CommandBuilder {
             return;
         }
 
-        this.unsubscribe = onCommand((command, tab) => {
-            if (command === name) {
-                this.handle(tab);
-            }
+        this.unsubscribe = onSpecificCommand(name, tab => {
+            this.handle(tab);
         });
     }
 

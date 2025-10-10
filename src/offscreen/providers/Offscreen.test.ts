@@ -1,4 +1,4 @@
-import {closeOffscreen, createOffscreen, hasOffscreen} from "@adnbn/browser";
+import {closeOffscreen, createOffscreen, hasOffscreen} from "@addon-core/browser";
 import {isOffscreen} from "@offscreen/utils";
 
 import {getBrowser} from "@main/env";

@@ -30,7 +30,7 @@ function fixCliIndexImports(src: string, targets: string[]): string {
     return src;
 }
 
-const fixVirtualIndexImportPlugin: Plugin = {
+const fixVirtualIndexImportPlugin = (): Plugin => ({
     name: "fix-virtual-index-import",
     setup(build) {
         const targets = ["virtual", "entrypoint"];
@@ -54,7 +54,7 @@ const fixVirtualIndexImportPlugin: Plugin = {
             };
         });
     },
-};
+});
 
 export default defineConfig([
     {
@@ -76,7 +76,7 @@ export default defineConfig([
         dts: true,
         sourcemap: true,
         // @ts-ignore
-        esbuildPlugins: [fixVirtualIndexImportPlugin, fixImportsPlugin()],
+        esbuildPlugins: [fixVirtualIndexImportPlugin(), fixImportsPlugin()],
         esbuildOptions: options => {
             options.outbase = "src";
         },
@@ -93,7 +93,7 @@ export default defineConfig([
         sourcemap: false,
         external: [/^@cli/],
         // @ts-ignore
-        esbuildPlugins: [fixVirtualIndexImportPlugin, rawPlugin(), fixImportsPlugin()],
+        esbuildPlugins: [fixVirtualIndexImportPlugin(), rawPlugin(), fixImportsPlugin()],
         esbuildOptions: options => {
             options.outbase = "src";
         },
