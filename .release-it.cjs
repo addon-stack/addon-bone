@@ -118,22 +118,17 @@ module.exports = () => {
             requireUpstream: false,
             requireBranch: false,
             commit: true,
-            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             commitMessage: "chore(release): v${version}",
             tag: true,
-            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             tagName: "v${version}",
-            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             tagAnnotation: "v${version}",
             push: true,
         },
 
         github: {
             release: true,
-            // biome-ignore lint/suspicious/noTemplateCurlyInString: release-it placeholder
             releaseName: "v${version}",
             autoGenerate: false,
-            // Ensure GitHub receives exactly the generated changelog body
             releaseNotes: ({changelog}) => changelog,
         },
 
@@ -199,7 +194,7 @@ module.exports = () => {
                 writerOpts: {
                     headerPartial:
                         "## 🚀 Release {{#if name}}`{{name}}` {{else}}{{#if @root.pkg}}`{{@root.pkg.name}}` {{/if}}{{/if}}v{{version}} ({{date}})\n\n",
-                    footerPartial: `{{#if @root.contributors.length}}\n### 🙌 Contributors\n\n{{#each @root.contributors}}- {{#if url}}{{#if name}}[{{name}}]({{url}}){{#if login}} (@{{login}}){{/if}}{{else}}[@{{login}}]({{url}}){{/if}}{{else}}{{#if email}}{{#if name}}[{{name}}]({{email}}){{else}}{{email}}{{/if}}{{else}}{{name}}{{/if}}{{/if}} — {{count}} commits\n{{/each}}{{/if}}`,
+                    footerPartial: `{{#if @root.contributors.length}}\n### 🙌 Contributors\n\n{{#each @root.contributors}}- {{#if url}}{{#if name}}[{{name}}]({{url}}){{#if login}} (@{{login}}){{/if}}{{else}}[@{{login}}]({{url}}){{/if}}{{else}}{{#if email}}{{#if name}}[{{name}}](mailto:{{email}}){{else}}{{email}}{{/if}}{{else}}{{name}}{{/if}}{{/if}} — commits: {{count}}\n{{/each}}{{/if}}`,
                     mainTemplate:
                         "{{> header}}\n" +
                         "{{#if noteGroups}}\n### 💥 Breaking Changes\n\n{{#each noteGroups}}{{#each notes}}* {{{text}}}\n\n{{/each}}{{/each}}{{/if}}" +
