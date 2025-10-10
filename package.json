@@ -112,7 +112,9 @@
     "test:locale": "jest --testPathPatterns=Locale",
     "test:manifest": "jest --testPathPatterns=src/cli/builders/manifest",
     "test:entrypoint": "jest --testPathPatterns=src/cli/entrypoint",
-    "test:plugins": "jest --testPathPatterns=src/cli/plugins"
+    "test:plugins": "jest --testPathPatterns=src/cli/plugins",
+    "release": "release-it",
+    "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
   },
   "dependencies": {
     "@addon-core/browser": "^0.2.1",
