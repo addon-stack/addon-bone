@@ -49,4 +49,4 @@ export const changeSidebarIcon = async (icon?: string, tab?: number | Tab): Prom
     }
 
     await setSidebarIcon({path: icons, tabId: tab});
-}
+};
