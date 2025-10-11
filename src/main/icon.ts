@@ -1,4 +1,4 @@
-import {setActionIcon} from "@addon-core/browser";
+import {setActionIcon, setSidebarIcon} from "@addon-core/browser";
 
 import {DefaultIconGroupName} from "@typing/icon";
 
@@ -32,3 +32,21 @@ export const changeActionIcon = async (icon?: string, tab?: number | Tab): Promi
 
     await setActionIcon({path: icons, tabId: tab});
 };
+
+export const changeSidebarIcon = async (icon?: string, tab?: number | Tab): Promise<void> => {
+    if (!icon) {
+        icon = DefaultIconGroupName;
+    }
+
+    const icons = getIcons()[icon];
+
+    if (!icons) {
+        throw new Error(`Icon group name "${icon}" not found for sidebar icon.`);
+    }
+
+    if (tab && typeof tab === "object") {
+        tab = tab.id;
+    }
+
+    await setSidebarIcon({path: icons, tabId: tab});
+}
