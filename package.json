@@ -207,8 +207,9 @@
   },
   "overrides": {
     "html-rspack-tags-plugin": {
-      "glob": "^8.1.0"
+      "glob": "^10.4.1"
     },
+    "test-exclude": "^7.0.1",
     "tsup": {
       "source-map": "^0.7.4"
     }
