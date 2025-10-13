@@ -1,5 +1,53 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.4.2 (2025-10-13)
+
+
+### ⚡️ Performance Improvements
+
+* **icon:** add support for updating the sidebar icon ([5080b50](https://github.com/addon-stack/addon-bone/commit/5080b50527053b9ee82b2468a6e807d168c7003f))
+
+
+* **icon:** add support for updating the sidebar icon ([c5d8852](https://github.com/addon-stack/addon-bone/commit/c5d8852b25146d89443499e6f512881fb7d82fcc))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **config:** add debug-based dotenv logging configuration ([cce9cc5](https://github.com/addon-stack/addon-bone/commit/cce9cc5238050d441138744a3b944f668a3aaa6d))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** update dependencies and add overrides for package improvements ([84c783a](https://github.com/addon-stack/addon-bone/commit/84c783aa51b169b2d821429c397b2afd1eba611d))
+
+  - Upgraded dependencies: `@types/node`, `caniuse-lite`, `glob`, `immutable`.
+  - Updated `source-map` version and replaced duplicates with a single entry.
+  - Added `overrides` section to ensure compatibility for `html-rspack-tags-plugin` and `tsup`.
+
+* update dependencies and improve configuration ([08b551a](https://github.com/addon-stack/addon-bone/commit/08b551a935312f35f3e7d9f8f7a1d09874b8ac21))
+
+
+* update dependencies in `package-lock.json` to newer versions ([81db4e1](https://github.com/addon-stack/addon-bone/commit/81db4e1ee86db6d1a341f43f847d7ef9e5d6ce40))
+
+
+
+
+### 🛠️ Refactoring
+
+* add changeSidebarIcon declaration ([8fa6ed2](https://github.com/addon-stack/addon-bone/commit/8fa6ed299f77a6e3f687ffaf8edfa26353a2c092))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](mailto:addonbonedev@gmail.com) — commits: 8
+
 ## 🚀 Release `adnbn` v0.4.1 (2025-10-10)
 
 
