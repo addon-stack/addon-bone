@@ -204,5 +204,13 @@
     "@types/react-dom": {
       "optional": true
     }
+  },
+  "overrides": {
+    "html-rspack-tags-plugin": {
+      "glob": "^8.1.0"
+    },
+    "tsup": {
+      "source-map": "^0.7.4"
+    }
   }
 }
