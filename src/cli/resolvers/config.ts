@@ -134,7 +134,13 @@ const updateLocalDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
 };
 
 const loadDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
-    const {mode, browser} = config;
+    const {mode, browser, debug} = config;
+
+    process.env.DOTENV_LOG = debug ? "debug" : "none";
+
+    if (!debug) {
+        process.env.DOTENV_CONFIG_SILENT = "true";
+    }
 
     const preset = [
         `.env.${mode}.${browser}.local`,
