@@ -1,3 +1,5 @@
+import AwaitLock from "await-lock";
+
 import Builder from "@entry/core/Builder";
 
 import {
@@ -35,6 +37,8 @@ import {
 import {Awaiter} from "@typing/helpers";
 
 export default abstract class extends Builder implements ContentScriptBuilder {
+    private readonly lock: AwaitLock = new AwaitLock();
+
     protected readonly definition: ContentScriptResolvedDefinition;
 
     protected readonly emitter = new EventEmitter();
@@ -42,8 +46,6 @@ export default abstract class extends Builder implements ContentScriptBuilder {
     protected readonly context = new ManagedContext(this.emitter);
 
     protected unwatch?: () => void;
-
-    private isProcessing: boolean = false;
 
     protected abstract createNode(anchor: Element): Promise<ContentScriptNode>;
 
@@ -124,17 +126,15 @@ export default abstract class extends Builder implements ContentScriptBuilder {
     }
 
     protected async processing(): Promise<void> {
-        if (this.isProcessing) {
-            return;
+        await this.lock.acquireAsync();
+
+        try {
+            const anchors = await this.definition.anchor();
+
+            await Promise.allSettled(anchors.map(this.processAnchor.bind(this)));
+        } finally {
+            this.lock.release();
         }
-
-        this.isProcessing = true;
-
-        const anchors = await this.definition.anchor();
-
-        await Promise.allSettled(anchors.map(this.processAnchor.bind(this)));
-
-        this.isProcessing = false;
     }
 
     protected async processAnchor(anchor: Element): Promise<void> {

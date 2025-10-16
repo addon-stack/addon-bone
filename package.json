@@ -125,6 +125,7 @@
     "@rspack/cli": "^1.4.11",
     "@rspack/core": "^1.4.11",
     "@svgr/webpack": "^8.1.0",
+    "await-lock": "^3.0.0",
     "c12": "^3.0.3",
     "cac": "^6.7.14",
     "consola": "^3.4.2",
