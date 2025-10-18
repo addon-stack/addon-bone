@@ -1,4 +1,4 @@
-import {isValidContentScriptRenderValue} from "../resolvers/render";
+import {isValidContentScriptRenderValue} from "./render";
 
 import {ContentScriptDefinition, ContentScriptRenderHandler, ContentScriptRenderValue} from "@typing/content";
 
