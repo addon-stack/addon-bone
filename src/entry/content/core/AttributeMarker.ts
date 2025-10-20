@@ -7,12 +7,10 @@ import {ContentScriptAnchor, ContentScriptMarkerValue} from "@typing/content";
 export default class extends AbstractMarker {
     protected readonly attr: string;
 
-    constructor(anchor?: ContentScriptAnchor) {
+    constructor(anchor?: ContentScriptAnchor, attr?: string) {
         super(anchor);
 
-        const generateId = customAlphabet("abcdefghijklmnopqrstuvwxyz", 7);
-
-        this.attr = `data-${generateId()}`;
+        this.attr = attr ?? `data-${customAlphabet("abcdefghijklmnopqrstuvwxyz", 7)()}`;
     }
 
     public isMarked(element: Element): boolean {
@@ -23,20 +21,6 @@ export default class extends AbstractMarker {
         element.setAttribute(this.attr, value);
 
         return true;
-    }
-
-    public marked(): Element[] {
-        const anchor = this.anchor;
-
-        if (anchor instanceof Element) {
-            if (this.isMarked(anchor)) {
-                return [anchor];
-            }
-
-            return [];
-        }
-
-        return Array.from(document.querySelectorAll(`${anchor}[${this.attr}]`));
     }
 
     public unmark(element: Element): boolean {
@@ -51,11 +35,15 @@ export default class extends AbstractMarker {
         return this.isValidValue(value) ? value : undefined;
     }
 
-    protected querySelector(selector: string): Element[] {
-        return super.querySelector(`${selector}:not([${this.attr}])`);
+    protected querySelector(selector: string, marked: boolean = false): Element[] {
+        const filter = marked ? `[${this.attr}]` : `:not([${this.attr}])`;
+
+        return super.querySelector(`:is(${selector})${filter}`, marked);
     }
 
-    protected queryXpath(xpath: string): Element[] {
-        return super.queryXpath(`(${xpath})[not(@${this.attr})]`);
+    protected queryXpath(xpath: string, marked: boolean = false): Element[] {
+        const filter = marked ? `[@${this.attr}]` : `[not(@${this.attr})]`;
+
+        return super.queryXpath(`(${xpath.trim()})${filter}`, marked);
     }
 }

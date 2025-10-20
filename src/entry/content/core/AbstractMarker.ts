@@ -1,8 +1,6 @@
 import {ContentScriptAnchor, ContentScriptMarkerContract, ContentScriptMarkerValue} from "@typing/content";
 
 export default abstract class implements ContentScriptMarkerContract {
-    public abstract marked(): Element[];
-
     public abstract mark(element: Element, value: ContentScriptMarkerValue): boolean;
 
     public abstract unmark(element: Element): boolean;
@@ -19,28 +17,16 @@ export default abstract class implements ContentScriptMarkerContract {
         return this;
     }
 
-    public pending(): Element[] {
-        const elements: Element[] = [];
+    public unmarked(): Element[] {
+        return this.query(false);
+    }
 
-        let resolved = this.anchor;
-
-        if (resolved instanceof Element) {
-            if (!this.isMarked(resolved)) {
-                elements.push(resolved);
-            }
-        } else if (typeof resolved === "string") {
-            if (resolved.startsWith("/")) {
-                elements.push(...this.queryXpath(resolved));
-            } else {
-                elements.push(...this.querySelector(resolved));
-            }
-        }
-
-        return elements;
+    public marked(): Element[] {
+        return this.query(true);
     }
 
     public mount(element: Element): boolean {
-        return this.mark(element, ContentScriptMarkerValue.Mounded);
+        return this.mark(element, ContentScriptMarkerValue.Mounted);
     }
 
     public unmount(element: Element): boolean {
@@ -55,11 +41,41 @@ export default abstract class implements ContentScriptMarkerContract {
         return this;
     }
 
-    protected querySelector(selector: string): Element[] {
+    protected query(marked: boolean): Element[] {
+        const anchor = this.anchor;
+
+        if (anchor instanceof Element) {
+            const isMarked = this.isMarked(anchor);
+
+            if ((isMarked && marked) || (!isMarked && !marked)) {
+                return [anchor];
+            }
+        } else if (typeof anchor === "string") {
+            return this.queryAnchor(anchor, marked);
+        }
+
+        return [];
+    }
+
+    protected queryAnchor(anchor: string, marked: boolean = false): Element[] {
+        try {
+            if (anchor.startsWith("/")) {
+                return this.queryXpath(anchor, marked);
+            }
+
+            return this.querySelector(anchor, marked);
+        } catch (e) {
+            console.error(`Invalid anchor format. Expected a valid string (CSS selector/XPath)\n\n`, e);
+
+            return [];
+        }
+    }
+
+    protected querySelector(selector: string, _marked: boolean = false): Element[] {
         return Array.from(document.querySelectorAll(selector));
     }
 
-    protected queryXpath(xpath: string): Element[] {
+    protected queryXpath(xpath: string, _marked: boolean = false): Element[] {
         const elements: Element[] = [];
 
         const result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -72,6 +88,6 @@ export default abstract class implements ContentScriptMarkerContract {
     }
 
     protected isValidValue(value: any): value is ContentScriptMarkerValue {
-        return [ContentScriptMarkerValue.Unmounted, ContentScriptMarkerValue.Mounded].includes(value);
+        return [ContentScriptMarkerValue.Unmounted, ContentScriptMarkerValue.Mounted].includes(value);
     }
 }

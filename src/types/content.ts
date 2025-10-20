@@ -113,7 +113,7 @@ export enum ContentScriptMarker {
 }
 
 export enum ContentScriptMarkerValue {
-    Mounded = "1",
+    Mounted = "1",
     Unmounted = "0",
 }
 
@@ -124,7 +124,7 @@ export interface ContentScriptMarkerContract {
      * Returns elements that are not tracked yet (no marker attribute present).
      * MUST NOT mutate marker state.
      */
-    pending(): Element[];
+    unmarked(): Element[];
 
     marked(): Element[];
 

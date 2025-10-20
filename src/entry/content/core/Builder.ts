@@ -84,7 +84,11 @@ export default abstract class extends Builder implements ContentScriptBuilder {
             }
 
             if (typeof marker === "string") {
-                return new AttributeMarker();
+                switch (marker) {
+                    case ContentScriptMarker.Attribute:
+                    default:
+                        return new AttributeMarker();
+                }
             }
 
             return marker;
@@ -162,7 +166,7 @@ export default abstract class extends Builder implements ContentScriptBuilder {
         try {
             const anchor = await this.definition.anchor();
 
-            const anchors = this.marker.for(anchor).pending();
+            const anchors = this.marker.for(anchor).unmarked();
 
             await Promise.allSettled(anchors.map(this.processAnchor.bind(this)));
         } finally {
