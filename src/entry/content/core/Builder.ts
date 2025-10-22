@@ -95,12 +95,6 @@ export default abstract class extends Builder implements ContentScriptBuilder {
                 }
             }
 
-            if (typeof marker !== "object") {
-                throw new Error(
-                    `The content script marker must be either a string ("attribute" | "weak") or an object implementing ContentScriptMarkerContract. Received: "${typeof marker}".`
-                );
-            }
-
             return marker;
         };
     }
