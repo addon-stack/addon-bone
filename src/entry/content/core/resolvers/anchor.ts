@@ -1,17 +1,9 @@
-import {customAlphabet} from "nanoid";
-
-import {ContentScriptAnchor, ContentScriptAnchorGetter, ContentScriptAnchorResolver} from "@typing/content";
-
-const generateId = customAlphabet("abcdefghijklmnopqrstuvwxyz", 7);
-
-export const contentScriptAnchorAttribute = `data-${generateId()}`;
+import {ContentScriptAnchor, ContentScriptAnchorGetter} from "@typing/content";
 
 // prettier-ignore
 export const contentScriptAnchorResolver =
-    (anchor?: ContentScriptAnchor | ContentScriptAnchorGetter): ContentScriptAnchorResolver =>
-        async (): Promise<Element[]> => {
-            const attr = contentScriptAnchorAttribute;
-
+    (anchor?: ContentScriptAnchor | ContentScriptAnchorGetter): ContentScriptAnchorGetter =>
+        async (): Promise<ContentScriptAnchor> => {
             let resolved = typeof anchor === "function" ? anchor() : anchor;
 
             if (resolved instanceof Promise) {
@@ -19,36 +11,8 @@ export const contentScriptAnchorResolver =
             }
 
             if (resolved === undefined || resolved === null) {
-                resolved = document.body;
+                return document.body;
             }
 
-            const elements: Element[] = [];
-
-            if (resolved instanceof Element) {
-                if (!resolved.hasAttribute(attr)) {
-                    elements.push(resolved);
-                }
-            } else if (typeof resolved === "string") {
-                if (resolved.startsWith("/")) {
-                    resolved = `(${resolved})[not(@${attr})]`;
-
-                    const result = document.evaluate(
-                        resolved,
-                        document,
-                        null,
-                        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-                        null
-                    );
-
-                    for (let i = 0; i < result.snapshotLength; i++) {
-                        elements.push(result.snapshotItem(i) as Element);
-                    }
-                } else {
-                    resolved += `:not([${attr}])`;
-
-                    elements.push(...Array.from(document.querySelectorAll(resolved)));
-                }
-            }
-
-            return elements;
+            return resolved;
         };
