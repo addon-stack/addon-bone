@@ -281,20 +281,13 @@ export default class ExpressionFile extends SourceFile {
             return this.signatureBuilder.formatMembers(members);
         }
 
-        // For literals or other expressions, infer a simple type
         if (ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node)) {
             return this.objectParser.inferTypeFromExpression(node as ts.Expression);
         }
 
-        // Fallback: undefined
         return undefined;
     }
 
-    /**
-     * Resolve type for an object shorthand property by its identifier name.
-     * Prefers the variable's AST initializer for precise type, with a safe
-     * fallback to value-based inference gathered by SourceFile.
-     */
     private resolveTypeFromShorthand(name: string): string | undefined {
         const varDecl = this.nodeFinder.findVariableDeclaration(name);
         if (varDecl && varDecl.initializer) {

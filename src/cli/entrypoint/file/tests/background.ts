@@ -1,6 +1,7 @@
 import path from "path";
-jest.mock("../resolvers", () => jest.requireActual("../resolvers/tests/resolvers.mock"));
 import OptionFile from "../OptionFile";
+
+jest.mock("../resolvers", () => jest.requireActual("../resolvers/tests/resolvers.mock"));
 
 const fixtures = path.resolve(__dirname, "fixtures");
 
@@ -90,6 +91,23 @@ describe("background", () => {
         expect(options).toEqual({
             persistent: true,
             includeBrowser: ["chromium"],
+        });
+    });
+
+    test("background with definition shorthand", () => {
+        const filename = path.join(fixtures, "background", "definition-shorthand.ts");
+
+        const options = OptionFile.make(filename)
+            .setProperties(["permissions", "persistent", "excludeBrowser", "includeBrowser", "excludeApp"])
+            .setDefinition("defineBackground")
+            .getOptions();
+
+        expect(options).toEqual({
+            permissions: ["storage", "tabs"],
+            persistent: true,
+            excludeBrowser: ["edge"],
+            includeBrowser: ["firefox"],
+            excludeApp: ["my_test_app"],
         });
     });
 });

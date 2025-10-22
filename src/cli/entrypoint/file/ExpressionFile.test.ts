@@ -1,5 +1,5 @@
 import path from "path";
-jest.mock("./resolvers", () => require("./resolvers/tests/resolvers.mock"));
+jest.mock("./resolvers", () => jest.requireActual("./resolvers/tests/resolvers.mock"));
 import ExpressionFile from "./ExpressionFile";
 
 const fixtures = path.resolve(__dirname, "tests", "fixtures", "expression");
