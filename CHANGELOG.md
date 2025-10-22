@@ -1,5 +1,84 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.0 (2025-10-22)
+
+
+### ⚡️ Performance Improvements
+
+* **content:** add processing lock mechanism with `await-lock` ([24a9395](https://github.com/addon-stack/addon-bone/commit/24a93951f621481803a003a0f3a95e4ba3844302))
+
+
+
+
+### ✨ Features
+
+* **content:** add `WeakMarker` implementation and integrate with content resolvers ([a35abd6](https://github.com/addon-stack/addon-bone/commit/a35abd697c233403282d161a820d8824340ff64a))
+
+  - Introduced `WeakMarker` for managing weakly referenced element markers.
+  - Updated `core.ts` to register `ContentScriptMarker` resolvers.
+  - Enhanced `ContentParser` schema with `marker` validation support.
+  - Integrated `WeakMarker` into `Builder` with necessary error handling.
+
+* **content:** introduce marker-based anchor handling and cleanup resolvers ([bd7b897](https://github.com/addon-stack/addon-bone/commit/bd7b897cb131dddcf1197d3892d404aa7891eab7))
+
+  - Added `ContentScriptMarkerContract` for marker management.
+  - Replaced `contentScriptAnchorAttribute` with marker attribute logic.
+  - Refactored `Node` and introduced `MarkerNode` wrapping for marker operations.
+  - Abstracted marker logic into `AbstractMarker` and `AttributeMarker`.
+  - Updated related definitions and resolved configurations for marker integration.
+
+* **entrypoint:** add definition shorthand support and improve tests ([e29e3f9](https://github.com/addon-stack/addon-bone/commit/e29e3f9075c87a9ecccd94f9303db359166309a4))
+
+
+
+
+### 🐛 Bug Fixed
+
+* fix email mapping and update git shortlog command to use mailmap ([bdbd0b2](https://github.com/addon-stack/addon-bone/commit/bdbd0b28349b9e96c38beff0b367df2e16ef822e))
+
+
+
+
+### 🧪 Tests
+
+* **content:** add comprehensive test coverage for markers ([04572f4](https://github.com/addon-stack/addon-bone/commit/04572f4feb436577b3ee1a120fb1e83277971d19))
+
+  - Added new unit tests for `WeakMarker`, `AttributeMarker`,
+    and unified `Marker` tests.
+  - Improved test specificity and coverage across different marker implementations.
+  - Removed redundant tests and refactored existing ones for clarity.
+
+* **content:** add unit tests for `AttributeMarker` functionality ([1977f8c](https://github.com/addon-stack/addon-bone/commit/1977f8c86d29fb4cc5a1a056dcb7dfeb8201505a))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** update package-lock to upgrade dependencies ([92556a6](https://github.com/addon-stack/addon-bone/commit/92556a6c02df253000c93d6660b654179dd27463))
+
+
+* **deps:** update package-lock to upgrade dependencies ([ee784b8](https://github.com/addon-stack/addon-bone/commit/ee784b802e411c8578aa90ae158c12fe7d19dcd9))
+
+
+
+
+### 🛠️ Refactoring
+
+* **content:** improve marker querying and unify unmarked handling ([d40c7e1](https://github.com/addon-stack/addon-bone/commit/d40c7e1fc1f6fcb4b019ba81f86fcd96c2c8754a))
+
+
+* **content:** remove redundant marker type validation in `Builder` ([073e69c](https://github.com/addon-stack/addon-bone/commit/073e69c21f658172302b6cf5c3b73e3a50271853))
+
+
+* **entrypoint:** enhance shorthand property type resolution and refactor methods ([d6316e9](https://github.com/addon-stack/addon-bone/commit/d6316e9f5fca308a12038c74a359ffef0371b612))
+
+  - Implemented `resolveTypeFromShorthand` for cleaner and reusable logic.
+  - Improved `SourceFile` handling for shorthand property assignments.
+  - Moved background tests to a standalone file for better test structure.
+
+* **icon:** update `getIcons` return type and migrate to `Map` usage ([b981cf5](https://github.com/addon-stack/addon-bone/commit/b981cf521b4b5f8b36639e0dba612a96489ad815))
+
 ## 🚀 Release `adnbn` v0.4.2 (2025-10-13)
 
 
