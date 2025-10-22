@@ -3,7 +3,7 @@ import AbstractMarker from "./AbstractMarker";
 import {ContentScriptAnchor, ContentScriptMarkerValue} from "@typing/content";
 
 export default class extends AbstractMarker {
-    private readonly map: WeakMap<Element, ContentScriptMarkerValue> = new WeakMap;
+    private readonly map: WeakMap<Element, ContentScriptMarkerValue> = new WeakMap();
 
     constructor(anchor?: ContentScriptAnchor) {
         super(anchor);

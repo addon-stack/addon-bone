@@ -6,7 +6,7 @@ import {
     ContentScriptDeclarative,
     ContentScriptEntrypointOptions,
     ContentScriptMarker,
-    ContentScriptMatches
+    ContentScriptMatches,
 } from "@typing/content";
 import {EntrypointFile} from "@typing/entrypoint";
 
