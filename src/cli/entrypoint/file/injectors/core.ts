@@ -1,7 +1,7 @@
 import {Command, Mode, PackageName} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {RelayMethod} from "@typing/relay";
-import {ContentScriptAppend, ContentScriptDeclarative} from "@typing/content";
+import {ContentScriptAppend, ContentScriptDeclarative, ContentScriptMarker} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
 
 import {Injector} from "../types";
@@ -49,6 +49,15 @@ export default (): Injector[] => {
         resolvers.push({
             from: PackageName,
             target: "ContentScriptAppend",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(ContentScriptMarker).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "ContentScriptMarker",
             name: key,
             value,
         });

@@ -2,7 +2,12 @@ import z from "zod";
 
 import AbstractParser from "./AbstractParser";
 
-import {ContentScriptDeclarative, ContentScriptEntrypointOptions, ContentScriptMatches} from "@typing/content";
+import {
+    ContentScriptDeclarative,
+    ContentScriptEntrypointOptions,
+    ContentScriptMarker,
+    ContentScriptMatches
+} from "@typing/content";
 import {EntrypointFile} from "@typing/entrypoint";
 
 export default class<
@@ -24,6 +29,7 @@ export default class<
             runAt: z.enum(["document_start", "document_end", "document_idle"]).optional(),
             matchOriginAsFallback: z.boolean().optional(),
             declarative: z.union([z.nativeEnum(ContentScriptDeclarative), z.boolean()]).optional(),
+            marker: z.union([z.nativeEnum(ContentScriptMarker), z.boolean()]).optional(),
         });
     }
 

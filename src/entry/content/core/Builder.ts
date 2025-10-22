@@ -15,6 +15,7 @@ import {
 import ManagedContext from "./ManagedContext";
 import EventEmitter from "./EventEmitter";
 import AttributeMarker from "./AttributeMarker";
+import WeakMarker from "./WeakMarker";
 
 import {
     ContentScriptAnchor,
@@ -85,10 +86,17 @@ export default abstract class extends Builder implements ContentScriptBuilder {
 
             if (typeof marker === "string") {
                 switch (marker) {
+                    case ContentScriptMarker.Weak:
+                        return new WeakMarker();
+
                     case ContentScriptMarker.Attribute:
                     default:
                         return new AttributeMarker();
                 }
+            }
+
+            if (typeof marker !== "object") {
+                throw new Error(`The content script marker must be either a string ("attribute" | "weak") or an object implementing ContentScriptMarkerContract. Received: "${typeof marker}".`);
             }
 
             return marker;
