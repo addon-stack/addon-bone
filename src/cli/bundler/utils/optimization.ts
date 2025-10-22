@@ -13,6 +13,7 @@ const getEntryDirs = (entry: string | string[]): string[] => {
     return entries.flatMap(v => [
         path.join("node_modules", PackageName, "dist", "entry", v),
         path.join("addonbone", "dist", "entry", v), // TODO: Only for test. Remove this
+        path.join("addon-bone", "dist", "entry", v), // TODO: Only for test. Remove this
     ]);
 };
 

@@ -32,6 +32,7 @@ export default class ExpressionFile extends SourceFile {
     private readonly objectParser: ObjectParser;
     private readonly classParser: ClassParser;
     private readonly jsDocParser: JSDocParser;
+
     constructor(filePath: string) {
         super(filePath);
 
@@ -105,6 +106,8 @@ export default class ExpressionFile extends SourceFile {
                                     // Get the return type of the method
                                     const returnType = this.getTypeFromMethodReturn(prop);
                                     if (returnType) return returnType;
+                                } else if (ts.isShorthandPropertyAssignment(prop)) {
+                                    return this.resolveTypeFromShorthand(prop.name.text);
                                 }
                             }
                         }
@@ -127,27 +130,7 @@ export default class ExpressionFile extends SourceFile {
 
                         return this.signatureBuilder.buildFunctionType(sig);
                     } else if (ts.isShorthandPropertyAssignment(prop)) {
-                        const name = prop.name.text;
-                        const variable = this.getVariables().get(name);
-
-                        if (variable) {
-                            const val = variable.value;
-                            switch (typeof val) {
-                                case "string":
-                                    return "string";
-                                case "number":
-                                    return "number";
-                                case "boolean":
-                                    return "boolean";
-                                case "object":
-                                    if (val === null) return "null";
-                                    if (Array.isArray(val)) return "array";
-                                    return "object";
-                                default:
-                                    return "any";
-                            }
-                        }
-                        return "any";
+                        return this.resolveTypeFromShorthand(prop.name.text);
                     }
                 }
                 return undefined;
@@ -298,13 +281,38 @@ export default class ExpressionFile extends SourceFile {
             return this.signatureBuilder.formatMembers(members);
         }
 
-        // For literals or other expressions, infer a simple type
         if (ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node)) {
             return this.objectParser.inferTypeFromExpression(node as ts.Expression);
         }
 
-        // Fallback: undefined
         return undefined;
+    }
+
+    private resolveTypeFromShorthand(name: string): string | undefined {
+        const varDecl = this.nodeFinder.findVariableDeclaration(name);
+        if (varDecl && varDecl.initializer) {
+            const t = this.getTypeFromInitializer(varDecl.initializer);
+            if (t) return t;
+        }
+        const variable = this.getVariables().get(name);
+        if (variable) {
+            const val = variable.value;
+            switch (typeof val) {
+                case "string":
+                    return "string";
+                case "number":
+                    return "number";
+                case "boolean":
+                    return "boolean";
+                case "object":
+                    if (val === null) return "null";
+                    if (Array.isArray(val)) return "array";
+                    return "object";
+                default:
+                    return "any";
+            }
+        }
+        return "any";
     }
 
     /**

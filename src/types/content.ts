@@ -103,7 +103,54 @@ export interface ContentScriptProps extends ContentScriptEntrypointOptions {
 // Anchor
 export type ContentScriptAnchor = string | Element | null | undefined;
 export type ContentScriptAnchorGetter = () => Awaiter<ContentScriptAnchor>;
-export type ContentScriptAnchorResolver = () => Awaiter<Element[]>;
+
+// Marker
+export enum ContentScriptMarker {
+    /** In-memory marking (no DOM mutations). */
+    Weak = "weak",
+    /** DOM attribute-based marking. */
+    Attribute = "attribute",
+}
+
+export enum ContentScriptMarkerValue {
+    Mounted = "1",
+    Unmounted = "0",
+}
+
+export interface ContentScriptMarkerContract {
+    for(anchor: ContentScriptAnchor): ContentScriptMarkerContract;
+
+    /**
+     * Returns elements that are not tracked yet (no marker attribute present).
+     * MUST NOT mutate marker state.
+     */
+    unmarked(): Element[];
+
+    marked(): Element[];
+
+    mark(element: Element, value: ContentScriptMarkerValue): boolean;
+
+    unmark(element: Element): boolean;
+
+    isMarked(element: Element): boolean;
+
+    value(element: Element): ContentScriptMarkerValue | undefined;
+
+    mount(element: Element): boolean;
+
+    unmount(element: Element): boolean;
+
+    reset(): ContentScriptMarkerContract;
+}
+
+export type ContentScriptMarkerType =
+    | ContentScriptMarker
+    | `${ContentScriptMarker}`
+    | ContentScriptMarkerContract
+    | undefined;
+
+export type ContentScriptMarkerGetter = (options: ContentScriptOptions) => Awaiter<ContentScriptMarkerType>;
+export type ContentScriptMarkerResolver = (options: ContentScriptOptions) => Awaiter<ContentScriptMarkerContract>;
 
 // Render
 export type ContentScriptRenderReactComponent = FC<ContentScriptProps>;
@@ -193,6 +240,7 @@ export type ContentScriptNodeSet = Set<ContentScriptNode>;
 
 // Definition
 export interface ContentScriptDefinition extends ContentScriptEntrypointOptions {
+    marker?: ContentScriptMarkerType | ContentScriptMarkerGetter;
     anchor?: ContentScriptAnchor | ContentScriptAnchorGetter;
     mount?: ContentScriptMountFunction;
     render?: ContentScriptRenderValue | ContentScriptRenderHandler;
@@ -202,8 +250,9 @@ export interface ContentScriptDefinition extends ContentScriptEntrypointOptions 
 }
 
 // prettier-ignore
-export interface ContentScriptResolvedDefinition extends Omit<ContentScriptDefinition, "anchor" | "mount" | "container" | "render" | "watch"> {
-    anchor: ContentScriptAnchorResolver;
+export interface ContentScriptResolvedDefinition extends Omit<ContentScriptDefinition, "anchor" | "marker" | "mount" | "container" | "render" | "watch"> {
+    marker: ContentScriptMarkerResolver;
+    anchor: ContentScriptAnchorGetter;
     mount: ContentScriptMountFunction;
     render?: ContentScriptRenderHandler;
     container: ContentScriptContainerCreator;

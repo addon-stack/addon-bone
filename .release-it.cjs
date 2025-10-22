@@ -34,7 +34,7 @@ function getContributors() {
         }
 
         const range = fromTag ? `${fromTag}..HEAD` : "";
-        const cmd = `git shortlog -sne ${range}`.trim();
+        const cmd = `git shortlog --use-mailmap -sne ${range}`.trim();
         const out = execSync(cmd, {encoding: "utf8"}).trim();
 
         if (!out) {
