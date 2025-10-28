@@ -1,5 +1,26 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.1 (2025-10-28)
+
+
+### 🐛 Bug Fixed
+
+* **Message:** remove unsupported `documentId` option in sendTabMessage for Firefox ([07a2599](https://github.com/addon-stack/addon-bone/commit/07a259996d5f55a4ca3d3c3de11683e630d98b56))
+
+
+
+
+### 🧪 Tests
+
+* **Message:** add `documentId` support in sendTabMessage with Firefox handling ([7d41a73](https://github.com/addon-stack/addon-bone/commit/7d41a73a0185322c4c523eaa7899d0be7a0c65cf))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** remove unused `@types/validator` dependency from package.json ([c5745a5](https://github.com/addon-stack/addon-bone/commit/c5745a57be108941ff0c6e890a5f951a722f82da))
+
 ## 🚀 Release `adnbn` v0.5.0 (2025-10-22)
 
 
