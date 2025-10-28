@@ -84,3 +84,8 @@ jest.mock(
     },
     {virtual: true}
 );
+
+jest.mock("@main/env", () => ({
+    ...jest.requireActual("@main/env"),
+    isBrowser: jest.fn().mockReturnValue(false),
+}));
