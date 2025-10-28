@@ -1,4 +1,5 @@
 import Message from "./Message";
+import * as env from "@main/env";
 
 type MessageMap = {
     getStringLength: (data: string) => number;
@@ -8,6 +9,7 @@ type MessageMap = {
 };
 
 let message: Message<MessageMap>;
+const mockedEnv = env as jest.Mocked<typeof env>;
 
 beforeEach(async () => {
     jest.clearAllMocks();
@@ -140,10 +142,26 @@ describe("send method", () => {
         expect(result).toBe(4);
     });
 
-    test("sends a message to tab when options is a object with tabId and frameId", async () => {
+    test("sends a message to tab when options is a object with tabId, frameId and documentId", async () => {
         message.watch("getStringLength", str => str.length);
 
-        const result = await message.send("getStringLength", "test", {tabId: 123, frameId: 1});
+        const result = await message.send("getStringLength", "test", {tabId: 123, frameId: 1, documentId: "1"});
+
+        expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
+            123,
+            expect.objectContaining({type: "getStringLength", data: "test"}),
+            {frameId: 1, documentId: "1"},
+            expect.any(Function)
+        );
+        expect(result).toBe(4);
+    });
+
+    test("sends a message to tab when options is a object with tabId, frameId and documentId in Firefox", async () => {
+        mockedEnv.isBrowser.mockReturnValue(true);
+
+        message.watch("getStringLength", str => str.length);
+
+        const result = await message.send("getStringLength", "test", {tabId: 123, frameId: 1, documentId: "1"});
 
         expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
             123,
