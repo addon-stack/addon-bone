@@ -1,5 +1,7 @@
 import {sendMessage, sendTabMessage} from "@addon-core/browser";
 
+import {isBrowser} from "@main/env";
+
 import {
     MessageData,
     MessageDictionary,
@@ -11,6 +13,7 @@ import {
     MessageTargetHandler,
     MessageType,
 } from "@typing/message";
+import {Browser} from "@typing/browser";
 
 import AbstractMessage from "./AbstractMessage";
 import MessageManager from "../MessageManager";
@@ -41,6 +44,10 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
             }
 
             const {tabId, ...other} = options;
+
+            if (isBrowser(Browser.Firefox)) {
+                delete other.documentId;
+            }
 
             return sendTabMessage(tabId, message, other);
         }

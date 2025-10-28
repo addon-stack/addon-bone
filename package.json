@@ -168,7 +168,6 @@
     "@types/pluralize": "^0.0.33",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
-    "@types/validator": "^13.15.1",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
     "esbuild": "^0.25.10",
