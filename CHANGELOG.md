@@ -1,5 +1,40 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.2 (2025-11-10)
+
+
+### 🐛 Bug Fixed
+
+* **cli:** set default DOTENV_LOG level to 'error' instead of 'none' ([2ff78be](https://github.com/addon-stack/addon-bone/commit/2ff78bef7dd4919c459adaefc0d607727943e816))
+
+
+
+
+### 🧹 Chores
+
+* **plugins:** standardize plugin export names for consistency ([fc2cb55](https://github.com/addon-stack/addon-bone/commit/fc2cb554787523aec786ffc83700db20a2e6cb94))
+
+
+
+
+### 🛠️ Refactoring
+
+* **dotenv:** remove encryption/decryption logic and simplify env handling ([9af389f](https://github.com/addon-stack/addon-bone/commit/9af389fbba53457e32c32ee23b27cbb4cd92c834))
+
+  - Deleted `crypt.ts` module and associated tests.
+  - Removed references to encryption/decryption in dotenv utils and plugins.
+  - Simplified `resolveEnvOptions` to eliminate `crypt` flag handling.
+  - Updated tests to reflect the removal of encryption-related logic.
+  - Renamed `ReservedEnvKeys` to `EnvReservedKeys` for consistency.
+
+* **meta:** remove `Email` plugin and implement `SpecificSettings` plugin ([82db540](https://github.com/addon-stack/addon-bone/commit/82db540f1a5def467e6685ece71a0b0f22cd7d53))
+
+  - Deleted `Email` metadata plugin and its associated tests.
+  - Added `SpecificSettings` plugin to handle browser-specific configurations.
+  - Updated manifest builder to support `browser_specific_settings` via `SpecificSettings`.
+  - Enhanced typing schemas to include `BrowserSpecific` definitions.
+  - Refactored related code and tests to incorporate new plugin and remove redundant logic.
+
 ## 🚀 Release `adnbn` v0.5.1 (2025-10-28)
 
 
