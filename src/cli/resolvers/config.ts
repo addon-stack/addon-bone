@@ -4,27 +4,27 @@ import {loadConfig} from "c12";
 import _ from "lodash";
 
 import {
-    assetPlugin,
-    backgroundPlugin,
-    bundlerPlugin,
-    contentPlugin,
-    dotenvPlugin,
-    htmlPlugin,
-    iconPlugin,
-    localePlugin,
-    metaPlugin,
-    offscreenPlugin,
-    optimizationPlugin,
-    outputPlugin,
-    pagePlugin,
-    popupPlugin,
-    publicPlugin,
-    reactPlugin,
-    sidebarPlugin,
-    stylePlugin,
-    typescriptPlugin,
-    versionPlugin,
-    viewPlugin,
+    pluginAsset,
+    pluginBackground,
+    pluginBundler,
+    pluginContent,
+    pluginDotenv,
+    pluginHtml,
+    pluginIcon,
+    pluginLocale,
+    pluginMeta,
+    pluginOffscreen,
+    pluginOptimization,
+    pluginOutput,
+    pluginPage,
+    pluginPopup,
+    pluginPublic,
+    pluginReact,
+    pluginSidebar,
+    pluginStyle,
+    pluginTypescript,
+    pluginVersion,
+    pluginView,
 } from "../plugins";
 
 import {fromRootPath, getAppPath, getAppSourcePath, getConfigFile} from "../resolvers/path";
@@ -136,7 +136,7 @@ const updateLocalDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
 const loadDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
     const {mode, browser, debug} = config;
 
-    process.env.DOTENV_LOG = debug ? "debug" : "error";
+    process.env.DOTENV_LOG = debug ? "debug" : "none";
 
     if (!debug) {
         process.env.DOTENV_CONFIG_SILENT = "true";
@@ -311,27 +311,27 @@ export default async (config: OptionalConfig): Promise<Config> => {
      * Reordering may result in missing artifacts, incorrect configuration, or build failures.
      */
     const corePlugins: Plugin[] = [
-        dotenvPlugin(vars),
-        outputPlugin(),
-        optimizationPlugin(),
-        typescriptPlugin(),
-        reactPlugin(),
-        iconPlugin(),
-        assetPlugin(),
-        stylePlugin(),
-        localePlugin(),
-        metaPlugin(),
-        contentPlugin(),
-        backgroundPlugin(),
-        popupPlugin(),
-        publicPlugin(),
-        sidebarPlugin(),
-        offscreenPlugin(),
-        pagePlugin(),
-        viewPlugin(),
-        htmlPlugin(),
-        versionPlugin(),
-        bundlerPlugin(),
+        pluginDotenv(vars),
+        pluginOutput(),
+        pluginOptimization(),
+        pluginTypescript(),
+        pluginReact(),
+        pluginIcon(),
+        pluginAsset(),
+        pluginStyle(),
+        pluginLocale(),
+        pluginMeta(),
+        pluginContent(),
+        pluginBackground(),
+        pluginPopup(),
+        pluginPublic(),
+        pluginSidebar(),
+        pluginOffscreen(),
+        pluginPage(),
+        pluginView(),
+        pluginHtml(),
+        pluginVersion(),
+        pluginBundler(),
     ];
 
     return {
