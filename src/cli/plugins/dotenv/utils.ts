@@ -1,25 +1,23 @@
 import _ from "lodash";
-import {EnvFilterFunction, EnvFilterOptions, EnvFilterVariant, ReservedEnvKeys} from "@typing/env";
+import {EnvFilterFunction, EnvFilterOptions, EnvFilterVariant, EnvReservedKeys} from "@typing/env";
 
 export type EnvOption = EnvFilterVariant | Partial<EnvFilterOptions>;
 
-export const resolveEnvOptions = (option?: EnvOption): {filter: EnvFilterFunction; crypt: boolean} => {
+export const resolveEnvOptions = (option?: EnvOption): {filter: EnvFilterFunction} => {
     let userFilter: EnvFilterVariant | undefined;
-    let crypt: boolean = false;
 
     if (_.isString(option)) {
         userFilter = option;
     } else if (_.isFunction(option)) {
         userFilter = option;
     } else if (option && _.isObject(option)) {
-        const {filter: f, crypt: c} = option as Partial<EnvFilterOptions>;
+        const {filter: f} = option as Partial<EnvFilterOptions>;
 
         userFilter = f;
-        crypt = Boolean(c);
     }
 
     const filter = (key: string): boolean => {
-        if (ReservedEnvKeys.has(key)) {
+        if (EnvReservedKeys.has(key)) {
             return true;
         }
 
@@ -34,7 +32,7 @@ export const resolveEnvOptions = (option?: EnvOption): {filter: EnvFilterFunctio
         return true;
     };
 
-    return {filter, crypt};
+    return {filter};
 };
 
 export const filterEnvVars = <T extends Record<string, any>>(vars: T, filter: EnvFilterFunction): Partial<T> => {

@@ -1,5 +1,5 @@
 import {filterEnvVars, resolveEnvOptions} from "./utils";
-import {ReservedEnvKeys} from "../../../types/env";
+import {EnvReservedKeys} from "../../../types/env";
 
 const baseVars = {
     APP: "myapp",
@@ -38,9 +38,9 @@ describe("dotenv utils - filterEnvVars & resolveEnvOptions", () => {
         });
     });
 
-    test("object with filter and crypt true - filter selection plus crypt flag detection", () => {
+    test("object with filter true - filter selection flag detection", () => {
         const option = {filter: "PUBLIC_", crypt: true} as const;
-        const {filter, crypt} = resolveEnvOptions(option);
+        const {filter} = resolveEnvOptions(option);
         const filtered = filterEnvVars(baseVars, filter);
         expect(filtered).toEqual({
             APP: baseVars.APP,
@@ -50,8 +50,6 @@ describe("dotenv utils - filterEnvVars & resolveEnvOptions", () => {
             PUBLIC_API_URL: baseVars.PUBLIC_API_URL,
             PUBLIC_FEATURE: baseVars.PUBLIC_FEATURE,
         });
-
-        expect(crypt).toBe(true);
     });
 
     test("empty string filter results in all keys", () => {
@@ -71,7 +69,7 @@ describe("dotenv utils - filterEnvVars & resolveEnvOptions", () => {
         const {filter} = resolveEnvOptions(() => false);
         const filtered = filterEnvVars(baseVars, filter);
         const expected: any = {};
-        for (const key of ReservedEnvKeys) expected[key] = (baseVars as any)[key];
+        for (const key of EnvReservedKeys) expected[key] = (baseVars as any)[key];
         expect(filtered).toEqual(expected);
     });
 
