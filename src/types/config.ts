@@ -2,7 +2,7 @@ import type {Configuration as RspackConfig, Filename} from "@rspack/core";
 import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
 import {Command, Mode} from "@typing/app";
-import {Browser} from "@typing/browser";
+import {Browser, BrowserSpecific} from "@typing/browser";
 import {ManifestIncognitoValue, ManifestVersion} from "@typing/manifest";
 import {Plugin} from "@typing/plugin";
 import {Language} from "@typing/locale";
@@ -10,8 +10,9 @@ import {Awaiter} from "@typing/helpers";
 import {EnvFilterOptions, EnvFilterVariant} from "@typing/env";
 
 /**
- * Configuration object for defining various settings and build parameters
- * for an extension application.
+ * Configuration options for building a browser extension. This interface defines
+ * all the properties required to customize the build process, extension metadata,
+ * file structure, and other build-related settings.
  */
 export interface Config {
     /**
@@ -151,15 +152,17 @@ export interface Config {
     icon: string;
 
     /**
-     * Used for Firefox under `browser_specific_settings.gecko.id`,
-     * but only if the "storage" permission is declared.
-     * Can be either:
-     * - a valid email
-     * - a function that returns the email
+     * Browser-specific settings (populate manifest.browser_specific_settings).
      *
-     * @default EMAIL
+     * Two forms are supported:
+     * - object — fixed values for browsers (e.g., gecko, safari);
+     * - function — lazy evaluation at build time; if it returns undefined, the field is omitted.
+     *
+     * Examples:
+     * - { gecko: { id: "addon@example.com", strictMinVersion: "109.0" } }
+     * - () => ({ gecko: { id: "addon@example.com" } })
      */
-    email: string | (() => string | undefined);
+    specific?: BrowserSpecific | (() => BrowserSpecific | undefined);
 
     /**
      * Used to specify how this extension will behave in incognito mode
