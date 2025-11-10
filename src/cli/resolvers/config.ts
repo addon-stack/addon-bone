@@ -136,7 +136,7 @@ const updateLocalDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
 const loadDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
     const {mode, browser, debug} = config;
 
-    process.env.DOTENV_LOG = debug ? "debug" : "none";
+    process.env.DOTENV_LOG = debug ? "debug" : "error";
 
     if (!debug) {
         process.env.DOTENV_CONFIG_SILENT = "true";
