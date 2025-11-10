@@ -2,6 +2,7 @@ import {ContentScriptConfig} from "@typing/content";
 import {BackgroundConfig} from "@typing/background";
 import {CommandConfig} from "@typing/command";
 import {Language} from "@typing/locale";
+import {BrowserSpecific} from "@typing/browser";
 
 type ManifestCommon = chrome.runtime.Manifest;
 type ManifestBase = chrome.runtime.ManifestBase;
@@ -86,8 +87,6 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     setDescription(description?: string): this;
 
-    setEmail(email?: string): this;
-
     setAuthor(author?: string): this;
 
     setHomepage(homepage?: string): this;
@@ -99,6 +98,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setMinimumVersion(minimumVersion?: string): this;
 
     setLocale(lang?: Language): this;
+
+    setSpecific(settings?: BrowserSpecific): this;
 
     // Icons
     setIcons(icons?: ManifestIcons): this;

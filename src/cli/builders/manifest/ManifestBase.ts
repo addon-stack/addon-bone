@@ -1,8 +1,9 @@
+import _ from "lodash";
+
 import {mergeWebAccessibleResources} from "./utils";
 
 import {
     CoreManifest,
-    FirefoxManifest,
     Manifest,
     ManifestAccessibleResource,
     ManifestAccessibleResources,
@@ -14,13 +15,13 @@ import {
     ManifestHostPermissions,
     ManifestIcons,
     ManifestIncognito,
-    ManifestPermissions,
     ManifestOptionalPermissions,
+    ManifestPermissions,
     ManifestPopup,
     ManifestSidebar,
     ManifestVersion,
 } from "@typing/manifest";
-import {Browser} from "@typing/browser";
+import {Browser, BrowserSpecific} from "@typing/browser";
 import {Language} from "@typing/locale";
 import {CommandExecuteActionName} from "@typing/command";
 import {DefaultIconGroupName} from "@typing/icon";
@@ -40,7 +41,6 @@ export class ManifestError extends Error {
 
 export default abstract class<T extends CoreManifest> implements ManifestBuilder<T> {
     protected name: string = "__MSG_app_name__";
-    protected email?: string;
     protected author?: string;
     protected homepage?: string;
     protected shortName?: string;
@@ -49,6 +49,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected version: string = "0.0.0";
     protected icon?: string;
     protected incognito?: ManifestIncognito;
+    protected specific?: BrowserSpecific;
     protected locale?: Language;
     protected icons: ManifestIcons = new Map();
     protected background?: ManifestBackground;
@@ -91,12 +92,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
-    public setEmail(email?: string): this {
-        this.email = email;
-
-        return this;
-    }
-
     public setName(name: string): this {
         this.name = name;
 
@@ -135,6 +130,12 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public setIncognito(incognito?: ManifestIncognito): this {
         this.incognito = incognito;
+
+        return this;
+    }
+
+    public setSpecific(settings?: BrowserSpecific): this {
+        this.specific = settings;
 
         return this;
     }
@@ -464,13 +465,52 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         }
     }
 
-    protected buildBrowserSpecificSettings(): Partial<FirefoxManifest> | undefined {
-        if (this.browser === Browser.Firefox && this.email && this.permissions.has("storage")) {
+    protected buildBrowserSpecificSettings(): Partial<Manifest> | undefined {
+        const settings = this.specific || {};
+        const {safari, gecko, geckoAndroid} = settings;
+
+        if (this.browser === Browser.Firefox) {
+            const emptyGecko =
+                _.isEmpty(gecko?.id) &&
+                _.isEmpty(gecko?.strictMinVersion) &&
+                _.isEmpty(gecko?.strictMaxVersion) &&
+                _.isEmpty(gecko?.updateUrl);
+
+            const emptyGeckoAndroid =
+                _.isEmpty(geckoAndroid?.strictMinVersion) && _.isEmpty(geckoAndroid?.strictMaxVersion);
+
+            if (emptyGecko && emptyGeckoAndroid) {
+                return;
+            }
+
             return {
                 browser_specific_settings: {
-                    gecko: {
-                        id: this.email,
-                        // strict_min_version: this.minimumVersion,
+                    gecko: emptyGecko
+                        ? undefined
+                        : {
+                              id: gecko?.id,
+                              strict_min_version: gecko?.strictMinVersion,
+                              strict_max_version: gecko?.strictMaxVersion,
+                              update_url: gecko?.updateUrl,
+                          },
+                    gecko_android: emptyGeckoAndroid
+                        ? undefined
+                        : {
+                              strict_min_version: geckoAndroid?.strictMinVersion,
+                              strict_max_version: geckoAndroid?.strictMaxVersion,
+                          },
+                },
+            };
+        } else if (this.browser === Browser.Safari) {
+            if (_.isEmpty(safari?.strictMinVersion) && _.isEmpty(safari?.strictMaxVersion)) {
+                return;
+            }
+
+            return {
+                browser_specific_settings: {
+                    safari: {
+                        strict_min_version: safari?.strictMinVersion,
+                        strict_max_version: safari?.strictMaxVersion,
                     },
                 },
             };

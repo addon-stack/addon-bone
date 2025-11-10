@@ -6,7 +6,7 @@ import type {ReadonlyConfig} from "@typing/config";
 
 const urlSchema = z.string().url();
 
-export default class extends AbstractMeta {
+export default class extends AbstractMeta<string> {
     public constructor(config: ReadonlyConfig) {
         super(config);
     }
@@ -15,7 +15,7 @@ export default class extends AbstractMeta {
         return this.config.homepage;
     }
 
-    protected isValid(value?: string): boolean {
+    protected isValid(value?: unknown): value is string {
         return urlSchema.safeParse(value).success;
     }
 }
