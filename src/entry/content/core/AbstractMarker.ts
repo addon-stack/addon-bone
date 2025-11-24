@@ -65,7 +65,7 @@ export default abstract class implements ContentScriptMarkerContract {
 
             return this.querySelector(anchor, marked);
         } catch (e) {
-            console.error(`Invalid anchor format. Expected a valid string (CSS selector/XPath)\n\n`, e);
+            console.error("Invalid anchor format. Expected a valid string (CSS selector/XPath)", e);
 
             return [];
         }
