@@ -1,7 +1,6 @@
 import _ from "lodash";
 import path from "path";
 import fs from "fs";
-import {createHash} from "crypto";
 import {Configuration as RspackConfig, CssExtractRspackPlugin, RuleSetUse, RuleSetUseItem} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
@@ -63,6 +62,7 @@ export default definePlugin(() => {
             const {app, cssDir, cssFilename, cssIdentName, mergeStyles} = config;
 
             const filename = appFilenameResolver(app, cssFilename, cssDir);
+            const kebabApp = _.kebabCase(app);
 
             const createSassRuleSet = (rule: RuleSetUseItem): RuleSetUse => {
                 const rules: RuleSetUse = [CssExtractRspackPlugin.loader, rule, "sass-loader"];
@@ -113,8 +113,8 @@ export default definePlugin(() => {
                                             modules: {
                                                 exportLocalsConvention: "as-is",
                                                 namedExport: false,
-                                                localIdentName: cssIdentName.replaceAll("[app]", _.kebabCase(app)),
-                                                localIdentHashSalt: createHash("sha256").update(app).digest("hex"),
+                                                localIdentName: cssIdentName.replaceAll("[app]", kebabApp),
+                                                localIdentHashSalt: kebabApp,
                                             },
                                         },
                                     }),

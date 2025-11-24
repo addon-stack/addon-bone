@@ -1,5 +1,6 @@
 import _ from "lodash";
 import {Configuration as RspackConfig, NormalModule} from "@rspack/core";
+import {merge as mergeConfig} from "webpack-merge";
 
 import {definePlugin} from "@main/plugin";
 
@@ -9,16 +10,25 @@ export default definePlugin(() => {
     return {
         name: "adnbn:optimization",
         bundler: ({config}) => {
+            const rspack: RspackConfig = {
+                optimization: {
+                    moduleIds: "deterministic",
+                    chunkIds: "deterministic",
+                    mangleExports: "deterministic",
+                },
+            };
+
             if (!config.commonChunks) {
-                return {};
+                return rspack;
             }
 
-            return {
+            return mergeConfig(rspack, {
                 optimization: {
                     usedExports: true,
                     providedExports: true,
                     splitChunks: {
-                        minSize: 10,
+                        chunks: "all",
+                        minSize: 20000,
                         cacheGroups: {
                             default: false,
                             defaultVendors: false,
@@ -40,13 +50,14 @@ export default definePlugin(() => {
                                     return `${entryNames.join("-")}.${cacheGroupKey}`;
                                 },
                                 minChunks: 2,
+                                enforce: true,
                                 priority: -10,
                                 reuseExistingChunk: true,
                             },
                         },
                     },
                 },
-            } satisfies RspackConfig;
+            });
         },
     };
 });
