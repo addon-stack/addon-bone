@@ -169,13 +169,16 @@ module.exports = () => {
                 },
 
                 recommendedBump: true,
-                whatBump: (commits) => {
+                whatBump: commits => {
                     let isMajor = false;
                     let isMinor = false;
                     let isPatch = false;
 
                     for (const commit of commits) {
-                        const hasBreaking = Boolean(commit.breaking) || (commit.notes && commit.notes.some(n => /BREAKING[ -]CHANGE/i.test(n.title || n.text || "")));
+                        const hasBreaking =
+                            Boolean(commit.breaking) ||
+                            (commit.notes &&
+                                commit.notes.some(n => /BREAKING[ -]CHANGE/i.test(n.title || n.text || "")));
                         if (hasBreaking) {
                             isMajor = true;
                             break;
