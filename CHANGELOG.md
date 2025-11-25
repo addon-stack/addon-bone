@@ -1,5 +1,43 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.3 (2025-11-25)
+
+
+### 🐛 Bug Fixed
+
+* **config:** format `whatBump` logic for readability and maintainability ([90dc51d](https://github.com/addon-stack/addon-bone/commit/90dc51d4686770af9697e5693e1aacee577d2bb0))
+
+
+* enhance release rules and bump logic for semantic versioning ([d99f6fc](https://github.com/addon-stack/addon-bone/commit/d99f6fcbd0f42d3e181c06ab10bb185a089ff7dd))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** update `c12` and `@rsdoctor/rspack-plugin` to latest versions ([addae18](https://github.com/addon-stack/addon-bone/commit/addae18643c037d307f393f5a78348e3ba67b7be))
+
+
+* **deps:** update package-lock to upgrade dependencies ([76e0b1e](https://github.com/addon-stack/addon-bone/commit/76e0b1e26442633899b8911f8f493dcf344b945b))
+
+
+
+
+### 🛠️ Refactoring
+
+* **config:** improve output, optimization, and style plugin configurations ([f0a07d5](https://github.com/addon-stack/addon-bone/commit/f0a07d5008569bf3b097f15d2c117f5842ae97c6))
+
+
+* **content:** improve content manager handling and add comprehensive utils tests ([4cead1a](https://github.com/addon-stack/addon-bone/commit/4cead1adb3890ee672bc08097de0b9a165f39769))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 8
+
 ## 🚀 Release `adnbn` v0.5.2 (2025-11-10)
 
 
