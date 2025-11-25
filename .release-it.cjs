@@ -34,7 +34,7 @@ function getContributors() {
         }
 
         const range = fromTag ? `${fromTag}..HEAD` : "";
-        const cmd = `git shortlog --use-mailmap -sne ${range}`.trim();
+        const cmd = `git shortlog -sne ${range}`.trim();
         const out = execSync(cmd, {encoding: "utf8"}).trim();
 
         if (!out) {
@@ -151,6 +151,14 @@ module.exports = () => {
 
                 presetConfig: {
                     types: [...types.entries()].map(([type, section]) => ({type, section, hidden: false})),
+                    releaseRules: [
+                        {breaking: true, release: "major"},
+                        {type: "feat", release: "minor"},
+                        {type: "fix", release: "patch"},
+                        {type: "perf", release: "patch"},
+                        {type: "refactor", release: "patch"},
+                        {type: "ci", release: "patch"},
+                    ],
                 },
 
                 context: {
@@ -160,36 +168,38 @@ module.exports = () => {
                     contributors,
                 },
 
-                recommendedBumpOpts: {
-                    preset: "conventionalcommits",
-                    whatBump: commits => {
-                        let isMajor = false;
-                        let isMinor = false;
-                        let isPatch = false;
+                recommendedBump: true,
+                whatBump: commits => {
+                    let isMajor = false;
+                    let isMinor = false;
+                    let isPatch = false;
 
-                        for (const commit of commits) {
-                            if (commit.notes?.some(n => /BREAKING CHANGE/i.test(n.title || n.text || ""))) {
-                                isMajor = true;
-                                break;
-                            }
-
-                            const type = (commit.type || "").toLowerCase();
-
-                            if (type === "feat") {
-                                isMinor = true;
-                            }
-
-                            if (["fix", "perf", "refactor", "ci"].includes(type)) {
-                                isPatch = true;
-                            }
+                    for (const commit of commits) {
+                        const hasBreaking =
+                            Boolean(commit.breaking) ||
+                            (commit.notes &&
+                                commit.notes.some(n => /BREAKING[ -]CHANGE/i.test(n.title || n.text || "")));
+                        if (hasBreaking) {
+                            isMajor = true;
+                            break;
                         }
 
-                        if (isMajor) return {level: 0};
-                        if (isMinor) return {level: 1};
-                        if (isPatch) return {level: 2};
+                        const type = (commit.type || "").toLowerCase().replace(/!+$/, "");
 
-                        return null;
-                    },
+                        if (type === "feat") {
+                            isMinor = true;
+                        }
+
+                        if (["fix", "perf", "refactor", "ci"].includes(type)) {
+                            isPatch = true;
+                        }
+                    }
+
+                    if (isMajor) return {level: 0};
+                    if (isMinor) return {level: 1};
+                    if (isPatch) return {level: 2};
+
+                    return null;
                 },
                 writerOpts: {
                     headerPartial:
