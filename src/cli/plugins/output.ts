@@ -24,6 +24,7 @@ export default definePlugin(() => {
                     path: getResolvePath(getOutputPath(config)),
                     filename,
                     chunkFilename: filename,
+                    hashSalt: kebabApp,
                     hotUpdateGlobal: camelApp + "HotUpdate",
                     chunkLoadingGlobal: camelApp + "ChunkLoading",
                     uniqueName: kebabApp,
