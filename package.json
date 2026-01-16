@@ -206,6 +206,7 @@
     }
   },
   "overrides": {
+    "jsdom": "27.4.0",
     "html-rspack-tags-plugin": {
       "glob": "^10.4.1"
     },
