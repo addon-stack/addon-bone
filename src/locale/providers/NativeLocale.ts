@@ -1,13 +1,10 @@
-import {getI18nMessage, getI18nUILanguage} from "@addon-core/browser";
+import {getI18nMessage} from "@addon-core/browser";
 
 import AbstractLocale from "./AbstractLocale";
 
-import {convertLocaleKey} from "@locale/utils";
+import {convertLocaleKey, normalizeLocale} from "@locale/utils";
 
-import {isBrowser} from "@main/env";
-
-import {Language, LanguageCodes, LocaleCustomKeyForLanguage, LocaleProvider, LocaleStructure} from "@typing/locale";
-import {Browser} from "@typing/browser";
+import {Language, LocaleCustomKeyForLanguage, LocaleProvider, LocaleStructure} from "@typing/locale";
 
 export interface LocaleNativeStructure extends LocaleStructure {}
 
@@ -18,29 +15,31 @@ export default class NativeLocale extends AbstractLocale<LocaleNativeStructure> 
         return (NativeLocale.instance ??= new NativeLocale());
     }
 
-    public lang(): Language {
-        let lang: Language | undefined;
+    private readonly language?: Language;
 
-        /**
-         * The Opera browser does not support RTL languages,
-         * and for Opera you need to directly indicate what kind of language it is.
-         * interface language is always different
-         */
-        if (isBrowser(Browser.Opera)) {
-            lang = getI18nMessage(LocaleCustomKeyForLanguage) as Language;
+    constructor() {
+        super();
 
-            if (LanguageCodes.has(lang)) {
-                return lang;
-            }
-        }
-
-        lang = getI18nUILanguage() as Language;
+        const localeLang = getI18nMessage(LocaleCustomKeyForLanguage);
+        const lang = normalizeLocale(localeLang);
 
         if (!lang) {
+            console.warn(`Locale Native: Language "${localeLang}" is not supported yet by framework`);
+        }
+
+        if (localeLang && lang && localeLang !== lang) {
+            console.info(`Locale Native: Instead of "${localeLang}" language, "${lang}" is used`);
+        }
+
+        this.language = lang;
+    }
+
+    public lang(): Language {
+        if (!this.language) {
             throw new Error("Locale Native: Unable to get UI language");
         }
 
-        return lang;
+        return this.language;
     }
 
     public keys(): Set<keyof LocaleNativeStructure> {

@@ -43,15 +43,8 @@ export default class LocaleBuilder implements LocaleBuilderContract {
             }
         }
 
-        if (this.browser === Browser.Opera) {
-            /**
-             * The Opera browser does not support RTL languages,
-             * and for Opera you need to directly indicate what kind of language it is.
-             * interface language is always different
-             */
-
-            items.set(LocaleCustomKeyForLanguage, this.language);
-        }
+        // To accurately determine the language that the browser has detected
+        items.set(LocaleCustomKeyForLanguage, this.language);
 
         return (this.items = items);
     }
