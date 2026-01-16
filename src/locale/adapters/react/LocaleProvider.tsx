@@ -30,6 +30,7 @@ const LocaleProvider = ({children, storage}: PropsWithChildren<LocaleProviderPro
     }, []);
 
     useEffect(() => {
+        // TODO: Handle potential errors and edge cases when setting HTML attributes
         const html = document.querySelector("html");
 
         html?.setAttribute("lang", lang);
