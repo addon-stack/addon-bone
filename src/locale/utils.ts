@@ -1,5 +1,6 @@
 import {
     Language,
+    LanguageCodes,
     LocaleDir,
     LocaleKeyMarker,
     LocaleKeysSeparator,
@@ -54,4 +55,18 @@ export const getLocaleDir = (lang: Language): LocaleDir => {
 
 export const flattenLocaleMessages = (messages: LocaleMessages): Record<string, string> => {
     return Object.fromEntries(Object.entries(messages).map(([key, value]) => [key, value.message]));
+};
+
+export const resolveLanguage = (language?: string): Language | undefined => {
+    if (!language) {
+        return undefined;
+    }
+
+    if (LanguageCodes.has(language as Language)) {
+        return language as Language;
+    }
+
+    const shortLang = language.slice(0, 2) as Language;
+
+    return LanguageCodes.has(shortLang) ? shortLang : undefined;
 };

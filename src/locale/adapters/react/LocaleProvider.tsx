@@ -10,9 +10,10 @@ import {Language} from "@typing/locale";
 
 export interface LocaleProviderProps {
     storage?: string | false;
+    container?: string | Element | false;
 }
 
-const LocaleProvider = ({children, storage}: PropsWithChildren<LocaleProviderProps>) => {
+const LocaleProvider = ({children, storage, container = "html"}: PropsWithChildren<LocaleProviderProps>) => {
     const locale = useMemo(() => new DynamicLocale(storage), []);
 
     const [lang, setLang] = useState<Language>(locale.lang());
@@ -26,15 +27,28 @@ const LocaleProvider = ({children, storage}: PropsWithChildren<LocaleProviderPro
     }, []);
 
     const change: LocaleContract["change"] = useCallback((lang): void => {
-        locale.change(lang).catch(err => console.error(`Cannot find locale file for "${lang}" language`, err));
+        locale
+            .change(lang)
+            .catch(err => console.error(`[LocaleProvider] Cannot find locale file for "${lang}" language`, err));
     }, []);
 
     useEffect(() => {
-        const html = document.querySelector("html");
+        if (container === false) {
+            return;
+        }
 
-        html?.setAttribute("lang", lang);
-        html?.setAttribute("dir", getLocaleDir(lang));
-    }, [lang]);
+        const element = typeof container === "string" ? document.querySelector(container) : container;
+
+        if (element) {
+            element.setAttribute("lang", lang);
+            element.setAttribute("dir", getLocaleDir(lang));
+
+            return () => {
+                element.removeAttribute("lang");
+                element.removeAttribute("dir");
+            };
+        }
+    }, [lang, container]);
 
     useEffect(() => {
         locale.sync().then(lang => setLang(lang));

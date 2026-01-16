@@ -43,15 +43,15 @@ export default class LocaleBuilder implements LocaleBuilderContract {
             }
         }
 
-        if (this.browser === Browser.Opera) {
-            /**
-             * The Opera browser does not support RTL languages,
-             * and for Opera you need to directly indicate what kind of language it is.
-             * interface language is always different
-             */
-
-            items.set(LocaleCustomKeyForLanguage, this.language);
-        }
+        /**
+         We inject a locale marker into each `messages.json`.
+         Chrome provides no API to query the effective i18n locale:
+         browser UI language may differ from the translation actually used
+         (Chrome silently falls back to default_locale).
+         Reading this marker via chrome.i18n.getMessage() is the only reliable way
+         to detect the language currently displayed in the extension UI.
+         */
+        items.set(LocaleCustomKeyForLanguage, this.language);
 
         return (this.items = items);
     }

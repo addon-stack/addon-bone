@@ -11,9 +11,10 @@ import {
     MessageType,
 } from "@typing/message";
 
-export default abstract class AbstractMessage<T extends MessageDictionary, TOptions>
-    implements MessageProvider<T, TOptions>
-{
+export default abstract class AbstractMessage<T extends MessageDictionary, TOptions> implements MessageProvider<
+    T,
+    TOptions
+> {
     public abstract send<K extends MessageType<T>>(
         type: K,
         data: MessageData<T, K>,
