@@ -61,6 +61,7 @@ jobs:
           DEBUG: release-it:*,@release-it/*
           HUSKY: 0
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
         run: |
           VERSION_ARG=""
           if [ -n "${{ inputs.version }}" ]; then
