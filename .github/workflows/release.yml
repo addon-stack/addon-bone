@@ -62,6 +62,7 @@ jobs:
           HUSKY: 0
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
         run: |
           VERSION_ARG=""
           if [ -n "${{ inputs.version }}" ]; then
@@ -80,7 +81,7 @@ jobs:
           fi
           NPM_TAG_ARG="--npm.tag=${NPM_TAG}"
 
-          npm run release -- --ci $PREID_ARG $NPM_TAG_ARG $VERSION_ARG
+          npx release-it --ci $PREID_ARG $NPM_TAG_ARG $VERSION_ARG
 
       - name: Sync main → develop
         uses: devmasx/merge-branch@v1.4.0
