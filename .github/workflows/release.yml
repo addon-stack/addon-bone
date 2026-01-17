@@ -48,6 +48,11 @@ jobs:
           node-version: 22
           cache: 'npm'
 
+      - name: Update npm
+        run: |
+          npm install -g npm@latest
+          npm -v
+
       - name: Install dependencies
         run: npm ci
 
@@ -61,8 +66,6 @@ jobs:
           DEBUG: release-it:*,@release-it/*
           HUSKY: 0
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
         run: |
           VERSION_ARG=""
           if [ -n "${{ inputs.version }}" ]; then
