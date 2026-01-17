@@ -10,7 +10,8 @@
     "url": "git+https://github.com/addon-stack/addon-bone.git"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "bugs": {
     "url": "https://github.com/addon-stack/addon-bone/issues"

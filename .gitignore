@@ -16,3 +16,4 @@ stats.html
 .tool-versions
 .cache
 *-stats.txt
+.npmrc
