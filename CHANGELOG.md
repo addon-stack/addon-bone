@@ -1,5 +1,72 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.4 (2026-01-17)
+
+
+### 🐛 Bug Fixed
+
+* update repository url format for compatibility with npm standards ([d751d2b](https://github.com/addon-stack/addon-bone/commit/d751d2becc002c5df9ded4260958ecf5db22165d))
+
+
+
+
+### 🤖 CI
+
+* **release:** enhance npm publish config and enable provenance in workflow ([9bbae3e](https://github.com/addon-stack/addon-bone/commit/9bbae3e1d655afb7637b407d281be63d4686e8fa))
+
+
+* **release:** skip npm checks and clean release workflow config ([f35fd05](https://github.com/addon-stack/addon-bone/commit/f35fd056f01ce6230d5ad1991186600701c7933f))
+
+
+* **release:** update npm settings and workflow for registry and provenance handling ([8552c31](https://github.com/addon-stack/addon-bone/commit/8552c31ae8f3fc968dbb77d7218beb095b112ac5))
+
+
+* **release:** update release config for npm provenance and registry handling ([20377c4](https://github.com/addon-stack/addon-bone/commit/20377c43307a6ab81b77a70c93a68ea8bd393a4e))
+
+
+* remove unused auth tokens from release workflow ([1fbf28b](https://github.com/addon-stack/addon-bone/commit/1fbf28bcda15b39dfd96211a3001c2d93efb0b79))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** update dependencies in package-lock.json for latest versions ([b3a1177](https://github.com/addon-stack/addon-bone/commit/b3a117755b3b6f2bda3fd5cf4d4851195800a030))
+
+
+* **deps:** update package-lock to upgrade and align dependencies ([1954eb8](https://github.com/addon-stack/addon-bone/commit/1954eb87509fa6cc2b66ab4ab7cfeb8bb81cc16e))
+
+
+* **types:** adjust interface formatting for consistency and readability ([7f08239](https://github.com/addon-stack/addon-bone/commit/7f08239e4efd1cf8cb4c33088026ebb501f911d2))
+
+
+
+
+### 🛠️ Refactoring
+
+* **locale:** add container prop for dynamic lang/dir attribute handling ([c409172](https://github.com/addon-stack/addon-bone/commit/c409172955a8080ddada7c030b50d086adeaa41f))
+
+
+* **locale:** improve locale handling and language resolution logic ([71d0b1c](https://github.com/addon-stack/addon-bone/commit/71d0b1cdeb2e134f71555d3d25a8300136ee561b))
+
+  - Renamed `normalizeLocale` to `resolveLanguage` for clarity.
+  - Enhanced language detection logic with better fallback handling.
+  - Added comprehensive comments to explain Chrome i18n locale detection limitations.
+  - Improved error messages and logging for unsupported or failed locale resolutions.
+  - Updated related imports and adjusted code for the `resolveLanguage` function.
+
+* **Locale:** streamline language detection and normalization logic ([f420c38](https://github.com/addon-stack/addon-bone/commit/f420c38a32261a0eb07cc29278de3ce044a5ff17))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 11
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 8
+- [Rostyslav Nihrutsa](https://github.com/RostyslavNihrutsa) (@RostyslavNihrutsa) — commits: 1
+
 ## 🚀 Release `adnbn` v0.5.3 (2025-11-25)
 
 
