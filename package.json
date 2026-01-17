@@ -10,8 +10,7 @@
     "url": "git+https://github.com/addon-stack/addon-bone.git"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "bugs": {
     "url": "https://github.com/addon-stack/addon-bone/issues"
