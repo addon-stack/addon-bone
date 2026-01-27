@@ -1,3 +1,4 @@
+import {DataCollectionPermission} from "@typing/browser";
 import SpecificSettings from "./SpecificSettings";
 
 describe("SpecificSettings meta", () => {
@@ -22,6 +23,10 @@ describe("SpecificSettings meta", () => {
                 strictMinVersion: "58.0",
                 strictMaxVersion: "100.*",
                 updateUrl: "https://example.com/updates.json",
+                dataCollectionPermissions: {
+                    required: [DataCollectionPermission.WebsiteActivity],
+                    optional: [DataCollectionPermission.AuthenticationInfo, DataCollectionPermission.SearchTerms],
+                },
             },
             geckoAndroid: {
                 strictMinVersion: "109.0",
@@ -35,6 +40,33 @@ describe("SpecificSettings meta", () => {
 
         const meta = new SpecificSettings(makeConfig(specific));
         expect(meta.getResolved()).toEqual(specific);
+    });
+
+    test("returns undefined for invalid dataCollectionPermissions (bad enum value)", () => {
+        const specific = {
+            gecko: {
+                dataCollectionPermissions: {
+                    required: ["invalid-permission" as any],
+                },
+            },
+        };
+
+        const meta = new SpecificSettings(makeConfig(specific));
+        expect(meta.getResolved()).toBeUndefined();
+    });
+
+    test("returns undefined for invalid dataCollectionPermissions (extra field)", () => {
+        const specific = {
+            gecko: {
+                dataCollectionPermissions: {
+                    required: [DataCollectionPermission.WebsiteActivity],
+                    foo: "bar", // extra field not allowed by strict schema
+                } as any,
+            },
+        };
+
+        const meta = new SpecificSettings(makeConfig(specific));
+        expect(meta.getResolved()).toBeUndefined();
     });
 
     test("returns undefined for invalid direct value (bad URL)", () => {

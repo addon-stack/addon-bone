@@ -15,7 +15,7 @@ export default definePlugin(() => {
                 .setAuthor(Author.value(config))
                 .setHomepage(Homepage.value(config))
                 .setIncognito(Incognito.value(config))
-                .setSpecific(SpecificSettings.value(config));
+                .mergeSpecific(SpecificSettings.value(config) || {});
         },
     };
 });
