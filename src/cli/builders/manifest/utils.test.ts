@@ -483,10 +483,10 @@ describe("normalizeDataCollectionPermissions", () => {
         expect(result.optional).toEqual([DataCollectionPermission.SearchTerms]);
     });
 
-    it("should handle mixed string and enum permissions", () => {
+    it("should handle mixed string and enum permissions including new BookmarksInfo", () => {
         const input = {
             required: ["websiteActivity" as any, DataCollectionPermission.SearchTerms],
-            optional: ["searchTerms" as any, "locationInfo" as any],
+            optional: ["searchTerms" as any, DataCollectionPermission.BookmarksInfo],
         };
 
         // "searchTerms" is in both, so it should be removed from optional
@@ -494,7 +494,7 @@ describe("normalizeDataCollectionPermissions", () => {
 
         expect(result.required).toContain("websiteActivity");
         expect(result.required).toContain(DataCollectionPermission.SearchTerms);
-        expect(result.optional).toEqual(["locationInfo"]);
+        expect(result.optional).toEqual([DataCollectionPermission.BookmarksInfo]);
     });
 
     it("should filter out invalid permissions not present in the enum", () => {
