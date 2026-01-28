@@ -11,6 +11,7 @@
   },
   "publishConfig": {
     "access": "public",
+    "registry": "https://registry.npmjs.org/",
     "provenance": true
   },
   "bugs": {
@@ -140,7 +141,7 @@
     "html-rspack-tags-plugin": "^0.0.3",
     "js-yaml": "^4.1.1",
     "json-stringify-deterministic": "^1.0.12",
-    "lodash": "^4.17.21",
+    "lodash": "4.17.23",
     "mini-css-extract-plugin": "^2.9.2",
     "nanoid": "^5.1.4",
     "pluralize": "^8.0.0",
