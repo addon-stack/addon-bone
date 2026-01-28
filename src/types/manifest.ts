@@ -2,12 +2,12 @@ import {ContentScriptConfig} from "@typing/content";
 import {BackgroundConfig} from "@typing/background";
 import {CommandConfig} from "@typing/command";
 import {Language} from "@typing/locale";
-import {BrowserSpecific} from "@typing/browser";
+import {BrowserSpecific, DataCollectionPermission} from "@typing/browser";
 
 type ManifestCommon = chrome.runtime.Manifest;
 type ManifestBase = chrome.runtime.ManifestBase;
-type ManifestPermission = chrome.runtime.ManifestPermissions;
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissions;
+type ManifestPermission = chrome.runtime.ManifestPermission;
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
 
 export const ManifestMatchSchemes: ReadonlySet<string> = new Set<string>(["http", "https", "file", "ftp", "ws", "wss"]);
 
@@ -61,6 +61,10 @@ export type FirefoxManifest = ChromeManifest & {
             strict_min_version?: string;
             strict_max_version?: string;
             update_url?: string;
+            data_collection_permissions?: {
+                required?: ["none"] | `${DataCollectionPermission}`[];
+                optional?: `${DataCollectionPermission}`[];
+            };
         };
         gecko_android?: {
             strict_min_version?: string;
@@ -99,7 +103,10 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     setLocale(lang?: Language): this;
 
+    // Specific settings
     setSpecific(settings?: BrowserSpecific): this;
+
+    mergeSpecific(settings: BrowserSpecific): this;
 
     // Icons
     setIcons(icons?: ManifestIcons): this;

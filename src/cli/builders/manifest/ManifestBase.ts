@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-import {mergeWebAccessibleResources} from "./utils";
+import {mergeWebAccessibleResources, normalizeDataCollectionPermissions} from "./utils";
 
 import {
     CoreManifest,
@@ -29,8 +29,8 @@ import {SidebarAlternativeBrowsers} from "@typing/sidebar";
 import {ContentScriptMatches} from "@typing/content";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
-type ManifestPermission = chrome.runtime.ManifestPermissions;
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissions;
+type ManifestPermission = chrome.runtime.ManifestPermission;
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
 type CoreManifestIcons = chrome.runtime.ManifestIcons;
 
 export class ManifestError extends Error {
@@ -136,6 +136,16 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public setSpecific(settings?: BrowserSpecific): this {
         this.specific = settings;
+
+        return this;
+    }
+
+    public mergeSpecific(settings: BrowserSpecific): this {
+        this.specific = _.mergeWith({}, this.specific, settings, (objValue, srcValue) => {
+            if (_.isArray(objValue) && _.isArray(srcValue)) {
+                return _.union(objValue, srcValue);
+            }
+        });
 
         return this;
     }
@@ -288,7 +298,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
-    private marge<T extends CoreManifest>(manifest: T, ...sources: Array<Partial<T> | undefined>): T {
+    private merge<T extends CoreManifest>(manifest: T, ...sources: Array<Partial<T> | undefined>): T {
         sources = sources.filter(source => source !== undefined);
 
         if (sources.length === 0) {
@@ -317,7 +327,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             incognito: this.incognito,
         };
 
-        manifest = this.marge<Manifest>(
+        manifest = this.merge<Manifest>(
             manifest,
             this.buildLocale(),
             this.buildIcons(),
@@ -470,29 +480,20 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         const {safari, gecko, geckoAndroid} = settings;
 
         if (this.browser === Browser.Firefox) {
-            const emptyGecko =
-                _.isEmpty(gecko?.id) &&
-                _.isEmpty(gecko?.strictMinVersion) &&
-                _.isEmpty(gecko?.strictMaxVersion) &&
-                _.isEmpty(gecko?.updateUrl);
-
             const emptyGeckoAndroid =
                 _.isEmpty(geckoAndroid?.strictMinVersion) && _.isEmpty(geckoAndroid?.strictMaxVersion);
 
-            if (emptyGecko && emptyGeckoAndroid) {
-                return;
-            }
-
             return {
                 browser_specific_settings: {
-                    gecko: emptyGecko
-                        ? undefined
-                        : {
-                              id: gecko?.id,
-                              strict_min_version: gecko?.strictMinVersion,
-                              strict_max_version: gecko?.strictMaxVersion,
-                              update_url: gecko?.updateUrl,
-                          },
+                    gecko: {
+                        id: gecko?.id,
+                        strict_min_version: gecko?.strictMinVersion,
+                        strict_max_version: gecko?.strictMaxVersion,
+                        update_url: gecko?.updateUrl,
+                        data_collection_permissions: normalizeDataCollectionPermissions(
+                            gecko?.dataCollectionPermissions
+                        ),
+                    },
                     gecko_android: emptyGeckoAndroid
                         ? undefined
                         : {

@@ -50,7 +50,7 @@ jobs:
 
       - name: Update npm
         run: |
-          npm install -g npm@latest
+          npm install -g npm@11.7.0
           npm -v
 
       - name: Install dependencies

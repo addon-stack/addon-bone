@@ -1,1 +1,1 @@
-export {Browser} from "@typing/browser";
+export {Browser, DataCollectionPermission} from "@typing/browser";

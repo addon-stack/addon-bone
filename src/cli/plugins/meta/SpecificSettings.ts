@@ -2,7 +2,7 @@ import {z} from "zod";
 
 import AbstractMeta from "./AbstractMeta";
 
-import {BrowserSpecific} from "@typing/browser";
+import {BrowserSpecific, DataCollectionPermission} from "@typing/browser";
 import {ReadonlyConfig} from "@typing/config";
 
 const VersionSpecificSchema = z
@@ -12,9 +12,17 @@ const VersionSpecificSchema = z
     })
     .strict();
 
+const DataCollectionPermissionsSchema = z
+    .object({
+        required: z.array(z.nativeEnum(DataCollectionPermission)).optional(),
+        optional: z.array(z.nativeEnum(DataCollectionPermission)).optional(),
+    })
+    .strict();
+
 const GeckoSpecificSchema = VersionSpecificSchema.extend({
     id: z.string().min(1).optional(),
     updateUrl: z.string().url().optional(),
+    dataCollectionPermissions: DataCollectionPermissionsSchema.optional(),
 }).strict();
 
 const BrowserSpecificSchema = z
