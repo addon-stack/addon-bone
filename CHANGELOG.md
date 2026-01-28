@@ -1,5 +1,28 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.5 (2026-01-28)
+
+
+### ⚡️ Performance Improvements
+
+* add support for data collection permissions in gecko-specific settings ([e69fa41](https://github.com/addon-stack/addon-bone/commit/e69fa41328b6db48f8300f998da4d9b04eeae689))
+
+
+
+
+### 🤖 CI
+
+* **release:** simplify npm config and pin npm version in workflow ([67c3a17](https://github.com/addon-stack/addon-bone/commit/67c3a17907b3418cae3808b6d0ef67f37df78ff5))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 2
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 1
+
 ## 🚀 Release `adnbn` v0.5.4 (2026-01-17)
 
 
