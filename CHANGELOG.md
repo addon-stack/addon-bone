@@ -1,5 +1,21 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.6 (2026-01-28)
+
+
+### 🐛 Bug Fixed
+
+* extend permissions with BookmarksInfo and improve test coverage ([054a40c](https://github.com/addon-stack/addon-bone/commit/054a40cce7754ba4dd739a7b7ddc74c01d4390f6))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 1
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 1
+
 ## 🚀 Release `adnbn` v0.5.5 (2026-01-28)
 
 
