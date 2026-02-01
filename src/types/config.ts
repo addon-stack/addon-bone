@@ -534,9 +534,26 @@ export interface Config {
      * and improved caching. This allows the browser to load common modules once
      * and reuse them across different parts of the extension.
      *
+     * When a function is provided, it receives a Set of entry point names that share common code
+     * and should return a string representing the chunk name, or undefined to skip chunk creation.
+     * The function allows dynamic naming of common chunks based on the entries that use them.
+     *
+     * @example
+     * // Boolean usage:
+     * true // Creates common chunks with auto-generated names
+     * false // Disables common chunk creation
+     *
+     * @example
+     * // Function usage:
+     * (names) => {
+     *   const entryList = Array.from(names).toSorted().join("-");
+     *
+     *   return `${entryList}.common`;
+     * }
+     *
      * @default true
      */
-    commonChunks: boolean;
+    commonChunks: boolean | ((names: Set<string>) => string | undefined);
 
     /**
      * Build artifact name.
