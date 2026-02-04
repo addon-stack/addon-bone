@@ -1,5 +1,41 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.5.7 (2026-02-04)
+
+
+### ⚡️ Performance Improvements
+
+* **config:** extend `commonChunks` to support dynamic chunk naming functionality ([2bbd640](https://github.com/addon-stack/addon-bone/commit/2bbd6405a0a5be6346f0530b6476f8592892e058))
+
+
+* **optimization:** enhance chunk splitting and export handling in plugin config ([24ee48b](https://github.com/addon-stack/addon-bone/commit/24ee48bf921618632cee118bd7e862b63b4b25ee))
+
+
+* **plugins:** enhance chunk splitting logic with entry filtering and path resolution ([e376378](https://github.com/addon-stack/addon-bone/commit/e376378113e30224392ead24ccf40333b11df73b))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **config:** simplify dotenv config by removing redundant environment variable settings ([35caec2](https://github.com/addon-stack/addon-bone/commit/35caec281830d1b090b5f8ecd2171a0a84f40d85))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** update dependencies in `package-lock.json` to latest compatible versions ([1678839](https://github.com/addon-stack/addon-bone/commit/16788399f1f36c7bfa398aec7482e0ebb6ae055c))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 5
+- [Addon Stack](https://github.com/addon-stack) (@addon-stack) — commits: 1
+
 ## 🚀 Release `adnbn` v0.5.6 (2026-01-28)
 
 
