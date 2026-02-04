@@ -34,7 +34,7 @@ export default definePlugin(() => {
                         cacheGroups: {
                             default: false,
                             defaultVendors: false,
-                            common: {
+                            adnbnCommon: {
                                 test: module => {
                                     const {resource} = module as NormalModule;
 
@@ -55,7 +55,7 @@ export default definePlugin(() => {
 
                                     return isFileSystemModule && !isVirtual;
                                 },
-                                name: (_module, chunks, cacheGroupKey) => {
+                                name: (_module, chunks) => {
                                     const names = new Set(
                                         chunks
                                             .map(({name}) => name)
@@ -71,14 +71,14 @@ export default definePlugin(() => {
                                     }
 
                                     if (names.size === 0) {
-                                        return `async.` + cacheGroupKey;
+                                        return `async.common`;
                                     }
 
                                     const sortedNames = Array.from(names).toSorted();
                                     const joinedNames = sortedNames.join("-");
 
                                     if (joinedNames.length <= 60 && sortedNames.length <= 3) {
-                                        return `${joinedNames}.${cacheGroupKey}`;
+                                        return `${joinedNames}.common`;
                                     }
 
                                     let hash = 0;
@@ -91,7 +91,7 @@ export default definePlugin(() => {
                                     const hashStr = Math.abs(hash).toString(36).slice(0, 8);
                                     const prefix = sortedNames.slice(0, 2).join("-");
 
-                                    return `${prefix}-etc-${hashStr}.${cacheGroupKey}`;
+                                    return `${prefix}-etc-${hashStr}.common`;
                                 },
                                 minChunks: 2,
                                 priority: -10,
