@@ -126,9 +126,9 @@
     "@addon-core/browser": "^0.2.1",
     "@addon-core/inject-script": "^0.3.1",
     "@addon-core/storage": "^0.4.0",
-    "@rsdoctor/rspack-plugin": "^1.3.11",
-    "@rspack/cli": "^1.6.7",
-    "@rspack/core": "^1.6.7",
+    "@rsdoctor/rspack-plugin": "^1.5.1",
+    "@rspack/cli": "^1.7.5",
+    "@rspack/core": "^1.7.5",
     "@svgr/webpack": "^8.1.0",
     "await-lock": "^3.0.0",
     "c12": "^3.3.2",
@@ -157,6 +157,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "glob": "^13.0.1",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@microsoft/api-extractor": "^7.53.1",
@@ -173,6 +174,7 @@
     "@types/pluralize": "^0.0.33",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "@types/semver": "^7.7.1",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
     "esbuild": "^0.25.10",
@@ -211,10 +213,8 @@
     }
   },
   "overrides": {
+    "glob": "$glob",
     "jsdom": "27.4.0",
-    "html-rspack-tags-plugin": {
-      "glob": "^10.4.1"
-    },
     "test-exclude": "^7.0.1",
     "tsup": {
       "source-map": "^0.7.4"
