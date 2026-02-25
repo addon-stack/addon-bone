@@ -4,6 +4,7 @@ export {default as pluginBackground} from "./background";
 export {default as pluginContent} from "./content";
 export {default as pluginDotenv} from "./dotenv";
 export {default as pluginHtml} from "./html";
+export {default as pluginManifest} from "./manifest";
 export {default as pluginOptimization} from "./optimization";
 export {default as pluginOutput} from "./output";
 export {default as pluginIcon} from "./icon";

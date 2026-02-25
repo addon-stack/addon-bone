@@ -13,6 +13,13 @@ type Permission = ManifestPermissions | ManifestOptionalPermissions;
  * @param permissions - Set of permissions to filter
  * @returns New set of permissions adapted for Manifest V2
  */
+export const filterPermissions = <T extends Permission>(permissions: Set<T>): Set<T> => {
+    if (permissions.has("tabs" as T)) {
+        permissions.delete("activeTab" as T);
+    }
+    return permissions;
+};
+
 export const filterPermissionsForMV2 = <T extends Permission>(permissions: Set<T>): Set<T> => {
     const filteredPermissions = new Set(permissions);
 
@@ -35,7 +42,7 @@ export const filterPermissionsForMV2 = <T extends Permission>(permissions: Set<T
 
     filteredPermissions.delete("offscreen" as T);
 
-    return filteredPermissions;
+    return filterPermissions(filteredPermissions);
 };
 
 export const filterPermissionsForMV3 = <T extends Permission>(permissions: Set<T>): Set<T> => {
@@ -53,7 +60,15 @@ export const filterPermissionsForMV3 = <T extends Permission>(permissions: Set<T
     filteredPermissions.delete("webRequestAuthProvider" as T);
     filteredPermissions.delete("webRequestBlocking" as T);
 
-    return filteredPermissions;
+    return filterPermissions(filteredPermissions);
+};
+
+export const filterOptionalPermissions = <O extends ManifestOptionalPermissions, R extends ManifestPermissions>(
+    optional: Set<O>,
+    required: Set<R>
+): O[] => {
+    const allPermissions = filterPermissions(new Set([...optional, ...required]));
+    return _.difference(Array.from(allPermissions), Array.from(required)) as O[];
 };
 
 export const filterHostPatterns = (patterns: Set<string>): Set<string> => {

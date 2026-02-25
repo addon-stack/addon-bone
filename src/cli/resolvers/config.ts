@@ -14,6 +14,7 @@ import {
     pluginLocale,
     pluginMeta,
     pluginOffscreen,
+    pluginManifest,
     pluginOptimization,
     pluginOutput,
     pluginPage,
@@ -193,6 +194,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         html = [],
         bundler = {},
         env = {},
+        manifest,
         manifestVersion = (new Set<Browser>([Browser.Safari]).has(browser) ? 2 : 3) as ManifestVersion,
         mode = Mode.Development,
         analyze = false,
@@ -246,6 +248,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         icon,
         incognito,
         specific,
+        manifest,
         manifestVersion,
         rootDir,
         outDir,
@@ -326,6 +329,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         pluginHtml(),
         pluginVersion(),
         pluginBundler(),
+        pluginManifest(),
     ];
 
     return {

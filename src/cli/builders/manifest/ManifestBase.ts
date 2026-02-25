@@ -20,6 +20,7 @@ import {
     ManifestPopup,
     ManifestSidebar,
     ManifestVersion,
+    OptionalManifest,
 } from "@typing/manifest";
 import {Browser, BrowserSpecific} from "@typing/browser";
 import {Language} from "@typing/locale";
@@ -40,13 +41,13 @@ export class ManifestError extends Error {
 }
 
 export default abstract class<T extends CoreManifest> implements ManifestBuilder<T> {
-    protected name: string = "__MSG_app_name__";
+    protected name?: string;
     protected author?: string;
     protected homepage?: string;
     protected shortName?: string;
     protected description?: string;
     protected minimumVersion?: string;
-    protected version: string = "0.0.0";
+    protected version?: string;
     protected icon?: string;
     protected incognito?: ManifestIncognito;
     protected specific?: BrowserSpecific;
@@ -63,6 +64,9 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected hostPermissions: ManifestHostPermissions = new Set();
     protected optionalHostPermissions: ManifestHostPermissions = new Set();
     protected accessibleResources: ManifestAccessibleResources = new Set();
+
+    protected raws: Set<OptionalManifest> = new Set();
+    protected mergedRaws: OptionalManifest | null = null;
 
     public abstract getManifestVersion(): ManifestVersion;
 
@@ -111,7 +115,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     }
 
     public setVersion(version?: string): this {
-        this.version = version || "0.0.0";
+        this.version = version;
 
         return this;
     }
@@ -292,43 +296,31 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
-    public setManifestAccessibleResource(accessibleResources: ManifestAccessibleResources): this {
+    public setAccessibleResource(accessibleResources: ManifestAccessibleResources): this {
         this.accessibleResources = accessibleResources;
 
         return this;
     }
 
-    private merge<T extends CoreManifest>(manifest: T, ...sources: Array<Partial<T> | undefined>): T {
-        sources = sources.filter(source => source !== undefined);
+    public raw(manifest: OptionalManifest): this {
+        this.raws.add(manifest);
 
-        if (sources.length === 0) {
-            return manifest;
-        }
-
-        const result = {...manifest};
-
-        for (const source of sources) {
-            Object.assign(result, source);
-        }
-
-        return result;
+        return this;
     }
 
     public build(): T {
-        let manifest: Manifest = {
-            name: this.name,
-            short_name: this.shortName,
-            description: this.description,
-            version: this.version,
-            manifest_version: this.getManifestVersion(),
-            minimum_chrome_version: this.minimumVersion,
-            author: this.author,
-            homepage_url: this.homepage,
-            incognito: this.incognito,
-        };
+        const raws = this.buildRaws();
 
-        manifest = this.merge<Manifest>(
-            manifest,
+        return this.merge<Manifest>(
+            this.buildName(),
+            this.buildShortName(),
+            this.buildDescription(),
+            this.buildVersion(),
+            this.buildManifestVersion(),
+            this.buildMinimumChromeVersion(),
+            this.buildAuthor(),
+            this.buildHomepageUrl(),
+            this.buildIncognito(),
             this.buildLocale(),
             this.buildIcons(),
             this.buildBackground(),
@@ -341,16 +333,90 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.buildHostPermissions(),
             this.buildOptionalHostPermissions(),
             this.buildWebAccessibleResources(),
-            this.buildBrowserSpecificSettings()
-        );
+            this.buildBrowserSpecificSettings(),
+            raws
+        ) as T;
+    }
 
-        return manifest as T;
+    public get(): T {
+        return this.build();
+    }
+
+    protected get optionalManifest(): OptionalManifest {
+        if (this.mergedRaws) return this.mergedRaws;
+
+        return (this.mergedRaws = Array.from(this.raws).reduce((result, manifest) => _.merge(result, manifest), {}));
+    }
+
+    private merge<T extends CoreManifest>(...sources: Array<Partial<T> | undefined>): T {
+        sources = sources.filter(source => source !== undefined);
+
+        if (sources.length === 0) {
+            throw new ManifestError("No sources provided for manifest merging");
+        }
+
+        const result = {} as T;
+
+        for (const source of sources) {
+            Object.assign(result, source);
+        }
+
+        return result;
+    }
+
+    protected buildName(): Partial<CoreManifest> {
+        return {name: this.name || this.optionalManifest.name || "__MSG_app_name__"};
+    }
+
+    protected buildShortName(): Partial<CoreManifest> | undefined {
+        const shortName = this.shortName || this.optionalManifest.short_name;
+        return shortName ? {short_name: shortName} : undefined;
+    }
+
+    protected buildDescription(): Partial<CoreManifest> | undefined {
+        const description = this.description || this.optionalManifest.description;
+        return description ? {description} : undefined;
+    }
+
+    protected buildVersion(): Partial<CoreManifest> {
+        return {version: this.version || this.optionalManifest.version || "0.0.0"};
+    }
+
+    protected buildManifestVersion(): Partial<CoreManifest> {
+        return {manifest_version: this.getManifestVersion()};
+    }
+
+    protected buildMinimumChromeVersion(): Partial<CoreManifest> | undefined {
+        const version = this.minimumVersion || this.optionalManifest.minimum_chrome_version;
+        return version ? {minimum_chrome_version: version} : undefined;
+    }
+
+    protected buildAuthor(): Partial<CoreManifest> | undefined {
+        const author = this.author || this.optionalManifest.author;
+        return author ? {author} : undefined;
+    }
+
+    protected buildHomepageUrl(): Partial<CoreManifest> | undefined {
+        const homepage = this.homepage || this.optionalManifest.homepage_url;
+        return homepage ? {homepage_url: homepage} : undefined;
+    }
+
+    protected buildIncognito(): Partial<CoreManifest> | undefined {
+        const incognito = this.incognito || this.optionalManifest.incognito;
+        return incognito !== undefined ? {incognito} : undefined;
+    }
+
+    protected buildLocale(): Partial<CoreManifest> | undefined {
+        const defaultLocale = this.locale || this.optionalManifest.default_locale;
+        return defaultLocale ? {default_locale: defaultLocale} : undefined;
     }
 
     protected buildIcons(): Partial<CoreManifest> | undefined {
-        if (this.icon) {
-            return {icons: this.getIconsByName(this.icon)};
-        }
+        const icons = {
+            ...this.optionalManifest.icons,
+            ...this.getIconsByName(this.icon),
+        };
+        return Object.keys(icons).length ? {icons} : undefined;
     }
 
     protected buildBackground(): Partial<CoreManifest> | undefined {
@@ -374,10 +440,11 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     }
 
     protected buildCommands(): Partial<CoreManifest> | undefined {
-        if (this.commands.size > 0) {
-            const commands = Array.from(this.commands).reduce(
-                (commands, command) => {
-                    const item = {
+        const internalCommands = Array.from(this.commands).reduce(
+            (commands, command) => {
+                return {
+                    ...commands,
+                    [command.name]: {
                         suggested_key: {
                             default: command?.defaultKey,
                             windows: command?.windowsKey,
@@ -389,21 +456,25 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
                             command?.description ||
                             (command.name === CommandExecuteActionName ? undefined : command.name),
                         global: command?.global,
-                    };
+                    },
+                };
+            },
+            {} as CoreManifest["commands"]
+        );
 
-                    return {...commands, [command.name]: item};
-                },
-                {} as CoreManifest["commands"]
-            );
+        const commands = _.merge(this.optionalManifest.commands, internalCommands);
 
-            return {commands};
-        }
+        if (Object.keys(commands).length) return {commands};
     }
 
     protected buildContentScripts(): Partial<CoreManifest> | undefined {
-        if (this.contentScripts.size > 0) {
-            const contentScripts: ManifestV3["content_scripts"] = [];
+        const contentScripts: ManifestV3["content_scripts"] = [];
 
+        if (this.optionalManifest.content_scripts) {
+            contentScripts.push(...this.optionalManifest.content_scripts);
+        }
+
+        if (this.contentScripts.size > 0) {
             for (const script of this.contentScripts.values()) {
                 const {
                     entry,
@@ -446,13 +517,22 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
                     world,
                 });
             }
-
-            return {content_scripts: contentScripts};
         }
+
+        return contentScripts.length ? {content_scripts: contentScripts} : undefined;
     }
 
     protected buildSidebar(): Partial<CoreManifest> | undefined {
         if (!this.sidebar) {
+            const sidebarAction = this.optionalManifest.sidebar_action;
+            const sidePanel = this.optionalManifest.side_panel;
+
+            if (SidebarAlternativeBrowsers.has(this.browser)) {
+                if (sidebarAction) return {sidebar_action: sidebarAction};
+            } else {
+                if (sidePanel) return {side_panel: sidePanel};
+            }
+
             return;
         }
 
@@ -469,57 +549,105 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             : {side_panel: {...commonProps, default_path: path}};
     }
 
-    protected buildLocale(): Partial<CoreManifest> | undefined {
-        if (this.locale) {
-            return {default_locale: this.locale};
-        }
-    }
-
     protected buildBrowserSpecificSettings(): Partial<Manifest> | undefined {
-        const settings = this.specific || {};
-        const {safari, gecko, geckoAndroid} = settings;
+        const optionalSettings = this.optionalManifest.browser_specific_settings;
+        const {safari, gecko, geckoAndroid} = this.specific || {};
 
         if (this.browser === Browser.Firefox) {
-            const emptyGeckoAndroid =
-                _.isEmpty(geckoAndroid?.strictMinVersion) && _.isEmpty(geckoAndroid?.strictMaxVersion);
+            const id = gecko?.id || optionalSettings?.gecko?.id;
+            const updateUrl = gecko?.updateUrl || optionalSettings?.gecko?.update_url;
+            const geckoMinVersion = gecko?.strictMinVersion || optionalSettings?.gecko?.strict_min_version;
+            const geckoMaxVersion = gecko?.strictMaxVersion || optionalSettings?.gecko?.strict_max_version;
+            const dataCollectionPermissions = _.merge(
+                optionalSettings?.gecko?.data_collection_permissions,
+                gecko?.dataCollectionPermissions
+            );
+
+            const androidMinVersion =
+                geckoAndroid?.strictMinVersion || optionalSettings?.gecko_android?.strict_min_version;
+            const androidMaxVersion =
+                geckoAndroid?.strictMaxVersion || optionalSettings?.gecko_android?.strict_max_version;
 
             return {
                 browser_specific_settings: {
                     gecko: {
-                        id: gecko?.id,
-                        strict_min_version: gecko?.strictMinVersion,
-                        strict_max_version: gecko?.strictMaxVersion,
-                        update_url: gecko?.updateUrl,
-                        data_collection_permissions: normalizeDataCollectionPermissions(
-                            gecko?.dataCollectionPermissions
-                        ),
+                        id,
+                        update_url: updateUrl,
+                        strict_min_version: geckoMinVersion,
+                        strict_max_version: geckoMaxVersion,
+                        data_collection_permissions: normalizeDataCollectionPermissions(dataCollectionPermissions),
                     },
-                    gecko_android: emptyGeckoAndroid
-                        ? undefined
-                        : {
-                              strict_min_version: geckoAndroid?.strictMinVersion,
-                              strict_max_version: geckoAndroid?.strictMaxVersion,
-                          },
+                    gecko_android:
+                        _.isEmpty(androidMinVersion) && _.isEmpty(androidMaxVersion)
+                            ? undefined
+                            : {
+                                  strict_min_version: androidMinVersion,
+                                  strict_max_version: androidMaxVersion,
+                              },
                 },
             };
         } else if (this.browser === Browser.Safari) {
-            if (_.isEmpty(safari?.strictMinVersion) && _.isEmpty(safari?.strictMaxVersion)) {
+            const minVersion = safari?.strictMinVersion || optionalSettings?.safari?.strict_min_version;
+            const maxVersion = safari?.strictMaxVersion || optionalSettings?.safari?.strict_max_version;
+
+            if (_.isEmpty(minVersion) && _.isEmpty(maxVersion)) {
                 return;
             }
 
             return {
                 browser_specific_settings: {
                     safari: {
-                        strict_min_version: safari?.strictMinVersion,
-                        strict_max_version: safari?.strictMaxVersion,
+                        strict_min_version: minVersion,
+                        strict_max_version: maxVersion,
                     },
                 },
             };
         }
     }
 
+    protected buildRaws(): Partial<Manifest> | undefined {
+        const {
+            name,
+            short_name,
+            description,
+            version,
+            minimum_chrome_version,
+            author,
+            homepage_url,
+            incognito,
+            default_locale,
+            icons,
+            background,
+            commands,
+            action,
+            sidebar,
+            content_scripts,
+            permissions,
+            optional_permissions,
+            host_permissions,
+            optional_host_permissions,
+            web_accessible_resources,
+            browser_specific_settings,
+            ...other
+        } = this.optionalManifest;
+
+        this.appendPermissions(new Set(permissions));
+        this.appendOptionalPermissions(new Set(optional_permissions));
+        this.appendHostPermissions(new Set(host_permissions));
+        this.appendOptionalHostPermissions(new Set(optional_host_permissions));
+
+        this.appendAccessibleResources(new Set(web_accessible_resources));
+
+        return other;
+    }
+
     protected hasExecuteActionCommand(): boolean {
-        return this.commands.size > 0 && Array.from(this.commands).some(({name}) => name === CommandExecuteActionName);
+        const optionalCommands = this.optionalManifest.commands;
+
+        const inInternalCommands =
+            this.commands.size > 0 && Array.from(this.commands).some(({name}) => name === CommandExecuteActionName);
+        const inOptionalCommands = optionalCommands && Object.keys(optionalCommands).includes(CommandExecuteActionName);
+        return inInternalCommands || inOptionalCommands;
     }
 
     protected getIconsByName(name?: string): CoreManifestIcons | undefined {
@@ -536,10 +664,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         if (icons) {
             return Object.fromEntries(icons);
         }
-    }
-
-    public get(): T {
-        return this.build();
     }
 
     public getWebAccessibleResources(): ManifestAccessibleResource[] {

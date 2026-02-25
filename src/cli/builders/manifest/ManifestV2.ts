@@ -1,6 +1,6 @@
 import ManifestBase from "./ManifestBase";
 
-import {filterHostPatterns, filterPermissionsForMV2} from "./utils";
+import {filterHostPatterns, filterOptionalPermissions, filterPermissionsForMV2} from "./utils";
 
 import {CoreManifest, ManifestVersion} from "@typing/manifest";
 import {Browser} from "@typing/browser";
@@ -77,8 +77,9 @@ export default class extends ManifestBase<ManifestV2> {
     }
 
     protected buildOptionalPermissions(): Partial<ManifestV2> | undefined {
-        const optionalPermissions: string[] = Array.from(filterPermissionsForMV2(this.optionalPermissions)).filter(
-            permission => !this.permissions.has(permission)
+        const optionalPermissions: string[] = filterOptionalPermissions(
+            filterPermissionsForMV2(this.optionalPermissions),
+            filterPermissionsForMV2(this.permissions)
         );
 
         // prettier-ignore

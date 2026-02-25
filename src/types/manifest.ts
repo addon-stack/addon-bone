@@ -84,6 +84,8 @@ export type SafariManifest = ChromeManifest & {
 
 export type Manifest = ChromeManifest | FirefoxManifest | SafariManifest;
 
+export type OptionalManifest = Partial<Omit<Manifest, "manifest_version">>;
+
 export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setName(name: string): this;
 
@@ -156,7 +158,7 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     appendOptionalHostPermissions(permissions: ManifestHostPermissions): this;
 
     // Web Accessible Resource
-    setManifestAccessibleResource(accessibleResources: ManifestAccessibleResources): this;
+    setAccessibleResource(accessibleResources: ManifestAccessibleResources): this;
 
     appendAccessibleResources(accessibleResources: ManifestAccessibleResources): this;
 
@@ -166,6 +168,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     // Getter
     get(): T;
+
+    raw(manifest: OptionalManifest): this;
 }
 
 type Entry = string;
