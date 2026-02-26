@@ -65,10 +65,10 @@ export default class extends ManifestBase<ManifestV2> {
     }
 
     protected buildPermissions(): Partial<ManifestV2> | undefined {
-        const permissions: string[] = Array.from(filterPermissionsForMV2(this.permissions));
+        const permissions: string[] = Array.from(filterPermissionsForMV2(this.combinedPermissions));
 
-        if (this.hostPermissions.size > 0) {
-            permissions.push(...filterHostPatterns(this.hostPermissions));
+        if (this.combinedHostPermissions.size > 0) {
+            permissions.push(...filterHostPatterns(this.combinedHostPermissions));
         }
 
         if (permissions.length > 0) {
@@ -78,14 +78,14 @@ export default class extends ManifestBase<ManifestV2> {
 
     protected buildOptionalPermissions(): Partial<ManifestV2> | undefined {
         const optionalPermissions: string[] = filterOptionalPermissions(
-            filterPermissionsForMV2(this.optionalPermissions),
-            filterPermissionsForMV2(this.permissions)
+            filterPermissionsForMV2(this.combinedOptionalPermissions),
+            filterPermissionsForMV2(this.combinedPermissions)
         );
 
         // prettier-ignore
         const optionalHostPermissions: string[] = Array
-            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
-            .filter((permission) => !this.hostPermissions.has(permission));
+            .from(filterHostPatterns(new Set([...this.combinedHostPermissions, ...this.combinedOptionalHostPermissions])))
+            .filter((permission) => !this.combinedHostPermissions.has(permission));
 
         if (optionalHostPermissions.length > 0) {
             optionalPermissions.push(...optionalHostPermissions);

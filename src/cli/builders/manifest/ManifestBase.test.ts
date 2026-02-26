@@ -156,6 +156,26 @@ describe("ManifestBase primitive properties", () => {
 });
 
 describe("ManifestBase merged properties", () => {
+    it("merging objects and arrays", () => {
+        const builder = new ManifestV3(Browser.Chrome);
+
+        builder
+            .raw({permissions: ["tabs"]})
+            .raw({permissions: ["storage"]})
+            .raw({commands: {cmd1: {description: "First"}}})
+            .raw({commands: {cmd2: {description: "Second"}}});
+
+        const manifest: any = builder.build();
+
+        expect(manifest.permissions).toEqual(expect.arrayContaining(["tabs", "storage"]));
+        expect(manifest.commands).toEqual(
+            expect.objectContaining({
+                cmd1: {description: "First"},
+                cmd2: {description: "Second"},
+            })
+        );
+    });
+
     it("commands", () => {
         const builder = new ManifestV3(Browser.Chrome);
 
@@ -551,25 +571,32 @@ describe("ManifestBase mergeSpecific", () => {
 
     it("should use raw for gecko settings when specific is not set", () => {
         const builder = new ManifestV3(Browser.Firefox);
-
-        builder.raw({
-            browser_specific_settings: {
+        builder
+            .setSpecific({
                 gecko: {
-                    id: "from@optional",
-                    update_url: "https://example.com/update.json",
-                    strict_min_version: "110.0",
-                    strict_max_version: "119.0",
-                    data_collection_permissions: {
-                        required: [DataCollectionPermission.WebsiteActivity],
-                        optional: [DataCollectionPermission.AuthenticationInfo],
+                    dataCollectionPermissions: {
+                        required: [DataCollectionPermission.BrowsingActivity],
                     },
                 },
-                gecko_android: {
-                    strict_min_version: "110.0",
-                    strict_max_version: "119.0",
+            })
+            .raw({
+                browser_specific_settings: {
+                    gecko: {
+                        id: "from@optional",
+                        update_url: "https://example.com/update.json",
+                        strict_min_version: "110.0",
+                        strict_max_version: "119.0",
+                        data_collection_permissions: {
+                            required: [DataCollectionPermission.WebsiteActivity],
+                            optional: [DataCollectionPermission.AuthenticationInfo],
+                        },
+                    },
+                    gecko_android: {
+                        strict_min_version: "110.0",
+                        strict_max_version: "119.0",
+                    },
                 },
-            },
-        });
+            });
 
         const settings: any = builder.build().browser_specific_settings;
 
@@ -578,6 +605,9 @@ describe("ManifestBase mergeSpecific", () => {
         expect(settings.gecko.strict_min_version).toBe("110.0");
         expect(settings.gecko.strict_max_version).toBe("119.0");
         expect(settings.gecko.data_collection_permissions.required).toContain(DataCollectionPermission.WebsiteActivity);
+        expect(settings.gecko.data_collection_permissions.required).toContain(
+            DataCollectionPermission.BrowsingActivity
+        );
         expect(settings.gecko_android.strict_min_version).toBe("110.0");
         expect(settings.gecko_android.strict_max_version).toBe("119.0");
     });

@@ -73,7 +73,7 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildPermissions(): Partial<ManifestV3> | undefined {
-        const permissions = Array.from(filterPermissionsForMV3(this.permissions));
+        const permissions = Array.from(filterPermissionsForMV3(this.combinedPermissions));
 
         if (permissions.length > 0) {
             return {permissions};
@@ -82,8 +82,8 @@ export default class extends ManifestBase<ManifestV3> {
 
     protected buildOptionalPermissions(): Partial<ManifestV3> | undefined {
         const optionalPermissions = filterOptionalPermissions(
-            filterPermissionsForMV3(this.optionalPermissions),
-            filterPermissionsForMV3(this.permissions)
+            filterPermissionsForMV3(this.combinedOptionalPermissions),
+            filterPermissionsForMV3(this.combinedPermissions)
         );
 
         if (optionalPermissions.length > 0) {
@@ -92,16 +92,16 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildHostPermissions(): Partial<ManifestV3> | undefined {
-        if (this.hostPermissions.size > 0) {
-            return {host_permissions: [...filterHostPatterns(this.hostPermissions)]};
+        if (this.combinedHostPermissions.size > 0) {
+            return {host_permissions: [...filterHostPatterns(this.combinedHostPermissions)]};
         }
     }
 
     protected buildOptionalHostPermissions(): Partial<ManifestV3> | undefined {
         // prettier-ignore
         const optionalHostPermissions = Array
-            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
-            .filter((permission) => !this.hostPermissions.has(permission));
+            .from(filterHostPatterns(new Set([...this.combinedHostPermissions, ...this.combinedOptionalHostPermissions])))
+            .filter((permission) => !this.combinedHostPermissions.has(permission));
 
         if (optionalHostPermissions.length > 0) {
             return {optional_host_permissions: optionalHostPermissions};
