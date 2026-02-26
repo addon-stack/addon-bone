@@ -19,6 +19,6 @@ export default abstract class AbstractVersion {
             return;
         }
 
-        return String(_.isFunction(version) ? version : version);
+        return String(_.isFunction(version) ? version() : version);
     }
 }

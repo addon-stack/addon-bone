@@ -3,7 +3,7 @@ import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
 import {Command, Mode} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";
-import {ManifestIncognitoValue, ManifestVersion} from "@typing/manifest";
+import {ManifestIncognitoValue, ManifestVersion, ManifestBuilder, OptionalManifest} from "@typing/manifest";
 import {Plugin} from "@typing/plugin";
 import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
@@ -170,6 +170,20 @@ export interface Config {
      * @default "not_allowed"
      */
     incognito?: ManifestIncognitoValue | (() => ManifestIncognitoValue | undefined);
+
+    /**
+     * Extension manifest without the version.
+     * Allows customizing the manifest.json file beyond the standard fields handled by the builder.
+     * The structure and available APIs depend on the manifest version (v2 or v3).
+     *
+     * Accepts:
+     * - an object with additional manifest fields
+     * - a function that receives a ManifestBuilder instance and returns manifest fields
+     *
+     * Note: Some fields like name, version, and permissions are handled automatically
+     * by the builder and should not be included here unless you need to override them.
+     */
+    manifest?: OptionalManifest | ((builder: ManifestBuilder) => OptionalManifest | undefined);
 
     /**
      * Extension manifest version (e.g., v2 or v3).
