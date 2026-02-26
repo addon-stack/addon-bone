@@ -82,6 +82,62 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     protected abstract buildWebAccessibleResources(): Partial<T> | undefined;
 
+    protected get combinedRaws(): OptionalManifest {
+        return this.mergedRaws ??= Array.from(this.raws).reduce((result, raw) => {
+            return _.mergeWith(result, raw, (objValue, srcValue) => {
+                if (Array.isArray(objValue) && Array.isArray(srcValue)) {
+                    return objValue.concat(srcValue);
+                }
+            });
+        }, {});
+    }
+
+    protected get combinedPermissions(): ManifestPermissions {
+        const result = new Set(this.permissions);
+
+        if (this.combinedRaws.permissions) {
+            for (const permission of this.combinedRaws.permissions) {
+                result.add(permission);
+            }
+        }
+
+        return result;
+    }
+
+    protected get combinedOptionalPermissions(): ManifestOptionalPermissions {
+        const result = new Set(this.optionalPermissions);
+
+        if (this.combinedRaws.optional_permissions) {
+            for (const permission of this.combinedRaws.optional_permissions) {
+                result.add(permission);
+            }
+        }
+
+        return result;
+    }
+
+    protected get combinedHostPermissions(): ManifestHostPermissions {
+        const result = new Set(this.hostPermissions);
+
+        if (this.combinedRaws.host_permissions) {
+            for (const permission of this.combinedRaws.host_permissions) {
+                result.add(permission);
+            }
+        }
+
+        return result;
+    }
+
+    protected get combinedOptionalHostPermissions(): ManifestHostPermissions {
+        const result = new Set(this.optionalHostPermissions);
+        if (this.combinedRaws.optional_host_permissions) {
+            for (const permission of this.combinedRaws.optional_host_permissions) {
+                result.add(permission);
+            }
+        }
+        return result;
+    }
+
     protected constructor(protected readonly browser: Browser = Browser.Chrome) {}
 
     public setAuthor(author?: string): this {
@@ -340,59 +396,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this.build();
     }
 
-    protected get combinedRaws(): OptionalManifest {
-        if (this.mergedRaws) return this.mergedRaws;
 
-        this.mergedRaws = Array.from(this.raws).reduce((result, raw) => {
-            return _.mergeWith(result, raw, (objValue, srcValue) => {
-                if (Array.isArray(objValue) && Array.isArray(srcValue)) {
-                    return objValue.concat(srcValue);
-                }
-            });
-        }, {});
-
-        return this.mergedRaws;
-    }
-
-    protected get combinedPermissions(): ManifestPermissions {
-        const result = new Set(this.permissions);
-        if (this.combinedRaws.permissions) {
-            for (const permission of this.combinedRaws.permissions) {
-                result.add(permission);
-            }
-        }
-        return result;
-    }
-
-    protected get combinedOptionalPermissions(): ManifestOptionalPermissions {
-        const result = new Set(this.optionalPermissions);
-        if (this.combinedRaws.optional_permissions) {
-            for (const permission of this.combinedRaws.optional_permissions) {
-                result.add(permission);
-            }
-        }
-        return result;
-    }
-
-    protected get combinedHostPermissions(): ManifestHostPermissions {
-        const result = new Set(this.hostPermissions);
-        if (this.combinedRaws.host_permissions) {
-            for (const permission of this.combinedRaws.host_permissions) {
-                result.add(permission);
-            }
-        }
-        return result;
-    }
-
-    protected get combinedOptionalHostPermissions(): ManifestHostPermissions {
-        const result = new Set(this.optionalHostPermissions);
-        if (this.combinedRaws.optional_host_permissions) {
-            for (const permission of this.combinedRaws.optional_host_permissions) {
-                result.add(permission);
-            }
-        }
-        return result;
-    }
 
     private merge<T extends CoreManifest>(...sources: Array<Partial<T> | undefined>): T {
         sources = sources.filter(source => source !== undefined);
