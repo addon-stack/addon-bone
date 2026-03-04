@@ -83,13 +83,13 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected abstract buildWebAccessibleResources(): Partial<T> | undefined;
 
     protected get combinedRaws(): OptionalManifest {
-        return this.mergedRaws ??= Array.from(this.raws).reduce((result, raw) => {
+        return (this.mergedRaws ??= Array.from(this.raws).reduce((result, raw) => {
             return _.mergeWith(result, raw, (objValue, srcValue) => {
                 if (Array.isArray(objValue) && Array.isArray(srcValue)) {
                     return objValue.concat(srcValue);
                 }
             });
-        }, {});
+        }, {}));
     }
 
     protected get combinedPermissions(): ManifestPermissions {
@@ -395,8 +395,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     public get(): T {
         return this.build();
     }
-
-
 
     private merge<T extends CoreManifest>(...sources: Array<Partial<T> | undefined>): T {
         sources = sources.filter(source => source !== undefined);
