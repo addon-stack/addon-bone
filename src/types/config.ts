@@ -1,5 +1,6 @@
 import type {Configuration as RspackConfig, Filename} from "@rspack/core";
 import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
+import type {TsConfigJson} from "type-fest";
 
 import {Command, Mode} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";
@@ -7,6 +8,7 @@ import {ManifestIncognitoValue, ManifestVersion, ManifestBuilder, OptionalManife
 import {Plugin} from "@typing/plugin";
 import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
+import {TsConfigBuilder} from "@typing/typescript";
 import {EnvFilterOptions, EnvFilterVariant} from "@typing/env";
 
 /**
@@ -190,6 +192,11 @@ export interface Config {
      * Defines the manifest structure and available APIs.
      */
     manifestVersion: ManifestVersion;
+
+    /**
+     * TypeScript configuration for the project. This is the parsed tsconfig.json content.
+     */
+    tsConfig?: TsConfigJson | ((builder: TsConfigBuilder) => void);
 
     /**
      * Default locale for the extension.

@@ -117,6 +117,7 @@
     "test:relay": "jest --testPathPatterns=Relay",
     "test:locale": "jest --testPathPatterns=Locale",
     "test:manifest": "jest --testPathPatterns=src/cli/builders/manifest",
+    "test:typescript": "jest --testPathPatterns=src/cli/builders/typescript",
     "test:entrypoint": "jest --testPathPatterns=src/cli/entrypoint",
     "test:plugins": "jest --testPathPatterns=src/cli/plugins",
     "release": "release-it",

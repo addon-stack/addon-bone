@@ -10,6 +10,8 @@ import {ReadonlyConfig} from "@typing/config";
 import {PackageName} from "@typing/app";
 
 export default class extends FileBuilder {
+    protected tsConfig: TsConfigJson = {};
+
     protected readonly vendorAliases = {
         [`${PackageName}/browser`]: "@addon-core/browser",
         [`${PackageName}/storage`]: "@addon-core/storage",
@@ -32,7 +34,13 @@ export default class extends FileBuilder {
     }
 
     protected content(): string {
-        return JSON.stringify(this.json(), null, 2);
+        const json = _.mergeWith(this.tsConfig, this.json(), (_objValue, srcValue) => {
+            if (Array.isArray(srcValue)) {
+                return srcValue;
+            }
+        });
+
+        return JSON.stringify(json, null, 2);
     }
 
     protected alias(): Record<string, string> {
@@ -85,5 +93,16 @@ export default class extends FileBuilder {
             include: ["../**/*", "./*.d.ts"],
             exclude: [outputDir],
         };
+    }
+
+    public merge(config?: TsConfigJson) {
+        if (config) {
+            this.tsConfig = _.mergeWith(this.tsConfig, config, (_objValue, srcValue) => {
+                if (Array.isArray(srcValue)) {
+                    return srcValue;
+                }
+            });
+        }
+        return this;
     }
 }
