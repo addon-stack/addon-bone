@@ -198,6 +198,17 @@ export interface Config {
     lang?: string | Language;
 
     /**
+     * Shared source layer configuration.
+     *
+     * - `false` uses the source directory itself as the shared layer.
+     * - `true` uses the default `shared` directory.
+     * - a string uses a custom shared directory name.
+     *
+     * @default false
+     */
+    shared: boolean | string;
+
+    /**
      * Path to the directory with source files for building.
      * This is the base directory relative to which other paths are defined.
      * @example "addon"
@@ -714,7 +725,7 @@ export interface Config {
 }
 
 export type OptionalConfig = Partial<Config>;
-export type UserConfig = Omit<OptionalConfig, "configFile" | "command">;
+export type UserConfig = Omit<OptionalConfig, "configFile" | "command" | "sharedDir">;
 export type ReadonlyConfig = Readonly<Config>;
 
 export type UserConfigCallback = (config: ReadonlyConfig) => UserConfig;

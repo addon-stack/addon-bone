@@ -177,10 +177,10 @@ export default async (config: OptionalConfig): Promise<Config> => {
         lang = Language.English,
         incognito,
         specific,
+        shared = false,
         rootDir = ".",
         outDir = "dist",
         srcDir = "src",
-        sharedDir = "shared",
         appsDir = "apps",
         appSrcDir = ".",
         localeDir = "locales",
@@ -250,10 +250,11 @@ export default async (config: OptionalConfig): Promise<Config> => {
         specific,
         manifest,
         manifestVersion,
+        shared,
         rootDir,
         outDir,
         srcDir,
-        sharedDir,
+        sharedDir: _.isString(shared) ? shared : shared ? "shared" : ".",
         appsDir,
         appSrcDir,
         jsDir,
@@ -298,7 +299,18 @@ export default async (config: OptionalConfig): Promise<Config> => {
 
     const {plugins: userPlugins = [], ...userConfig} = await getUserConfig(resolvedConfig);
 
-    resolvedConfig = validateConfig({...resolvedConfig, ...userConfig});
+    resolvedConfig = {
+        ...resolvedConfig,
+        ...userConfig,
+    };
+
+    resolvedConfig.sharedDir = _.isString(resolvedConfig.shared)
+        ? resolvedConfig.shared
+        : resolvedConfig.shared
+          ? "shared"
+          : ".";
+
+    resolvedConfig = validateConfig(resolvedConfig);
 
     vars = {...vars, ...loadDotenv(resolvedConfig)};
 
