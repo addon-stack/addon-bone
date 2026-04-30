@@ -50,9 +50,7 @@ export default class extends BackgroundParser<CommandEntrypointOptions> {
         const {defaultKey, windowsKey, macKey, chromeosKey, linuxKey, ...options} = super.options(file);
 
         if (!defaultKey && !windowsKey && !macKey && !chromeosKey && !linuxKey) {
-            throw new Error(
-                `Invalid command options in "${file.file}": At least one suggested key must be defined`
-            );
+            throw new Error(`Invalid command options in "${file.file}": At least one suggested key must be defined`);
         }
 
         if (options.global) {
