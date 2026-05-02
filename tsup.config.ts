@@ -73,7 +73,7 @@ export default defineConfig([
         outDir: "dist",
         target: "node14",
         clean: true,
-        dts: true,
+        dts: false,
         sourcemap: true,
         // @ts-ignore
         esbuildPlugins: [fixVirtualIndexImportPlugin(), fixImportsPlugin()],
