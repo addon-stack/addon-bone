@@ -8,9 +8,7 @@
     "outDir": "./dist",
     "sourceMap": false
   },
-  "include": [
-    "./src/**/*"
-  ],
+  "include": ["./src/**/*"],
   "exclude": [
     "**/*.test.ts",
     "**/tests/**/*.ts",
