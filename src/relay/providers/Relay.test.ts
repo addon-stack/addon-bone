@@ -41,6 +41,12 @@ const options: RelayOptions = {
     method: RelayMethod.Scripting,
 };
 
+const expectScriptInjection = (expected: Partial<chrome.scripting.ScriptInjection<any[], any>>) => {
+    const [injection] = (chrome.scripting.executeScript as jest.Mock).mock.calls.at(-1);
+
+    expect(injection).toEqual(expect.objectContaining(expected));
+};
+
 describe("ProxyRelay", () => {
     beforeEach(async () => {
         (isRelayContext as jest.Mock).mockReturnValue(false);
@@ -69,13 +75,11 @@ describe("ProxyRelay", () => {
 
         expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
 
-        expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
-            expect.objectContaining({
-                target: {tabId: 1},
-                func: expect.any(Function),
-                args: [relayName, "sum", [1, 2], RelayGlobalKey],
-            })
-        );
+        expectScriptInjection({
+            target: {tabId: 1},
+            func: expect.any(Function),
+            args: [relayName, "sum", [1, 2], RelayGlobalKey],
+        });
     });
 
     test("accesses primitive value as method on the relay object", async () => {
@@ -85,35 +89,29 @@ describe("ProxyRelay", () => {
         }).get();
 
         expect(await relay.one()).toBe(1);
-        expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
-            expect.objectContaining({
-                target: {tabId: 1, frameIds: [2]},
-                func: expect.any(Function),
-                args: [relayName, "one", [], RelayGlobalKey],
-            })
-        );
+        expectScriptInjection({
+            target: {tabId: 1, frameIds: [2]},
+            func: expect.any(Function),
+            args: [relayName, "one", [], RelayGlobalKey],
+        });
     });
 
     test("accesses nested method or property ", async () => {
         const relay = new ProxyRelay<typeof relayName, RelayProxyType>(relayName, options, 1).get();
 
         expect(await relay.obj.concat("Hello", "world")).toBe("Hello world");
-        expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
-            expect.objectContaining({
-                target: {tabId: 1},
-                func: expect.any(Function),
-                args: [relayName, "obj.concat", ["Hello", "world"], RelayGlobalKey],
-            })
-        );
+        expectScriptInjection({
+            target: {tabId: 1},
+            func: expect.any(Function),
+            args: [relayName, "obj.concat", ["Hello", "world"], RelayGlobalKey],
+        });
 
         expect(await relay.obj.zero()).toBe(0);
-        expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
-            expect.objectContaining({
-                target: {tabId: 1},
-                func: expect.any(Function),
-                args: [relayName, "obj.zero", [], RelayGlobalKey],
-            })
-        );
+        expectScriptInjection({
+            target: {tabId: 1},
+            func: expect.any(Function),
+            args: [relayName, "obj.zero", [], RelayGlobalKey],
+        });
     });
 
     test("calls async method on proxy and returns resolved value", async () => {

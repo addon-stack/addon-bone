@@ -31,9 +31,9 @@ export default abstract class<
 
         this.message().watch(async ({path, args}, sender) => {
             try {
-                this.injectSender(instance, sender);
+                const context = this.withSender(instance, sender);
 
-                const property = path == null ? instance : get(instance, path);
+                const property = path == null ? context : get(context, path);
 
                 if (property === undefined) {
                     throw new Error(`Property not found at path "${path}" in "${this.name}"`);
@@ -42,18 +42,14 @@ export default abstract class<
                 let result: any;
 
                 if (typeof property === "function") {
-                    result = await property.apply(instance, args);
+                    result = await property.apply(context, args);
                 } else {
                     result = property;
                 }
 
-                this.clearSender(instance);
-
                 return result;
             } catch (error) {
                 console.error(`Error during message handler registration for transport "${this.name}"`, error);
-
-                this.clearSender(instance);
 
                 throw error;
             }
@@ -62,22 +58,15 @@ export default abstract class<
         return instance;
     }
 
-    private injectSender(instance: T, sender: MessageSender): void {
-        if (!Object.getOwnPropertyDescriptor(instance, MessageSenderProperty)) {
-            Object.defineProperty(instance, MessageSenderProperty, {
-                configurable: true,
-                enumerable: false,
-                writable: true,
-                value: undefined,
-            });
-        }
+    private withSender(instance: T, sender: MessageSender): T {
+        return new Proxy(instance, {
+            get(target, property, receiver) {
+                if (property === MessageSenderProperty) {
+                    return sender;
+                }
 
-        (instance as any)[MessageSenderProperty] = sender;
-    }
-
-    private clearSender(instance: T): void {
-        if (Object.getOwnPropertyDescriptor(instance, MessageSenderProperty)) {
-            (instance as any)[MessageSenderProperty] = undefined;
-        }
+                return Reflect.get(target, property, receiver);
+            },
+        });
     }
 }

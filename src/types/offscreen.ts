@@ -4,6 +4,7 @@ import {Awaiter} from "@typing/helpers";
 
 export const OffscreenGlobalKey = "adnbnOffscreen";
 export const OffscreenGlobalAccess = "adnbnOffscreenAccess";
+export const OffscreenBridgeReadyMessageType = "adnbn:offscreen:ready";
 
 export enum OffscreenReason {
     /** A reason used for testing purposes only. */
