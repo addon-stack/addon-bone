@@ -218,7 +218,7 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
         if (entry.matches.includes("<all_urls>") || entry.matches.includes("*://*/*")) {
             for (const other of result) {
                 if (other === entry) continue;
-                // збігаються усі крім resources → можна чистити resources
+
                 if (
                     _.isEqual(other.matches, entry.matches) ||
                     other.useDynamicUrl !== entry.useDynamicUrl ||
