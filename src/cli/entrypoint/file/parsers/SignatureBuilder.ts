@@ -45,7 +45,7 @@ export default class SignatureBuilder {
                 const type = jsDocType || tsType;
 
                 // Remove spaces in object types to match expected format
-                const formattedType = type.replace(/\{\s+/g, "{").replace(/\s+\}/g, "}");
+                const formattedType = type.replace(/{\s+/g, "{").replace(/\s+}/g, "}");
                 const optional = p.questionToken !== undefined || p.initializer !== undefined;
                 return {name, type: formattedType, optional};
             });
@@ -80,7 +80,7 @@ export default class SignatureBuilder {
         const returnType = jsDocReturnType || tsReturnType;
 
         // Remove spaces in object types to match expected format
-        const formattedReturnType = returnType.replace(/\{\s+/g, "{").replace(/\s+\}/g, "}");
+        const formattedReturnType = returnType.replace(/{\s+/g, "{").replace(/\s+}/g, "}");
 
         return {
             kind: "method",
@@ -121,7 +121,7 @@ export default class SignatureBuilder {
                         let paramType = p.type;
                         if (paramType.includes("@param")) {
                             // This is a parameter with JSDoc comments, extract just the type
-                            const match = paramType.match(/\{([^}]+)\}/);
+                            const match = paramType.match(/{([^}]+)}/);
                             if (match) {
                                 paramType = match[1];
                             }
