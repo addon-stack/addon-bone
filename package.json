@@ -185,7 +185,7 @@
     "jest-webextension-mock": "^4.0.0",
     "prettier": "^3.6.2",
     "release-it": "^19.2.3",
-    "ts-node": "^1.7.1",
+    "ts-node": "10.9.2",
     "tsc-alias": "^1.8.17",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
