@@ -1,4 +1,0 @@
-interface:
-    display_name: "Offscreen"
-    short_description: "Offscreen transport project guide."
-    default_prompt: "Use $offscreen to change or review addon-bone offscreen transport behavior."
