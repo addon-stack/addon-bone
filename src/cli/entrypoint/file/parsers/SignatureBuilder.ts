@@ -34,19 +34,21 @@ export default class SignatureBuilder {
                 : new Map<string, string>();
 
         // parameters
-        const params: ParameterSignature[] = ("parameters" in method ? method.parameters : []).map(p => {
-            const name = ts.isIdentifier(p.name) ? p.name.text : p.name.getText();
+        const params: ParameterSignature[] = ("parameters" in method ? method.parameters : [])
+            .filter(p => p.name.getText() !== "this")
+            .map(p => {
+                const name = ts.isIdentifier(p.name) ? p.name.text : p.name.getText();
 
-            // Use JSDoc type if available, otherwise use TypeScript type
-            const tsType = p.type ? this.typeResolver.resolveTypeNode(p.type) : "any";
-            const jsDocType = jsDocParamTypes.get(name);
-            const type = jsDocType || tsType;
+                // Use JSDoc type if available, otherwise use TypeScript type
+                const tsType = p.type ? this.typeResolver.resolveTypeNode(p.type) : "any";
+                const jsDocType = jsDocParamTypes.get(name);
+                const type = jsDocType || tsType;
 
-            // Remove spaces in object types to match expected format
-            const formattedType = type.replace(/\{\s+/g, "{").replace(/\s+\}/g, "}");
-            const optional = p.questionToken !== undefined || p.initializer !== undefined;
-            return {name, type: formattedType, optional};
-        });
+                // Remove spaces in object types to match expected format
+                const formattedType = type.replace(/\{\s+/g, "{").replace(/\s+\}/g, "}");
+                const optional = p.questionToken !== undefined || p.initializer !== undefined;
+                return {name, type: formattedType, optional};
+            });
 
         // Get JSDoc type parameters if available, otherwise use TypeScript type parameters
         let typeParams: string[] = [];

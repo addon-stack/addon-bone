@@ -311,7 +311,7 @@ describe("ExpressionFile", () => {
                 );
                 const type = ExpressionFile.make(filename).setDefinition("defineService").setProperty("init").getType();
 
-                expect(type).toBe("{ ping(): Promise<void>; }");
+                expect(type).toBe("{ ping(): Promise<number | undefined>; }");
             });
         });
     });
