@@ -7,7 +7,10 @@ import CustomLocale, {CustomLocaleData} from "./CustomLocale";
 
 import {Language, LanguageCodes, LocaleDynamicProvider, LocaleMessages} from "@typing/locale";
 
-export default class<T extends LocaleNativeStructure> extends NativeLocale implements LocaleDynamicProvider<T> {
+export default class<T extends object = LocaleNativeStructure>
+    extends NativeLocale<T>
+    implements LocaleDynamicProvider<T>
+{
     protected cache = new Map<Language, CustomLocaleData>();
 
     protected locale?: CustomLocale<T>;
@@ -93,8 +96,8 @@ export default class<T extends LocaleNativeStructure> extends NativeLocale imple
         return this.locale?.lang() || super.lang();
     }
 
-    protected value(key: Extract<keyof LocaleNativeStructure, string>): string | undefined {
-        return this.locale?.get(key) || super.value(key);
+    protected value(key: Extract<keyof T, string>): string | undefined {
+        return this.locale?.get(key) ?? super.value(key);
     }
 
     protected async fetch(lang: Language): Promise<CustomLocaleData> {

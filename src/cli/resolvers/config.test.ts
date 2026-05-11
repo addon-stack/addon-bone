@@ -35,6 +35,8 @@ import {loadConfig} from "c12";
 
 import resolveConfig from "./config";
 
+import {Language} from "@typing/locale";
+
 const mockedLoadConfig = jest.mocked(loadConfig);
 
 describe("config resolver", () => {
@@ -47,6 +49,36 @@ describe("config resolver", () => {
 
         expect(config.shared).toBe(false);
         expect(config.sharedDir).toBe(".");
+    });
+
+    test("uses English as the default language", async () => {
+        const config = await resolveConfig({configFile: "package.json"});
+
+        expect(config.lang).toBe(Language.English);
+    });
+
+    test("normalizes language from user config", async () => {
+        mockedLoadConfig.mockResolvedValue({
+            config: {
+                lang: "fr",
+            },
+        });
+
+        const config = await resolveConfig({configFile: "package.json"});
+
+        expect(config.lang).toBe(Language.French);
+    });
+
+    test("throws a clear error for invalid language config", async () => {
+        mockedLoadConfig.mockResolvedValue({
+            config: {
+                lang: "missing",
+            },
+        });
+
+        await expect(resolveConfig({configFile: "package.json"})).rejects.toThrow(
+            'Invalid language "missing" provided by config'
+        );
     });
 
     test("uses default shared directory when shared is true", async () => {

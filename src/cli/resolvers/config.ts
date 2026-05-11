@@ -35,8 +35,20 @@ import {Command, Mode} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {Plugin} from "@typing/plugin";
 import {ManifestVersion} from "@typing/manifest";
-import {Language} from "@typing/locale";
+import {Language, LanguageCodes} from "@typing/locale";
 import {DefaultIconGroupName} from "@typing/icon";
+
+const resolveLanguage = (lang?: `${Language}` | Language): Language => {
+    if (!lang) {
+        return Language.English;
+    }
+
+    if (LanguageCodes.has(lang)) {
+        return lang as Language;
+    }
+
+    throw new Error(`Invalid language "${lang}" provided by config`);
+};
 
 const getUserConfig = async (config: ReadonlyConfig): Promise<UserConfig> => {
     const configFilePath = getConfigFile(config);
@@ -244,7 +256,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         minimumVersion,
         author,
         homepage,
-        lang,
+        lang: resolveLanguage(lang),
         icon,
         incognito,
         specific,
@@ -297,11 +309,12 @@ export default async (config: OptionalConfig): Promise<Config> => {
 
     let vars = loadDotenv(resolvedConfig);
 
-    const {plugins: userPlugins = [], ...userConfig} = await getUserConfig(resolvedConfig);
+    const {plugins: userPlugins = [], lang: userLang, ...userConfig} = await getUserConfig(resolvedConfig);
 
     resolvedConfig = {
         ...resolvedConfig,
         ...userConfig,
+        lang: resolveLanguage(userLang ?? resolvedConfig.lang),
     };
 
     resolvedConfig.sharedDir = _.isString(resolvedConfig.shared)

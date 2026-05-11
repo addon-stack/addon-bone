@@ -84,7 +84,7 @@ export default class LocaleBuilder implements LocaleBuilderContract {
                 substitutions.push(match[1].trim());
             }
 
-            return substitutions;
+            return _.uniq(substitutions.filter(Boolean)).sort();
         };
 
         return this.get()

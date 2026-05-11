@@ -1,26 +1,19 @@
 import {createContext, useContext} from "react";
 
-import {
-    LocaleDir,
-    Language,
-    LocaleNonPluralKeys,
-    LocaleStructure,
-    LocaleSubstitutionsFor,
-    LocalePluralKeys,
-} from "@typing/locale";
+import {LocaleDir, Language, LocaleNonPluralKeys, LocaleSubstitutionArgs, LocalePluralKeys} from "@typing/locale";
 
 import {LocaleNativeStructure} from "@locale/providers";
 
-export interface LocaleContract<S extends LocaleStructure = LocaleNativeStructure> {
+export interface LocaleContract<S extends object = LocaleNativeStructure> {
     lang: Language;
 
     dir: LocaleDir;
 
     isRtl: boolean;
 
-    _<K extends LocaleNonPluralKeys<S>>(key: K, substitutions?: LocaleSubstitutionsFor<S, K>): string;
+    t<K extends LocaleNonPluralKeys<S>>(key: K, ...args: LocaleSubstitutionArgs<S, K>): string;
 
-    choice<K extends LocalePluralKeys<S>>(key: K, count: number, substitutions?: LocaleSubstitutionsFor<S, K>): string;
+    choice<K extends LocalePluralKeys<S>>(key: K, count: number, ...args: LocaleSubstitutionArgs<S, K>): string;
 
     change(lang: Language): void;
 }
@@ -29,7 +22,7 @@ export const DefaultLocale: LocaleContract = {
     lang: Language.English,
     isRtl: false,
     dir: LocaleDir.LeftToRight,
-    _(key: string): string {
+    t(key: string): string {
         return key as string;
     },
     choice(key: string): string {

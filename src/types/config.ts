@@ -195,7 +195,7 @@ export interface Config {
      * Default locale for the extension.
      * @example "en"
      */
-    lang?: string | Language;
+    lang: Language;
 
     /**
      * Shared source layer configuration.
@@ -724,7 +724,10 @@ export interface Config {
     cssIdentName: string;
 }
 
-export type OptionalConfig = Partial<Config>;
+export type OptionalConfig = Omit<Partial<Config>, "lang"> & {
+    lang?: Language | `${Language}`;
+};
+
 export type UserConfig = Omit<OptionalConfig, "configFile" | "command" | "sharedDir">;
 export type ReadonlyConfig = Readonly<Config>;
 

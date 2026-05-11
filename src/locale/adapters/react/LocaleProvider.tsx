@@ -18,12 +18,12 @@ const LocaleProvider = ({children, storage, container = "html"}: PropsWithChildr
 
     const [lang, setLang] = useState<Language>(locale.lang());
 
-    const _: LocaleContract["_"] = useCallback((key, substitutions): string => {
-        return locale.trans(key, substitutions);
+    const t: LocaleContract["t"] = useCallback((key, ...args): string => {
+        return locale.trans(key, ...args);
     }, []);
 
-    const choice: LocaleContract["choice"] = useCallback((key, count, substitutions): string => {
-        return locale.choice(key, count, substitutions);
+    const choice: LocaleContract["choice"] = useCallback((key, count, ...args): string => {
+        return locale.choice(key, count, ...args);
     }, []);
 
     const change: LocaleContract["change"] = useCallback((lang): void => {
@@ -61,7 +61,7 @@ const LocaleProvider = ({children, storage, container = "html"}: PropsWithChildr
     return (
         <LocaleContext.Provider
             value={{
-                _,
+                t,
                 choice,
                 change,
                 lang,

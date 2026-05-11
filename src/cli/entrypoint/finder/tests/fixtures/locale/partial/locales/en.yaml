@@ -1,0 +1,3 @@
+app:
+    name: My App
+    greeting: Hello {{name}}

@@ -77,7 +77,7 @@ export const LanguageCodes: ReadonlySet<string> = new Set(Object.values(Language
 
 export const LocaleFileExtensions: ReadonlySet<string> = new Set(["yaml", "yml", "json"]);
 
-export type LocaleValue = string | number | string[] | number[];
+export type LocaleValue = string | number | Array<string | number>;
 
 export type LocaleData = {
     [key: string]: LocaleValue | LocaleData;
@@ -111,10 +111,18 @@ export interface LocaleBuilder {
     validate(): this;
 }
 
+export type LocaleBuilders = Map<Language, LocaleBuilder>;
+
 export interface LocaleValidator {
     isValid(locale: LocaleBuilder): boolean;
 
     validate(locale: LocaleBuilder): this;
+}
+
+export interface LocaleContractValidator {
+    isValid(builders: LocaleBuilders): boolean;
+
+    validate(builders: LocaleBuilders): this;
 }
 
 export interface LocaleFutures {
@@ -126,23 +134,33 @@ export interface LocaleStructure {
     [key: string]: LocaleFutures;
 }
 
-export type LocaleNonPluralKeys<T extends LocaleStructure> = {
+export type LocaleNonPluralKeys<T> = {
     [K in keyof T]: T[K] extends {plural: false} ? K : never;
 }[keyof T] &
     string;
 
-export type LocalePluralKeys<T extends LocaleStructure> = {
+export type LocalePluralKeys<T> = {
     [K in keyof T]: T[K] extends {plural: true} ? K : never;
 }[keyof T] &
     string;
 
-export type LocaleSubstitutionsFor<T extends LocaleStructure, K extends keyof T> = T[K] extends {
-    substitutions: readonly (infer U)[];
-}
-    ? Partial<Record<U & string, string | number>>
+export type LocaleSubstitutionValue = string | number;
+
+export type LocaleSubstitutionKeys<T, K extends keyof T> = T[K] extends {substitutions: readonly (infer U)[]}
+    ? U & string
     : never;
 
-export interface LocaleProvider<S extends LocaleStructure> {
+export type LocaleSubstitutionsFor<T, K extends keyof T> = [LocaleSubstitutionKeys<T, K>] extends [never]
+    ? never
+    : Record<LocaleSubstitutionKeys<T, K>, LocaleSubstitutionValue>;
+
+export type LocaleSubstitutionArgs<T, K extends keyof T> = string extends keyof T
+    ? [substitutions?: Record<string, LocaleSubstitutionValue>]
+    : [LocaleSubstitutionKeys<T, K>] extends [never]
+      ? []
+      : [substitutions: LocaleSubstitutionsFor<T, K>];
+
+export interface LocaleProvider<S> {
     lang(): Language;
 
     languages(): Set<Language>;
@@ -150,12 +168,12 @@ export interface LocaleProvider<S extends LocaleStructure> {
     keys(): ReadonlySet<keyof S>;
 
     // non-plural keys
-    trans<K extends LocaleNonPluralKeys<S>>(key: K, substitutions?: LocaleSubstitutionsFor<S, K>): string;
+    trans<K extends LocaleNonPluralKeys<S>>(key: K, ...args: LocaleSubstitutionArgs<S, K>): string;
 
     // plural keys
-    choice<K extends LocalePluralKeys<S>>(key: K, count: number, substitutions?: LocaleSubstitutionsFor<S, K>): string;
+    choice<K extends LocalePluralKeys<S>>(key: K, count: number, ...args: LocaleSubstitutionArgs<S, K>): string;
 }
 
-export interface LocaleDynamicProvider<S extends LocaleStructure> extends LocaleProvider<S> {
+export interface LocaleDynamicProvider<S> extends LocaleProvider<S> {
     change(lang: Language): Promise<Language>;
 }

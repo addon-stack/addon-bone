@@ -11,7 +11,6 @@ import {LocaleDeclaration} from "./declaration";
 
 import {Command} from "@typing/app";
 import {Browser} from "@typing/browser";
-import {Language, LanguageCodes} from "@typing/locale";
 
 export default definePlugin(() => {
     let locale: Locale;
@@ -25,6 +24,8 @@ export default definePlugin(() => {
         },
         locale: () => locale.files(),
         bundler: async ({config}) => {
+            await locale.validate();
+
             declaration.structure(await locale.structure()).build();
 
             const plugin = new GenerateJsonPlugin(await locale.json());
@@ -32,6 +33,8 @@ export default definePlugin(() => {
             if (config.command === Command.Watch) {
                 plugin.watch(async () => {
                     locale.clear();
+
+                    await locale.validate();
 
                     declaration.structure(await locale.structure()).build();
 
@@ -50,81 +53,73 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({config, manifest}) => {
-            const {lang, name, shortName, description, browser} = config;
+            const {lang: language, name, shortName, description, browser} = config;
+            const availableLanguages = await locale.languages();
+            const builders = await locale.builders();
+            const hasLocales = builders.size > 0;
 
-            let language: Language = Language.English;
-
-            if (lang) {
-                if (LanguageCodes.has(lang)) {
-                    language = lang as Language;
-                } else {
-                    throw new Error(`Invalid language "${lang}" provided by config`);
-                }
-
-                const availableLanguages = await locale.languages();
-
-                if (availableLanguages.size > 0 && !availableLanguages.has(language)) {
-                    throw new Error(
-                        `Language "${language}" not found in available translations. Available languages: ${[...availableLanguages].join(", ")}`
-                    );
-                }
+            if (availableLanguages.size > 0 && !availableLanguages.has(language)) {
+                throw new Error(
+                    `Language "${language}" not found in available translations. Available languages: ${[...availableLanguages].join(", ")}`
+                );
             }
 
-            const builders = await locale.builders();
+            await locale.validate();
+
             const keys = await locale.keys();
 
-            manifest.setLocale(builders.size > 0 ? language : undefined);
+            const assertLocaleKey = (value: string, label: string): void => {
+                const key = extractLocaleKey(value);
 
-            if (builders.size > 0) {
-                if (shortName) {
-                    let manifestShortName: string | undefined = modifyLocaleMessageKey(shortName);
-
-                    const shortNameKey = extractLocaleKey(shortName);
-
-                    if (shortNameKey) {
-                        if (!keys.has(shortNameKey)) {
-                            throw new Error(`Locale short name key "${shortNameKey}" not found in translation`);
-                        }
-
-                        /** Opera/Edge do not support localization in manifest's short_name field */
-                        if (browser === Browser.Opera || browser === Browser.Edge) {
-                            const instance = builders.get(language);
-
-                            if (!instance) {
-                                throw new Error(`Locale not found for "${language}"`);
-                            }
-
-                            manifestShortName = instance.get().get(shortNameKey);
-                        }
-                    }
-
-                    manifest.setShortName(manifestShortName);
+                if (!key) {
+                    return;
                 }
 
-                if (description) {
-                    const descriptionKey = extractLocaleKey(description);
-
-                    if (descriptionKey && !keys.has(descriptionKey)) {
-                        throw new Error(`Locale description key "${descriptionKey}" not found in translation`);
-                    }
-
-                    manifest.setDescription(modifyLocaleMessageKey(description));
+                if (!hasLocales) {
+                    throw new Error(`Locale ${label} key "${key}" provided but no translations were found`);
                 }
 
-                if (name) {
-                    const nameKey = extractLocaleKey(name);
+                if (!keys.has(key)) {
+                    throw new Error(`Locale ${label} key "${key}" not found in translation`);
+                }
+            };
 
-                    if (nameKey && !keys.has(nameKey)) {
-                        throw new Error(`Locale name key "${nameKey}" not found in translation`);
+            manifest.setLocale(hasLocales ? language : undefined);
+
+            if (shortName) {
+                let manifestShortName = modifyLocaleMessageKey(shortName) ?? shortName;
+                const shortNameKey = extractLocaleKey(shortName);
+
+                assertLocaleKey(shortName, "short name");
+
+                /** Opera/Edge do not support localization in manifest's short_name field */
+                if (shortNameKey && (browser === Browser.Opera || browser === Browser.Edge)) {
+                    const instance = builders.get(language);
+
+                    if (!instance) {
+                        throw new Error(`Locale not found for "${language}"`);
                     }
 
-                    const manifestName = modifyLocaleMessageKey(name);
+                    manifestShortName = instance.get().get(shortNameKey) ?? manifestShortName;
+                }
 
-                    if (manifestName) {
-                        manifest.setName(manifestName);
+                manifest.setShortName(manifestShortName);
+            }
 
-                        return;
-                    }
+            if (description) {
+                assertLocaleKey(description, "description");
+                manifest.setDescription(modifyLocaleMessageKey(description));
+            }
+
+            if (name) {
+                assertLocaleKey(name, "name");
+
+                const manifestName = modifyLocaleMessageKey(name);
+
+                if (manifestName) {
+                    manifest.setName(manifestName);
+
+                    return;
                 }
             }
 
