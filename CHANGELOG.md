@@ -1,5 +1,129 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.6.0 (2026-05-11)
+
+
+### ⚡️ Performance Improvements
+
+* **build:** enable separate TypeScript declaration file generation ([7864487](https://github.com/addon-stack/addon-bone/commit/7864487f8fde6d37282047fc19dde2f5d964e825))
+
+
+
+
+### ✨ Features
+
+* **config:** add `shared` option for configurable shared source layer ([0ff5c34](https://github.com/addon-stack/addon-bone/commit/0ff5c346623e5a1a402b08fcae9dc5c02b7abedf))
+
+  - Introduced `shared` option to configure shared directories as `false`, `true`,
+   or a custom string.
+  - Added tests to validate behavior for all `shared` option cases.
+  - Updated type definitions to document the new `shared` configuration.
+
+* **offscreen:** add lifecycle tests and improve iframe readiness handling ([db39da2](https://github.com/addon-stack/addon-bone/commit/db39da29e7d66d41fa422e48c3c2a258d698089a))
+
+  - Added tests to validate iframe lifecycle, including creation, readiness, and removal.
+  - Improved offscreen iframe readiness by waiting for a specific "ready" message.
+  - Updated timeout handling for iframe readiness and added error messaging.
+
+* **workspace:** add workspace mode for single and multi app structure ([8469d92](https://github.com/addon-stack/addon-bone/commit/8469d92c52bf55abc27cdec74bfe47206370393b))
+
+  - add Workspace enum with single and multi modes
+  - replace shared config option with workspace
+  - keep sharedDir as a public configurable directory
+  - normalize sharedDir to "." for single workspace
+  - use configured sharedDir for multi workspace
+  - update config resolver tests for workspace behavior
+
+
+
+### 🐛 Bug Fixed
+
+* **command:** simplify error message for invalid command key options ([c02a4dd](https://github.com/addon-stack/addon-bone/commit/c02a4ddb06d8639817b44ed2924cc1f82539ae83))
+
+
+* **locale:** validate locale contract and tighten substitutions ([d3b05a6](https://github.com/addon-stack/addon-bone/commit/d3b05a67d77a29987139f7ee984760269eaefd0a))
+
+  - resolve config.lang to a concrete Language before plugins run
+  - validate locale structure against the default language contract
+  - allow missing keys in secondary locales and warn about extra keys
+  - generate locale keys and types from the default language only
+  - trim runtime substitution placeholders to match generated types
+  - make substitution arguments strict in TypeScript
+  - fix manifest plain name, shortName and description handling
+  - replace locale helpers with t, choice, key and resolve
+  - preserve empty-string values in custom and dynamic locales
+  - add locale validator, manifest, runtime and type-level tests
+
+* **parsers:** correct regex patterns for object type formatting in `SignatureBuilder` ([6acda7d](https://github.com/addon-stack/addon-bone/commit/6acda7daf7d26ab39643667991af5d5d61d2ffbb))
+
+
+* **parsers:** exclude `this` parameter from signature generation ([1d5f3cd](https://github.com/addon-stack/addon-bone/commit/1d5f3cd99127f09b62a9cac9595c9f988ffa8c74))
+
+  - Updated `SignatureBuilder` to filter out `this` parameters in method signatures.
+  - Adjusted tests in `ExpressionFile` to reflect changes in method return type.
+  - Refined type usage and formatting in service definition for consistency.
+
+* **tests:** improve path normalization and add Windows-specific diagnostics test ([354f428](https://github.com/addon-stack/addon-bone/commit/354f42836f94a1d41a499d6703321052318281d4))
+
+
+* **tests:** normalize paths in entrypoint and locale tests ([de0b494](https://github.com/addon-stack/addon-bone/commit/de0b49429ed201a7b2ad69359e4f57c4fd0f356f))
+
+
+
+
+### 🧹 Chores
+
+* **deps:** bump lodash to v4.18.1 ([209be45](https://github.com/addon-stack/addon-bone/commit/209be45ad7c1681d05fb18c466049320829f4513))
+
+
+* **deps:** update `ts-node` to v10.9.2 and clean up outdated dependencies ([409bf0b](https://github.com/addon-stack/addon-bone/commit/409bf0bee800e62a4c23b657e1822a918f8f951a))
+
+
+* **docs:** remove projects skills ([31c2407](https://github.com/addon-stack/addon-bone/commit/31c2407e9c3f9484ca46e5a75cfb13af4f02a35f))
+
+
+* **manifest:** remove redundant comment in URL match validation logic ([2e095da](https://github.com/addon-stack/addon-bone/commit/2e095daadc23b6f1cea17dca6c3b8c6ba8ac365c))
+
+
+* simplify documentation for `EntrypointOptions` by removing redundant notes ([7869818](https://github.com/addon-stack/addon-bone/commit/78698181e38d46bf5c7600b0a1cd7ec660e4517f))
+
+
+* **tsconfig:** reformat include list and update exclude patterns ([1afe794](https://github.com/addon-stack/addon-bone/commit/1afe794eefe30def474bbb0afe6861c938889f86))
+
+
+
+
+### 🛠️ Refactoring
+
+* **command:** enhance shortcut key validation and add tests for CommandParser ([c0e9464](https://github.com/addon-stack/addon-bone/commit/c0e9464ff21fa428de2343b758e4184651ec6d89))
+
+  - Refined shortcut key validation, supporting media and platform-specific keys.
+  - Added stricter global shortcut constraints and error messaging improvements.
+  - Introduced comprehensive tests to ensure robust validation logic.
+
+* **finder:** improve sorting logic and enhance priority handling ([9c1dbcf](https://github.com/addon-stack/addon-bone/commit/9c1dbcf71ab99b70718694511c67814a800892bf))
+
+
+* **finder:** restructure file collection logic to support grouped and root entrypoints ([4ae0c7b](https://github.com/addon-stack/addon-bone/commit/4ae0c7b0df98256557d2c765485427734ea0af1a))
+
+
+* **Manifest:** add raw method to manifestBuilder, add plugin and manifest option to config ([491dc83](https://github.com/addon-stack/addon-bone/commit/491dc8357b5a2b2f07bdac21dd602796b19b1be6))
+
+
+* **Manifest:** improve permissions and host permissions logic, improve raw manifest merging ([ddc543b](https://github.com/addon-stack/addon-bone/commit/ddc543bc8d96a0d5bed45942c45679d696f61dbf))
+
+
+* **manifest:** streamline `combined*` methods for readability and maintainability ([83db7c1](https://github.com/addon-stack/addon-bone/commit/83db7c1979da8f91230c7be3381ad812edcf9db4))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 24
+- [Rostyslav Nihrutsa](https://github.com/RostyslavNihrutsa) (@RostyslavNihrutsa) — commits: 2
+
 ## 🚀 Release `adnbn` v0.5.7 (2026-02-04)
 
 
