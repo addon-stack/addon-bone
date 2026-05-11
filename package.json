@@ -4,6 +4,7 @@
   "version": "0.5.7",
   "description": "Addon Bone - Cross-browser web extension framework with shared code base",
   "homepage": "https://addonbone.com",
+  "author": "Anjey Tsibylskij (https://github.com/atldays)",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -26,10 +27,6 @@
     "edge",
     "opera",
     "safari"
-  ],
-  "author": "Addon Stack <addonbonedev@gmail.com>",
-  "contributors": [
-    "Anjey Tsibylskij (https://github.com/atldays)"
   ],
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -104,7 +101,7 @@
     "prepare": "husky",
     "preinstall": "npm run check:node-version",
     "prepublishOnly": "npm run build",
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=15046 tsup && node ./scripts/copy-dts.js",
+    "build": "tsup && tsc -p tsconfig.build.json && node ./scripts/copy-dts.js && tsc-alias -p tsconfig.build.json -f -fe .js",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:node-version": "node ./scripts/check-node-version.js",
@@ -123,9 +120,9 @@
     "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.2.1",
+    "@addon-core/browser": "^0.6.0",
     "@addon-core/inject-script": "^0.3.1",
-    "@addon-core/storage": "^0.4.0",
+    "@addon-core/storage": "^0.6.0",
     "@rsdoctor/rspack-plugin": "^1.5.1",
     "@rspack/cli": "^1.7.5",
     "@rspack/core": "^1.7.5",
@@ -141,7 +138,7 @@
     "html-rspack-tags-plugin": "^0.0.3",
     "js-yaml": "^4.1.1",
     "json-stringify-deterministic": "^1.0.12",
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
     "mini-css-extract-plugin": "^2.9.2",
     "nanoid": "^5.1.4",
     "pluralize": "^8.0.0",
@@ -157,7 +154,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "glob": "^13.0.1",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@microsoft/api-extractor": "^7.53.1",
@@ -181,6 +177,7 @@
     "esbuild-fix-imports-plugin": "^1.0.22",
     "esbuild-plugin-raw": "^0.3.0",
     "fs-extra": "^11.3.0",
+    "glob": "^13.0.1",
     "globby": "^14.1.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
@@ -188,7 +185,8 @@
     "jest-webextension-mock": "^4.0.0",
     "prettier": "^3.6.2",
     "release-it": "^19.2.3",
-    "ts-node": "^1.7.1",
+    "ts-node": "10.9.2",
+    "tsc-alias": "^1.8.17",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
     "uglify-js": "^3.19.3",

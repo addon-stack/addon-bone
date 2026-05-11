@@ -1,8 +1,6 @@
-import {closeOffscreen, createOffscreen, hasOffscreen, isManifestVersion3} from "@addon-core/browser";
+import {closeOffscreen, createOffscreen, hasOffscreen, hasOffscreenPath, isManifestVersion3} from "@addon-core/browser";
 
-import {getBrowser} from "@main/env";
-
-import {__t} from "@locale/helpers";
+import {isBrowser} from "@main/env";
 
 import ProxyTransport from "@transport/ProxyTransport";
 
@@ -17,23 +15,16 @@ import {DeepAsyncProxy} from "@typing/helpers";
 import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
 type CreateParameters = chrome.offscreen.CreateParameters;
+type ReleaseLock = () => void;
+
+const GateLockName = "adnbn:offscreen:gate";
+const ActiveLockName = "adnbn:offscreen:active";
 
 export default class ProxyOffscreen<
     N extends TransportName,
     T = DeepAsyncProxy<TransportDictionary[N]>,
 > extends ProxyTransport<N, T> {
     protected message: TransportMessage;
-
-    private url?: string;
-
-    private static instance?: ProxyOffscreen<any, any>;
-
-    public static getInstance<N extends TransportName, T = DeepAsyncProxy<TransportDictionary[N]>>(
-        name: N,
-        parameters: CreateParameters
-    ): ProxyOffscreen<N, T> {
-        return (this.instance ??= new ProxyOffscreen(name, parameters));
-    }
 
     constructor(
         name: N,
@@ -49,28 +40,62 @@ export default class ProxyOffscreen<
     }
 
     protected async apply(args: any[], path?: string): Promise<any> {
-        const parameters: CreateParameters = {
-            ...this.parameters,
-            justification: __t(this.parameters.justification),
-        };
+        if (!isManifestVersion3() || isBrowser(Browser.Firefox)) {
+            await OffscreenBridge.createOffscreen(this.parameters);
 
-        if (!isManifestVersion3() || getBrowser() === Browser.Firefox) {
-            await OffscreenBridge.createOffscreen(parameters);
-        } else {
-            const exists = await hasOffscreen();
-
-            if (!exists || this.url !== parameters.url) {
-                if (exists) {
-                    await closeOffscreen();
-                }
-
-                await createOffscreen(parameters);
-
-                this.url = parameters.url;
-            }
+            return this.message.send({path, args});
         }
 
-        return this.message.send({path, args});
+        const release = await this.acquire(this.parameters);
+
+        try {
+            return await this.message.send({path, args});
+        } finally {
+            release();
+        }
+    }
+
+    private async acquire(parameters: CreateParameters): Promise<ReleaseLock> {
+        return navigator.locks.request(GateLockName, {mode: "exclusive"}, async () => {
+            if (await hasOffscreenPath(parameters.url)) {
+                return this.acquireLock(ActiveLockName, {mode: "shared"});
+            }
+
+            const releaseActive = await this.acquireLock(ActiveLockName, {mode: "exclusive"});
+
+            try {
+                if (!(await hasOffscreenPath(parameters.url))) {
+                    if (await hasOffscreen()) {
+                        await closeOffscreen();
+                    }
+
+                    await createOffscreen(parameters);
+                }
+            } finally {
+                releaseActive();
+            }
+
+            return this.acquireLock(ActiveLockName, {mode: "shared"});
+        });
+    }
+
+    private async acquireLock(name: string, options: LockOptions): Promise<ReleaseLock> {
+        let releaseLock!: ReleaseLock;
+
+        // Keep the Web Lock callback pending and expose its resolver as a manual release function.
+        const lockHeld = new Promise<void>(resolve => {
+            releaseLock = resolve;
+        });
+
+        return new Promise<ReleaseLock>((resolve, reject) => {
+            navigator.locks
+                .request(name, options, async () => {
+                    resolve(releaseLock);
+
+                    await lockHeld;
+                })
+                .catch(reject);
+        });
     }
 
     public get(): T {

@@ -131,7 +131,7 @@ declare module "adnbn/transport" {
 }
 
 declare module "adnbn/locale" {
-    export function __t(value: string): string;
+    export function resolve(value: string): string;
 }
 
 declare module "adnbn/entry/background" {

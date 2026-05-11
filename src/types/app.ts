@@ -11,3 +11,8 @@ export enum Command {
     Build = "build",
     Watch = "watch",
 }
+
+export enum Workspace {
+    Single = "single",
+    Multi = "multi",
+}

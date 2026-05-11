@@ -2,6 +2,7 @@ import LocaleBuilder from "./LocaleBuilder";
 import LocaleValidator from "./LocaleValidator";
 import OperaLocaleValidator from "./OperaLocaleValidator";
 import FirefoxLocaleValidator from "./FirefoxLocaleValidator";
+import LocaleStructureValidator from "./LocaleStructureValidator";
 
 import {extractLocaleKey} from "@locale/utils";
 
@@ -9,7 +10,7 @@ import {Language, LocaleBuilder as LocaleBuilderContract} from "@typing/locale";
 import {ReadonlyConfig} from "@typing/config";
 import {Browser} from "@typing/browser";
 
-export {LocaleBuilder, LocaleValidator, OperaLocaleValidator, FirefoxLocaleValidator};
+export {LocaleBuilder, LocaleValidator, OperaLocaleValidator, FirefoxLocaleValidator, LocaleStructureValidator};
 
 export default (language: Language, config: ReadonlyConfig): LocaleBuilderContract => {
     const {browser, name, shortName, description, lang} = config;

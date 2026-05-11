@@ -2,6 +2,8 @@
 .env
 .env.*
 .idea
+.codex
+.claude
 .output
 addon
 *.log

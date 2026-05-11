@@ -6,7 +6,7 @@ import {Language, LocaleStructure} from "@typing/locale";
 
 export type CustomLocaleData = Record<string, string>;
 
-export default class<T extends LocaleStructure = LocaleStructure> extends AbstractLocale<T> {
+export default class<T extends object = LocaleStructure> extends AbstractLocale<T> {
     constructor(
         protected language: Language = Language.English,
         protected data: CustomLocaleData = {}
@@ -30,8 +30,8 @@ export default class<T extends LocaleStructure = LocaleStructure> extends Abstra
         return this.language;
     }
 
-    public keys(): Set<string> {
-        return new Set(Object.keys(this.data));
+    public keys(): Set<keyof T> {
+        return new Set(Object.keys(this.data)) as Set<keyof T>;
     }
 
     public languages(): Set<Language> {
@@ -41,7 +41,7 @@ export default class<T extends LocaleStructure = LocaleStructure> extends Abstra
     protected value(key: string): string | undefined {
         const value = this.data[convertLocaleKey(key)];
 
-        if (!value || value.length === 0) {
+        if (value === undefined) {
             return undefined;
         }
 

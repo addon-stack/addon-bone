@@ -1,5 +1,5 @@
 import type {CommandUnresolvedDefinition} from "adnbn";
-import {__t} from "adnbn/locale";
+import {resolve} from "adnbn/locale";
 import command, {isValidCommandDefinition, isValidCommandExecuteFunction} from "adnbn/entry/command";
 
 import * as module from "virtual:command-entrypoint";
@@ -22,7 +22,7 @@ try {
     command({
         name,
         execute,
-        description: description ? __t(description) : undefined,
+        description: description ? resolve(description) : undefined,
         ...options,
     });
 } catch (e) {

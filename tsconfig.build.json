@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "sourceMap": false
+  },
+  "include": ["./src/**/*"],
+  "exclude": [
+    "**/*.test.ts",
+    "**/tests/**/*.ts",
+    "dist",
+    "src/cli/entrypoint/file/fixtures/**"
+  ]
+}

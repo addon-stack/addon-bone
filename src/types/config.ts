@@ -1,9 +1,9 @@
 import type {Configuration as RspackConfig, Filename} from "@rspack/core";
 import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
-import {Command, Mode} from "@typing/app";
+import {Command, Mode, Workspace} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";
-import {ManifestIncognitoValue, ManifestVersion} from "@typing/manifest";
+import {ManifestIncognitoValue, ManifestVersion, ManifestBuilder, OptionalManifest} from "@typing/manifest";
 import {Plugin} from "@typing/plugin";
 import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
@@ -172,6 +172,20 @@ export interface Config {
     incognito?: ManifestIncognitoValue | (() => ManifestIncognitoValue | undefined);
 
     /**
+     * Extension manifest without the version.
+     * Allows customizing the manifest.json file beyond the standard fields handled by the builder.
+     * The structure and available APIs depend on the manifest version (v2 or v3).
+     *
+     * Accepts:
+     * - an object with additional manifest fields
+     * - a function that receives a ManifestBuilder instance and returns manifest fields
+     *
+     * Note: Some fields like name, version, and permissions are handled automatically
+     * by the builder and should not be included here unless you need to override them.
+     */
+    manifest?: OptionalManifest | ((builder: ManifestBuilder) => OptionalManifest | undefined);
+
+    /**
      * Extension manifest version (e.g., v2 or v3).
      * Defines the manifest structure and available APIs.
      */
@@ -181,7 +195,17 @@ export interface Config {
      * Default locale for the extension.
      * @example "en"
      */
-    lang?: string | Language;
+    lang: Language;
+
+    /**
+     * Project workspace mode.
+     *
+     * - `single` uses the source directory itself as the shared layer.
+     * - `multi` uses the configured shared directory.
+     *
+     * @default "single"
+     */
+    workspace: Workspace;
 
     /**
      * Path to the directory with source files for building.
@@ -211,10 +235,13 @@ export interface Config {
     srcDir: string;
 
     /**
-     * Directory with common modules, content scripts, and background scripts.
-     * Contains code used by multiple extensions.
+     * Directory with shared modules (content scripts, background scripts, common code)
+     * used across multiple extensions. Applies only when `workspace` is `"multi"`;
+     * for a `"single"` workspace the value is forced to `"."`, since a single-app
+     * project has no separate shared layer.
+     *
      * @example "shared"
-     * @path Full path: `{{inputDir}}/{{srcDir}}//{{sharedDir}}`
+     * @path Full path: `{{inputDir}}/{{srcDir}}/{{sharedDir}}`
      *
      * @default "shared"
      */
@@ -699,7 +726,11 @@ export interface Config {
     cssIdentName: string;
 }
 
-export type OptionalConfig = Partial<Config>;
+export type OptionalConfig = Omit<Partial<Config>, "lang" | "workspace"> & {
+    lang?: Language | `${Language}`;
+    workspace?: Workspace | `${Workspace}`;
+};
+
 export type UserConfig = Omit<OptionalConfig, "configFile" | "command">;
 export type ReadonlyConfig = Readonly<Config>;
 

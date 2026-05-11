@@ -1,6 +1,6 @@
 import ManifestBase, {ManifestError} from "./ManifestBase";
 
-import {filterHostPatterns, filterPermissionsForMV3} from "./utils";
+import {filterHostPatterns, filterOptionalPermissions, filterPermissionsForMV3} from "./utils";
 
 import {CoreManifest, ManifestAccessibleResource, ManifestVersion} from "@typing/manifest";
 import {Browser} from "@typing/browser";
@@ -73,7 +73,7 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildPermissions(): Partial<ManifestV3> | undefined {
-        const permissions = Array.from(filterPermissionsForMV3(this.permissions));
+        const permissions = Array.from(filterPermissionsForMV3(this.combinedPermissions));
 
         if (permissions.length > 0) {
             return {permissions};
@@ -81,10 +81,10 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildOptionalPermissions(): Partial<ManifestV3> | undefined {
-        // prettier-ignore
-        const optionalPermissions = Array
-            .from(filterPermissionsForMV3(this.optionalPermissions))
-            .filter((permission) => !this.permissions.has(permission));
+        const optionalPermissions = filterOptionalPermissions(
+            filterPermissionsForMV3(this.combinedOptionalPermissions),
+            filterPermissionsForMV3(this.combinedPermissions)
+        );
 
         if (optionalPermissions.length > 0) {
             return {optional_permissions: optionalPermissions};
@@ -92,16 +92,16 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildHostPermissions(): Partial<ManifestV3> | undefined {
-        if (this.hostPermissions.size > 0) {
-            return {host_permissions: [...filterHostPatterns(this.hostPermissions)]};
+        if (this.combinedHostPermissions.size > 0) {
+            return {host_permissions: [...filterHostPatterns(this.combinedHostPermissions)]};
         }
     }
 
     protected buildOptionalHostPermissions(): Partial<ManifestV3> | undefined {
         // prettier-ignore
         const optionalHostPermissions = Array
-            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
-            .filter((permission) => !this.hostPermissions.has(permission));
+            .from(filterHostPatterns(new Set([...this.combinedHostPermissions, ...this.combinedOptionalHostPermissions])))
+            .filter((permission) => !this.combinedHostPermissions.has(permission));
 
         if (optionalHostPermissions.length > 0) {
             return {optional_host_permissions: optionalHostPermissions};

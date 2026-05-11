@@ -57,7 +57,7 @@ export default abstract class implements EntrypointFinder {
                 return priorityA - priorityB;
             }
 
-            return a.file.length - b.file.length;
+            return this.sortKey(a).localeCompare(this.sortKey(b));
         });
 
         return (this._files = new Set(files));
@@ -134,6 +134,12 @@ export default abstract class implements EntrypointFinder {
     }
 
     protected priority(file: EntrypointFile): number {
-        return _.findIndex(this.priorityDirectories, dir => file.file.includes(dir));
+        const priority = _.findIndex(this.priorityDirectories, dir => file.file.includes(dir));
+
+        return priority >= 0 ? priority : this.priorityDirectories.length;
+    }
+
+    protected sortKey(file: EntrypointFile): string {
+        return toPosixPath(file.import || file.file);
     }
 }

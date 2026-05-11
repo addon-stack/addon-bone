@@ -6,16 +6,24 @@ jest.mock("@addon-core/browser", () => ({
     isAvailableScripting: jest.fn(),
 
     browser: jest.fn(() => chrome),
+    isBackground: jest.fn(() => false),
     isManifestVersion3: jest.fn(() => true),
 
     hasOffscreen: jest.fn(),
+    getOffscreenContext: jest.fn(),
+    getOffscreenUrl: jest.fn(),
+    getOffscreenPath: jest.fn(),
+    hasOffscreenUrl: jest.fn(),
+    hasOffscreenPath: jest.fn(),
     closeOffscreen: jest.fn(),
     createOffscreen: jest.fn(),
 
     containsPermissions: jest.fn(() => true),
     requestPermissions: jest.fn(() => true),
 
-    executeScript: chrome.scripting.executeScript,
+    executeScript: (...args: Parameters<typeof chrome.scripting.executeScript>) => {
+        return chrome.scripting.executeScript(...args);
+    },
 
     sendMessage: (msg: any) => {
         return new Promise(resolve => {
