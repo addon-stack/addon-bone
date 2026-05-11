@@ -1,8 +1,13 @@
 import path from "path";
 import ts from "typescript";
 
+const normalizeDiagnosticFilename = (filename: string): string => {
+    return path.normalize(filename).toLowerCase();
+};
+
 const typecheck = (source: string): string[] => {
     const filename = path.join(__dirname, "__locale-type-test.ts");
+    const normalizedFilename = normalizeDiagnosticFilename(filename);
     const options: ts.CompilerOptions = {
         module: ts.ModuleKind.ESNext,
         moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -33,7 +38,9 @@ const typecheck = (source: string): string[] => {
 
     return ts
         .getPreEmitDiagnostics(program)
-        .filter(diagnostic => diagnostic.file?.fileName === filename)
+        .filter(diagnostic => {
+            return diagnostic.file && normalizeDiagnosticFilename(diagnostic.file.fileName) === normalizedFilename;
+        })
         .map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
 };
 

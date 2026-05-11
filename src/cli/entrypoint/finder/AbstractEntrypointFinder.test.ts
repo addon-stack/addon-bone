@@ -3,6 +3,7 @@ import os from "os";
 import path from "path";
 
 import AbstractEntrypointFinder from "./AbstractEntrypointFinder";
+import {toPosix} from "@cli/utils/path";
 
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile, EntrypointOptions, EntrypointParser, EntrypointType} from "@typing/entrypoint";
@@ -46,7 +47,7 @@ const touch = (file: string): void => {
 };
 
 const relativeFiles = (root: string, files: Set<EntrypointFile>): string[] => {
-    return Array.from(files, ({file}) => path.relative(root, file)).sort();
+    return Array.from(files, ({file}) => toPosix(path.relative(root, file))).sort();
 };
 
 describe("AbstractEntrypointFinder", () => {
