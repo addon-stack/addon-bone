@@ -1,13 +1,13 @@
 import path from "path";
 import ts from "typescript";
 
-const normalizeDiagnosticFilename = (filename: string): string => {
-    return path.normalize(filename).toLowerCase();
+const normalizeFilename = (filename: string): string => {
+    return path.normalize(filename).replaceAll("\\", "/").toLowerCase();
 };
 
-const typecheck = (source: string): string[] => {
-    const filename = path.join(__dirname, "__locale-type-test.ts");
-    const normalizedFilename = normalizeDiagnosticFilename(filename);
+const typecheck = (source: string, filename = path.join(__dirname, "__locale-type-test.ts")): string[] => {
+    const normalizedFilename = normalizeFilename(filename);
+    const isTestFilename = (file: string): boolean => normalizeFilename(file) === normalizedFilename;
     const options: ts.CompilerOptions = {
         module: ts.ModuleKind.ESNext,
         moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -24,28 +24,28 @@ const typecheck = (source: string): string[] => {
     const fileExists = host.fileExists.bind(host);
 
     host.getSourceFile = (file, languageVersion, onError, shouldCreateNewSourceFile) => {
-        if (file === filename) {
+        if (isTestFilename(file)) {
             return ts.createSourceFile(file, source, languageVersion, true);
         }
 
         return getSourceFile(file, languageVersion, onError, shouldCreateNewSourceFile);
     };
 
-    host.readFile = file => (file === filename ? source : readFile(file));
-    host.fileExists = file => file === filename || fileExists(file);
+    host.readFile = file => (isTestFilename(file) ? source : readFile(file));
+    host.fileExists = file => isTestFilename(file) || fileExists(file);
 
     const program = ts.createProgram([filename], options, host);
 
     return ts
         .getPreEmitDiagnostics(program)
         .filter(diagnostic => {
-            return diagnostic.file && normalizeDiagnosticFilename(diagnostic.file.fileName) === normalizedFilename;
+            return diagnostic.file?.text === source;
         })
         .map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
 };
 
 const prelude = `
-import type {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionArgs} from "../types/locale";
+import type {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionArgs} from "./locale";
 
 interface Structure {
     "app.name": {plural: false; substitutions: []};
@@ -66,6 +66,19 @@ declare function choice<K extends LocalePluralKeys<Structure>>(
 `;
 
 describe("locale types", () => {
+    test("captures diagnostics for Windows-style test filenames", () => {
+        const diagnostics = typecheck(
+            `
+declare function takesString(value: string): void;
+
+takesString(123);
+`,
+            path.join(__dirname, "__locale-type-test.ts").split(path.sep).join("\\")
+        ).join("\n");
+
+        expect(diagnostics).toMatch("Argument of type 'number' is not assignable to parameter of type 'string'.");
+    });
+
     test("accept valid locale calls", () => {
         expect(
             typecheck(`
