@@ -35,6 +35,7 @@ import {loadConfig} from "c12";
 
 import resolveConfig from "./config";
 
+import {Workspace} from "@typing/app";
 import {Language} from "@typing/locale";
 
 const mockedLoadConfig = jest.mocked(loadConfig);
@@ -44,10 +45,10 @@ describe("config resolver", () => {
         mockedLoadConfig.mockResolvedValue({config: {}});
     });
 
-    test("uses source directory as shared layer by default", async () => {
+    test("uses single workspace by default", async () => {
         const config = await resolveConfig({configFile: "package.json"});
 
-        expect(config.shared).toBe(false);
+        expect(config.workspace).toBe(Workspace.Single);
         expect(config.sharedDir).toBe(".");
     });
 
@@ -81,36 +82,70 @@ describe("config resolver", () => {
         );
     });
 
-    test("uses default shared directory when shared is true", async () => {
+    test("uses default shared directory for multi workspace", async () => {
         const config = await resolveConfig({
             configFile: "package.json",
-            shared: true,
+            workspace: "multi",
         });
 
-        expect(config.shared).toBe(true);
+        expect(config.workspace).toBe(Workspace.Multi);
         expect(config.sharedDir).toBe("shared");
     });
 
-    test("uses custom shared directory when shared is a string", async () => {
+    test("accepts workspace enum value", async () => {
         const config = await resolveConfig({
             configFile: "package.json",
-            shared: "common",
+            workspace: Workspace.Multi,
         });
 
-        expect(config.shared).toBe("common");
+        expect(config.workspace).toBe(Workspace.Multi);
+        expect(config.sharedDir).toBe("shared");
+    });
+
+    test("uses custom shared directory for multi workspace", async () => {
+        const config = await resolveConfig({
+            configFile: "package.json",
+            workspace: "multi",
+            sharedDir: "common",
+        });
+
+        expect(config.workspace).toBe(Workspace.Multi);
         expect(config.sharedDir).toBe("common");
     });
 
-    test("normalizes shared directory after loading user config", async () => {
+    test("ignores custom shared directory for single workspace", async () => {
+        const config = await resolveConfig({
+            configFile: "package.json",
+            workspace: "single",
+            sharedDir: "common",
+        });
+
+        expect(config.workspace).toBe(Workspace.Single);
+        expect(config.sharedDir).toBe(".");
+    });
+
+    test("normalizes workspace after loading user config", async () => {
         mockedLoadConfig.mockResolvedValue({
             config: {
-                shared: true,
+                workspace: "multi",
             },
         });
 
         const config = await resolveConfig({configFile: "package.json"});
 
-        expect(config.shared).toBe(true);
+        expect(config.workspace).toBe(Workspace.Multi);
         expect(config.sharedDir).toBe("shared");
+    });
+
+    test("throws a clear error for invalid workspace config", async () => {
+        mockedLoadConfig.mockResolvedValue({
+            config: {
+                workspace: "missing",
+            },
+        });
+
+        await expect(resolveConfig({configFile: "package.json"})).rejects.toThrow(
+            'Invalid workspace "missing" provided by config'
+        );
     });
 });

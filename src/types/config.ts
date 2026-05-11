@@ -1,7 +1,7 @@
 import type {Configuration as RspackConfig, Filename} from "@rspack/core";
 import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
-import {Command, Mode} from "@typing/app";
+import {Command, Mode, Workspace} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";
 import {ManifestIncognitoValue, ManifestVersion, ManifestBuilder, OptionalManifest} from "@typing/manifest";
 import {Plugin} from "@typing/plugin";
@@ -198,15 +198,14 @@ export interface Config {
     lang: Language;
 
     /**
-     * Shared source layer configuration.
+     * Project workspace mode.
      *
-     * - `false` uses the source directory itself as the shared layer.
-     * - `true` uses the default `shared` directory.
-     * - a string uses a custom shared directory name.
+     * - `single` uses the source directory itself as the shared layer.
+     * - `multi` uses the configured shared directory.
      *
-     * @default false
+     * @default "single"
      */
-    shared: boolean | string;
+    workspace: Workspace;
 
     /**
      * Path to the directory with source files for building.
@@ -236,10 +235,13 @@ export interface Config {
     srcDir: string;
 
     /**
-     * Directory with common modules, content scripts, and background scripts.
-     * Contains code used by multiple extensions.
+     * Directory with shared modules (content scripts, background scripts, common code)
+     * used across multiple extensions. Applies only when `workspace` is `"multi"`;
+     * for a `"single"` workspace the value is forced to `"."`, since a single-app
+     * project has no separate shared layer.
+     *
      * @example "shared"
-     * @path Full path: `{{inputDir}}/{{srcDir}}//{{sharedDir}}`
+     * @path Full path: `{{inputDir}}/{{srcDir}}/{{sharedDir}}`
      *
      * @default "shared"
      */
@@ -724,11 +726,12 @@ export interface Config {
     cssIdentName: string;
 }
 
-export type OptionalConfig = Omit<Partial<Config>, "lang"> & {
+export type OptionalConfig = Omit<Partial<Config>, "lang" | "workspace"> & {
     lang?: Language | `${Language}`;
+    workspace?: Workspace | `${Workspace}`;
 };
 
-export type UserConfig = Omit<OptionalConfig, "configFile" | "command" | "sharedDir">;
+export type UserConfig = Omit<OptionalConfig, "configFile" | "command">;
 export type ReadonlyConfig = Readonly<Config>;
 
 export type UserConfigCallback = (config: ReadonlyConfig) => UserConfig;

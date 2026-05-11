@@ -30,8 +30,8 @@ import {
 
 import {fromRootPath, getAppPath, getAppSourcePath, getConfigFile} from "../resolvers/path";
 
-import {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
-import {Command, Mode} from "@typing/app";
+import type {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
+import {Command, Mode, Workspace} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {Plugin} from "@typing/plugin";
 import {ManifestVersion} from "@typing/manifest";
@@ -48,6 +48,22 @@ const resolveLanguage = (lang?: `${Language}` | Language): Language => {
     }
 
     throw new Error(`Invalid language "${lang}" provided by config`);
+};
+
+const resolveWorkspace = (workspace?: Workspace | `${Workspace}`): Workspace => {
+    if (!workspace) {
+        return Workspace.Single;
+    }
+
+    if (Object.values(Workspace).includes(workspace as Workspace)) {
+        return workspace as Workspace;
+    }
+
+    throw new Error(`Invalid workspace "${workspace}" provided by config`);
+};
+
+const resolveSharedDir = (workspace: Workspace, sharedDir: string): string => {
+    return workspace === Workspace.Multi ? sharedDir : ".";
 };
 
 const getUserConfig = async (config: ReadonlyConfig): Promise<UserConfig> => {
@@ -189,10 +205,11 @@ export default async (config: OptionalConfig): Promise<Config> => {
         lang = Language.English,
         incognito,
         specific,
-        shared = false,
+        workspace = Workspace.Single,
         rootDir = ".",
         outDir = "dist",
         srcDir = "src",
+        sharedDir = "shared",
         appsDir = "apps",
         appSrcDir = ".",
         localeDir = "locales",
@@ -262,11 +279,11 @@ export default async (config: OptionalConfig): Promise<Config> => {
         specific,
         manifest,
         manifestVersion,
-        shared,
+        workspace: resolveWorkspace(workspace),
         rootDir,
         outDir,
         srcDir,
-        sharedDir: _.isString(shared) ? shared : shared ? "shared" : ".",
+        sharedDir,
         appsDir,
         appSrcDir,
         jsDir,
@@ -309,19 +326,21 @@ export default async (config: OptionalConfig): Promise<Config> => {
 
     let vars = loadDotenv(resolvedConfig);
 
-    const {plugins: userPlugins = [], lang: userLang, ...userConfig} = await getUserConfig(resolvedConfig);
+    const {
+        plugins: userPlugins = [],
+        lang: userLang,
+        workspace: userWorkspace,
+        ...userConfig
+    } = await getUserConfig(resolvedConfig);
 
     resolvedConfig = {
         ...resolvedConfig,
         ...userConfig,
         lang: resolveLanguage(userLang ?? resolvedConfig.lang),
+        workspace: resolveWorkspace(userWorkspace ?? resolvedConfig.workspace),
     };
 
-    resolvedConfig.sharedDir = _.isString(resolvedConfig.shared)
-        ? resolvedConfig.shared
-        : resolvedConfig.shared
-          ? "shared"
-          : ".";
+    resolvedConfig.sharedDir = resolveSharedDir(resolvedConfig.workspace, resolvedConfig.sharedDir);
 
     resolvedConfig = validateConfig(resolvedConfig);
 
