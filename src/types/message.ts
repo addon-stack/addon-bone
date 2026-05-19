@@ -4,6 +4,8 @@ export const MessageTypeSeparator = ":";
 
 export const MessageSenderProperty = "$sender";
 
+export const MessageResultEnvelopeProperty = "__adnbnEnvelope";
+
 export type MessageSender = chrome.runtime.MessageSender;
 
 export type MessageSendOptions = number | {tabId: number; frameId?: number; documentId?: string};
@@ -15,6 +17,16 @@ export interface MessageDictionary {
 export interface MessageSenderAware {
     readonly [MessageSenderProperty]?: MessageSender;
 }
+
+export interface MessageError {
+    name: string;
+    message: string;
+    stack?: string;
+}
+
+export type MessageResult<T = any> =
+    | {readonly [MessageResultEnvelopeProperty]: true; ok: true; payload: T}
+    | {readonly [MessageResultEnvelopeProperty]: true; ok: false; error: MessageError};
 
 export type MessageType<T extends MessageDictionary> = Extract<keyof T, string>;
 export type MessageData<T extends MessageDictionary, K extends MessageType<T>> = Parameters<T[K]>[0];

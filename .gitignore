@@ -2,8 +2,10 @@
 .env
 .env.*
 .idea
+.agents
 .codex
 .claude
+skills-lock.json
 .output
 addon
 *.log
