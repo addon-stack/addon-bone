@@ -1,5 +1,25 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.6.1 (2026-05-19)
+
+
+### 🐛 Bug Fixed
+
+* **transport:** improve error handling and result structure across transports ([2dc9aca](https://github.com/addon-stack/addon-bone/commit/2dc9aca34cfca78c17ef89451db1f9f8c2e895e6))
+
+  - Add structured error serialization and restoration in MessageManager
+  - Add support for envelope-like response structures in messages
+  - Improve test coverage for various error scenarios in message handlers
+  - Refactor transport registries with stricter type constraints
+  - Update transport APIs to use scoped registry names and target types
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 2
+
 ## 🚀 Release `adnbn` v0.6.0 (2026-05-11)
 
 
