@@ -1,8 +1,8 @@
 import RelayPermission from "@relay/RelayPermission";
 import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 
-import {DeepAsyncProxy} from "@typing/helpers";
-import {TransportDictionary, TransportType} from "@typing/transport";
+import type {RelayName, RelayProxyTarget} from "@relay/index";
+import type {TransportType} from "@typing/transport";
 import {RelayDefinition, RelayMethod, RelayOptions, RelayOptionsMap, RelayUnresolvedDefinition} from "@typing/relay";
 
 export {RelayMethod};
@@ -25,10 +25,7 @@ const getRelayOptionsMap = (): RelayOptionsMap => {
     return relays;
 };
 
-export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
-    name: N,
-    params: ProxyRelayParams
-): DeepAsyncProxy<TransportDictionary[N]> => {
+export const getRelay = <N extends RelayName>(name: N, params: ProxyRelayParams): RelayProxyTarget<N> => {
     const relays = getRelayOptionsMap();
 
     RelayPermission.init(relays);

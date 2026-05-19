@@ -3,11 +3,15 @@ import {sendMessage, sendTabMessage} from "@addon-core/browser";
 import {isBrowser} from "@main/env";
 
 import {
+    MessageBody,
     MessageData,
     MessageDictionary,
+    MessageError,
     MessageGeneralHandler,
     MessageHandler,
     MessageMapHandler,
+    MessageResult,
+    MessageResultEnvelopeProperty,
     MessageResponse,
     MessageSendOptions,
     MessageTargetHandler,
@@ -31,28 +35,111 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
         return MessageManager.getInstance<T>();
     }
 
-    public send<K extends MessageType<T>>(
+    public async send<K extends MessageType<T>>(
         type: K,
         data: MessageData<T, K>,
         options?: MessageSendOptions
     ): Promise<MessageResponse<T, K>> {
         const message = this.buildMessage(type, data);
+        const response = await this.dispatch(message, options);
 
-        if (options) {
-            if (typeof options === "number") {
-                return sendTabMessage(options, message);
-            }
+        return this.unwrap(response);
+    }
 
-            const {tabId, ...other} = options;
-
-            if (isBrowser(Browser.Firefox)) {
-                delete other.documentId;
-            }
-
-            return sendTabMessage(tabId, message, other);
+    private dispatch<K extends MessageType<T>>(
+        message: MessageBody<T, K>,
+        options?: MessageSendOptions
+    ): Promise<MessageResult<MessageResponse<T, K>> | MessageResponse<T, K> | undefined> {
+        if (options === undefined) {
+            return sendMessage(message);
         }
 
-        return sendMessage(message);
+        if (typeof options === "number") {
+            return sendTabMessage(options, message);
+        }
+
+        const {tabId, ...other} = options;
+
+        if (isBrowser(Browser.Firefox)) {
+            delete other.documentId;
+        }
+
+        return sendTabMessage(tabId, message, other);
+    }
+
+    private unwrap<K extends MessageType<T>>(
+        response: MessageResult<MessageResponse<T, K>> | MessageResponse<T, K> | undefined
+    ): MessageResponse<T, K> {
+        if (!this.isMessageResult(response)) {
+            return response as MessageResponse<T, K>;
+        }
+
+        if (response.ok) {
+            return response.payload;
+        }
+
+        throw this.restoreError(response.error);
+    }
+
+    private isMessageResult(response: unknown): response is MessageResult {
+        if (
+            !this.isRecord(response) ||
+            response[MessageResultEnvelopeProperty] !== true ||
+            typeof response.ok !== "boolean"
+        ) {
+            return false;
+        }
+
+        if (response.ok) {
+            return "payload" in response;
+        }
+
+        return this.isSerializedError(response.error);
+    }
+
+    private isSerializedError(error: unknown): error is MessageError {
+        return (
+            this.isRecord(error) &&
+            typeof error.name === "string" &&
+            typeof error.message === "string" &&
+            (error.stack === undefined || typeof error.stack === "string")
+        );
+    }
+
+    private isRecord(value: unknown): value is Record<string, unknown> {
+        return typeof value === "object" && value !== null;
+    }
+
+    private restoreError(error: MessageError): Error {
+        const ErrorConstructor = this.getErrorConstructor(error.name);
+        const restored = new ErrorConstructor(error.message);
+
+        restored.name = error.name || "Error";
+
+        if (error.stack) {
+            restored.stack = error.stack;
+        }
+
+        return restored;
+    }
+
+    private getErrorConstructor(name: string): new (message?: string) => Error {
+        switch (name) {
+            case "EvalError":
+                return EvalError;
+            case "RangeError":
+                return RangeError;
+            case "ReferenceError":
+                return ReferenceError;
+            case "SyntaxError":
+                return SyntaxError;
+            case "TypeError":
+                return TypeError;
+            case "URIError":
+                return URIError;
+            default:
+                return Error;
+        }
     }
 
     public watch<K extends MessageType<T>>(

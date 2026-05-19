@@ -6,6 +6,13 @@ type MessageMap = {
     toUpperCase: (str: string) => string;
     sayHello: (data?: string) => string;
     fetchUser: (name: string) => Promise<{name: string}>;
+    throwSync: (message: string) => never;
+    throwAsync: (message: string) => Promise<void>;
+    throwPrimitive: (message: string) => never;
+    throwPlainObject: (message: string) => never;
+    envelopeLikePayload: (data?: undefined) => {ok: false; error: string};
+    rawEnvelopeLikePayload: (data?: undefined) => {ok: false; error: string};
+    rawSuccessEnvelopeLikePayload: (data?: undefined) => {ok: true; payload: string};
 };
 
 let message: Message<MessageMap>;
@@ -170,6 +177,83 @@ describe("send method", () => {
             expect.any(Function)
         );
         expect(result).toBe(4);
+    });
+
+    test("rejects when a sync handler throws", async () => {
+        message.watch("throwSync", data => {
+            throw new TypeError(data);
+        });
+
+        await expect(message.send("throwSync", "sync boom")).rejects.toMatchObject({
+            name: "TypeError",
+            message: "sync boom",
+        });
+        await expect(message.send("throwSync", "sync boom")).rejects.toBeInstanceOf(TypeError);
+    });
+
+    test("rejects when an async handler rejects", async () => {
+        message.watch("throwAsync", async data => {
+            throw new RangeError(data);
+        });
+
+        await expect(message.send("throwAsync", "async boom")).rejects.toMatchObject({
+            name: "RangeError",
+            message: "async boom",
+        });
+        await expect(message.send("throwAsync", "async boom")).rejects.toBeInstanceOf(RangeError);
+    });
+
+    test("rejects when a handler throws a primitive value", async () => {
+        message.watch("throwPrimitive", data => {
+            throw data;
+        });
+
+        await expect(message.send("throwPrimitive", "primitive boom")).rejects.toMatchObject({
+            name: "Error",
+            message: "primitive boom",
+        });
+    });
+
+    test("rejects when a handler throws a plain object", async () => {
+        message.watch("throwPlainObject", data => {
+            throw {name: "CustomError", message: data};
+        });
+
+        await expect(message.send("throwPlainObject", "plain object boom")).rejects.toMatchObject({
+            name: "CustomError",
+            message: "plain object boom",
+        });
+    });
+
+    test("returns envelope-like user data as payload", async () => {
+        message.watch("envelopeLikePayload", () => ({ok: false, error: "user payload"}));
+
+        await expect(message.send("envelopeLikePayload", undefined)).resolves.toEqual({
+            ok: false,
+            error: "user payload",
+        });
+    });
+
+    test("returns raw invalid failure envelope as payload", async () => {
+        (chrome.runtime.sendMessage as jest.Mock).mockImplementationOnce((msg, callback) => {
+            callback?.({ok: false, error: "raw payload"});
+        });
+
+        await expect(message.send("rawEnvelopeLikePayload", undefined)).resolves.toEqual({
+            ok: false,
+            error: "raw payload",
+        });
+    });
+
+    test("returns raw success envelope-like response as payload", async () => {
+        (chrome.runtime.sendMessage as jest.Mock).mockImplementationOnce((msg, callback) => {
+            callback?.({ok: true, payload: "raw payload"});
+        });
+
+        await expect(message.send("rawSuccessEnvelopeLikePayload", undefined)).resolves.toEqual({
+            ok: true,
+            payload: "raw payload",
+        });
     });
 });
 

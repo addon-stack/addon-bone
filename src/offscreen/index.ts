@@ -1,15 +1,18 @@
 import {Offscreen, ProxyOffscreen, RegisterOffscreen} from "./providers";
 import OffscreenBackground from "./OffscreenBackground";
 
-import {
-    TransportDictionary,
-    TransportName,
-    TransportProxyTarget as OffscreenProxyTarget,
-    TransportTarget as OffscreenTarget,
-} from "@typing/transport";
+import type {TransportProxyTarget, TransportTarget} from "@transport/index";
 
-export {type OffscreenTarget, type OffscreenProxyTarget, ProxyOffscreen, RegisterOffscreen, OffscreenBackground};
+export {ProxyOffscreen, RegisterOffscreen, OffscreenBackground};
 
-export const getOffscreen = <N extends TransportName>(name: N): TransportDictionary[N] => {
+export interface OffscreenRegistry {}
+
+export type OffscreenName = Extract<keyof OffscreenRegistry, string>;
+
+export type OffscreenTarget<N extends keyof OffscreenRegistry> = TransportTarget<OffscreenRegistry, N>;
+
+export type OffscreenProxyTarget<N extends keyof OffscreenRegistry> = TransportProxyTarget<OffscreenRegistry, N>;
+
+export const getOffscreen = <N extends OffscreenName>(name: N): OffscreenTarget<N> => {
     return new Offscreen<N>(name).get();
 };
