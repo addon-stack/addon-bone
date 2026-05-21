@@ -3,7 +3,7 @@ import {createRequire} from "module";
 
 import TsResolver from "./TsResolver";
 
-import {hasEntrypointPath, resolveEntrypointPath} from "@cli/entrypoint";
+import {hasEntrypointPath, resolveEntrypointPath} from "@cli/entrypoint/utils";
 
 import {PackageName} from "@typing/app";
 
