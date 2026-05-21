@@ -19,6 +19,8 @@ export {default as OffscreenViewFinder} from "./OffscreenViewFinder";
 export {default as PageFinder} from "./PageFinder";
 export {default as PopupFinder} from "./PopupFinder";
 export {default as RelayFinder} from "./RelayFinder";
+export {default as SandboxFinder} from "./SandboxFinder";
+export {default as SandboxViewFinder} from "./SandboxViewFinder";
 export {default as ServiceFinder} from "./ServiceFinder";
 export {default as PluginFinder} from "./PluginFinder";
 export {default as SidebarFinder} from "./SidebarFinder";

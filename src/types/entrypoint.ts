@@ -15,6 +15,7 @@ export enum EntrypointType {
     Popup = "popup",
     Sidebar = "sidebar",
     Offscreen = "offscreen",
+    Sandbox = "sandbox",
 }
 
 export interface EntrypointOptions {

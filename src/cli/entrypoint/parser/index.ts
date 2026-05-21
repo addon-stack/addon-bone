@@ -4,6 +4,7 @@ export {default as ContentParser} from "./ContentParser";
 export {default as PageParser} from "./PageParser";
 export {default as PopupParser} from "./PopupParser";
 export {default as RelayParser} from "./RelayParser";
+export {default as SandboxParser} from "./SandboxParser";
 export {default as ServiceParser} from "./ServiceParser";
 export {default as SidebarParser} from "./SidebarParser";
 export {default as OffscreenParser} from "./OffscreenParser";

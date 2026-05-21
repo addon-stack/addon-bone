@@ -84,6 +84,10 @@
       "types": "./dist/relay/index.d.ts",
       "default": "./dist/relay/index.js"
     },
+    "./sandbox": {
+      "types": "./dist/sandbox/index.d.ts",
+      "default": "./dist/sandbox/index.js"
+    },
     "./service": {
       "types": "./dist/service/index.d.ts",
       "default": "./dist/service/index.js"

@@ -540,6 +540,14 @@ export interface Config {
     mergeOffscreen: boolean;
 
     /**
+     * Flag indicating whether to merge sandbox files from App and Shared directories.
+     * When `true`, sandbox files from both directories will be combined.
+     *
+     * @default false
+     */
+    mergeSandbox: boolean;
+
+    /**
      * Path to the directory containing public assets to be copied into the build output.
      * Must be relative to the project root and cannot be "." (the project root itself).
      *

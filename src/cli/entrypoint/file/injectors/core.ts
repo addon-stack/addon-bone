@@ -3,6 +3,7 @@ import {Browser} from "@typing/browser";
 import {RelayMethod} from "@typing/relay";
 import {ContentScriptAppend, ContentScriptDeclarative, ContentScriptMarker} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
+import {SandboxAllow, SandboxSource} from "@typing/sandbox";
 
 import {Injector} from "../types";
 
@@ -76,6 +77,24 @@ export default (): Injector[] => {
         resolvers.push({
             from: PackageName,
             target: "OffscreenReason",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(SandboxAllow).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "SandboxAllow",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(SandboxSource).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "SandboxSource",
             name: key,
             value,
         });

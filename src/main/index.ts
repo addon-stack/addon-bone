@@ -12,6 +12,7 @@ export * from "./page";
 export * from "./plugin";
 export * from "./popup";
 export * from "./relay";
+export * from "./sandbox";
 export * from "./service";
 export * from "./sidebar";
 export * from "./view";
