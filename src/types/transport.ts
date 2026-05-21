@@ -33,11 +33,15 @@ export interface TransportMessageData {
     args: any[];
 }
 
-export interface TransportMessage {
-    send(data: TransportMessageData, options?: MessageSendOptions): any;
-
-    watch(handler: (data: TransportMessageData, sender: MessageSender) => any): void;
+export interface TransportReceiver {
+    watch(handler: (data: TransportMessageData, sender: MessageSender) => any): () => void;
 }
+
+export interface TransportSender {
+    send(data: TransportMessageData, options?: MessageSendOptions): any;
+}
+
+export interface TransportMessage extends TransportSender, TransportReceiver {}
 
 export interface TransportProvider<T extends TransportType> {
     get(): T;
