@@ -115,4 +115,34 @@ export default class extends ManifestBase<ManifestV2> {
             return {web_accessible_resources: Array.from(new Set(resources))};
         }
     }
+
+    protected buildSandbox(): Partial<ManifestV2> | undefined {
+        if (this.browser === Browser.Firefox) {
+            return;
+        }
+
+        const rawSandbox = (this.combinedRaws.sandbox || {}) as Record<string, any>;
+        const sandboxes = this.getSandboxes();
+        const contentSecurityPolicy = this.sandboxContentSecurityPolicy || rawSandbox.content_security_policy;
+
+        if (sandboxes.length === 0 && !contentSecurityPolicy && Object.keys(rawSandbox).length === 0) {
+            return;
+        }
+
+        return {
+            sandbox: {
+                ...rawSandbox,
+                pages: sandboxes,
+                ...(contentSecurityPolicy ? {content_security_policy: contentSecurityPolicy} : {}),
+            },
+        } as Partial<ManifestV2>;
+    }
+
+    protected buildContentSecurityPolicy(): Partial<ManifestV2> | undefined {
+        const contentSecurityPolicy = this.combinedRaws.content_security_policy;
+
+        return contentSecurityPolicy
+            ? ({content_security_policy: contentSecurityPolicy} as Partial<ManifestV2>)
+            : undefined;
+    }
 }

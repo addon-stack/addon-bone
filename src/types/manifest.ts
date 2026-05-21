@@ -126,6 +126,13 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     setSidebar(sidebar?: ManifestSidebar): this;
 
+    // Sandbox
+    addSandbox(sandbox: ManifestSandbox): this;
+
+    appendSandboxes(sandboxes: Iterable<ManifestSandbox>): this;
+
+    setSandboxContentSecurityPolicy(policy?: ManifestSandboxContentSecurityPolicy): this;
+
     // System
     setDependencies(dependencies: ManifestDependencies): this;
 
@@ -228,6 +235,12 @@ export interface ManifestAccessibleResource {
 }
 
 export type ManifestAccessibleResources = Set<ManifestAccessibleResource>;
+
+export type ManifestSandbox = string;
+
+export type ManifestSandboxes = Set<ManifestSandbox>;
+
+export type ManifestSandboxContentSecurityPolicy = string;
 
 export interface ManifestDependency {
     js: Set<string>;

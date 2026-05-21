@@ -155,6 +155,92 @@ describe("ManifestBase primitive properties", () => {
     });
 });
 
+describe("ManifestBase sandbox properties", () => {
+    test("builds MV3 sandbox pages and content security policy", () => {
+        const builder = new ManifestV3(Browser.Chrome);
+
+        builder
+            .raw({
+                sandbox: {pages: ["sandbox/raw.html"]},
+                content_security_policy: {
+                    extension_pages: "script-src 'self'; object-src 'self';",
+                    sandbox: "sandbox allow-scripts; script-src 'self';",
+                },
+            } as any)
+            .appendSandboxes(["sandbox/parser.html", "sandbox/parser.html"])
+            .setSandboxContentSecurityPolicy("sandbox allow-scripts; script-src 'self' 'unsafe-eval';");
+
+        const manifest: any = builder.build();
+
+        expect(manifest.sandbox.pages).toEqual(["sandbox/raw.html", "sandbox/parser.html"]);
+        expect(manifest.content_security_policy.extension_pages).toBe("script-src 'self'; object-src 'self';");
+        expect(manifest.content_security_policy.sandbox).toBe(
+            "sandbox allow-scripts; script-src 'self' 'unsafe-eval';"
+        );
+    });
+
+    test("builds MV2 sandbox content security policy inside the sandbox object", () => {
+        const builder = new ManifestV2(Browser.Chrome);
+
+        builder
+            .raw({
+                sandbox: {
+                    pages: ["sandbox/raw.html"],
+                    content_security_policy: "sandbox allow-scripts; script-src 'self';",
+                },
+            } as any)
+            .addSandbox("sandbox/parser.html")
+            .setSandboxContentSecurityPolicy("sandbox allow-scripts; script-src 'self' 'unsafe-eval';");
+
+        const manifest: any = builder.build();
+
+        expect(manifest.sandbox.pages).toEqual(["sandbox/raw.html", "sandbox/parser.html"]);
+        expect(manifest.sandbox.content_security_policy).toBe(
+            "sandbox allow-scripts; script-src 'self' 'unsafe-eval';"
+        );
+    });
+
+    test("does not emit sandbox manifest fields for Firefox MV3", () => {
+        const builder = new ManifestV3(Browser.Firefox);
+
+        builder
+            .raw({
+                sandbox: {pages: ["sandbox/raw.html"]},
+                content_security_policy: {
+                    extension_pages: "script-src 'self'; object-src 'self';",
+                    sandbox: "sandbox allow-scripts; script-src 'self';",
+                },
+            } as any)
+            .appendSandboxes(["sandbox/parser.html"])
+            .setSandboxContentSecurityPolicy("sandbox allow-scripts; script-src 'self' 'unsafe-eval';");
+
+        const manifest: any = builder.build();
+
+        expect(manifest.sandbox).toBeUndefined();
+        expect(manifest.content_security_policy).toEqual({
+            extension_pages: "script-src 'self'; object-src 'self';",
+        });
+    });
+
+    test("does not emit sandbox manifest fields for Firefox MV2", () => {
+        const builder = new ManifestV2(Browser.Firefox);
+
+        builder
+            .raw({
+                sandbox: {
+                    pages: ["sandbox/raw.html"],
+                    content_security_policy: "sandbox allow-scripts; script-src 'self';",
+                },
+            } as any)
+            .addSandbox("sandbox/parser.html")
+            .setSandboxContentSecurityPolicy("sandbox allow-scripts; script-src 'self' 'unsafe-eval';");
+
+        const manifest: any = builder.build();
+
+        expect(manifest.sandbox).toBeUndefined();
+    });
+});
+
 describe("ManifestBase merged properties", () => {
     it("merging objects and arrays", () => {
         const builder = new ManifestV3(Browser.Chrome);

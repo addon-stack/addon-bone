@@ -120,4 +120,65 @@ export default class extends ManifestBase<ManifestV3> {
             return {web_accessible_resources: transformedResources};
         }
     }
+
+    protected buildSandbox(): Partial<ManifestV3> | undefined {
+        if (this.browser === Browser.Firefox) {
+            return;
+        }
+
+        const rawSandbox = (this.combinedRaws.sandbox || {}) as Record<string, any>;
+        const sandboxes = this.getSandboxes();
+
+        if (sandboxes.length === 0 && Object.keys(rawSandbox).length === 0) {
+            return;
+        }
+
+        return {
+            sandbox: {
+                ...rawSandbox,
+                pages: sandboxes,
+            },
+        } as Partial<ManifestV3>;
+    }
+
+    protected buildContentSecurityPolicy(): Partial<ManifestV3> | undefined {
+        const rawContentSecurityPolicy = this.combinedRaws.content_security_policy;
+
+        if (this.browser === Browser.Firefox) {
+            if (!rawContentSecurityPolicy) {
+                return;
+            }
+
+            if (typeof rawContentSecurityPolicy === "string") {
+                return {content_security_policy: rawContentSecurityPolicy} as Partial<ManifestV3>;
+            }
+
+            const {sandbox, ...contentSecurityPolicy} = rawContentSecurityPolicy;
+
+            return Object.keys(contentSecurityPolicy).length > 0
+                ? ({content_security_policy: contentSecurityPolicy} as Partial<ManifestV3>)
+                : undefined;
+        }
+
+        if (!rawContentSecurityPolicy && !this.sandboxContentSecurityPolicy) {
+            return;
+        }
+
+        if (typeof rawContentSecurityPolicy === "string") {
+            if (this.sandboxContentSecurityPolicy) {
+                throw new ManifestError(
+                    "Cannot merge sandbox content security policy with a string content_security_policy."
+                );
+            }
+
+            return {content_security_policy: rawContentSecurityPolicy} as Partial<ManifestV3>;
+        }
+
+        return {
+            content_security_policy: {
+                ...rawContentSecurityPolicy,
+                sandbox: this.sandboxContentSecurityPolicy || rawContentSecurityPolicy?.sandbox,
+            },
+        } as Partial<ManifestV3>;
+    }
 }
