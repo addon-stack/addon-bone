@@ -1,9 +1,10 @@
 import {onMessage} from "@addon-core/browser";
 
+import {serializeError} from "./error";
+
 import {
     MessageBody,
     MessageDictionary,
-    MessageError,
     MessageGlobalKey,
     MessageHandler,
     MessageResult,
@@ -98,35 +99,6 @@ export default class MessageManager<T extends MessageDictionary> {
     }
 
     private failure(error: unknown): MessageResult<never> {
-        return {[MessageResultEnvelopeProperty]: true, ok: false, error: this.serializeError(error)};
-    }
-
-    private serializeError(error: unknown): MessageError {
-        if (error instanceof Error) {
-            return this.error(error.name, error.message, error.stack);
-        }
-
-        if (typeof error === "object" && error !== null) {
-            const record = error as Record<string, unknown>;
-            const name = typeof record.name === "string" ? record.name : "Error";
-            const message = typeof record.message === "string" ? record.message : this.stringifyError(error);
-            const stack = typeof record.stack === "string" ? record.stack : undefined;
-
-            return this.error(name, message, stack);
-        }
-
-        return this.error("Error", String(error));
-    }
-
-    private stringifyError(error: object): string {
-        try {
-            return JSON.stringify(error);
-        } catch {
-            return String(error);
-        }
-    }
-
-    private error(name: string, message: string, stack?: string): MessageError {
-        return stack ? {name, message, stack} : {name, message};
+        return {[MessageResultEnvelopeProperty]: true, ok: false, error: serializeError(error)};
     }
 }
