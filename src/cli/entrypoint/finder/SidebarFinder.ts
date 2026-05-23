@@ -1,4 +1,4 @@
-import AbstractViewFinder from "./AbstractViewFinder";
+import ViewCspFinder from "./ViewCspFinder";
 import PluginFinder from "./PluginFinder";
 
 import {SidebarParser} from "../parser";
@@ -7,7 +7,7 @@ import {ReadonlyConfig} from "@typing/config";
 import {SidebarEntrypointOptions} from "@typing/sidebar";
 import {EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class extends AbstractViewFinder<SidebarEntrypointOptions> {
+export default class extends ViewCspFinder<SidebarEntrypointOptions> {
     constructor(config: ReadonlyConfig) {
         super(config);
     }

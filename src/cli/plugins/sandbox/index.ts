@@ -68,9 +68,7 @@ export default definePlugin(() => {
         },
         manifest: async ({manifest}) => {
             if (await sandbox.exists()) {
-                manifest
-                    .appendSandboxes(await sandbox.sandboxes())
-                    .setSandboxContentSecurityPolicy(await sandbox.contentSecurityPolicy());
+                manifest.appendSandboxes(await sandbox.sandboxes()).appendSandboxCsp(await sandbox.csp());
             }
         },
     };

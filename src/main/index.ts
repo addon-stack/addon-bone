@@ -4,6 +4,7 @@ export * from "./browser";
 export * from "./command";
 export * from "./config";
 export * from "./content";
+export * from "./csp";
 export * from "./env";
 export * from "./icon";
 export * from "./manifest";

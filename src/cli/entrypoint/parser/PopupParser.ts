@@ -1,10 +1,10 @@
 import {z} from "zod";
 
-import ViewParser from "./ViewParser";
+import ViewCspParser from "./ViewCspParser";
 
 import {PopupEntrypointOptions} from "@typing/popup";
 
-export default class extends ViewParser<PopupEntrypointOptions> {
+export default class extends ViewCspParser<PopupEntrypointOptions> {
     protected definition(): string {
         return "definePopup";
     }

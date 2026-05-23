@@ -1,10 +1,10 @@
 import z from "zod";
 
-import ViewParser from "./ViewParser";
+import ViewCspParser from "./ViewCspParser";
 
 import {PageEntrypointOptions} from "@typing/page";
 
-export default class extends ViewParser<PageEntrypointOptions> {
+export default class extends ViewCspParser<PageEntrypointOptions> {
     protected definition(): string {
         return "definePage";
     }

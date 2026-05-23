@@ -1,4 +1,4 @@
-import ManifestBase from "./ManifestBase";
+import ManifestBase, {ManifestError} from "./ManifestBase";
 
 import {filterHostPatterns, filterOptionalPermissions, filterPermissionsForMV2} from "./utils";
 
@@ -123,9 +123,9 @@ export default class extends ManifestBase<ManifestV2> {
 
         const rawSandbox = (this.combinedRaws.sandbox || {}) as Record<string, any>;
         const sandboxes = this.getSandboxes();
-        const contentSecurityPolicy = this.sandboxContentSecurityPolicy || rawSandbox.content_security_policy;
+        const csp = this.sandboxCsp.build() || rawSandbox.content_security_policy;
 
-        if (sandboxes.length === 0 && !contentSecurityPolicy && Object.keys(rawSandbox).length === 0) {
+        if (sandboxes.length === 0 && !csp && Object.keys(rawSandbox).length === 0) {
             return;
         }
 
@@ -133,16 +133,23 @@ export default class extends ManifestBase<ManifestV2> {
             sandbox: {
                 ...rawSandbox,
                 pages: sandboxes,
-                ...(contentSecurityPolicy ? {content_security_policy: contentSecurityPolicy} : {}),
+                ...(csp ? {content_security_policy: csp} : {}),
             },
         } as Partial<ManifestV2>;
     }
 
-    protected buildContentSecurityPolicy(): Partial<ManifestV2> | undefined {
-        const contentSecurityPolicy = this.combinedRaws.content_security_policy;
+    protected buildCsp(): Partial<ManifestV2> | undefined {
+        const rawCsp = this.combinedRaws.content_security_policy;
+        const csp = this.csp.build();
 
-        return contentSecurityPolicy
-            ? ({content_security_policy: contentSecurityPolicy} as Partial<ManifestV2>)
-            : undefined;
+        if (rawCsp && csp) {
+            throw new ManifestError(
+                "Cannot merge extension pages content security policy with a raw content_security_policy."
+            );
+        }
+
+        const policy = rawCsp || csp;
+
+        return policy ? ({content_security_policy: policy} as Partial<ManifestV2>) : undefined;
     }
 }

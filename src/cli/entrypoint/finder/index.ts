@@ -8,6 +8,7 @@ export {
     type ViewAliasToFilename,
     type ViewFileToFilename,
 } from "./AbstractViewFinder";
+export {default as ViewCspFinder} from "./ViewCspFinder";
 export {default as AbstractOptionsFinder} from "./AbstractOptionsFinder";
 export {default as BackgroundFinder} from "./BackgroundFinder";
 export {default as CommandFinder} from "./CommandFinder";

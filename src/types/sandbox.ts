@@ -27,7 +27,7 @@ export enum SandboxSource {
     UnsafeInline = "'unsafe-inline'",
 }
 
-export interface SandboxContentSecurityPolicySources {
+export interface SandboxCspSources {
     connect?: Array<SandboxSource | `${SandboxSource}`>;
     image?: Array<SandboxSource | `${SandboxSource}`>;
     style?: Array<SandboxSource | `${SandboxSource}`>;
@@ -37,21 +37,24 @@ export interface SandboxContentSecurityPolicySources {
     child?: Array<SandboxSource | `${SandboxSource}`>;
 }
 
-export interface SandboxContentSecurityPolicy {
+export interface SandboxCspConfig {
     eval?: boolean;
     inline?: boolean;
     allow?: Array<SandboxAllow | `${SandboxAllow}`>;
-    sources?: SandboxContentSecurityPolicySources;
+    sources?: SandboxCspSources;
+}
+
+export interface SandboxCspOptions {
+    csp?: SandboxCspConfig;
 }
 
 export interface SandboxConfig extends TransportConfig {
-    csp?: SandboxContentSecurityPolicy;
     readyTimeout?: number;
     requestTimeout?: number;
     removeOnRequestTimeout?: boolean;
 }
 
-export type SandboxOptions = SandboxConfig & ViewOptions;
+export type SandboxOptions = SandboxConfig & SandboxCspOptions & ViewOptions;
 
 export type SandboxEntrypointOptions = Partial<SandboxOptions>;
 

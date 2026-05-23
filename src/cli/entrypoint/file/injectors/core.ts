@@ -4,6 +4,7 @@ import {RelayMethod} from "@typing/relay";
 import {ContentScriptAppend, ContentScriptDeclarative, ContentScriptMarker} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
 import {SandboxAllow, SandboxSource} from "@typing/sandbox";
+import {CspSource} from "@typing/csp";
 
 import {Injector} from "../types";
 
@@ -59,6 +60,15 @@ export default (): Injector[] => {
         resolvers.push({
             from: PackageName,
             target: "ContentScriptMarker",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(CspSource).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "CspSource",
             name: key,
             value,
         });

@@ -3,6 +3,8 @@ import {BackgroundConfig} from "@typing/background";
 import {CommandConfig} from "@typing/command";
 import {Language} from "@typing/locale";
 import {BrowserSpecific, DataCollectionPermission} from "@typing/browser";
+import {CspConfig} from "@typing/csp";
+import {SandboxCspConfig} from "@typing/sandbox";
 
 type ManifestCommon = chrome.runtime.Manifest;
 type ManifestBase = chrome.runtime.ManifestBase;
@@ -131,7 +133,14 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     appendSandboxes(sandboxes: Iterable<ManifestSandbox>): this;
 
-    setSandboxContentSecurityPolicy(policy?: ManifestSandboxContentSecurityPolicy): this;
+    addSandboxCsp(csp: SandboxCspConfig): this;
+
+    appendSandboxCsp(csps: Iterable<SandboxCspConfig>): this;
+
+    // Content Security Policy
+    addCsp(csp: CspConfig): this;
+
+    appendCsp(csps: Iterable<CspConfig>): this;
 
     // System
     setDependencies(dependencies: ManifestDependencies): this;
@@ -239,8 +248,6 @@ export type ManifestAccessibleResources = Set<ManifestAccessibleResource>;
 export type ManifestSandbox = string;
 
 export type ManifestSandboxes = Set<ManifestSandbox>;
-
-export type ManifestSandboxContentSecurityPolicy = string;
 
 export interface ManifestDependency {
     js: Set<string>;

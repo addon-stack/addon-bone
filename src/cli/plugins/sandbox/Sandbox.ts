@@ -3,10 +3,8 @@ import {View} from "../view";
 import {SandboxFinder, SandboxViewFinder} from "@cli/entrypoint";
 import {virtualSandboxModule} from "@cli/virtual";
 
-import SandboxCsp from "./SandboxCsp";
-
 import {EntrypointFile} from "@typing/entrypoint";
-import {SandboxEntrypointOptions, SandboxParameters} from "@typing/sandbox";
+import {SandboxCspConfig, SandboxEntrypointOptions, SandboxParameters} from "@typing/sandbox";
 
 export type SandboxParametersMap = Record<string, SandboxParameters>;
 
@@ -61,14 +59,14 @@ export default class extends SandboxFinder {
         return Object.values(await this.parameters()).map(({url}) => url);
     }
 
-    public async contentSecurityPolicy(): Promise<string> {
-        const csp = new SandboxCsp();
+    public async csp(): Promise<SandboxCspConfig[]> {
+        const csps: SandboxCspConfig[] = [];
 
         for (const {options} of (await this.transport()).values()) {
-            csp.add(options.csp);
+            csps.push(options.csp || {});
         }
 
-        return csp.build();
+        return csps;
     }
 
     public clear(): this {

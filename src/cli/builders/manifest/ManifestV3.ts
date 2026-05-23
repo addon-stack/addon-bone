@@ -141,43 +141,68 @@ export default class extends ManifestBase<ManifestV3> {
         } as Partial<ManifestV3>;
     }
 
-    protected buildContentSecurityPolicy(): Partial<ManifestV3> | undefined {
-        const rawContentSecurityPolicy = this.combinedRaws.content_security_policy;
+    protected buildCsp(): Partial<ManifestV3> | undefined {
+        const rawCsp = this.combinedRaws.content_security_policy;
+        const csp = this.csp.build();
+        const sandboxCsp = this.sandboxCsp.build();
 
         if (this.browser === Browser.Firefox) {
-            if (!rawContentSecurityPolicy) {
+            if (!rawCsp && !csp) {
                 return;
             }
 
-            if (typeof rawContentSecurityPolicy === "string") {
-                return {content_security_policy: rawContentSecurityPolicy} as Partial<ManifestV3>;
+            if (typeof rawCsp === "string") {
+                if (csp) {
+                    throw new ManifestError(
+                        "Cannot merge extension pages content security policy with a string content_security_policy."
+                    );
+                }
+
+                return {content_security_policy: rawCsp} as Partial<ManifestV3>;
             }
 
-            const {sandbox, ...contentSecurityPolicy} = rawContentSecurityPolicy;
+            const {sandbox, ...contentCsp} = rawCsp || {};
 
-            return Object.keys(contentSecurityPolicy).length > 0
-                ? ({content_security_policy: contentSecurityPolicy} as Partial<ManifestV3>)
-                : undefined;
-        }
-
-        if (!rawContentSecurityPolicy && !this.sandboxContentSecurityPolicy) {
-            return;
-        }
-
-        if (typeof rawContentSecurityPolicy === "string") {
-            if (this.sandboxContentSecurityPolicy) {
+            if (csp && contentCsp.extension_pages) {
                 throw new ManifestError(
-                    "Cannot merge sandbox content security policy with a string content_security_policy."
+                    "Cannot merge extension pages content security policy with raw content_security_policy.extension_pages."
                 );
             }
 
-            return {content_security_policy: rawContentSecurityPolicy} as Partial<ManifestV3>;
+            if (csp) {
+                contentCsp.extension_pages = csp;
+            }
+
+            return Object.keys(contentCsp).length > 0
+                ? ({content_security_policy: contentCsp} as Partial<ManifestV3>)
+                : undefined;
+        }
+
+        if (!rawCsp && !sandboxCsp && !csp) {
+            return;
+        }
+
+        if (typeof rawCsp === "string") {
+            if (sandboxCsp || csp) {
+                throw new ManifestError(
+                    "Cannot merge framework content security policy with a string content_security_policy."
+                );
+            }
+
+            return {content_security_policy: rawCsp} as Partial<ManifestV3>;
+        }
+
+        if (csp && rawCsp?.extension_pages) {
+            throw new ManifestError(
+                "Cannot merge extension pages content security policy with raw content_security_policy.extension_pages."
+            );
         }
 
         return {
             content_security_policy: {
-                ...rawContentSecurityPolicy,
-                sandbox: this.sandboxContentSecurityPolicy || rawContentSecurityPolicy?.sandbox,
+                ...rawCsp,
+                ...(csp ? {extension_pages: csp} : {}),
+                ...(sandboxCsp || rawCsp?.sandbox ? {sandbox: sandboxCsp || rawCsp?.sandbox} : {}),
             },
         } as Partial<ManifestV3>;
     }

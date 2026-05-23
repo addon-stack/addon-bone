@@ -1,4 +1,4 @@
-import AbstractViewFinder from "./AbstractViewFinder";
+import ViewCspFinder from "./ViewCspFinder";
 import PluginFinder from "./PluginFinder";
 
 import {PageParser} from "../parser";
@@ -14,7 +14,7 @@ import {
     EntrypointType,
 } from "@typing/entrypoint";
 
-export default class extends AbstractViewFinder<PageEntrypointOptions> {
+export default class extends ViewCspFinder<PageEntrypointOptions> {
     constructor(config: ReadonlyConfig) {
         super(config);
     }
