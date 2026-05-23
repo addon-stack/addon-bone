@@ -3,14 +3,15 @@ import path from "path";
 import fs from "fs";
 import {Configuration as RspackConfig, CssExtractRspackPlugin, RuleSetUse, RuleSetUseItem} from "@rspack/core";
 
+import {mergeStyleSources} from "./utils";
+
 import {definePlugin} from "@main/plugin";
 
 import {appFilenameResolver} from "@cli/bundler";
-
 import {getAppSourcePath, getResolvePath, getSharedPath} from "@cli/resolvers/path";
+import {toPosix} from "@cli/utils/path";
 
 import {ReadonlyConfig} from "@typing/config";
-import {toPosix} from "@cli/utils/path";
 
 // prettier-ignore
 const styleMergerLoader =
@@ -25,32 +26,28 @@ const styleMergerLoader =
                 const appPath = getResolvePath(path.join(appDir, relativePath));
 
                 if (fs.existsSync(appPath)) {
-                    try {
-                        let appStyle = fs.readFileSync(appPath, "utf8");
+                    let appStyle = fs.readFileSync(appPath, "utf8");
 
-                        appStyle = appStyle.replace(/url\((['"]?)(.*?)\1\)/g, (match, quote, filePath) => {
-                            if (
-                                filePath.startsWith("/") ||
-                                filePath.startsWith("http") ||
-                                filePath.startsWith("data:")
-                            ) {
-                                return match;
-                            }
+                    appStyle = appStyle.replace(/url\((['"]?)(.*?)\1\)/g, (match, quote, filePath) => {
+                        if (
+                            filePath.startsWith("/") ||
+                            filePath.startsWith("http") ||
+                            filePath.startsWith("data:")
+                        ) {
+                            return match;
+                        }
 
-                            const cssDir = path.dirname(appPath);
-                            const assetAbs = path.resolve(cssDir, filePath);
+                        const cssDir = path.dirname(appPath);
+                        const assetAbs = path.resolve(cssDir, filePath);
 
-                            const sharedFileDir = path.dirname(sharedPath);
+                        const sharedFileDir = path.dirname(sharedPath);
 
-                            const relativeToSharedFile = path.relative(sharedFileDir, assetAbs);
+                        const relativeToSharedFile = path.relative(sharedFileDir, assetAbs);
 
-                            return `url("${toPosix(relativeToSharedFile)}")`;
-                        });
+                        return `url("${toPosix(relativeToSharedFile)}")`;
+                    });
 
-                        return sharedStyle + "\n" + appStyle;
-                    } catch (error) {
-                        console.error(error);
-                    }
+                    return mergeStyleSources(sharedStyle, appStyle);
                 }
             }
         };

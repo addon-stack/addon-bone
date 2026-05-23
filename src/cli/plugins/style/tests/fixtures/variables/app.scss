@@ -1,0 +1,6 @@
+$accent: blue;
+@use "sass:color";
+
+.app {
+  color: $accent;
+}
