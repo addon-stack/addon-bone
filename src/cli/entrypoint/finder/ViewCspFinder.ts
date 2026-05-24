@@ -1,10 +1,11 @@
 import AbstractViewFinder, {ViewItems} from "./AbstractViewFinder";
 
-import type {ViewCspEntrypointOptions} from "../parser/ViewCspParser";
-
 import type {CspConfig} from "@typing/csp";
+import type {ViewEntrypointOptions} from "@typing/view";
 
-export default abstract class<O extends ViewCspEntrypointOptions> extends AbstractViewFinder<O> {
+type CspEntrypointOptions = ViewEntrypointOptions & {csp?: unknown};
+
+export default abstract class<O extends CspEntrypointOptions, Csp = CspConfig> extends AbstractViewFinder<O> {
     protected async getViews(): Promise<ViewItems<O>> {
         const views = await super.getViews();
 
@@ -17,12 +18,12 @@ export default abstract class<O extends ViewCspEntrypointOptions> extends Abstra
         return views;
     }
 
-    public async csp(): Promise<CspConfig[]> {
-        const policies: CspConfig[] = [];
+    public async csp(): Promise<Csp[]> {
+        const policies: Csp[] = [];
 
         for (const [, options] of await this.plugin().options()) {
             if (options.csp) {
-                policies.push(options.csp);
+                policies.push(options.csp as Csp);
             }
         }
 

@@ -1,6 +1,7 @@
 import path from "path";
 
 import Page from "@cli/plugins/page/Page";
+import {SandboxFinder, SandboxViewFinder} from "@cli/entrypoint";
 
 import type {ReadonlyConfig} from "@typing/config";
 
@@ -17,6 +18,7 @@ const config = {
         {
             name: path.join(rootDir, "src"),
             page: "page.ts",
+            sandbox: "sandbox.ts",
         },
     ],
     rootDir,
@@ -40,6 +42,20 @@ describe("ViewCspFinder", () => {
             {
                 files: ["page.html"],
                 name: "help",
+            },
+        ]);
+    });
+
+    test("collects sandbox CSP through sandbox view finder", async () => {
+        const sandbox = new SandboxViewFinder(config, new SandboxFinder(config));
+
+        await expect(sandbox.csp()).resolves.toEqual([
+            {
+                inline: true,
+                allow: ["forms"],
+                sources: {
+                    worker: ["blob:"],
+                },
             },
         ]);
     });

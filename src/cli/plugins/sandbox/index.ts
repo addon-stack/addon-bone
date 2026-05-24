@@ -68,7 +68,7 @@ export default definePlugin(() => {
         },
         manifest: async ({manifest}) => {
             if (await sandbox.exists()) {
-                manifest.appendSandboxes(await sandbox.sandboxes()).appendSandboxCsp(await sandbox.csp());
+                manifest.appendSandboxes(await sandbox.sandboxes()).appendSandboxCsp(await sandbox.views().csp());
             }
         },
     };

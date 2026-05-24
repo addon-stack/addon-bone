@@ -1,11 +1,13 @@
-import AbstractViewFinder, {ViewItems} from "./AbstractViewFinder";
 import AbstractTransportFinder from "./AbstractTransportFinder";
+import ViewCspFinder from "./ViewCspFinder";
+
+import {ViewItems} from "./AbstractViewFinder";
 
 import {ReadonlyConfig} from "@typing/config";
-import {SandboxEntrypointOptions} from "@typing/sandbox";
+import {SandboxCspConfig, SandboxEntrypointOptions} from "@typing/sandbox";
 import {EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class extends AbstractViewFinder<SandboxEntrypointOptions> {
+export default class extends ViewCspFinder<SandboxEntrypointOptions, SandboxCspConfig> {
     constructor(
         config: ReadonlyConfig,
         protected readonly finder: AbstractTransportFinder<SandboxEntrypointOptions>
