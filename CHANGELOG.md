@@ -1,5 +1,88 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.7.0 (2026-05-25)
+
+
+### ✨ Features
+
+* **csp:** add CSP builder layer for extension entrypoints ([66a7e77](https://github.com/addon-stack/addon-bone/commit/66a7e775d3096a03f9f71edd02bd6d9e3ca466f8))
+
+  - Add typed CSP configs for view entrypoints and sandbox pages
+  - Merge per-entrypoint CSP options into MV2 and MV3 manifest output
+  - Wire page, popup, sidebar, and offscreen CSP into extension-pages CSP
+  - Keep sandbox CSP generation browser-aware
+  - Cover CSP builders and manifest merge behavior with tests
+
+* **manifest:** add sandbox and content security policy support for MV2 and MV3 ([2fb3e62](https://github.com/addon-stack/addon-bone/commit/2fb3e624f525ff54067c427205460ac4eda4cd3d))
+
+  - Add `addSandbox`, `appendSandboxes`, and `setSandboxContentSecurityPolicy` methods
+  - Implement builders for sandbox pages and content security policies in MV2 and MV3
+  - Update tests for manifest sandbox functionality
+
+* **sandbox:** introduce sandbox message system and host/iframe communication support ([7350888](https://github.com/addon-stack/addon-bone/commit/73508888a817844bb724877347d2ed501d9d4353))
+
+  - Add `SandboxMessage`, `SandboxHost`, `SandboxInner`, and `SandboxMemory` classes.
+  - Implement in-memory and iframe-based sandbox communication.
+  - Add `ReadyFrame` utility for iframe readiness handling.
+  - Extend tests to cover sandbox message system, frame initialization, and transport.
+
+
+
+### 🐛 Bug Fixed
+
+* **page:** add sandbox entrypoint support to PageFinder ([8de9e0a](https://github.com/addon-stack/addon-bone/commit/8de9e0af9696fe85a70212029a72635fadb357c2))
+
+
+* **style:** add support for merging Sass and CSS with PostCSS and improve style handling ([1db73c9](https://github.com/addon-stack/addon-bone/commit/1db73c9446ecfe36e6c675216c3fb63341c02c8a))
+
+
+
+
+### 🧪 Tests
+
+* add unit tests for locale validation and name generator refactor ([b7695da](https://github.com/addon-stack/addon-bone/commit/b7695da4480e70b65c71d7216141d77563596e00))
+
+
+
+
+### 🧹 Chores
+
+* enhance type handling and add multiline union alias support in tests ([2e385a1](https://github.com/addon-stack/addon-bone/commit/2e385a1eaa6a94206656bf4e928e11af03473d6d))
+
+
+
+
+### 🛠️ Refactoring
+
+* **csp:** add sandbox CSP support and integrate with view finders ([06f2a3b](https://github.com/addon-stack/addon-bone/commit/06f2a3b34aa2e0e7be310e96b540e46cc7b4c88a))
+
+  - Implement `SandboxViewFinder` extending `ViewCspFinder` to handle sandbox CSPs.
+  - Add `sandbox.ts` fixture to define sandbox CSP configurations.
+  - Update `Sandbox` to fetch CSPs using view-based methods.
+  - Adjust manifest to include sandbox CSPs via updated view logic.
+  - Add tests to validate sandbox CSP collection and integration.
+
+* **message:** extract error handling into dedicated utility module ([2ea2fb0](https://github.com/addon-stack/addon-bone/commit/2ea2fb05677e770dfaadecf4aaf5b9561d6fed37))
+
+  - Move `serializeError` and `restoreError` from `MessageManager` to `error.ts`
+  - Replace inline error handling with shared utility functions across the message layer
+  - Add comprehensive tests for error serialization and restoration logic
+
+* **transport:** refactor transport interfaces and add sandbox registry support ([26f8099](https://github.com/addon-stack/addon-bone/commit/26f80999f185dee7e6394678a4cc3f9bde2e6091))
+
+  - Split `TransportMessage` into `TransportSender` and `TransportReceiver`
+  - Add `TransportMessage` implementation combining sender and receiver
+  - Introduce `TransportDeclarationLayer.Sandbox` and `sandbox.d.ts` handling
+  - Implement `TransportBuilder` for sandbox transport initialization
+  - Add `destroy` method and cleanup mechanism to `RegisterTransport`
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 11
+
 ## 🚀 Release `adnbn` v0.6.1 (2026-05-19)
 
 
