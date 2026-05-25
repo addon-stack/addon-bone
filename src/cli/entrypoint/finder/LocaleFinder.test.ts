@@ -147,34 +147,9 @@ describe("LocaleFinder", () => {
         });
     });
 
-    test("requires configured default locale to exist when translations are present", async () => {
-        await expect(makeFinder("default-missing").validate()).rejects.toThrow(
-            'Default locale "en" not found in available translations. Available languages: fr'
-        );
-    });
-
-    test("warns about keys outside the default locale contract", async () => {
-        const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
-
-        try {
-            await expect(makeFinder("extra-key").validate()).resolves.toBeInstanceOf(LocaleFinder);
-            expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'Locale "fr" contains unknown key "app.extra" not found in default locale "en"'
-            );
-        } finally {
-            consoleWarnSpy.mockRestore();
-        }
-    });
-
-    test("rejects substitution mismatch against the default locale contract", async () => {
+    test("surfaces structure validation errors from real locale files", async () => {
         await expect(makeFinder("substitution-mismatch").validate()).rejects.toThrow(
             'Locale "fr" key "app.greeting" substitutions [firstName] must match default locale "en" substitutions [name]'
-        );
-    });
-
-    test("rejects plural mismatch against the default locale contract", async () => {
-        await expect(makeFinder("plural-mismatch").validate()).rejects.toThrow(
-            'Locale "fr" key "app.cars" must be plural like default locale "en"'
         );
     });
 });

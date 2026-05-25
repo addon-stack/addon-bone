@@ -127,6 +127,21 @@ describe("ExpressionFile", () => {
                     "{ getUserInfo(): {id: number; name: string;}; getUserDetails(): {id: number; name: string; address?: string; age?: number; data?: {reg: number; log: number;};}; getUserAndDetails(): {id: number; name: string; address?: string; age?: number; data?: {reg: number; log: number;};}; }"
                 );
             });
+
+            test("class with multiline union alias keeps generated type inline", () => {
+                const filename = path.join(
+                    fixtures,
+                    "type-patterns",
+                    "complex-types",
+                    "class-with-multiline-union-alias.ts"
+                );
+
+                const type = ExpressionFile.make(filename).getType();
+
+                expect(type).toBe(
+                    "{ evaluate(code: string): Promise<{ok: true; type: string; value: string;} | {ok: false; name: string; message: string; stack?: string;}>; }"
+                );
+            });
         });
 
         describe("External Library Types", () => {

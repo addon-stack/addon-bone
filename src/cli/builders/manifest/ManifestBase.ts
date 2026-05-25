@@ -1,5 +1,7 @@
 import _ from "lodash";
 
+import {Csp, type CspBuilder, SandboxCsp} from "../csp";
+
 import {mergeWebAccessibleResources, normalizeDataCollectionPermissions} from "./utils";
 
 import {
@@ -18,10 +20,14 @@ import {
     ManifestOptionalPermissions,
     ManifestPermissions,
     ManifestPopup,
+    ManifestSandbox,
+    ManifestSandboxes,
     ManifestSidebar,
     ManifestVersion,
     OptionalManifest,
 } from "@typing/manifest";
+import {CspConfig} from "@typing/csp";
+import {SandboxCspConfig} from "@typing/sandbox";
 import {Browser, BrowserSpecific} from "@typing/browser";
 import {Language} from "@typing/locale";
 import {CommandExecuteActionName} from "@typing/command";
@@ -56,6 +62,9 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected background?: ManifestBackground;
     protected popup?: ManifestPopup;
     protected sidebar?: ManifestSidebar;
+    protected sandboxes: ManifestSandboxes = new Set();
+    protected sandboxCsp: CspBuilder<SandboxCspConfig> = new SandboxCsp();
+    protected csp: CspBuilder<CspConfig> = new Csp();
     protected commands: ManifestCommands = new Set();
     protected contentScripts: ManifestContentScripts = new Set();
     protected dependencies: ManifestDependencies = new Map();
@@ -81,6 +90,10 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected abstract buildOptionalHostPermissions(): Partial<T> | undefined;
 
     protected abstract buildWebAccessibleResources(): Partial<T> | undefined;
+
+    protected abstract buildSandbox(): Partial<T> | undefined;
+
+    protected abstract buildCsp(): Partial<T> | undefined;
 
     protected get combinedRaws(): OptionalManifest {
         return (this.mergedRaws ??= Array.from(this.raws).reduce((result, raw) => {
@@ -252,6 +265,48 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
+    public addSandbox(sandbox: ManifestSandbox): this {
+        this.sandboxes.add(sandbox);
+
+        return this;
+    }
+
+    public appendSandboxes(sandboxes: Iterable<ManifestSandbox>): this {
+        for (const sandbox of sandboxes) {
+            this.addSandbox(sandbox);
+        }
+
+        return this;
+    }
+
+    public addSandboxCsp(csp: SandboxCspConfig): this {
+        this.sandboxCsp.add(csp);
+
+        return this;
+    }
+
+    public appendSandboxCsp(csps: Iterable<SandboxCspConfig>): this {
+        for (const csp of csps) {
+            this.addSandboxCsp(csp);
+        }
+
+        return this;
+    }
+
+    public addCsp(csp: CspConfig): this {
+        this.csp.add(csp);
+
+        return this;
+    }
+
+    public appendCsp(csps: Iterable<CspConfig>): this {
+        for (const csp of csps) {
+            this.addCsp(csp);
+        }
+
+        return this;
+    }
+
     public setDependencies(dependencies: ManifestDependencies): this {
         this.dependencies = dependencies;
 
@@ -387,6 +442,8 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.buildHostPermissions(),
             this.buildOptionalHostPermissions(),
             this.buildWebAccessibleResources(),
+            this.buildSandbox(),
+            this.buildCsp(),
             this.buildBrowserSpecificSettings(),
             this.buildRaw()
         ) as T;
@@ -680,11 +737,28 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             host_permissions,
             optional_host_permissions,
             web_accessible_resources,
+            sandbox,
+            content_security_policy,
             browser_specific_settings,
             ...other
         } = this.combinedRaws;
 
         return other;
+    }
+
+    protected getSandboxes(): string[] {
+        const sandboxes = new Set<string>();
+        const rawSandbox = this.combinedRaws.sandbox as {pages?: string[]} | undefined;
+
+        for (const sandbox of rawSandbox?.pages || []) {
+            sandboxes.add(sandbox);
+        }
+
+        for (const sandbox of this.sandboxes) {
+            sandboxes.add(sandbox);
+        }
+
+        return Array.from(sandboxes);
     }
 
     protected hasExecuteActionCommand(): boolean {

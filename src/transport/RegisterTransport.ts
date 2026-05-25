@@ -2,7 +2,7 @@ import get from "get-value";
 
 import BaseTransport from "./BaseTransport";
 
-import {TransportDictionary, TransportMessage, TransportName, TransportRegister} from "@typing/transport";
+import {TransportDictionary, TransportName, TransportReceiver, TransportRegister} from "@typing/transport";
 import {MessageSender, MessageSenderProperty} from "@typing/message";
 
 // prettier-ignore
@@ -11,6 +11,8 @@ export default abstract class<
     T extends object = TransportDictionary[N],
     A extends any[] = []
 > extends BaseTransport<N, T> implements TransportRegister<T, A> {
+    private unwatch?: () => void;
+
     protected constructor(
         name: N,
         protected readonly init: (...args: A) => T
@@ -18,7 +20,7 @@ export default abstract class<
         super(name);
     }
 
-    protected abstract message(): TransportMessage;
+    protected abstract message(): TransportReceiver;
 
     public register(...args: A): T {
         if (this.manager().has(this.name)) {
@@ -29,7 +31,7 @@ export default abstract class<
 
         this.manager().add(this.name, instance);
 
-        this.message().watch(async ({path, args}, sender) => {
+        this.unwatch = this.message().watch(async ({path, args}, sender) => {
             try {
                 const context = this.withSender(instance, sender);
 
@@ -56,6 +58,13 @@ export default abstract class<
         });
 
         return instance;
+    }
+
+    public destroy(): void {
+        this.unwatch?.();
+        this.unwatch = undefined;
+
+        super.destroy();
     }
 
     private withSender(instance: T, sender: MessageSender): T {

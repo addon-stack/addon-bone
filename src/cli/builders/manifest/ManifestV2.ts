@@ -1,4 +1,4 @@
-import ManifestBase from "./ManifestBase";
+import ManifestBase, {ManifestError} from "./ManifestBase";
 
 import {filterHostPatterns, filterOptionalPermissions, filterPermissionsForMV2} from "./utils";
 
@@ -114,5 +114,42 @@ export default class extends ManifestBase<ManifestV2> {
         if (resources.length > 0) {
             return {web_accessible_resources: Array.from(new Set(resources))};
         }
+    }
+
+    protected buildSandbox(): Partial<ManifestV2> | undefined {
+        if (this.browser === Browser.Firefox) {
+            return;
+        }
+
+        const rawSandbox = (this.combinedRaws.sandbox || {}) as Record<string, any>;
+        const sandboxes = this.getSandboxes();
+        const csp = this.sandboxCsp.build() || rawSandbox.content_security_policy;
+
+        if (sandboxes.length === 0 && !csp && Object.keys(rawSandbox).length === 0) {
+            return;
+        }
+
+        return {
+            sandbox: {
+                ...rawSandbox,
+                pages: sandboxes,
+                ...(csp ? {content_security_policy: csp} : {}),
+            },
+        } as Partial<ManifestV2>;
+    }
+
+    protected buildCsp(): Partial<ManifestV2> | undefined {
+        const rawCsp = this.combinedRaws.content_security_policy;
+        const csp = this.csp.build();
+
+        if (rawCsp && csp) {
+            throw new ManifestError(
+                "Cannot merge extension pages content security policy with a raw content_security_policy."
+            );
+        }
+
+        const policy = rawCsp || csp;
+
+        return policy ? ({content_security_policy: policy} as Partial<ManifestV2>) : undefined;
     }
 }

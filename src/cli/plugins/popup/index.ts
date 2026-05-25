@@ -65,7 +65,7 @@ export default definePlugin(() => {
             } as RspackConfig;
         },
         manifest: async ({manifest}) => {
-            manifest.setPopup(await popup.manifest());
+            manifest.setPopup(await popup.manifest()).appendCsp(await popup.csp());
         },
     };
 });

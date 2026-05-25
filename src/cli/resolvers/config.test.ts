@@ -19,6 +19,7 @@ jest.mock("../plugins", () => {
         pluginPopup: plugin("popup"),
         pluginPublic: plugin("public"),
         pluginReact: plugin("react"),
+        pluginSandbox: plugin("sandbox"),
         pluginSidebar: plugin("sidebar"),
         pluginStyle: plugin("style"),
         pluginTypescript: plugin("typescript"),

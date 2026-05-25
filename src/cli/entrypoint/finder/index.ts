@@ -8,6 +8,7 @@ export {
     type ViewAliasToFilename,
     type ViewFileToFilename,
 } from "./AbstractViewFinder";
+export {default as ViewCspFinder} from "./ViewCspFinder";
 export {default as AbstractOptionsFinder} from "./AbstractOptionsFinder";
 export {default as BackgroundFinder} from "./BackgroundFinder";
 export {default as CommandFinder} from "./CommandFinder";
@@ -19,6 +20,8 @@ export {default as OffscreenViewFinder} from "./OffscreenViewFinder";
 export {default as PageFinder} from "./PageFinder";
 export {default as PopupFinder} from "./PopupFinder";
 export {default as RelayFinder} from "./RelayFinder";
+export {default as SandboxFinder} from "./SandboxFinder";
+export {default as SandboxViewFinder} from "./SandboxViewFinder";
 export {default as ServiceFinder} from "./ServiceFinder";
 export {default as PluginFinder} from "./PluginFinder";
 export {default as SidebarFinder} from "./SidebarFinder";

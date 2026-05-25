@@ -65,7 +65,7 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {
-            manifest.appendAccessibleResources(await page.accessibleResources());
+            manifest.appendAccessibleResources(await page.accessibleResources()).appendCsp(await page.csp());
         },
     };
 });

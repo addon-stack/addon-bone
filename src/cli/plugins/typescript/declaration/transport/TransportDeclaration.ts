@@ -8,6 +8,7 @@ export enum TransportDeclarationLayer {
     Service = "service",
     Offscreen = "offscreen",
     Relay = "relay",
+    Sandbox = "sandbox",
 }
 
 export default class<T extends Record<string, string> = Record<string, string>> extends FileBuilder {

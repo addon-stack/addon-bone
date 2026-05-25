@@ -14,6 +14,7 @@ export {default as pluginOffscreen} from "./offscreen";
 export {default as pluginPage} from "./page";
 export {default as pluginPopup} from "./popup";
 export {default as pluginPublic} from "./public";
+export {default as pluginSandbox} from "./sandbox";
 export {default as pluginSidebar} from "./sidebar";
 export {default as pluginTypescript, TypescriptConfig, FileBuilder, VendorDeclaration} from "./typescript";
 export {default as pluginReact} from "./react";

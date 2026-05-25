@@ -1,5 +1,7 @@
 import {sendMessage, sendTabMessage} from "@addon-core/browser";
 
+import {restoreError} from "../error";
+
 import {isBrowser} from "@main/env";
 
 import {
@@ -78,7 +80,7 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
             return response.payload;
         }
 
-        throw this.restoreError(response.error);
+        throw restoreError(response.error);
     }
 
     private isMessageResult(response: unknown): response is MessageResult {
@@ -108,38 +110,6 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
 
     private isRecord(value: unknown): value is Record<string, unknown> {
         return typeof value === "object" && value !== null;
-    }
-
-    private restoreError(error: MessageError): Error {
-        const ErrorConstructor = this.getErrorConstructor(error.name);
-        const restored = new ErrorConstructor(error.message);
-
-        restored.name = error.name || "Error";
-
-        if (error.stack) {
-            restored.stack = error.stack;
-        }
-
-        return restored;
-    }
-
-    private getErrorConstructor(name: string): new (message?: string) => Error {
-        switch (name) {
-            case "EvalError":
-                return EvalError;
-            case "RangeError":
-                return RangeError;
-            case "ReferenceError":
-                return ReferenceError;
-            case "SyntaxError":
-                return SyntaxError;
-            case "TypeError":
-                return TypeError;
-            case "URIError":
-                return URIError;
-            default:
-                return Error;
-        }
     }
 
     public watch<K extends MessageType<T>>(

@@ -67,6 +67,17 @@ declare module "virtual:relay-entrypoint" {
     export = module;
 }
 
+declare module "virtual:sandbox-entrypoint" {
+    type SandboxDefinition = import("@typing/sandbox").SandboxDefinition<any>;
+
+    interface ModuleType extends SandboxDefinition {
+        default: SandboxDefinition | SandboxDefinition["init"] | undefined;
+    }
+
+    const module: ModuleType;
+    export = module;
+}
+
 declare module "virtual:relay-framework" {
     type RelayUnresolvedDefinition = import("@typing/relay").RelayUnresolvedDefinition<any>;
 
@@ -119,6 +130,8 @@ declare module "adnbn" {
         import("@typing/offscreen").OffscreenUnresolvedDefinition<T>;
     export type RelayUnresolvedDefinition<T extends import("@typing/transport").TransportType> =
         import("@typing/relay").RelayUnresolvedDefinition<T>;
+    export type SandboxUnresolvedDefinition<T extends import("@typing/transport").TransportType> =
+        import("@typing/sandbox").SandboxUnresolvedDefinition<T>;
 }
 
 declare module "adnbn/transport" {
@@ -201,6 +214,20 @@ declare module "adnbn/entry/relay" {
         constructor(options: RelayDefinition<TransportType> | RelayUnresolvedDefinition<TransportType>);
 
         content(builder: ContentScriptBuilder): this;
+
+        build(): Promise<void>;
+    }
+}
+
+declare module "adnbn/entry/sandbox" {
+    import type {SandboxDefinition, SandboxUnresolvedDefinition} from "@typing/sandbox";
+    import type {TransportType} from "@typing/transport";
+    import type {ViewBuilder} from "@typing/view";
+
+    export class Builder {
+        constructor(options: SandboxDefinition<TransportType> | SandboxUnresolvedDefinition<TransportType>);
+
+        view(builder: ViewBuilder): this;
 
         build(): Promise<void>;
     }

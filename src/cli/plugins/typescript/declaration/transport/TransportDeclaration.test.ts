@@ -51,6 +51,15 @@ describe("TransportDeclaration", () => {
             layer: TransportDeclarationLayer.Relay,
             registry: "RelayRegistry",
         },
+        {
+            dictionary: {
+                alpha: "{ call(value: string): Promise<string>; }",
+                beta: "{ nested: { ping(): boolean; }; }",
+            },
+            filename: "sandbox.d.ts",
+            layer: TransportDeclarationLayer.Sandbox,
+            registry: "SandboxRegistry",
+        },
     ];
 
     test.each(cases)("writes a strict $layer registry", ({dictionary, filename, layer, registry}) => {

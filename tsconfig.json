@@ -24,11 +24,13 @@
     "paths": {
       "@cli/*": ["cli/*"],
       "@entry/*": ["entry/*"],
+      "@frame/*": ["frame/*"],
       "@locale/*": ["locale/*"],
       "@main/*": ["main/*"],
       "@message/*": ["message/*"],
       "@offscreen/*": ["offscreen/*"],
       "@relay/*": ["relay/*"],
+      "@sandbox/*": ["sandbox/*"],
       "@service/*": ["service/*"],
       "@storage/*": ["storage/*"],
       "@transport/*": ["transport/*"],

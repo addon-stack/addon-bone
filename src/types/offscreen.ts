@@ -1,6 +1,7 @@
 import {TransportConfig, TransportDefinition, TransportType} from "@typing/transport";
 import {ViewOptions} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
+import {CspOptions} from "@typing/csp";
 
 export const OffscreenGlobalKey = "adnbnOffscreen";
 export const OffscreenGlobalAccess = "adnbnOffscreenAccess";
@@ -44,7 +45,7 @@ export interface OffscreenConfig extends TransportConfig {
     justification?: string;
 }
 
-export type OffscreenOptions = OffscreenConfig & ViewOptions;
+export type OffscreenOptions = OffscreenConfig & CspOptions & ViewOptions;
 
 export type OffscreenEntrypointOptions = Partial<OffscreenOptions>;
 

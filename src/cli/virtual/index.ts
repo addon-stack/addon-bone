@@ -5,6 +5,7 @@ import transport from "./transport.ts?raw";
 import offscreen from "./offscreen.ts?raw";
 import offscreenBackground from "./offscreen.background.ts?raw";
 import relay from "./relay.ts?raw";
+import sandbox from "./sandbox.ts?raw";
 import view from "./view.ts?raw";
 
 import {inferEntrypointFramework} from "@cli/entrypoint";
@@ -12,7 +13,7 @@ import {inferEntrypointFramework} from "@cli/entrypoint";
 import {PackageName} from "@typing/app";
 import {EntrypointFile} from "@typing/entrypoint";
 
-const templates = {background, command, content, offscreen, relay, view, transport};
+const templates = {background, command, content, offscreen, relay, sandbox, view, transport};
 
 const getEntryFramework = (file: EntrypointFile, entry: "content" | "view"): string => {
     return `${PackageName}/entry/${entry}/${inferEntrypointFramework(file)}`;
@@ -60,6 +61,12 @@ export const virtualRelayModule = (file: EntrypointFile, name: string): string =
     return getVirtualModule(file, "relay")
         .replace("virtual:relay-name", name)
         .replace(`virtual:content-framework`, getEntryFramework(file, "content"));
+};
+
+export const virtualSandboxModule = (file: EntrypointFile, name: string): string => {
+    return getVirtualModule(file, "sandbox")
+        .replace("virtual:sandbox-name", name)
+        .replace(`virtual:view-framework`, getEntryFramework(file, "view"));
 };
 
 export const virtualServiceModule = (file: EntrypointFile, name: string): string => {
