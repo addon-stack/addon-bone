@@ -31,6 +31,7 @@ export default class extends ViewCspFinder<PageEntrypointOptions> {
             .reserve(EntrypointType.Sidebar)
             .reserve(EntrypointType.Popup)
             .reserve(EntrypointType.Offscreen)
+            .reserve(EntrypointType.Sandbox)
             .reserve(EntrypointType.Options);
     }
 
