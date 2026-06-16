@@ -1,6 +1,6 @@
 import {rspack} from "@rspack/core";
 
-import {build, watch} from "./command";
+import {build, serve, watch} from "./command";
 
 import configResolver from "@cli/resolvers/config";
 import bundlerResolver from "@cli/resolvers/bundler";
@@ -29,6 +29,10 @@ export default async (config: OptionalConfig): Promise<void> => {
 
         case Command.Watch:
             watch(compiler);
+            break;
+
+        case Command.Dev:
+            await serve(compiler, resolverConfig.server);
             break;
 
         default:

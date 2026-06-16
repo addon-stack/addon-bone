@@ -5,6 +5,7 @@ const config: Config = {
     testEnvironment: "jsdom",
     setupFiles: ["<rootDir>/tests/jest.setup.ts"],
     moduleNameMapper: {
+        "^@rspack/core$": "<rootDir>/tests/mocks/rspack-core.ts",
         "^@cli/(.*)$": "<rootDir>/src/cli/$1",
         "^@entry/(.*)$": "<rootDir>/src/entry/$1",
         "^@frame/(.*)$": "<rootDir>/src/frame/$1",

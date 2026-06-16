@@ -41,6 +41,39 @@ cli.command("watch [root]", "Start watch mode")
         }
     });
 
+cli.command("dev [root]", "Start dev server with HMR")
+    .option("-m, --mode <mode>", "Set env mode", {default: "development"})
+    .option("-c, --config <config>", "Path to config file")
+    .option("-a, --app <app>", "Specify an app to run", {default: "myapp"})
+    .option("-b, --browser <browser>", "Specify a browser")
+    .option("--mv2", "Target manifest v2")
+    .option("-p, --port <port>", "Dev server port")
+    .option("-H, --host <host>", "Dev server host")
+    .action(async (root, options) => {
+        try {
+            await app({
+                command: Command.Dev,
+                mode: options.mode,
+                debug: options.debug,
+                app: options.app,
+                browser: options.browser,
+                manifestVersion: options.mv2 ? 2 : 3,
+                rootDir: root,
+                configFile: options.config,
+                server: {
+                    // Keep numeric ports numeric, but pass through non-numeric values like
+                    // "auto" (a valid dev-server port) instead of coercing them to NaN.
+                    ...(options.port !== undefined
+                        ? {port: /^\d+$/.test(String(options.port)) ? Number(options.port) : options.port}
+                        : {}),
+                    ...(options.host ? {host: options.host} : {}),
+                },
+            });
+        } catch (e) {
+            consola.error(e);
+        }
+    });
+
 cli.command("build [root]", "Build for production")
     .option("-m, --mode <mode>", "Set env mode", {default: "production"})
     .option("-c, --config <config>", "Path to config file")

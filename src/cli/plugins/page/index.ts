@@ -10,7 +10,7 @@ import {virtualViewModule} from "@cli/virtual";
 import {EntrypointPlugin} from "@cli/bundler";
 import {ViewAliasToFilename} from "@cli/entrypoint";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 
 export default definePlugin(() => {
     let page: Page;
@@ -41,7 +41,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await page.view().entries())
                     .virtual(file => virtualViewModule(file));
 
-                if (config.command === Command.Watch) {
+                if (isWatchCommand(config.command)) {
                     plugin.watch(async () => {
                         declaration.setAlias(await page.clear().getAlias()).build();
 

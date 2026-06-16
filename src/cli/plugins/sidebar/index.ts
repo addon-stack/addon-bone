@@ -10,7 +10,7 @@ import Sidebar, {SidebarNameToManifest} from "./Sidebar";
 
 import {SidebarDeclaration} from "./declaration";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 import {SidebarAlternativeBrowsers} from "@typing/sidebar";
 
 export default definePlugin(() => {
@@ -58,7 +58,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await sidebar.view().entries())
                     .virtual(file => virtualViewModule(file));
 
-                if (config.command === Command.Watch) {
+                if (isWatchCommand(config.command)) {
                     plugin.watch(async () => {
                         declaration.setAlias(await sidebar.clear().getAlias()).build();
 

@@ -11,7 +11,7 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
 import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 import {RelayMethod, RelayOptions} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";
 
@@ -53,7 +53,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await manager.entries())
                     .virtual(file => manager.virtual(file));
 
-                if (config.command === Command.Watch) {
+                if (isWatchCommand(config.command)) {
                     plugin.watch(async () => {
                         manager.clear();
 

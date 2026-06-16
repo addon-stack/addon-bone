@@ -7,7 +7,7 @@ import {EntrypointPlugin} from "@cli/bundler";
 import Sandbox, {SandboxParametersMap} from "./Sandbox";
 import SandboxDeclaration from "./SandboxDeclaration";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 
 export default definePlugin(() => {
     let sandbox: Sandbox;
@@ -43,7 +43,7 @@ export default definePlugin(() => {
                     sandbox.virtual(file)
                 );
 
-                if (config.command === Command.Watch) {
+                if (isWatchCommand(config.command)) {
                     plugin.watch(async () => {
                         declaration.dictionary(await sandbox.clear().dictionary()).build();
 

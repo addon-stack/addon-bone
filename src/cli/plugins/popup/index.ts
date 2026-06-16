@@ -10,7 +10,7 @@ import Popup, {PopupNameToManifest} from "./Popup";
 
 import {PopupDeclaration} from "./declaration";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 
 export default definePlugin(() => {
     let popup: Popup;
@@ -41,7 +41,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await popup.view().entries())
                     .virtual(file => virtualViewModule(file));
 
-                if (config.command === Command.Watch) {
+                if (isWatchCommand(config.command)) {
                     plugin.watch(async () => {
                         declaration.setAlias(await popup.clear().getAlias()).build();
 

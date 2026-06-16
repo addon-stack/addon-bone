@@ -9,7 +9,7 @@ import ManifestPlugin from "@cli/bundler/plugins/ManifestPlugin";
 import WatchPlugin from "@cli/bundler/plugins/WatchPlugin";
 
 import {ReadonlyConfig} from "@typing/config";
-import {Command} from "@typing/app";
+import {Command, isWatchCommand} from "@typing/app";
 
 const getConfigFromPlugins = async (rspack: RspackConfig, config: ReadonlyConfig): Promise<RspackConfig> => {
     let mergedConfig: RspackConfig = {};
@@ -36,7 +36,7 @@ const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfi
 
     const plugins: RspackPluginInstance[] = [];
 
-    if (config.command === Command.Watch) {
+    if (isWatchCommand(config.command)) {
         plugins.push(
             new WatchPlugin(async () => {
                 await update();
@@ -71,9 +71,16 @@ export default async (config: ReadonlyConfig): Promise<RspackConfig> => {
         });
     }
 
-    if (config.command === Command.Watch) {
+    if (isWatchCommand(config.command)) {
         rspack = mergeConfig(rspack, {
-            devtool: "inline-source-map",
+            devtool: config.command === Command.Dev ? "cheap-module-source-map" : "inline-source-map",
+            // Don't watch node_modules. The legacy watch() passed this to compiler.watch()
+            // directly; the dev server drives the watch via compiler.options.watchOptions,
+            // so it must live in the config or the dev server tries to watch the whole tree
+            // and dies with EMFILE on large projects.
+            watchOptions: {
+                ignored: /[\\/]node_modules[\\/]/,
+            },
         });
     }
 

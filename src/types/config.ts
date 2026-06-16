@@ -1,4 +1,4 @@
-import type {Configuration as RspackConfig, Filename} from "@rspack/core";
+import type {Configuration as RspackConfig, DevServer, Filename} from "@rspack/core";
 import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
 import {Command, Mode, Workspace} from "@typing/app";
@@ -369,6 +369,19 @@ export interface Config {
      *   additional adjustments are necessary.
      */
     bundler: RspackConfig | ((rspack: RspackConfig) => Awaiter<RspackConfig>);
+
+    /**
+     * Rspack dev-server options, used only by the `dev` command (`adnbn dev`).
+     *
+     * This is the standard Rspack/webpack-dev-server `devServer` configuration
+     * (port, host, allowedHosts, hot, liveReload, client, devMiddleware, …). The
+     * build system always forces `devMiddleware.writeToDisk: true` on top of it,
+     * because the browser loads the unpacked extension from disk — assets must be
+     * emitted, not kept in memory.
+     *
+     * Ignored by `build` and `watch`.
+     */
+    server: DevServer;
 
     /**
      * Environment variables inclusion settings.

@@ -38,7 +38,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   },
   "bin": {
     "adnbn": "bin/adnbn.js"
@@ -127,9 +127,10 @@
     "@addon-core/browser": "^0.6.0",
     "@addon-core/inject-script": "^0.3.1",
     "@addon-core/storage": "^0.6.0",
-    "@rsdoctor/rspack-plugin": "^1.5.1",
-    "@rspack/cli": "^1.7.5",
-    "@rspack/core": "^1.7.5",
+    "@rsdoctor/rspack-plugin": "^1.5.13",
+    "@rspack/core": "^2.0.8",
+    "@rspack/dev-server": "^2.0.3",
+    "@rspack/plugin-react-refresh": "^2.0.2",
     "@svgr/webpack": "^8.1.0",
     "await-lock": "^3.0.0",
     "c12": "^3.3.2",
@@ -148,6 +149,7 @@
     "pluralize": "^8.0.0",
     "postcss": "^8.5.15",
     "postcss-scss": "^4.0.9",
+    "react-refresh": "^0.18.0",
     "rspack-plugin-virtual-module": "^1.0.1",
     "sass": "^1.83.4",
     "sass-loader": "^16.0.4",

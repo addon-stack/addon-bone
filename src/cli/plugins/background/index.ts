@@ -12,7 +12,7 @@ import Command from "./Command";
 import Service from "./Service";
 import ServiceDeclaration from "./ServiceDeclaration";
 
-import {Command as AppCommand} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 
 export default definePlugin(() => {
     let background: Background;
@@ -54,7 +54,7 @@ export default definePlugin(() => {
             const servicePlugin = EntrypointPlugin.from(await service.entry().entries())
                 .virtual(file => service.virtual(file));
 
-            if (config.command === AppCommand.Watch) {
+            if (isWatchCommand(config.command)) {
                 backgroundPlugin.watch(() => background.clear().entry().entries());
 
                 commandPlugin.watch(async () => {

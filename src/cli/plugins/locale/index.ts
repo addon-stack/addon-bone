@@ -9,7 +9,7 @@ import Locale from "./Locale";
 
 import {LocaleDeclaration} from "./declaration";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 import {Browser} from "@typing/browser";
 
 export default definePlugin(() => {
@@ -30,7 +30,7 @@ export default definePlugin(() => {
 
             const plugin = new GenerateJsonPlugin(await locale.json());
 
-            if (config.command === Command.Watch) {
+            if (isWatchCommand(config.command)) {
                 plugin.watch(async () => {
                     locale.clear();
 

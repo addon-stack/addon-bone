@@ -11,7 +11,7 @@ import {virtualOffscreenBackgroundModule} from "@cli/virtual";
 import Offscreen, {OffscreenParameters} from "./Offscreen";
 import OffscreenDeclaration from "./OffscreenDeclaration";
 
-import {Command} from "@typing/app";
+import {isWatchCommand} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {BackgroundEntryName} from "@typing/background";
 
@@ -54,7 +54,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await offscreen.view().entries())
                     .virtual(file => offscreen.virtual(file));
 
-                if (config.command === Command.Watch) {
+                if (isWatchCommand(config.command)) {
                     plugin.watch(async () => {
                         declaration.dictionary(await offscreen.clear().dictionary()).build();
 
