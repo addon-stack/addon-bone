@@ -1,6 +1,15 @@
 #!/usr/bin/env sh
 
-# Husky pre-push hook: typecheck, run full tests, and build
+# Husky pre-push hook: format first, then typecheck, run full tests, and build
+
+npm run format || exit 1
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "Push stopped because formatting created uncommitted changes."
+    echo "Commit or amend these changes before pushing:"
+    git status --short
+    exit 1
+fi
 
 npm run typecheck || exit 1
 npm run test:ci || exit 1

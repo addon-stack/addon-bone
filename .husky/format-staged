@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+set -eu
+
+staged_paths="$(mktemp)"
+unstaged_paths="$(mktemp)"
+partial_paths="$(mktemp)"
+staged_paths_nul="$(mktemp)"
+
+trap 'rm -f "$staged_paths" "$unstaged_paths" "$partial_paths" "$staged_paths_nul"' EXIT
+
+git diff --cached --name-only --diff-filter=ACMR > "$staged_paths"
+
+if [ ! -s "$staged_paths" ]; then
+    echo "No staged files to format."
+    exit 0
+fi
+
+git diff --name-only --diff-filter=ACMR > "$unstaged_paths"
+grep -Fxf "$staged_paths" "$unstaged_paths" > "$partial_paths" || true
+
+if [ -s "$partial_paths" ]; then
+    echo "Prettier was not run because some files have both staged and unstaged changes."
+    echo "Stage or stash the unstaged parts before committing:"
+    sed 's/^/  /' "$partial_paths"
+    exit 1
+fi
+
+git diff --cached --name-only --diff-filter=ACMR -z > "$staged_paths_nul"
+
+xargs -0 npx --no -- prettier --write --ignore-unknown -- < "$staged_paths_nul"
+xargs -0 git add -- < "$staged_paths_nul"

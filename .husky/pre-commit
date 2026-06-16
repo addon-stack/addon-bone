@@ -1,9 +1,8 @@
 #!/usr/bin/env sh
 
-# Husky pre-commit hook: format and run related tests on staged files
+# Husky pre-commit hook: format staged files, re-stage them, and run checks
 
-npm run format || exit 1
+sh .husky/format-staged || exit 1
 npm run typecheck || exit 1
 npm run test || exit 1
-
 
