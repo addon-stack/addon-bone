@@ -23,5 +23,4 @@ export enum Workspace {
  * `watch` (write-to-disk only) and the modern `dev` (RspackDevServer + HMR). Build is one-shot.
  * Use this for every gate that should apply to both incremental modes.
  */
-export const isWatchCommand = (command: Command): boolean =>
-    command === Command.Watch || command === Command.Dev;
+export const isWatchCommand = (command: Command): boolean => command === Command.Watch || command === Command.Dev;
