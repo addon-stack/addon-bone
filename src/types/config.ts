@@ -1,5 +1,5 @@
 import type {Configuration as RspackConfig, DevServer, Filename} from "@rspack/core";
-import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
+import type {HtmlTagsPluginOptions as HtmlOptions} from "@rspackjs/plugin-html-tags";
 
 import {Command, Mode, Workspace} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";

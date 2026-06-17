@@ -2,7 +2,7 @@ import path from "path";
 import _ from "lodash";
 
 import type {HtmlRspackPluginOptions} from "@rspack/core";
-import type {Options as HtmlRspackTagsPluginOptions} from "html-rspack-tags-plugin";
+import type {HtmlTagsPluginOptions} from "@rspackjs/plugin-html-tags";
 
 import {AbstractViewFinder} from "@cli/entrypoint";
 
@@ -45,8 +45,8 @@ export default class<O extends ViewEntrypointOptions> {
         return html;
     }
 
-    public async tags(): Promise<HtmlRspackTagsPluginOptions[]> {
-        const tags: HtmlRspackTagsPluginOptions[] = [];
+    public async tags(): Promise<HtmlTagsPluginOptions[]> {
+        const tags: HtmlTagsPluginOptions[] = [];
 
         const views = await this.finder.views();
 

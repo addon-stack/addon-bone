@@ -1,6 +1,6 @@
 import type {FC, ReactNode} from "react";
 import type {Optional} from "utility-types";
-import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
+import type {HtmlTagsPluginOptions as HtmlOptions} from "@rspackjs/plugin-html-tags";
 
 import {Awaiter, ExcludeFunctionsFromProperties, PickNonFunctionProperties} from "@typing/helpers";
 import {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";

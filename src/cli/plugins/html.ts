@@ -1,7 +1,7 @@
 import _ from "lodash";
 
 import {Configuration as RspackConfig, HtmlRspackPlugin} from "@rspack/core";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
@@ -25,7 +25,7 @@ export default definePlugin(() => {
                 options = [options];
             }
 
-            const plugins = options.map(options => new HtmlRspackTagsPlugin(options));
+            const plugins = options.map(options => new HtmlTagsRspackPlugin(options));
 
             return {plugins} satisfies RspackConfig;
         },
