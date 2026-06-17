@@ -2,7 +2,8 @@ import _ from "lodash";
 import path from "path";
 
 import {Compiler, EntryNormalized} from "@rspack/core";
-import {RspackVirtualModulePlugin as VirtualModulesPlugin} from "rspack-plugin-virtual-module";
+
+import VirtualModuleAdapter from "./VirtualModuleAdapter";
 
 import {EntrypointEntries, EntrypointFile} from "@typing/entrypoint";
 
@@ -29,7 +30,7 @@ export type EntrypointPluginEntryModules = Map<string, EntrypointPluginModules>;
 export default class EntrypointPlugin {
     private readonly pluginName: string = "EntrypointPlugin";
 
-    private _plugin?: VirtualModulesPlugin;
+    private _plugin?: VirtualModuleAdapter;
     private _modules?: EntrypointPluginEntryModules;
 
     protected template?: EntrypointPluginTemplate;
@@ -46,14 +47,14 @@ export default class EntrypointPlugin {
         return path.join("virtual", name);
     }
 
-    protected get plugin(): VirtualModulesPlugin {
+    protected get plugin(): VirtualModuleAdapter {
         if (this._plugin) {
             return this._plugin;
         }
 
         const modules = Object.fromEntries(this.getModuleContents(this.modules));
 
-        return (this._plugin = new VirtualModulesPlugin(modules, "entrypoint"));
+        return (this._plugin = new VirtualModuleAdapter(modules));
     }
 
     protected get modules(): EntrypointPluginEntryModules {
@@ -112,7 +113,7 @@ export default class EntrypointPlugin {
                     currentFiles = currentFiles.import;
                 }
 
-                currentFiles.push(...Array.from(modules.values(), ({name}) => name));
+                currentFiles.push(...Array.from(modules.values(), ({name}) => this.plugin.entryRequest(name)));
 
                 entry[name] = {
                     import: _.uniq(currentFiles),
@@ -151,6 +152,10 @@ export default class EntrypointPlugin {
 
         const addedContents = new Map(Array.from(updatedContents).filter(entry => !currentContents.has(entry[0])));
 
+        // compiler.options.entry holds normalized requests (entryRequest), while the content
+        // maps are keyed by storage name — map the removed names to requests so the filter matches.
+        const removedRequests = new Set(Array.from(removedContents.keys(), name => this.plugin.entryRequest(name)));
+
         if (removedContents.size > 0 || addedContents.size > 0) {
             removedContents.keys().forEach(name => {
                 this.plugin.writeModule(name, "");
@@ -167,9 +172,9 @@ export default class EntrypointPlugin {
                     entry = entry.import as string[];
                 }
 
-                entry = entry.filter(file => !removedContents.has(file));
+                entry = entry.filter(file => !removedRequests.has(file));
 
-                entry.push(...Array.from(modules.values(), ({name}) => name));
+                entry.push(...Array.from(modules.values(), ({name}) => this.plugin.entryRequest(name)));
 
                 compiler.options.entry[name] = _.uniq(entry);
             });

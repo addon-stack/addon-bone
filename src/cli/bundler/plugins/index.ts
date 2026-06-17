@@ -18,3 +18,5 @@ export {default as ManifestPlugin} from "./ManifestPlugin";
 export {default as ReplacePlugin} from "./ReplacePlugin";
 
 export {default as WatchPlugin} from "./WatchPlugin";
+
+export {default as VirtualModuleAdapter} from "./VirtualModuleAdapter";

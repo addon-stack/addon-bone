@@ -1,11 +1,10 @@
 import path from "path";
 import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
-import {RspackVirtualModulePlugin} from "rspack-plugin-virtual-module";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, VirtualModuleAdapter} from "@cli/bundler";
 import {virtualOffscreenBackgroundModule} from "@cli/virtual";
 
 import Offscreen, {OffscreenParameters} from "./Offscreen";
@@ -15,7 +14,7 @@ import {isWatchCommand} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {BackgroundEntryName} from "@typing/background";
 
-const OffscreenTempDir = "virtual";
+const OffscreenVirtualDir = "virtual";
 const OffscreenBackgroundModule = "offscreen.background.ts";
 
 export default definePlugin(() => {
@@ -68,19 +67,18 @@ export default definePlugin(() => {
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
 
                 if (config.manifestVersion === 2 || config.browser === Browser.Firefox) {
-                    plugins.push(
-                        new RspackVirtualModulePlugin(
-                            {
-                                [OffscreenBackgroundModule]: virtualOffscreenBackgroundModule(),
-                            },
-                            OffscreenTempDir
-                        )
-                    );
+                    const offscreenBackgroundPath = path.join(OffscreenVirtualDir, OffscreenBackgroundModule);
+
+                    const virtualPlugin = new VirtualModuleAdapter({
+                        [offscreenBackgroundPath]: virtualOffscreenBackgroundModule(),
+                    });
+
+                    plugins.push(virtualPlugin);
 
                     rspack = {
                         entry: {
                             [BackgroundEntryName]: {
-                                import: [path.join(OffscreenTempDir, OffscreenBackgroundModule)],
+                                import: [virtualPlugin.entryRequest(offscreenBackgroundPath)],
                             },
                         },
                     };
