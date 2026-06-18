@@ -5,7 +5,9 @@ import {toPosix} from "@cli/utils/path";
 import {ManifestBuilder, ManifestDependencies, ManifestDependency} from "@typing/manifest";
 
 class ManifestPlugin {
-    constructor(private readonly manifest: ManifestBuilder) {}
+    // A getter (not a fixed instance) so the plugin always reads the latest manifest — watch/dev
+    // recreate it on every rebuild to avoid accumulating stale permissions/csp/content-scripts.
+    constructor(private readonly manifest: () => ManifestBuilder) {}
 
     apply(compiler: Compiler): void {
         compiler.hooks.compilation.tap("ManifestPlugin", compilation => {
@@ -57,7 +59,7 @@ class ManifestPlugin {
                         entryDependencies.set(entryName, dependencies);
                     });
 
-                    const manifest = this.manifest.setDependencies(entryDependencies).get();
+                    const manifest = this.manifest().setDependencies(entryDependencies).get();
                     const json = JSON.stringify(manifest, null, 2);
 
                     compilation.emitAsset("manifest.json", new rspack.sources.RawSource(json));

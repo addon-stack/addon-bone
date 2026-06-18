@@ -11,6 +11,8 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
 import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
 
+import {defineTopology, entrypointTopology} from "@cli/utils/topology";
+
 import {isWatchCommand} from "@typing/app";
 import {RelayMethod, RelayOptions} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";
@@ -23,6 +25,14 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:content",
+        topology: async () => {
+            const empty = await manager.empty();
+            const defines = [
+                defineTopology({name: "__ADNBN_RELAY_OPTIONS__", value: empty ? {} : await relay.getOptionsMap()}),
+            ];
+
+            return empty ? {defines} : {...entrypointTopology(await manager.entries()), defines};
+        },
         startup: async ({config}) => {
             content = new Content(config);
             relay = new Relay(config);

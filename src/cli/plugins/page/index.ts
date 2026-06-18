@@ -10,6 +10,8 @@ import {virtualViewModule} from "@cli/virtual";
 import {EntrypointPlugin} from "@cli/bundler";
 import {ViewAliasToFilename} from "@cli/entrypoint";
 
+import {defineTopology, viewTopology} from "@cli/utils/topology";
+
 import {isWatchCommand} from "@typing/app";
 
 export default definePlugin(() => {
@@ -18,6 +20,14 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:page",
+        topology: async () => {
+            const empty = await page.empty();
+            const defines = [
+                defineTopology({name: "__ADNBN_PAGE_ALIAS__", value: empty ? {} : await page.getAliasToFilename()}),
+            ];
+
+            return empty ? {defines} : viewTopology(page.view(), defines);
+        },
         startup: ({config}) => {
             page = new Page(config);
             declaration = new PageDeclaration(config);

@@ -6,6 +6,8 @@ import Icon, {CopyPatterns, IconDefinition} from "./Icon";
 
 import {IconDeclaration} from "./declaration";
 
+import {defineTopology} from "@cli/utils/topology";
+
 export {Icon, type IconDefinition, type CopyPatterns};
 
 export default definePlugin(() => {
@@ -13,6 +15,9 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:icon",
+        topology: async () => ({
+            defines: [defineTopology({name: "__ADNBN_ICONS__", value: await icon.define()})],
+        }),
         startup: ({config}) => {
             icon = new Icon(config);
         },

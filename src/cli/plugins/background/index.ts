@@ -5,6 +5,8 @@ import {virtualBackgroundModule} from "@cli/virtual";
 
 import {EntrypointPlugin} from "@cli/bundler";
 
+import {entrypointTopology} from "@cli/utils/topology";
+
 import Background from "./Background";
 import BackgroundEntry from "./BackgroundEntry";
 import BackgroundManifest from "./BackgroundManifest";
@@ -22,6 +24,16 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:background",
+        topology: async () => {
+            const slices = (
+                await Promise.all([background.entry().entries(), command.entry().entries(), service.entry().entries()])
+            ).map(entrypointTopology);
+
+            return {
+                entries: slices.flatMap(slice => slice.entries),
+                virtualModules: slices.flatMap(slice => slice.virtualModules),
+            };
+        },
         startup: async ({config}) => {
             background = new Background(config);
             command = new Command(config);

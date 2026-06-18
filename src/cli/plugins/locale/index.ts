@@ -9,6 +9,8 @@ import Locale from "./Locale";
 
 import {LocaleDeclaration} from "./declaration";
 
+import {defineTopology} from "@cli/utils/topology";
+
 import {isWatchCommand} from "@typing/app";
 import {Browser} from "@typing/browser";
 
@@ -18,6 +20,12 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:locale",
+        topology: async () => ({
+            defines: [
+                defineTopology({name: "__ADNBN_LOCALE_KEYS__", value: [...(await locale.keys())]}),
+                defineTopology({name: "__ADNBN_DEFINED_LOCALES__", value: [...(await locale.languages())]}),
+            ],
+        }),
         startup: ({config}) => {
             locale = new Locale(config);
             declaration = new LocaleDeclaration(config);

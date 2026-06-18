@@ -1,12 +1,15 @@
 import {rspack} from "@rspack/core";
+import type {Configuration as RspackConfig} from "@rspack/core";
 
 import {build, serve, watch} from "./command";
 
 import configResolver from "@cli/resolvers/config";
 import bundlerResolver from "@cli/resolvers/bundler";
+import topologyResolver from "@cli/resolvers/topology";
 import {processPluginHandler} from "@cli/resolvers/plugin";
 
 import {OptionalConfig, ReadonlyConfig} from "@typing/config";
+import {TopologySnapshot} from "@typing/topology";
 import {Command} from "@typing/app";
 
 const startup = async (config: ReadonlyConfig): Promise<void> => {
@@ -14,25 +17,41 @@ const startup = async (config: ReadonlyConfig): Promise<void> => {
 };
 
 export default async (config: OptionalConfig): Promise<void> => {
-    const resolverConfig = await configResolver(config);
+    // A full pipeline run WITHOUT creating the compiler: resolve config → startup → assemble
+    // Rspack config → topology snapshot. The `dev` command runs this on every file event to
+    // probe the build's shape cheaply, and only instantiates `rspack(rspackConfig)` when the
+    // snapshot changed (HMR can't add/remove entries on a live build, so a change = restart).
+    const discoverBuild = async (): Promise<{
+        rspackConfig: RspackConfig;
+        resolverConfig: ReadonlyConfig;
+        snapshot: TopologySnapshot;
+    }> => {
+        const resolverConfig = await configResolver(config);
 
-    await startup(resolverConfig);
+        await startup(resolverConfig);
 
-    const rspackConfig = await bundlerResolver(resolverConfig);
+        const rspackConfig = await bundlerResolver(resolverConfig);
 
-    const compiler = rspack(rspackConfig);
+        // Snapshot AFTER bundler so the entrypoint discovery cached during the `bundler` hook is
+        // populated — the `topology` hook only reads it (no extra filesystem scan).
+        const snapshot = await topologyResolver(resolverConfig);
+
+        return {rspackConfig, resolverConfig, snapshot};
+    };
+
+    const {rspackConfig, resolverConfig, snapshot} = await discoverBuild();
 
     switch (resolverConfig.command) {
         case Command.Build:
-            build(compiler);
+            build(rspack(rspackConfig));
             break;
 
         case Command.Watch:
-            watch(compiler);
+            watch(rspack(rspackConfig));
             break;
 
         case Command.Dev:
-            await serve(compiler, resolverConfig.server);
+            await serve({compiler: rspack(rspackConfig), snapshot}, resolverConfig, discoverBuild);
             break;
 
         default:

@@ -6,6 +6,8 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
+import {defineTopology, viewTopology} from "@cli/utils/topology";
+
 import Popup, {PopupNameToManifest} from "./Popup";
 
 import {PopupDeclaration} from "./declaration";
@@ -18,6 +20,14 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:popup",
+        topology: async () => {
+            const empty = await popup.empty();
+            const defines = [
+                defineTopology({name: "__ADNBN_POPUP_MAP__", value: empty ? {} : await popup.manifestByAlias()}),
+            ];
+
+            return empty ? {defines} : viewTopology(popup.view(), defines);
+        },
         startup: ({config}) => {
             popup = new Popup(config);
             declaration = new PopupDeclaration(config);

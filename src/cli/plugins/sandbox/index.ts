@@ -4,6 +4,8 @@ import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin} from "@cli/bundler";
 
+import {defineTopology, viewTopology} from "@cli/utils/topology";
+
 import Sandbox, {SandboxParametersMap} from "./Sandbox";
 import SandboxDeclaration from "./SandboxDeclaration";
 
@@ -15,6 +17,14 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:sandbox",
+        topology: async () => {
+            const empty = await sandbox.empty();
+            const defines = [
+                defineTopology({name: "__ADNBN_SANDBOX_PARAMETERS__", value: empty ? {} : await sandbox.parameters()}),
+            ];
+
+            return empty ? {defines} : viewTopology(sandbox.view(), defines);
+        },
         startup: ({config}) => {
             sandbox = new Sandbox(config);
             declaration = new SandboxDeclaration(config);

@@ -3,6 +3,7 @@ import {Configuration as RspackConfig} from "@rspack/core";
 
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile} from "@typing/entrypoint";
+import {TopologyContribution} from "@typing/topology";
 import {Awaiter} from "@typing/helpers";
 
 /**
@@ -92,6 +93,15 @@ export interface Plugin extends PluginName {
     icon?: PluginHandler<PluginConfigOptions, PluginIconResult>;
     manifest?: PluginHandlerCallback<PluginManifestOptions>;
     startup?: PluginHandlerCallback<PluginConfigOptions>;
+
+    /**
+     * Report this plugin's slice of the build SHAPE (entries, HTML pages, tag options,
+     * DefinePlugin values, virtual-module identity) — everything baked into the compiler at
+     * creation that can't be updated live. Read from the plugin's already-cached discovery (no
+     * extra filesystem scan). The dev server diffs the assembled {@link TopologyContribution}
+     * snapshot to decide when the compiler must be recreated (restart).
+     */
+    topology?: PluginHandler<PluginConfigOptions, TopologyContribution>;
 }
 
 export type PluginHandler<O, T = void> = T | PluginHandlerCallback<O, T>;

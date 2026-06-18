@@ -7,6 +7,8 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin, VirtualModuleAdapter} from "@cli/bundler";
 import {virtualOffscreenBackgroundModule} from "@cli/virtual";
 
+import {defineTopology, viewTopology} from "@cli/utils/topology";
+
 import Offscreen, {OffscreenParameters} from "./Offscreen";
 import OffscreenDeclaration from "./OffscreenDeclaration";
 
@@ -23,6 +25,17 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:offscreen",
+        topology: async () => {
+            const empty = await offscreen.empty();
+            const defines = [
+                defineTopology({
+                    name: "__ADNBN_OFFSCREEN_PARAMETERS__",
+                    value: empty ? {} : await offscreen.parameters(),
+                }),
+            ];
+
+            return empty ? {defines} : viewTopology(offscreen.view(), defines);
+        },
         startup: ({config}) => {
             offscreen = new Offscreen(config);
             declaration = new OffscreenDeclaration(config);

@@ -25,12 +25,16 @@ const getConfigFromPlugins = async (rspack: RspackConfig, config: ReadonlyConfig
 };
 
 const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfig> => {
-    const manifest = manifestFactory(config);
+    let manifest = manifestFactory(config);
 
-    // prettier-ignore
-    const update = () => Array.fromAsync(
-        processPluginHandler(config.plugins, "manifest", {manifest, config})
-    );
+    // Recreate the manifest on every (re)build: the manifest hooks APPEND (permissions, csp,
+    // content scripts…), so re-running them on a reused instance accumulates stale values across
+    // watch/dev rebuilds. ManifestPlugin reads the current instance lazily via the getter below.
+    const update = async () => {
+        manifest = manifestFactory(config);
+
+        await Array.fromAsync(processPluginHandler(config.plugins, "manifest", {manifest, config}));
+    };
 
     await update();
 
@@ -44,7 +48,7 @@ const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfi
         );
     }
 
-    plugins.push(new ManifestPlugin(manifest));
+    plugins.push(new ManifestPlugin(() => manifest));
 
     return {plugins};
 };

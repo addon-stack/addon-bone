@@ -6,6 +6,8 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
+import {defineTopology, viewTopology} from "@cli/utils/topology";
+
 import Sidebar, {SidebarNameToManifest} from "./Sidebar";
 
 import {SidebarDeclaration} from "./declaration";
@@ -21,6 +23,14 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:sidebar",
+        topology: async () => {
+            const build = !(await sidebar.empty()) && sidebarAvailable;
+            const defines = [
+                defineTopology({name: "__ADNBN_SIDEBAR_MAP__", value: build ? await sidebar.manifestByAlias() : {}}),
+            ];
+
+            return build ? viewTopology(sidebar.view(), defines) : {defines};
+        },
         startup: ({config}) => {
             sidebar = new Sidebar(config);
             declaration = new SidebarDeclaration(config);
