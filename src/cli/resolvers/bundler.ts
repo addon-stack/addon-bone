@@ -1,3 +1,7 @@
+import {createRequire} from "node:module";
+import fs from "node:fs";
+import path from "node:path";
+
 import {Configuration as RspackConfig, RspackPluginInstance} from "@rspack/core";
 import {RsdoctorRspackPlugin} from "@rsdoctor/rspack-plugin";
 import {merge as mergeConfig} from "webpack-merge";
@@ -7,9 +11,45 @@ import {processPluginHandler} from "./plugin";
 
 import ManifestPlugin from "@cli/bundler/plugins/ManifestPlugin";
 import WatchPlugin from "@cli/bundler/plugins/WatchPlugin";
+import {getResolvePath} from "@cli/resolvers/path";
 
 import {ReadonlyConfig} from "@typing/config";
-import {Command, isWatchCommand} from "@typing/app";
+import {Command, PackageName, isWatchCommand} from "@typing/app";
+
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * The framework's own compiled-output directory (`<adnbn>/dist`) as a REAL on-disk path. In local
+ * framework development `adnbn` is symlinked into the project, so its output resolves to a path
+ * OUTSIDE node_modules; rspack (`resolve.symlinks`) then watches it as a dependency and would
+ * re-trigger the extension build every time the framework is rebuilt. Returns undefined when it
+ * can't be resolved (then only node_modules is ignored).
+ */
+const resolveFrameworkOutput = (config: ReadonlyConfig): string | undefined => {
+    try {
+        const projectRequire = createRequire(path.join(getResolvePath(config.rootDir), "package.json"));
+
+        return path.dirname(fs.realpathSync(projectRequire.resolve(PackageName)));
+    } catch {
+        return undefined;
+    }
+};
+
+/**
+ * Paths the dev/watch compiler must NOT watch: node_modules (also avoids EMFILE on large trees)
+ * and — only for local framework development — the framework's own output dir, so rebuilding
+ * `adnbn` does not spuriously re-trigger the extension's incremental build. For a published install
+ * the output lives under node_modules and is already covered, so the extra term is a no-op there.
+ */
+const watchIgnore = (config: ReadonlyConfig): RegExp => {
+    const frameworkOutput = resolveFrameworkOutput(config);
+
+    if (!frameworkOutput) {
+        return /[\\/]node_modules[\\/]/;
+    }
+
+    return new RegExp(`[\\\\/]node_modules[\\\\/]|^${escapeRegExp(frameworkOutput)}[\\\\/]`);
+};
 
 const getConfigFromPlugins = async (rspack: RspackConfig, config: ReadonlyConfig): Promise<RspackConfig> => {
     let mergedConfig: RspackConfig = {};
@@ -78,12 +118,11 @@ export default async (config: ReadonlyConfig): Promise<RspackConfig> => {
     if (isWatchCommand(config.command)) {
         rspack = mergeConfig(rspack, {
             devtool: config.command === Command.Dev ? "cheap-module-source-map" : "inline-source-map",
-            // Don't watch node_modules. The legacy watch() passed this to compiler.watch()
-            // directly; the dev server drives the watch via compiler.options.watchOptions,
-            // so it must live in the config or the dev server tries to watch the whole tree
-            // and dies with EMFILE on large projects.
+            // The dev server drives the watch via compiler.options.watchOptions, so the ignore list
+            // must live in the config (otherwise the dev server tries to watch the whole tree and
+            // dies with EMFILE on large projects). See watchIgnore for what's excluded and why.
             watchOptions: {
-                ignored: /[\\/]node_modules[\\/]/,
+                ignored: watchIgnore(config),
             },
         });
     }

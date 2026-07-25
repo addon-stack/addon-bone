@@ -7,6 +7,7 @@ import {rm} from "node:fs/promises";
 import {getOutputPath, getSourcePath} from "@cli/resolvers/path";
 import {hash} from "@cli/utils/hash";
 
+import {SystemDir} from "@typing/app";
 import type {ReadonlyConfig} from "@typing/config";
 import type {TopologySnapshot} from "@typing/topology";
 
@@ -193,9 +194,13 @@ export const serve = async (
         timer = setTimeout(() => void evaluate(), 250);
     };
 
+    // Ignore non-source trees that may sit under the watched root: dependencies, the framework's
+    // own generated dir (SystemDir), and the build output (config.outDir) — no raw literals.
+    const ignoredDirs = new Set(["node_modules", SystemDir, config.outDir]);
+
     const watcher = watchPaths(getSourcePath(config), {
         ignoreInitial: true,
-        ignored: (target: string) => /[\\/](?:node_modules|\.adnbn|dist)[\\/]/.test(target),
+        ignored: (target: string) => target.split(/[\\/]/).some(segment => ignoredDirs.has(segment)),
     });
 
     // A file added/removed/renamed, or an entrypoint's options edited (e.g. `as` → HTML name),
