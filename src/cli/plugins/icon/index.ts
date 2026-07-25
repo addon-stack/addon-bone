@@ -1,12 +1,13 @@
-import {Configuration as RspackConfig, CopyRspackPlugin, DefinePlugin} from "@rspack/core";
+import {Configuration as RspackConfig, CopyRspackPlugin} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
+import {VirtualDataPlugin} from "@cli/bundler";
 
 import Icon, {CopyPatterns, IconDefinition} from "./Icon";
 
 import {IconDeclaration} from "./declaration";
 
-import {defineTopology} from "@cli/utils/topology";
+import {isWatchCommand} from "@typing/app";
 
 export {Icon, type IconDefinition, type CopyPatterns};
 
@@ -15,9 +16,6 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:icon",
-        topology: async () => ({
-            defines: [defineTopology({name: "__ADNBN_ICONS__", value: await icon.define()})],
-        }),
         startup: ({config}) => {
             icon = new Icon(config);
         },
@@ -25,15 +23,21 @@ export default definePlugin(() => {
         bundler: async ({config}) => {
             new IconDeclaration(config).setNames(await icon.names()).build();
 
+            const data = new VirtualDataPlugin("icon", {icons: await icon.define()});
+
+            if (isWatchCommand(config.command)) {
+                const files = Array.from(await icon.files(), file => file.file);
+
+                data.watch({
+                    update: async () => ({icons: await icon.clear().define()}),
+                    files,
+                    dirs: icon.directories(),
+                });
+            }
+
             return {
-                plugins: [
-                    new CopyRspackPlugin({
-                        patterns: await icon.copy(),
-                    }),
-                    new DefinePlugin({
-                        __ADNBN_ICONS__: JSON.stringify(await icon.define()),
-                    }),
-                ],
+                plugins: [new CopyRspackPlugin({patterns: await icon.copy()}), data],
+                resolve: {alias: data.alias()},
             } satisfies RspackConfig;
         },
         manifest: async ({manifest, config}) => {

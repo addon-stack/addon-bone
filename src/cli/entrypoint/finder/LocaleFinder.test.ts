@@ -125,6 +125,19 @@ describe("LocaleFinder", () => {
         await expect(finder.structure()).resolves.toEqual({});
     });
 
+    test("tolerates an empty / comment-only locale file as a draft (no error)", async () => {
+        const finder = makeFinder("empty-file");
+
+        // The file is discovered (so the language is present) but contributes no real keys —
+        // only the injected language marker. Crucially, it does NOT throw.
+        await expect(finder.languages()).resolves.toEqual(new Set([Language.English]));
+        await expect(finder.keys()).resolves.toEqual(new Set(["locale"]));
+    });
+
+    test("rejects a non-empty locale file whose root is not an object", async () => {
+        await expect(makeFinder("non-object").keys()).rejects.toThrow("root must be an object");
+    });
+
     test("caches builders until clear is called", async () => {
         const finder = makeFinder("partial");
 

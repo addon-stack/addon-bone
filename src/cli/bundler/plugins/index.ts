@@ -20,3 +20,7 @@ export {default as ReplacePlugin} from "./ReplacePlugin";
 export {default as WatchPlugin} from "./WatchPlugin";
 
 export {default as VirtualModuleAdapter} from "./VirtualModuleAdapter";
+
+export {default as VirtualDataPlugin, type VirtualData, type VirtualDataWatch} from "./VirtualDataPlugin";
+
+export {default as DiagnosticPlugin} from "./DiagnosticPlugin";

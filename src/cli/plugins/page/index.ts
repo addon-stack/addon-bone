@@ -1,4 +1,4 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import Page from "./Page";
@@ -7,10 +7,10 @@ import {PageDeclaration} from "./declaration";
 
 import {definePlugin} from "@main/plugin";
 import {virtualViewModule} from "@cli/virtual";
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, VirtualDataPlugin} from "@cli/bundler";
 import {ViewAliasToFilename} from "@cli/entrypoint";
 
-import {defineTopology, viewTopology} from "@cli/utils/topology";
+import {viewTopology} from "@cli/utils/topology";
 
 import {isWatchCommand} from "@typing/app";
 
@@ -20,14 +20,7 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:page",
-        topology: async () => {
-            const empty = await page.empty();
-            const defines = [
-                defineTopology({name: "__ADNBN_PAGE_ALIAS__", value: empty ? {} : await page.getAliasToFilename()}),
-            ];
-
-            return empty ? {defines} : viewTopology(page.view(), defines);
-        },
+        topology: async () => ((await page.empty()) ? {} : viewTopology(page.view())),
         startup: ({config}) => {
             page = new Page(config);
             declaration = new PageDeclaration(config);
@@ -65,13 +58,17 @@ export default definePlugin(() => {
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
             }
 
+            const data = new VirtualDataPlugin("page", {pages: alias});
+
+            if (isWatchCommand(config.command)) {
+                data.watch({
+                    update: async () => ({pages: (await page.clear().empty()) ? {} : await page.getAliasToFilename()}),
+                });
+            }
+
             return {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_PAGE_ALIAS__: JSON.stringify(alias),
-                    }),
-                    ...plugins,
-                ],
+                plugins: [data, ...plugins],
+                resolve: {alias: data.alias()},
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {

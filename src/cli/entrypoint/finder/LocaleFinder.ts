@@ -73,11 +73,38 @@ export default class extends AbstractAssetFinder {
                 for (const {file} of files) {
                     const content = fs.readFileSync(file, "utf8");
 
-                    if (isFileExtension(file, ["yaml", "yml"])) {
-                        locale.merge(yaml.load(content) as LocaleData);
-                    } else if (isFileExtension(file, "json")) {
-                        locale.merge(JSON.parse(content));
+                    // Empty / whitespace-only file — e.g. just created in dev and not yet filled in.
+                    // Treat it as a draft and skip without error.
+                    if (!content.trim()) {
+                        continue;
                     }
+
+                    let parsed: unknown;
+
+                    try {
+                        if (isFileExtension(file, ["yaml", "yml"])) {
+                            parsed = yaml.load(content);
+                        } else if (isFileExtension(file, "json")) {
+                            parsed = JSON.parse(content);
+                        }
+                    } catch (e) {
+                        throw new Error(`Failed to parse locale file "${file}": ${(e as Error).message}`);
+                    }
+
+                    // Comment-only YAML parses to null (and an empty doc to undefined) — treat both
+                    // as a draft and skip without error. (js-yaml cannot distinguish a comment-only
+                    // file from explicit `null` content, so both are tolerated as "no data yet".)
+                    if (_.isNil(parsed)) {
+                        continue;
+                    }
+
+                    // A non-empty file whose root is not an object (e.g. [], "text", null) is a real
+                    // configuration error — fail loudly rather than silently pretending it is empty.
+                    if (!_.isPlainObject(parsed)) {
+                        throw new Error(`Locale file "${file}" root must be an object`);
+                    }
+
+                    locale.merge(parsed as LocaleData);
                 }
 
                 map.set(locale.lang(), locale);

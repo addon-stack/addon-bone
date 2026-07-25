@@ -1,10 +1,10 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, VirtualDataPlugin} from "@cli/bundler";
 
-import {defineTopology, viewTopology} from "@cli/utils/topology";
+import {viewTopology} from "@cli/utils/topology";
 
 import Sandbox, {SandboxParametersMap} from "./Sandbox";
 import SandboxDeclaration from "./SandboxDeclaration";
@@ -17,14 +17,7 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:sandbox",
-        topology: async () => {
-            const empty = await sandbox.empty();
-            const defines = [
-                defineTopology({name: "__ADNBN_SANDBOX_PARAMETERS__", value: empty ? {} : await sandbox.parameters()}),
-            ];
-
-            return empty ? {defines} : viewTopology(sandbox.view(), defines);
-        },
+        topology: async () => ((await sandbox.empty()) ? {} : viewTopology(sandbox.view())),
         startup: ({config}) => {
             sandbox = new Sandbox(config);
             declaration = new SandboxDeclaration(config);
@@ -67,13 +60,21 @@ export default definePlugin(() => {
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
             }
 
+            const data = new VirtualDataPlugin("sandbox", {sandboxes: parameters});
+
+            if (isWatchCommand(config.command)) {
+                data.watch({
+                    update: async () => {
+                        sandbox.clear();
+
+                        return {sandboxes: (await sandbox.empty()) ? {} : await sandbox.parameters()};
+                    },
+                });
+            }
+
             return {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_SANDBOX_PARAMETERS__: JSON.stringify(parameters),
-                    }),
-                    ...plugins,
-                ],
+                plugins: [data, ...plugins],
+                resolve: {alias: data.alias()},
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {

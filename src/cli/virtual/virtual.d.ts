@@ -245,3 +245,42 @@ declare module "adnbn/entry/:entry" {
     const transport: (definition: TransportUnresolvedDefinition<TransportOptions, TransportType>) => void;
     export default transport;
 }
+
+/**
+ * Virtual data module published by `VirtualDataPlugin` for the `locale` slot. Ambient so the
+ * framework's own source typechecks without depending on `dist` being built; runtime resolution
+ * is `resolve.alias` (live, inside an adnbn build) or `package.json#exports` → stub (outside).
+ */
+declare module "adnbn/virtual/locale" {
+    export const keys: string[];
+    export const locales: string[];
+    export const defaultLanguage: string;
+}
+
+declare module "adnbn/virtual/popup" {
+    export const popups: Record<string, import("@typing/manifest").ManifestPopup>;
+}
+
+declare module "adnbn/virtual/sidebar" {
+    export const sidebars: Record<string, import("@typing/manifest").ManifestSidebar>;
+}
+
+declare module "adnbn/virtual/page" {
+    export const pages: Record<string, string>;
+}
+
+declare module "adnbn/virtual/offscreen" {
+    export const offscreens: Record<string, chrome.offscreen.CreateParameters>;
+}
+
+declare module "adnbn/virtual/sandbox" {
+    export const sandboxes: Record<string, import("@typing/sandbox").SandboxParameters>;
+}
+
+declare module "adnbn/virtual/relay" {
+    export const relays: Record<string, import("@typing/relay").RelayOptions>;
+}
+
+declare module "adnbn/virtual/icon" {
+    export const icons: Record<string, Record<number, string>>;
+}

@@ -47,14 +47,28 @@ export default abstract class extends AbstractFinder {
             }
         };
 
-        const dir = this.getDirectory();
-
-        await parser(getAppSourcePath(this.config, dir));
-        await parser(getAppPath(this.config, dir));
-        await parser(getSharedPath(this.config, dir));
-        await parser(getSourcePath(this.config, dir));
+        for (const directory of this.directories()) {
+            await parser(directory);
+        }
 
         return files;
+    }
+
+    /**
+     * The candidate asset directories this finder scans, INDEPENDENT of whether any files exist in
+     * them yet. Used to register watch-graph context dependencies (see {@link VirtualDataPlugin}) so
+     * that creating the FIRST asset file — e.g. the first `locales/*.yaml` in a project that started
+     * with none — is still detected and triggers a rebuild.
+     */
+    public directories(): string[] {
+        const dir = this.getDirectory();
+
+        return [
+            getAppSourcePath(this.config, dir),
+            getAppPath(this.config, dir),
+            getSharedPath(this.config, dir),
+            getSourcePath(this.config, dir),
+        ].map(getResolvePath);
     }
 
     protected async findFiles(directory: string): Promise<Set<EntrypointFile>> {

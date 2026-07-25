@@ -17,22 +17,33 @@ export default class GenerateJsonPlugin {
 
     private update?: GenerateJsonPluginUpdate;
 
+    private error?: Error;
+
     constructor(protected data: GenerateJsonPluginData) {}
 
     public apply(compiler: Compiler): void {
         compiler.hooks.watchRun.tapPromise(this.pluginName, async () => {
-            try {
-                const update = this.update;
+            const update = this.update;
 
-                if (update) {
-                    this.data = await update();
-                }
+            if (!update) {
+                return;
+            }
+
+            try {
+                this.data = await update();
+                this.error = undefined;
             } catch (e) {
-                console.error("GenerateJsonPlugin: Error updating data", e);
+                // Keep the last-known-good `this.data` and surface the error as a compilation error
+                // (below) rather than crashing the dev server on a bad source edit.
+                this.error = e instanceof Error ? e : new Error(String(e));
             }
         });
 
         compiler.hooks.compilation.tap(this.pluginName, (compilation: Compilation) => {
+            if (this.error) {
+                compilation.errors.push(this.error);
+            }
+
             compilation.hooks.processAssets.tap(
                 {
                     name: this.pluginName,

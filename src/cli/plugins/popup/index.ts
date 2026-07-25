@@ -1,12 +1,12 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, VirtualDataPlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
-import {defineTopology, viewTopology} from "@cli/utils/topology";
+import {viewTopology} from "@cli/utils/topology";
 
 import Popup, {PopupNameToManifest} from "./Popup";
 
@@ -20,14 +20,7 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:popup",
-        topology: async () => {
-            const empty = await popup.empty();
-            const defines = [
-                defineTopology({name: "__ADNBN_POPUP_MAP__", value: empty ? {} : await popup.manifestByAlias()}),
-            ];
-
-            return empty ? {defines} : viewTopology(popup.view(), defines);
-        },
+        topology: async () => ((await popup.empty()) ? {} : viewTopology(popup.view())),
         startup: ({config}) => {
             popup = new Popup(config);
             declaration = new PopupDeclaration(config);
@@ -65,13 +58,17 @@ export default definePlugin(() => {
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
             }
 
+            const data = new VirtualDataPlugin("popup", {popups: alias});
+
+            if (isWatchCommand(config.command)) {
+                data.watch({
+                    update: async () => ({popups: (await popup.clear().empty()) ? {} : await popup.manifestByAlias()}),
+                });
+            }
+
             return {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_POPUP_MAP__: JSON.stringify(alias),
-                    }),
-                    ...plugins,
-                ],
+                plugins: [data, ...plugins],
+                resolve: {alias: data.alias()},
             } as RspackConfig;
         },
         manifest: async ({manifest}) => {

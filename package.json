@@ -48,6 +48,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./virtual/*": {
+      "types": "./dist/virtual/*.d.ts",
+      "default": "./dist/virtual/*.js"
+    },
     "./entry/*": {
       "types": "./dist/entry/*/index.d.ts",
       "default": "./dist/entry/*/index.js"

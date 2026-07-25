@@ -140,7 +140,7 @@ export default class LocaleBuilder implements LocaleBuilderContract {
     protected convert(data: LocaleData, prefix?: string): LocaleItems {
         const items: LocaleItems = new Map();
 
-        for (const [key, value] of Object.entries(data)) {
+        for (const [key, value] of Object.entries(data ?? {})) {
             const resolvedKey = prefix ? [prefix, key].join(LocaleNestedKeysSeparator) : key;
 
             if (_.isString(value) || _.isNumber(value)) {

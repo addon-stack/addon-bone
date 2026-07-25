@@ -1,4 +1,4 @@
-import {Configuration as RspackConfig, DefinePlugin, NormalModule} from "@rspack/core";
+import {Configuration as RspackConfig, NormalModule} from "@rspack/core";
 import {merge as mergeConfig} from "webpack-merge";
 
 import ContentManager from "./ContentManager";
@@ -8,10 +8,10 @@ import RelayDeclaration from "./RelayDeclaration";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
+import {EntrypointPlugin, VirtualDataPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
 import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
 
-import {defineTopology, entrypointTopology} from "@cli/utils/topology";
+import {entrypointTopology} from "@cli/utils/topology";
 
 import {isWatchCommand} from "@typing/app";
 import {RelayMethod, RelayOptions} from "@typing/relay";
@@ -25,14 +25,7 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:content",
-        topology: async () => {
-            const empty = await manager.empty();
-            const defines = [
-                defineTopology({name: "__ADNBN_RELAY_OPTIONS__", value: empty ? {} : await relay.getOptionsMap()}),
-            ];
-
-            return empty ? {defines} : {...entrypointTopology(await manager.entries()), defines};
-        },
+        topology: async () => ((await manager.empty()) ? {} : entrypointTopology(await manager.entries())),
         startup: async ({config}) => {
             content = new Content(config);
             relay = new Relay(config);
@@ -109,12 +102,21 @@ export default definePlugin(() => {
                 };
             }
 
+            const data = new VirtualDataPlugin("relay", {relays: options});
+
+            if (isWatchCommand(config.command)) {
+                data.watch({
+                    update: async () => {
+                        manager.clear();
+
+                        return {relays: (await manager.empty()) ? {} : await relay.getOptionsMap()};
+                    },
+                });
+            }
+
             return mergeConfig(rspack, {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_RELAY_OPTIONS__: JSON.stringify(options),
-                    }),
-                ],
+                plugins: [data],
+                resolve: {alias: data.alias()},
             });
         },
         manifest: async ({manifest}) => {

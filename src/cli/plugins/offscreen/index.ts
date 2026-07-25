@@ -1,13 +1,13 @@
 import path from "path";
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin, VirtualModuleAdapter} from "@cli/bundler";
+import {EntrypointPlugin, VirtualDataPlugin, VirtualModuleAdapter} from "@cli/bundler";
 import {virtualOffscreenBackgroundModule} from "@cli/virtual";
 
-import {defineTopology, viewTopology} from "@cli/utils/topology";
+import {viewTopology} from "@cli/utils/topology";
 
 import Offscreen, {OffscreenParameters} from "./Offscreen";
 import OffscreenDeclaration from "./OffscreenDeclaration";
@@ -25,17 +25,7 @@ export default definePlugin(() => {
 
     return {
         name: "adnbn:offscreen",
-        topology: async () => {
-            const empty = await offscreen.empty();
-            const defines = [
-                defineTopology({
-                    name: "__ADNBN_OFFSCREEN_PARAMETERS__",
-                    value: empty ? {} : await offscreen.parameters(),
-                }),
-            ];
-
-            return empty ? {defines} : viewTopology(offscreen.view(), defines);
-        },
+        topology: async () => ((await offscreen.empty()) ? {} : viewTopology(offscreen.view())),
         startup: ({config}) => {
             offscreen = new Offscreen(config);
             declaration = new OffscreenDeclaration(config);
@@ -98,14 +88,22 @@ export default definePlugin(() => {
                 }
             }
 
+            const data = new VirtualDataPlugin("offscreen", {offscreens: parameters});
+
+            if (isWatchCommand(config.command)) {
+                data.watch({
+                    update: async () => {
+                        offscreen.clear();
+
+                        return {offscreens: (await offscreen.empty()) ? {} : await offscreen.parameters()};
+                    },
+                });
+            }
+
             return {
                 ...rspack,
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_OFFSCREEN_PARAMETERS__: JSON.stringify(parameters),
-                    }),
-                    ...plugins,
-                ],
+                plugins: [data, ...plugins],
+                resolve: {alias: data.alias()},
             } satisfies RspackConfig;
         },
         manifest: async ({manifest, config}) => {

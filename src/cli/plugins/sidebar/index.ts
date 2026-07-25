@@ -1,12 +1,12 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, VirtualDataPlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
-import {defineTopology, viewTopology} from "@cli/utils/topology";
+import {viewTopology} from "@cli/utils/topology";
 
 import Sidebar, {SidebarNameToManifest} from "./Sidebar";
 
@@ -25,11 +25,8 @@ export default definePlugin(() => {
         name: "adnbn:sidebar",
         topology: async () => {
             const build = !(await sidebar.empty()) && sidebarAvailable;
-            const defines = [
-                defineTopology({name: "__ADNBN_SIDEBAR_MAP__", value: build ? await sidebar.manifestByAlias() : {}}),
-            ];
 
-            return build ? viewTopology(sidebar.view(), defines) : {defines};
+            return build ? viewTopology(sidebar.view()) : {};
         },
         startup: ({config}) => {
             sidebar = new Sidebar(config);
@@ -82,13 +79,23 @@ export default definePlugin(() => {
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
             }
 
+            const data = new VirtualDataPlugin("sidebar", {sidebars: alias});
+
+            if (isWatchCommand(config.command)) {
+                data.watch({
+                    update: async () => {
+                        sidebar.clear();
+
+                        const next = !(await sidebar.empty()) && sidebarAvailable;
+
+                        return {sidebars: next ? await sidebar.manifestByAlias() : {}};
+                    },
+                });
+            }
+
             return {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_SIDEBAR_MAP__: JSON.stringify(alias),
-                    }),
-                    ...plugins,
-                ],
+                plugins: [data, ...plugins],
+                resolve: {alias: data.alias()},
             } as RspackConfig;
         },
         manifest: async ({manifest, config}) => {
