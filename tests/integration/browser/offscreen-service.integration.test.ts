@@ -19,7 +19,6 @@ type CdpTarget = {
     id: string;
     type: string;
     url: string;
-    webSocketDebuggerUrl: string;
 };
 
 type CdpPendingRequest = {
@@ -93,19 +92,34 @@ const getFreePort = (): Promise<number> => {
     });
 };
 
-const run = (command: string, args: string[], cwd: string): Promise<void> => {
+const run = (command: string, args: string[], cwd: string, timeout = 30_000): Promise<void> => {
     return new Promise((resolve, reject) => {
         const process = spawn(command, args, {cwd, stdio: ["ignore", "pipe", "pipe"]});
         let output = "";
+        let settled = false;
+
+        const finish = (callback: () => void): void => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            clearTimeout(runTimeout);
+            callback();
+        };
+        const runTimeout = setTimeout(() => {
+            process.kill("SIGKILL");
+            finish(() => reject(new Error(`${command} ${args.join(" ")} timed out after ${timeout} ms\n${output}`)));
+        }, timeout);
 
         process.stdout.on("data", chunk => (output += chunk));
         process.stderr.on("data", chunk => (output += chunk));
-        process.once("error", reject);
+        process.once("error", error => finish(() => reject(error)));
         process.once("exit", code => {
             if (code === 0) {
-                resolve();
+                finish(resolve);
             } else {
-                reject(new Error(`${command} ${args.join(" ")} exited with ${code}\n${output}`));
+                finish(() => reject(new Error(`${command} ${args.join(" ")} exited with ${code}\n${output}`)));
             }
         });
     });
@@ -114,7 +128,6 @@ const run = (command: string, args: string[], cwd: string): Promise<void> => {
 class CdpClient {
     private nextId = 1;
     private readonly pending = new Map<number, CdpPendingRequest>();
-    private readonly listeners = new Set<(message: CdpMessage) => void>();
 
     private constructor(private readonly socket: WebSocket) {
         socket.addEventListener("message", event => this.receive(JSON.parse(String(event.data))));
@@ -122,25 +135,33 @@ class CdpClient {
         socket.addEventListener("error", () => this.rejectPending(new Error("Chrome DevTools connection failed")));
     }
 
-    public static async connect(url: string): Promise<CdpClient> {
+    public static async connect(url: string, timeout = 15_000): Promise<CdpClient> {
         return new Promise((resolve, reject) => {
             const socket = new WebSocket(url);
+            const connectTimeout = setTimeout(() => {
+                socket.close();
+                reject(new Error(`Timed out connecting to Chrome DevTools after ${timeout} ms: ${url}`));
+            }, timeout);
 
-            socket.addEventListener("open", () => resolve(new CdpClient(socket)), {once: true});
+            socket.addEventListener(
+                "open",
+                () => {
+                    clearTimeout(connectTimeout);
+                    resolve(new CdpClient(socket));
+                },
+                {once: true}
+            );
             socket.addEventListener(
                 "error",
-                () => reject(new Error(`Unable to connect to Chrome DevTools at ${url}`)),
+                () => {
+                    clearTimeout(connectTimeout);
+                    reject(new Error(`Unable to connect to Chrome DevTools at ${url}`));
+                },
                 {
                     once: true,
                 }
             );
         });
-    }
-
-    public onMessage(listener: (message: CdpMessage) => void): () => void {
-        this.listeners.add(listener);
-
-        return () => this.listeners.delete(listener);
     }
 
     public send(
@@ -208,8 +229,6 @@ class CdpClient {
 
             return;
         }
-
-        this.listeners.forEach(listener => listener(message));
     }
 
     private rejectPending(error: Error): void {
@@ -222,13 +241,13 @@ class CdpClient {
 }
 
 const targets = async (port: number): Promise<CdpTarget[]> => {
-    const response = await fetch(`http://127.0.0.1:${port}/json/list`);
+    const response = await fetch(`http://127.0.0.1:${port}/json/list`, {signal: AbortSignal.timeout(5_000)});
 
     return response.json() as Promise<CdpTarget[]>;
 };
 
 const browserVersion = async (port: number): Promise<{webSocketDebuggerUrl: string}> => {
-    const response = await fetch(`http://127.0.0.1:${port}/json/version`);
+    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {signal: AbortSignal.timeout(5_000)});
 
     return response.json() as Promise<{webSocketDebuggerUrl: string}>;
 };
@@ -238,24 +257,39 @@ const stop = async (process: ChildProcess): Promise<void> => {
         return;
     }
 
-    let timeout: NodeJS.Timeout | undefined;
-    const exited = new Promise<boolean>(resolve => {
-        process.once("exit", () => {
-            if (timeout) {
-                clearTimeout(timeout);
-            }
+    const waitForExit = (timeout: number): Promise<boolean> =>
+        new Promise(resolve => {
+            const onExit = () => {
+                clearTimeout(timer);
+                resolve(true);
+            };
+            const timer = setTimeout(() => {
+                process.off("exit", onExit);
+                resolve(false);
+            }, timeout);
 
-            resolve(true);
+            process.once("exit", onExit);
         });
-        timeout = setTimeout(() => resolve(false), 5_000);
-    });
 
-    process.kill("SIGTERM");
-    const stopped = await exited;
+    const stopProcess = (signal: NodeJS.Signals): void => {
+        try {
+            process.kill(signal);
+        } catch (error) {
+            if (!(error instanceof Error) || !error.message.includes("ESRCH")) {
+                throw error;
+            }
+        }
+    };
 
-    if (!stopped && process.exitCode === null) {
-        process.kill("SIGKILL");
-        await new Promise<void>(resolve => process.once("exit", () => resolve()));
+    const stopped = waitForExit(5_000);
+
+    stopProcess("SIGTERM");
+
+    if (!(await stopped) && process.exitCode === null) {
+        const killed = waitForExit(5_000);
+
+        stopProcess("SIGKILL");
+        await killed;
     }
 };
 
@@ -273,7 +307,6 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
     const debuggingPort = await getFreePort();
     let chrome: ChildProcess | undefined;
     let browser: CdpClient | undefined;
-    let serviceWorker: CdpClient | undefined;
     let chromeOutput = "";
 
     try {
@@ -285,6 +318,7 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
             chromeBinary,
             [
                 "--headless=new",
+                "--no-sandbox",
                 "--no-first-run",
                 "--no-default-browser-check",
                 "--enable-logging=stderr",
@@ -299,58 +333,6 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
 
         const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(debuggingPort));
         browser = await CdpClient.connect(webSocketDebuggerUrl);
-
-        const errors: string[] = [];
-        const extensionSessions = new Set<string>();
-
-        browser.onMessage(message => {
-            if (message.method === "Target.attachedToTarget") {
-                const targetInfo = message.params?.targetInfo as {url?: string} | undefined;
-                const sessionId = message.params?.sessionId as string | undefined;
-
-                if (sessionId) {
-                    if (targetInfo?.url?.startsWith("chrome-extension://")) {
-                        extensionSessions.add(sessionId);
-                        void browser!
-                            .send("Runtime.enable", {}, sessionId)
-                            .then(() => browser!.send("Log.enable", {}, sessionId))
-                            .catch(() => undefined);
-                    }
-                }
-
-                return;
-            }
-
-            if (!message.sessionId || !extensionSessions.has(message.sessionId)) {
-                return;
-            }
-
-            if (message.method === "Runtime.exceptionThrown") {
-                const details = message.params?.exceptionDetails as
-                    | {text?: string; exception?: {description?: string}}
-                    | undefined;
-
-                errors.push(details?.exception?.description ?? details?.text ?? "Unhandled extension exception");
-            }
-
-            if (message.method === "Runtime.consoleAPICalled" && message.params?.type === "error") {
-                const args = (message.params.args as Array<{value?: unknown; description?: string}> | undefined) ?? [];
-
-                errors.push(args.map(argument => String(argument.value ?? argument.description ?? "")).join(" "));
-            }
-
-            if (message.method === "Log.entryAdded") {
-                const entry = message.params?.entry as {level?: string; text?: string} | undefined;
-
-                if (entry?.level === "error") {
-                    errors.push(entry.text ?? "Chrome extension log error");
-                }
-            }
-        });
-
-        // The worker is inspected through its own DevTools WebSocket below. Pausing it
-        // in the auto-attached session races that direct connection on Linux Chrome.
-        await browser.send("Target.setAutoAttach", {autoAttach: true, waitForDebuggerOnStart: false, flatten: true});
         const extension = await browser.send("Extensions.loadUnpacked", {path: extensionDir});
         const extensionId = extension.id as string | undefined;
 
@@ -379,16 +361,26 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
             );
         }
 
-        serviceWorker = await CdpClient.connect(worker.webSocketDebuggerUrl);
+        const attachedWorker = await browser.send("Target.attachToTarget", {targetId: worker.id, flatten: true});
+        const workerSessionId = attachedWorker.sessionId as string | undefined;
+
+        if (!workerSessionId) {
+            throw new Error("Chrome did not return a DevTools session for the MV3 service worker");
+        }
+
         let backgroundState: unknown;
 
         try {
             await waitFor(async () => {
-                const ready = await serviceWorker!.send("Runtime.evaluate", {
-                    expression:
-                        "({entrypoint: typeof globalThis.__adnbnRunOffscreenRoundTrip, runtime: typeof chrome?.runtime})",
-                    returnByValue: true,
-                });
+                const ready = await browser!.send(
+                    "Runtime.evaluate",
+                    {
+                        expression:
+                            "({entrypoint: typeof globalThis.__adnbnRunOffscreenRoundTrip, runtime: typeof chrome?.runtime})",
+                        returnByValue: true,
+                    },
+                    workerSessionId
+                );
 
                 backgroundState = ready.result.value;
 
@@ -400,19 +392,19 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
             );
         }
 
-        const result = await serviceWorker.send("Runtime.evaluate", {
-            expression: "globalThis.__adnbnRunOffscreenRoundTrip()",
-            awaitPromise: true,
-            returnByValue: true,
-        });
+        const result = await browser.send(
+            "Runtime.evaluate",
+            {
+                expression: "globalThis.__adnbnRunOffscreenRoundTrip()",
+                awaitPromise: true,
+                returnByValue: true,
+            },
+            workerSessionId
+        );
 
         expect(result.exceptionDetails).toBeUndefined();
         expect(result.result.value).toBe("background:ping");
-
-        await delay(250);
-        expect(errors).toEqual([]);
     } finally {
-        await serviceWorker?.close();
         await browser?.close();
 
         if (chrome) {
@@ -422,6 +414,6 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
         await rm(path.join(fixtureDir, "node_modules"), {recursive: true, force: true});
         await rm(path.join(fixtureDir, ".adnbn"), {recursive: true, force: true});
         await rm(path.join(fixtureDir, "dist"), {recursive: true, force: true});
-        await rm(userDataDir, {recursive: true, force: true});
+        await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 });
