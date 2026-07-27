@@ -111,6 +111,7 @@
     "check:node-version": "node ./scripts/check-node-version.js",
     "test": "npm run build && jest",
     "test:ci": "npm run test -- --ci --passWithNoTests --coverage",
+    "test:ci:non-browser": "npm run test -- --ci --passWithNoTests --coverage --testPathIgnorePatterns=tests/integration/browser",
     "test:watch": "jest --watch --testPathIgnorePatterns=tests/integration/browser",
     "test:offscreen": "jest --testPathPatterns=Offscreen",
     "test:chrome": "npm run test -- --testPathPatterns=tests/integration/browser --runInBand",
