@@ -19,5 +19,6 @@ TODOs.md
 stats.html
 .tool-versions
 .cache
+/tests/integration/browser/offscreen-service/.adnbn/
 *-stats.txt
 .npmrc

@@ -83,7 +83,7 @@ Releases and versioning:
 3. Make changes and ensure commits follow Conventional Commits.
 4. Before opening a PR, run local checks:
     - Formatting: `npm run format`
-    - Tests: `npm test`
+    - Tests: `npm test` (the full suite includes a Chrome MV3 integration test; use `ADNBN_CHROME_BIN=/path/to/chrome` to override automatic Chrome discovery)
     - By area (if needed):
         - `npm run test:relay`
         - `npm run test:service`

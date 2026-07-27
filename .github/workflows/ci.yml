@@ -36,7 +36,7 @@ jobs:
           fi
 
   build-and-test:
-    name: Test and Build ${{ needs.compute-matrix.outputs.name_suffix }}
+    name: Test and Build (${{ matrix.os }}, Node ${{ matrix.node }}) ${{ needs.compute-matrix.outputs.name_suffix }}
     needs: compute-matrix
     runs-on: ${{ matrix.os }}
     permissions:
@@ -54,6 +54,13 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
 
+      - name: Set up Chrome
+        if: matrix.os == 'ubuntu-latest'
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
       - name: Install dependencies
         run: npm ci
 
@@ -61,7 +68,16 @@ jobs:
         run: npm run typecheck
 
       - name: Test
+        if: matrix.os == 'ubuntu-latest'
         run: npm run test:ci
+        env:
+          ADNBN_CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+
+      # The CDP extension-loading scenario is verified on Chrome's Linux runner.
+      # The rest of the test suite remains part of the full OS x Node matrix.
+      - name: Test (non-browser)
+        if: matrix.os != 'ubuntu-latest'
+        run: npm run test:ci:non-browser
 
       - name: Build
         run: npm run build
