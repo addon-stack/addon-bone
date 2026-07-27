@@ -22,6 +22,12 @@ type CdpTarget = {
     webSocketDebuggerUrl: string;
 };
 
+type CdpPendingRequest = {
+    resolve: (value: Record<string, any>) => void;
+    reject: (error: Error) => void;
+    timeout: NodeJS.Timeout;
+};
+
 const rootDir = path.resolve(__dirname, "..", "..", "..");
 const fixtureDir = path.join(__dirname, "offscreen-service");
 const extensionDir = path.join(fixtureDir, "dist", "myapp-chrome-mv3");
@@ -107,10 +113,7 @@ const run = (command: string, args: string[], cwd: string): Promise<void> => {
 
 class CdpClient {
     private nextId = 1;
-    private readonly pending = new Map<
-        number,
-        {resolve: (value: Record<string, any>) => void; reject: (error: Error) => void}
-    >();
+    private readonly pending = new Map<number, CdpPendingRequest>();
     private readonly listeners = new Set<(message: CdpMessage) => void>();
 
     private constructor(private readonly socket: WebSocket) {
@@ -143,13 +146,27 @@ class CdpClient {
     public send(
         method: string,
         params: Record<string, unknown> = {},
-        sessionId?: string
+        sessionId?: string,
+        timeout = 15_000
     ): Promise<Record<string, any>> {
         const id = this.nextId++;
 
-        this.socket.send(JSON.stringify({id, method, params, ...(sessionId ? {sessionId} : {})}));
+        return new Promise((resolve, reject) => {
+            const requestTimeout = setTimeout(() => {
+                this.pending.delete(id);
+                reject(new Error(`Chrome DevTools request timed out after ${timeout} ms: ${method}`));
+            }, timeout);
 
-        return new Promise((resolve, reject) => this.pending.set(id, {resolve, reject}));
+            this.pending.set(id, {resolve, reject, timeout: requestTimeout});
+
+            try {
+                this.socket.send(JSON.stringify({id, method, params, ...(sessionId ? {sessionId} : {})}));
+            } catch (error) {
+                this.pending.delete(id);
+                clearTimeout(requestTimeout);
+                reject(error instanceof Error ? error : new Error(String(error)));
+            }
+        });
     }
 
     public async close(): Promise<void> {
@@ -181,6 +198,7 @@ class CdpClient {
             }
 
             this.pending.delete(message.id);
+            clearTimeout(pending.timeout);
 
             if (message.error) {
                 pending.reject(new Error(message.error.message));
@@ -195,7 +213,10 @@ class CdpClient {
     }
 
     private rejectPending(error: Error): void {
-        this.pending.forEach(pending => pending.reject(error));
+        this.pending.forEach(pending => {
+            clearTimeout(pending.timeout);
+            pending.reject(error);
+        });
         this.pending.clear();
     }
 }
@@ -293,10 +314,7 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
                         void browser!
                             .send("Runtime.enable", {}, sessionId)
                             .then(() => browser!.send("Log.enable", {}, sessionId))
-                            .finally(() => browser!.send("Runtime.runIfWaitingForDebugger", {}, sessionId))
                             .catch(() => undefined);
-                    } else {
-                        void browser!.send("Runtime.runIfWaitingForDebugger", {}, sessionId).catch(() => undefined);
                     }
                 }
 
@@ -330,7 +348,9 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
             }
         });
 
-        await browser.send("Target.setAutoAttach", {autoAttach: true, waitForDebuggerOnStart: true, flatten: true});
+        // The worker is inspected through its own DevTools WebSocket below. Pausing it
+        // in the auto-attached session races that direct connection on Linux Chrome.
+        await browser.send("Target.setAutoAttach", {autoAttach: true, waitForDebuggerOnStart: false, flatten: true});
         const extension = await browser.send("Extensions.loadUnpacked", {path: extensionDir});
         const extensionId = extension.id as string | undefined;
 
