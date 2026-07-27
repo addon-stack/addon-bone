@@ -1,5 +1,44 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.7.1 (2026-07-27)
+
+
+### 🐛 Bug Fixed
+
+* **service:** allow offscreen documents to call background services ([e85fc6f](https://github.com/addon-stack/addon-bone/commit/e85fc6f43e8fbd7ac2492c875518d6e12e594bff))
+
+
+
+
+### 📝 Documentation
+
+* **readme:** refresh package overview ([2d7d8e7](https://github.com/addon-stack/addon-bone/commit/2d7d8e7e1c96191832c5440bf9d0c4316f826364))
+
+
+
+
+### 🤖 CI
+
+* add non-browser test workflow and refine matrix setup ([d40273c](https://github.com/addon-stack/addon-bone/commit/d40273cf94ca52785d3a41d0eb65fbcec58682ee))
+
+
+
+
+### 🧪 Tests
+
+* enhance timeout and error handling in offscreen service integration test ([7b0c3ec](https://github.com/addon-stack/addon-bone/commit/7b0c3ecc13ec19d143c72e471a3c3b59559113c5))
+
+
+* improve timeout handling in CdpClient integration tests ([a584525](https://github.com/addon-stack/addon-bone/commit/a5845252c087da8afb9c39207c52854e311dec02))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 6
+
 ## 🚀 Release `adnbn` v0.7.0 (2026-05-25)
 
 
