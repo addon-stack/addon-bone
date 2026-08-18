@@ -6,6 +6,7 @@ import {processPluginHandler} from "@cli/resolvers/plugin";
 
 import AbstractFinder from "./AbstractFinder";
 import AbstractAssetFinder from "./AbstractAssetFinder";
+import {FileLayer, FileSpecificity, setFilePrecedence, setFileSpecificity} from "./utils/filePrecedence";
 
 import {EntrypointFile} from "@typing/entrypoint";
 import {ReadonlyConfig} from "@typing/config";
@@ -27,9 +28,14 @@ export default class extends AbstractFinder {
             })
         );
 
+        // Plugin files preserve registration identity, order and sequence.
+        // Canonical-path deduplication is intentionally limited to overlapping
+        // workspace paths in AbstractAssetFinder.
         const files = new Set<EntrypointFile>();
 
-        for await (let {name, result} of pluginResult) {
+        for (let pluginIndex = 0; pluginIndex < pluginResult.length; pluginIndex++) {
+            let {name, result} = pluginResult[pluginIndex];
+
             if (_.isBoolean(result)) {
                 result = pluralize(this.key);
             }
@@ -39,6 +45,8 @@ export default class extends AbstractFinder {
             }
 
             if (_.isArray(result) || _.isSet(result)) {
+                let sequence = 0;
+
                 for (const item of result) {
                     if (_.isEmpty(item)) {
                         continue;
@@ -63,7 +71,19 @@ export default class extends AbstractFinder {
                     const {name: filename} = path.parse(file.file);
 
                     if (filename.endsWith(`.${this.config.browser}`) || !filename.includes(".")) {
+                        setFilePrecedence(file, {
+                            layer: FileLayer.Plugin,
+                            order: pluginIndex,
+                            sequence,
+                        });
+                        setFileSpecificity(
+                            file,
+                            filename.endsWith(`.${this.config.browser}`)
+                                ? FileSpecificity.Browser
+                                : FileSpecificity.Generic
+                        );
                         files.add(file);
+                        sequence++;
                     }
                 }
             }

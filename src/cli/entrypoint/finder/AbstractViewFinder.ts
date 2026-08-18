@@ -50,18 +50,16 @@ export default abstract class<O extends ViewEntrypointOptions> extends AbstractP
 
     protected async getViews(): Promise<ViewItems<O>> {
         const views: ViewItems<O> = new Map();
+        const entries = [...(await this.plugin().options())];
+        const candidates = this.allowMultiple() ? entries : entries.slice(-1);
 
-        for (const [file, options] of await this.plugin().options()) {
+        for (const [file, options] of candidates) {
             views.set(this.createViewName(file, options), {
                 alias: this.createViewAlias(file, options),
                 filename: this.createViewFilename(file, options),
                 file,
                 options,
             });
-
-            if (!this.allowMultiple()) {
-                break;
-            }
         }
 
         return views;

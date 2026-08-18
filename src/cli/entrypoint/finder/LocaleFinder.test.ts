@@ -41,6 +41,45 @@ const makeFinder = (fixture: string, config: Partial<ReadonlyConfig> = {}): Test
     } as ReadonlyConfig);
 };
 
+const makeLayeredFinder = (config: Partial<ReadonlyConfig> = {}): TestLocaleFinder => {
+    const root = path.join(fixtures, "layers");
+    const resolvedConfig = {
+        app: "app",
+        appSrcDir: "app-src",
+        appsDir: "apps",
+        browser: Browser.Chrome,
+        command: Command.Build,
+        lang: Language.English,
+        localeDir: "locales",
+        mergeLocales: true,
+        mode: "production",
+        plugins: [],
+        rootDir: path.join(root, "project"),
+        sharedDir: "shared",
+        srcDir: "src",
+        ...config,
+    } as ReadonlyConfig;
+
+    const finder = new TestLocaleFinder(resolvedConfig);
+
+    resolvedConfig.plugins.push(
+        {
+            name: path.join(root, "plugin"),
+            locale: true,
+        },
+        {
+            name: path.join(root, "plugin-override"),
+            locale: true,
+        },
+        {
+            name: "adnbn:locale",
+            locale: () => finder.files(),
+        }
+    );
+
+    return finder;
+};
+
 describe("LocaleFinder", () => {
     test("reports locale finder configuration", () => {
         const finder = makeFinder("partial", {
@@ -150,6 +189,97 @@ describe("LocaleFinder", () => {
     test("surfaces structure validation errors from real locale files", async () => {
         await expect(makeFinder("substitution-mismatch").validate()).rejects.toThrow(
             'Locale "fr" key "app.greeting" substitutions [firstName] must match default locale "en" substitutions [name]'
+        );
+    });
+
+    test("merges plugin, source, shared, app, app source and browser-specific locales from lowest to highest priority", async () => {
+        const builders = await makeLayeredFinder().builders();
+        const locale = builders.get(Language.English);
+
+        expect(locale).toBeDefined();
+        expect(Object.fromEntries(locale!.get())).toMatchObject({
+            title: "App Source Chrome",
+            pluginOnly: "Later Plugin",
+            sourceOnly: "Source",
+            sharedOnly: "Shared",
+            appOnly: "App",
+            appSourceOnly: "App Source",
+            browserOnly: "Chrome",
+            appSourceBrowserOnly: "Chrome",
+        });
+    });
+
+    test("keeps plugin locales as a baseline when workspace locale merging is disabled", async () => {
+        const builders = await makeLayeredFinder({mergeLocales: false}).builders();
+        const locale = builders.get(Language.English);
+
+        expect(locale).toBeDefined();
+        expect(Object.fromEntries(locale!.get())).toMatchObject({
+            title: "App Source Chrome",
+            pluginOnly: "Later Plugin",
+            appSourceOnly: "App Source",
+            appSourceBrowserOnly: "Chrome",
+        });
+        expect(locale!.get().has("sourceOnly")).toBe(false);
+        expect(locale!.get().has("sharedOnly")).toBe(false);
+        expect(locale!.get().has("appOnly")).toBe(false);
+        expect(locale!.get().has("browserOnly")).toBe(false);
+    });
+
+    test("continues to the next workspace layer when a higher-priority locale directory is empty", async () => {
+        const builders = await makeLayeredFinder({
+            appSrcDir: "empty-app-src",
+            mergeLocales: false,
+        }).builders();
+        const locale = builders.get(Language.English);
+
+        expect(locale).toBeDefined();
+        expect(Object.fromEntries(locale!.get())).toMatchObject({
+            title: "App Chrome",
+            pluginOnly: "Later Plugin",
+            appOnly: "App",
+            browserOnly: "Chrome",
+        });
+        expect(locale!.get().has("sourceOnly")).toBe(false);
+        expect(locale!.get().has("sharedOnly")).toBe(false);
+        expect(locale!.get().has("appSourceOnly")).toBe(false);
+        expect(locale!.get().has("appSourceBrowserOnly")).toBe(false);
+    });
+
+    test("deduplicates locale files discovered through overlapping workspace paths", async () => {
+        const multiFiles = [...(await makeLayeredFinder().files())].map(({file}) => file);
+        const singleFiles = [...(await makeLayeredFinder({sharedDir: "."}).files())].map(({file}) => file);
+
+        expect(new Set(multiFiles).size).toBe(multiFiles.length);
+        expect(new Set(singleFiles).size).toBe(singleFiles.length);
+    });
+
+    test("rejects ambiguous locale files in the same layer", async () => {
+        const root = path.join(fixtures, "duplicate-layer");
+        const config = {
+            app: "app",
+            appSrcDir: ".",
+            appsDir: "apps",
+            browser: Browser.Chrome,
+            command: Command.Build,
+            lang: Language.English,
+            localeDir: "locales",
+            mergeLocales: true,
+            mode: "production",
+            plugins: [],
+            rootDir: root,
+            sharedDir: "shared",
+            srcDir: "src",
+        } as ReadonlyConfig;
+        const finder = new TestLocaleFinder(config);
+
+        config.plugins.push({
+            name: "adnbn:locale",
+            locale: () => finder.files(),
+        });
+
+        await expect(finder.builders()).rejects.toThrow(
+            `Locale "en" has multiple generic files in the app source layer: "${path.join(root, "src/apps/app/locales/en.json")}" and "${path.join(root, "src/apps/app/locales/en.yaml")}"`
         );
     });
 });

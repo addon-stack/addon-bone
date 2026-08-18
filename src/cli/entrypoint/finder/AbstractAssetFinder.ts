@@ -4,6 +4,7 @@ import fs from "fs";
 import {getAppPath, getAppSourcePath, getResolvePath, getSharedPath, getSourcePath} from "@cli/resolvers/path";
 
 import AbstractFinder from "./AbstractFinder";
+import {FileLayer, getWorkspaceFileLayers, setFilePrecedence, type WorkspaceFileLayer} from "./utils/filePrecedence";
 
 import {EntrypointFile} from "@typing/entrypoint";
 
@@ -35,26 +36,40 @@ export default abstract class extends AbstractFinder {
     }
 
     protected async getFiles(): Promise<Set<EntrypointFile>> {
-        const files = new Set<EntrypointFile>();
+        const files = new Map<string, EntrypointFile>();
 
-        const parser = async (directory: string): Promise<void> => {
-            if (files.size === 0 || this.canMerge()) {
-                const localeFiles = await this.findFiles(getResolvePath(directory));
+        const collect = async (directory: string, layer: FileLayer): Promise<void> => {
+            const assetFiles = await this.findFiles(getResolvePath(directory));
 
-                for (const file of localeFiles) {
-                    files.add(file);
+            for (const file of assetFiles) {
+                const canonicalPath = fs.realpathSync.native(file.file);
+
+                if (!files.has(canonicalPath)) {
+                    files.set(canonicalPath, setFilePrecedence(file, {layer}));
                 }
             }
         };
 
         const dir = this.getDirectory();
 
-        await parser(getAppSourcePath(this.config, dir));
-        await parser(getAppPath(this.config, dir));
-        await parser(getSharedPath(this.config, dir));
-        await parser(getSourcePath(this.config, dir));
+        const directories: Record<WorkspaceFileLayer, string> = {
+            [FileLayer.Source]: getSourcePath(this.config, dir),
+            [FileLayer.Shared]: getSharedPath(this.config, dir),
+            [FileLayer.App]: getAppPath(this.config, dir),
+            [FileLayer.AppSource]: getAppSourcePath(this.config, dir),
+        };
 
-        return files;
+        const merge = this.canMerge();
+
+        for (const layer of getWorkspaceFileLayers()) {
+            await collect(directories[layer], layer);
+
+            if (!merge && files.size > 0) {
+                break;
+            }
+        }
+
+        return new Set(files.values());
     }
 
     protected async findFiles(directory: string): Promise<Set<EntrypointFile>> {
