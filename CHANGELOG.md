@@ -1,5 +1,34 @@
 # Changelog
 
+## 🚀 Release `adnbn` v0.8.0 (2026-08-18)
+
+
+### ✨ Features
+
+* **finder:** implement file precedence for layered locale and plugin resolution ([2d147d0](https://github.com/addon-stack/addon-bone/commit/2d147d043b7faa1779868be9f133f81e0e1177ce))
+
+  - Add file precedence system to prioritize layers and browser-specific files.
+  - Enhance locale merging logic with multi-layered and browser-specific resolution.
+  - Introduce duplicate layer detection and error handling for ambiguous files.
+  - Add layered locale and file precedence fixture tests for rigorous validation.
+
+
+
+### 🤖 CI
+
+* **release:** simplify and refine release rules and version bump logic ([331124c](https://github.com/addon-stack/addon-bone/commit/331124c05b15b9d79e559c2cc83ca1b65044e6d0))
+
+  - Extract `whatBump` and `hasBreakingChange` for cleaner code organization.
+  - Remove redundant `releaseRules` and inline `whatBump` implementation.
+  - Consolidate breaking change detection logic for better maintainability.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 3
+
 ## 🚀 Release `adnbn` v0.7.1 (2026-07-27)
 
 
