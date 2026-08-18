@@ -5,11 +5,13 @@ import yaml from "js-yaml";
 
 import AbstractAssetFinder from "./AbstractAssetFinder";
 import AssetPluginFinder from "./AssetPluginFinder";
+import {FileLayer, FileSpecificity, getFilePrecedence} from "./utils/filePrecedence";
 
 import localeFactory, {LocaleStructureValidator} from "@cli/builders/locale";
 import {isFileExtension} from "@cli/utils/path";
 
 import {ReadonlyConfig} from "@typing/config";
+import {EntrypointFile} from "@typing/entrypoint";
 import {
     Language,
     LanguageCodes,
@@ -21,6 +23,19 @@ import {
 } from "@typing/locale";
 
 export type {LocaleBuilders} from "@typing/locale";
+
+const layerNames: Record<FileLayer, string> = {
+    [FileLayer.Plugin]: "plugin",
+    [FileLayer.Source]: "source",
+    [FileLayer.Shared]: "shared",
+    [FileLayer.App]: "app",
+    [FileLayer.AppSource]: "app source",
+};
+
+const specificityNames: Record<FileSpecificity, string> = {
+    [FileSpecificity.Generic]: "generic",
+    [FileSpecificity.Browser]: "browser-specific",
+};
 
 export default class extends AbstractAssetFinder {
     protected _plugin?: AssetPluginFinder;
@@ -68,6 +83,8 @@ export default class extends AbstractAssetFinder {
         return _.chain(Array.from(await this.plugin().files()))
             .groupBy(file => this.getLanguageFromFilename(file.file))
             .reduce((map, files, lang) => {
+                this.assertUniqueFiles(lang as Language, files);
+
                 const locale = localeFactory(lang as Language, this.config);
 
                 for (const {file} of files) {
@@ -85,6 +102,24 @@ export default class extends AbstractAssetFinder {
                 return map;
             }, new Map() as LocaleBuilders)
             .value();
+    }
+
+    protected assertUniqueFiles(lang: Language, files: EntrypointFile[]): void {
+        const sources = new Map<string, EntrypointFile>();
+
+        for (const file of files) {
+            const {layer, order, specificity} = getFilePrecedence(file);
+            const source = [layer, order, specificity].join(":");
+            const duplicate = sources.get(source);
+
+            if (duplicate) {
+                throw new Error(
+                    `Locale "${lang}" has multiple ${specificityNames[specificity]} files in the ${layerNames[layer]} layer: "${duplicate.file}" and "${file.file}"`
+                );
+            }
+
+            sources.set(source, file);
+        }
     }
 
     protected getValidator(): LocaleStructureValidator {

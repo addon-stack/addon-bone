@@ -467,6 +467,14 @@ export interface Config {
      * Flag indicating whether to merge localizations from App and Shared directories.
      * When `true`, localization files from both directories will be combined.
      *
+     * Locale values are resolved from the least specific source to the most specific:
+     * plugins, source root, Shared, and App. Within each layer, a browser-specific
+     * file overrides its generic file. A value from a later source overrides the
+     * same key from an earlier source. When `false`, plugin locales remain available
+     * as a baseline and only the highest available workspace layer is selected.
+     * Multiple generic or browser-specific files for the same language in one layer
+     * are rejected as ambiguous.
+     *
      * @default true
      */
     mergeLocales: boolean;

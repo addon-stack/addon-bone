@@ -3,6 +3,7 @@ import path from "path";
 import pluralize from "pluralize";
 
 import AbstractOptionsFinder from "./AbstractOptionsFinder";
+import {FileLayer, setFilePrecedence} from "./utils/filePrecedence";
 
 import {getAppSourcePath, getSharedPath} from "@cli/resolvers/path";
 
@@ -33,6 +34,10 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
 
         const appFiles = this.findFiles(getAppSourcePath(this.config));
 
+        for (const file of appFiles) {
+            setFilePrecedence(file, {layer: FileLayer.AppSource});
+        }
+
         if (appFiles.size > 0) {
             files = appFiles;
 
@@ -43,6 +48,10 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
 
         if ((appFiles.size > 0 && this.canMerge()) || appFiles.size === 0) {
             const sharedFiles = this.findFiles(getSharedPath(this.config));
+
+            for (const file of sharedFiles) {
+                setFilePrecedence(file, {layer: FileLayer.Shared});
+            }
 
             if (sharedFiles.size > 0) {
                 files = new Set([...files, ...sharedFiles]);
