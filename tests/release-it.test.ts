@@ -1,3 +1,6 @@
+import {execFileSync} from "node:child_process";
+import path from "node:path";
+
 type ReleaseCommit = {
     type?: string;
     header?: string;
@@ -55,5 +58,66 @@ describe("release-it version policy", () => {
 
     test.each(["docs", "test", "chore", "build"])("does not release for %s alone", type => {
         expect(whatBump([{type}], "0.6.0")).toBeNull();
+    });
+});
+
+describe("release-it GitHub release notes", () => {
+    let release: {version: string; name: string; notes: string};
+
+    beforeAll(() => {
+        // Exercise the installed ESM parser and writer without Jest transforms or release side effects.
+        release = JSON.parse(
+            execFileSync(
+                process.execPath,
+                [
+                    "--input-type=module",
+                    "-e",
+                    `
+                        import {CommitParser} from "conventional-commits-parser";
+                        import {Bumper} from "conventional-recommended-bump";
+                        import {writeChangelogString} from "conventional-changelog-writer";
+                        import semver from "semver";
+                        import createReleaseConfig from "./.release-it.cjs";
+
+                        const config = createReleaseConfig();
+                        const options = config.plugins["@release-it/conventional-changelog"];
+                        const commit = new CommitParser(options.parserOpts).parse(
+                            "feat(relay)!: update relay targets\\n\\nBREAKING CHANGE: targets are mutually exclusive"
+                        );
+                        const {releaseType} = await new Bumper().commits([commit]).bump(
+                            commits => options.whatBump(commits, "0.8.0")
+                        );
+                        const version = semver.inc("0.8.0", releaseType);
+                        const changelog = await writeChangelogString([commit], {
+                            ...options.context,
+                            version,
+                            date: "2026-08-27",
+                        }, options.writerOpts);
+
+                        process.stdout.write(JSON.stringify({
+                            version,
+                            name: config.github.releaseName.replace("\${version}", version),
+                            notes: config.github.releaseNotes({changelog}),
+                        }));
+                    `,
+                ],
+                {cwd: path.resolve(__dirname, ".."), encoding: "utf8", timeout: 10_000}
+            )
+        );
+    });
+
+    test("recommends 0.9.0 for a parsed pre-1.0 breaking change", () => {
+        expect(release.version).toBe("0.9.0");
+    });
+
+    test("uses the framework name in the GitHub release title and notes heading", () => {
+        expect(release.name).toBe("Addon Bone v0.9.0");
+        expect(release.notes).toMatch(/^## 🚀 Release Addon Bone v0\.9\.0 \(2026-08-27\)/);
+        expect(release.notes).not.toContain("`adnbn`");
+    });
+
+    test("preserves the breaking changes section in a pre-1.0 release", () => {
+        expect(release.notes).toContain("### 💥 Breaking Changes");
+        expect(release.notes).toContain("targets are mutually exclusive");
     });
 });
