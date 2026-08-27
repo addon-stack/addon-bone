@@ -1,7 +1,6 @@
-import type {RelayUnresolvedDefinition} from "adnbn";
 import type {TransportType} from "adnbn/transport";
 import {isValidTransportDefinition, isValidTransportInitFunction} from "adnbn/entry/transport";
-import {Builder as RelayBuilder} from "adnbn/entry/relay";
+import {Builder as RelayBuilder, type RelayUnresolvedDefinition} from "adnbn/entry/relay";
 
 import {Builder as ContentScriptBuilder} from "virtual:content-framework";
 
@@ -21,6 +20,7 @@ try {
     }
 
     const {init, main, name, ...options} = definition;
+    const {method, allFrames, ...contentOptions} = options;
 
     new RelayBuilder({
         name: relayName,
@@ -28,7 +28,12 @@ try {
         main,
         ...options,
     })
-        .content(new ContentScriptBuilder(options))
+        .content(
+            new ContentScriptBuilder({
+                ...contentOptions,
+                ...(allFrames === undefined ? {} : {allFrames: allFrames !== false}),
+            })
+        )
         .build()
         .catch(e => {
             console.error("Failed to build relay: ", e);

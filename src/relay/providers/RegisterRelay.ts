@@ -39,9 +39,9 @@ export default class<
             this.manager().add(this.name, relay);
 
             return relay;
-        } else {
-            return super.register(...args);
         }
+
+        return super.register(...args);
     }
 
     public get(): T {

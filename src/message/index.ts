@@ -1,4 +1,5 @@
 import {Message} from "@message/providers";
+import {UnsupportedMessageTargetError} from "@message/error";
 
 import {
     MessageData,
@@ -26,7 +27,7 @@ export type {
     MessageSender,
 };
 
-export {Message};
+export {Message, UnsupportedMessageTargetError};
 
 export interface MessageRegistry extends MessageDictionary {}
 

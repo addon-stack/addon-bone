@@ -8,6 +8,11 @@
     "outDir": "./dist",
     "sourceMap": false
   },
+  "tsc-alias": {
+    "fileExtensions": {
+      "inputGlob": "d.ts"
+    }
+  },
   "include": ["./src/**/*"],
   "exclude": [
     "**/*.test.ts",

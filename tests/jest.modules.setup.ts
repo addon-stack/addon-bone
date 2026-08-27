@@ -2,6 +2,7 @@ jest.mock("@addon-core/browser", () => ({
     __esModule: true,
 
     throwRuntimeError: jest.fn(),
+    getManifest: jest.fn(() => ({manifest_version: 3, name: "Test extension", version: "1.0.0", permissions: []})),
     getManifestVersion: jest.fn(),
     isAvailableScripting: jest.fn(),
 
@@ -20,6 +21,12 @@ jest.mock("@addon-core/browser", () => ({
 
     containsPermissions: jest.fn(() => true),
     requestPermissions: jest.fn(() => true),
+    onPermissionsAdded: jest.fn(() => jest.fn()),
+    onPermissionsRemoved: jest.fn(() => jest.fn()),
+
+    getContexts: jest.fn(),
+    getAllFrames: jest.fn(),
+    getBrowserInfo: jest.fn(() => Promise.resolve({name: "Firefox", version: "153.0"})),
 
     executeScript: (...args: Parameters<typeof chrome.scripting.executeScript>) => {
         return chrome.scripting.executeScript(...args);

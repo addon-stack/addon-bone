@@ -1,6 +1,6 @@
-import {sendMessage, sendTabMessage} from "@addon-core/browser";
+import {getBrowserInfo, sendMessage, sendTabMessage} from "@addon-core/browser";
 
-import {restoreError} from "../error";
+import {markRemoteMessageError, restoreError, UnsupportedMessageTargetError} from "../error";
 
 import {isBrowser} from "@main/env";
 
@@ -27,7 +27,9 @@ import MessageManager from "../MessageManager";
 import {GeneralHandler, MapHandler, SingleHandler} from "../handlers";
 
 export default class Message<T extends MessageDictionary> extends AbstractMessage<T, MessageSendOptions> {
+    private static readonly FirefoxDocumentIdMinVersion = 153;
     private static instance: Message<MessageDictionary> | null = null;
+    private firefoxDocumentIdVersion?: Promise<{major: number; version: string}>;
 
     public static getInstance<T extends MessageDictionary>() {
         return (this.instance ??= new Message<T>());
@@ -48,7 +50,7 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
         return this.unwrap(response);
     }
 
-    private dispatch<K extends MessageType<T>>(
+    private async dispatch<K extends MessageType<T>>(
         message: MessageBody<T, K>,
         options?: MessageSendOptions
     ): Promise<MessageResult<MessageResponse<T, K>> | MessageResponse<T, K> | undefined> {
@@ -62,8 +64,8 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
 
         const {tabId, ...other} = options;
 
-        if (isBrowser(Browser.Firefox)) {
-            delete other.documentId;
+        if (other.documentId !== undefined && isBrowser(Browser.Firefox)) {
+            await this.assertFirefoxDocumentTargetSupport();
         }
 
         return sendTabMessage(tabId, message, other);
@@ -80,7 +82,42 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
             return response.payload;
         }
 
-        throw restoreError(response.error);
+        throw markRemoteMessageError(restoreError(response.error));
+    }
+
+    private async assertFirefoxDocumentTargetSupport(): Promise<void> {
+        this.firefoxDocumentIdVersion ??= getBrowserInfo().then(info => {
+            const major = Number.parseInt(info.version.split(".")[0], 10);
+
+            if (!Number.isInteger(major)) {
+                throw new UnsupportedMessageTargetError(
+                    `Cannot determine whether Firefox ${JSON.stringify(info.version)} supports documentId message targets.`
+                );
+            }
+
+            return {major, version: info.version};
+        });
+
+        let browserVersion: {major: number; version: string};
+
+        try {
+            browserVersion = await this.firefoxDocumentIdVersion;
+        } catch (error) {
+            if (error instanceof UnsupportedMessageTargetError) {
+                throw error;
+            }
+
+            throw new UnsupportedMessageTargetError(
+                "Cannot determine whether the current Firefox version supports documentId message targets.",
+                error
+            );
+        }
+
+        if (browserVersion.major < Message.FirefoxDocumentIdMinVersion) {
+            throw new UnsupportedMessageTargetError(
+                `Messaging by documentId requires Firefox ${Message.FirefoxDocumentIdMinVersion} or newer; current version is ${browserVersion.version}.`
+            );
+        }
     }
 
     private isMessageResult(response: unknown): response is MessageResult {

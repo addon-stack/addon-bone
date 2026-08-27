@@ -11,8 +11,14 @@ class TestMessage implements TransportMessage {
 
     public send(): void {}
 
-    public watch(handler: (data: TransportMessageData, sender: MessageSender) => any): void {
+    public watch(handler: (data: TransportMessageData, sender: MessageSender) => any): () => void {
         this.handler = handler;
+
+        return () => {
+            if (this.handler === handler) {
+                this.handler = undefined;
+            }
+        };
     }
 
     public dispatch(data: TransportMessageData, sender: MessageSender): Promise<any> {
