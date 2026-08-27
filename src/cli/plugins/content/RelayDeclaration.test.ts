@@ -41,9 +41,14 @@ describe("Relay declarations", () => {
         expect(declaration).not.toContain("[name: string]: any");
     });
 
-    test.each(["source", "package"])(
-        "checks the %s API and generated scalar/batch contracts",
-        mode => {
+    test.each(
+        ["source", "package"].flatMap(mode => [
+            {mode, pathStyle: "POSIX", generatedPath: generatedFile.replace(/\\/g, "/")},
+            {mode, pathStyle: "Windows", generatedPath: generatedFile.replace(/\//g, "\\")},
+        ])
+    )(
+        "checks the $mode API and generated scalar/batch contracts with $pathStyle paths",
+        ({mode, generatedPath}) => {
             const configFile = ts.readConfigFile(path.join(projectDir, "tsconfig.json"), ts.sys.readFile);
             const config = ts.parseJsonConfigFileContent(configFile.config, ts.sys, projectDir);
 
@@ -60,7 +65,7 @@ describe("Relay declarations", () => {
                 skipLibCheck: true,
                 types: ["node", "chrome"],
             };
-            const rootNames = [consumerFile, generatedFile];
+            const rootNames = [consumerFile, generatedPath];
 
             if (mode === "source") {
                 rootNames.push(
@@ -74,9 +79,11 @@ describe("Relay declarations", () => {
             // The package case deliberately has neither source aliases nor ambient virtual module declarations.
             const host = ts.createCompilerHost(options);
             const getSourceFile = host.getSourceFile.bind(host);
+            // TypeScript uses forward slashes even when the root file has a native Windows path.
+            const generatedFileName = generatedPath.replace(/\\/g, "/");
 
             host.getSourceFile = (file, languageVersion, onError, shouldCreateNewSourceFile) =>
-                file === generatedFile
+                file.replace(/\\/g, "/") === generatedFileName
                     ? ts.createSourceFile(file, declaration, languageVersion, true)
                     : getSourceFile(file, languageVersion, onError, shouldCreateNewSourceFile);
 
@@ -141,7 +148,9 @@ describe("Relay declarations", () => {
 
             const apiFile = ts.resolveModuleName("adnbn", consumerFile, options, host).resolvedModule?.resolvedFileName;
 
-            expect(apiFile).toBe(path.join(projectDir, mode === "source" ? "src/index.ts" : "dist/index.d.ts"));
+            expect(apiFile).toBe(
+                path.join(projectDir, mode === "source" ? "src/index.ts" : "dist/index.d.ts").replace(/\\/g, "/")
+            );
         },
         30_000
     );
