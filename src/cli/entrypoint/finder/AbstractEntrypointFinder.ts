@@ -2,7 +2,7 @@ import fs, {Dirent} from "fs";
 import path from "path";
 import pluralize from "pluralize";
 
-import AbstractOptionsFinder from "./AbstractOptionsFinder";
+import AbstractParsedFinder from "./AbstractParsedFinder";
 import {FileLayer, setFilePrecedence} from "./utils/filePrecedence";
 
 import {getAppSourcePath, getSharedPath} from "@cli/resolvers/path";
@@ -10,7 +10,7 @@ import {getAppSourcePath, getSharedPath} from "@cli/resolvers/path";
 import {EntrypointFile, EntrypointFileExtensions, EntrypointOptions} from "@typing/entrypoint";
 import {ReadonlyConfig} from "@typing/config";
 
-export default abstract class<O extends EntrypointOptions> extends AbstractOptionsFinder<O> {
+export default abstract class<O extends EntrypointOptions> extends AbstractParsedFinder<O> {
     protected fileExtensionsPattern: string;
 
     protected possibleIndexFiles: Set<string>;

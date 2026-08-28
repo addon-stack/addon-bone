@@ -81,6 +81,7 @@ export interface Plugin extends PluginName {
     bundler?: PluginHandler<PluginBundlerOptions, RspackConfig>;
     command?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     content?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
+    options?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     page?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     popup?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     relay?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
@@ -102,7 +103,17 @@ export type PluginHandlerKeys = keyof Omit<Plugin, "name">;
 
 export type PluginEntrypointKeys = keyof Pick<
     Plugin,
-    "background" | "command" | "content" | "page" | "popup" | "relay" | "sandbox" | "service" | "sidebar" | "offscreen"
+    | "background"
+    | "command"
+    | "content"
+    | "options"
+    | "page"
+    | "popup"
+    | "relay"
+    | "sandbox"
+    | "service"
+    | "sidebar"
+    | "offscreen"
 >;
 
 export type PluginAssetKeys = keyof Pick<Plugin, "icon" | "locale">;

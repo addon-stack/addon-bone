@@ -11,6 +11,7 @@ export {default as pluginIcon} from "./icon";
 export {default as pluginLocale} from "./locale";
 export {default as pluginMeta} from "./meta";
 export {default as pluginOffscreen} from "./offscreen";
+export {default as pluginOptions} from "./options";
 export {default as pluginPage} from "./page";
 export {default as pluginPopup} from "./popup";
 export {default as pluginPublic} from "./public";

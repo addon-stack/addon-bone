@@ -128,6 +128,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     setSidebar(sidebar?: ManifestSidebar): this;
 
+    setOptions(options?: ManifestOptions): this;
+
     // Sandbox
     addSandbox(sandbox: ManifestSandbox): this;
 
@@ -234,6 +236,20 @@ export interface ManifestSidebar {
      * Represents an optional HTML path.
      */
     path?: string;
+}
+
+export interface ManifestOptions {
+    /**
+     * Path to the options page HTML file relative to the extension root.
+     * Written to `options_ui.page` in the manifest.
+     */
+    path: string;
+    /**
+     * Whether the options page should open in a browser tab.
+     * Written to `options_ui.open_in_tab` and defaults to `true` when omitted.
+     * Set to `false` to request an embedded page where supported by the browser.
+     */
+    openInTab?: boolean;
 }
 
 export interface ManifestAccessibleResource {

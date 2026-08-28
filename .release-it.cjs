@@ -191,7 +191,7 @@ const createReleaseConfig = () => {
 
         github: {
             release: true,
-            releaseName: "Addon Bone v${version}",
+            releaseName: "v${version}",
             autoGenerate: false,
             releaseNotes: ({changelog}) => changelog,
         },
@@ -208,6 +208,8 @@ const createReleaseConfig = () => {
                 preset: "conventionalcommits",
 
                 parserOpts: {
+                    // The preset's breaking pattern is incompatible with our extra breaking capture.
+                    breakingHeaderPattern: null,
                     headerPattern: /^(\w+)(?:\(([^)]+)\))?(!)?:\s(.+?)(?:\s\(#\d+\))?$/,
                     headerCorrespondence: ["type", "scope", "breaking", "subject"],
                     noteKeywords: ["BREAKING CHANGE", "BREAKING-CHANGE"],

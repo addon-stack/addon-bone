@@ -18,6 +18,7 @@ import {
     ManifestIcons,
     ManifestIncognito,
     ManifestOptionalPermissions,
+    ManifestOptions,
     ManifestPermissions,
     ManifestPopup,
     ManifestSandbox,
@@ -62,6 +63,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected background?: ManifestBackground;
     protected popup?: ManifestPopup;
     protected sidebar?: ManifestSidebar;
+    protected options?: ManifestOptions;
     protected sandboxes: ManifestSandboxes = new Set();
     protected sandboxCsp: CspBuilder<SandboxCspConfig> = new SandboxCsp();
     protected csp: CspBuilder<CspConfig> = new Csp();
@@ -265,6 +267,12 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
+    public setOptions(options?: ManifestOptions): this {
+        this.options = options;
+
+        return this;
+    }
+
     public addSandbox(sandbox: ManifestSandbox): this {
         this.sandboxes.add(sandbox);
 
@@ -436,6 +444,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.buildCommands(),
             this.buildAction(),
             this.buildSidebar(),
+            this.buildOptions(),
             this.buildContentScripts(),
             this.buildPermissions(),
             this.buildOptionalPermissions(),
@@ -654,6 +663,19 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             : {side_panel: {...commonProps, default_path: path}};
     }
 
+    protected buildOptions(): Partial<CoreManifest> {
+        if (this.options) {
+            return {
+                options_ui: {
+                    page: this.options.path,
+                    open_in_tab: this.options.openInTab ?? true,
+                },
+            };
+        }
+
+        return _.pick(this.combinedRaws, ["options_ui", "options_page"]);
+    }
+
     protected buildBrowserSpecificSettings(): Partial<Manifest> | undefined {
         const optionalSettings = this.combinedRaws.browser_specific_settings;
         const {safari, gecko, geckoAndroid} = this.specific || {};
@@ -731,6 +753,8 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             commands,
             action,
             sidebar,
+            options_ui,
+            options_page,
             content_scripts,
             permissions,
             optional_permissions,
