@@ -21,12 +21,34 @@ on:
         type: string
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 jobs:
+  policy:
+    name: Release policy
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.actor != format('{0}[bot]', vars.RELEASE_APP_SLUG)
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.policy.outputs.should_release }}
+    steps:
+      - name: Checkout trusted workflow revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+
+      - name: Check release event
+        id: policy
+        env:
+          RELEASE_APP_SLUG: ${{ vars.RELEASE_APP_SLUG }}
+        run: node .github/scripts/releaseAutomation.cjs policy >> "$GITHUB_OUTPUT"
+
   ci:
     name: CI
+    needs: policy
+    if: needs.policy.outputs.should_release == 'true'
     uses: ./.github/workflows/ci.yml
     with:
       full: true
@@ -34,13 +56,28 @@ jobs:
   release:
     name: Release & Publish
     runs-on: ubuntu-latest
-    needs: ci
+    needs: [policy, ci]
+    if: needs.policy.outputs.should_release == 'true'
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
     steps:
+      - name: Create release App token
+        id: release-app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # Omitting owner/repositories scopes the token to this repository only.
+          permission-contents: write
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
+          token: ${{ steps.release-app-token.outputs.token }}
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -65,26 +102,13 @@ jobs:
         env:
           DEBUG: release-it:*,@release-it/*
           HUSKY: 0
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION_ARG=""
-          if [ -n "${{ inputs.version }}" ]; then
-            VERSION_ARG="${{ inputs.version }}"
-          fi
-
-          PREID_ARG=""
-          if [ -n "${{ inputs.preid }}" ]; then
-            PREID_ARG="--preRelease=${{ inputs.preid }}"
-          fi
-
-          if [ -n "${{ inputs.npm_tag }}" ]; then
-            NPM_TAG="${{ inputs.npm_tag }}"
-          else
-            NPM_TAG="latest"
-          fi
-          NPM_TAG_ARG="--npm.tag=${NPM_TAG}"
-
-          npx release-it --ci $PREID_ARG $NPM_TAG_ARG $VERSION_ARG
+          GITHUB_TOKEN: ${{ steps.release-app-token.outputs.token }}
+          RELEASE_APP_SLUG: ${{ vars.RELEASE_APP_SLUG }}
+          RELEASE_TOKEN_APP_SLUG: ${{ steps.release-app-token.outputs.app-slug }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_PREID: ${{ inputs.preid }}
+          RELEASE_NPM_TAG: ${{ inputs.npm_tag }}
+        run: node .github/scripts/releaseAutomation.cjs run
 
       - name: Sync main → develop
         uses: devmasx/merge-branch@v1.4.0
@@ -95,4 +119,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
         env:
           HUSKY: 0
-
