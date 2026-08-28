@@ -15,6 +15,7 @@ export interface LocaleProviderProps {
 
 const LocaleProvider = ({children, storage, container = "html"}: PropsWithChildren<LocaleProviderProps>) => {
     const locale = useMemo(() => new DynamicLocale(storage), []);
+    const langs = useMemo(() => locale.languageNames(), [locale]);
 
     const [lang, setLang] = useState<Language>(locale.lang());
 
@@ -65,6 +66,7 @@ const LocaleProvider = ({children, storage, container = "html"}: PropsWithChildr
                 choice,
                 change,
                 lang,
+                langs,
                 dir: getLocaleDir(lang),
                 isRtl: isLocaleRtl(lang),
             }}

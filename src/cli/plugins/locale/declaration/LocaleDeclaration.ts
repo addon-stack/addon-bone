@@ -25,11 +25,11 @@ export default class extends FileBuilder {
             throw new Error("Locale structure is not set");
         }
 
-        const type = JSON.stringify(structure, null, 4);
+        const type = Object.entries(structure)
+            .map(([key, value]) => `${JSON.stringify(key)}: ${JSON.stringify(value)};`)
+            .join("\n        ");
 
-        const name = "GeneratedNativeStructure";
-
-        return this.readFile().replace(`interface ${name} {}`, `interface ${name} ${type}`);
+        return this.readFile().replace("__LOCALE_DICTIONARY__", () => type);
     }
 
     public structure(structure: LocaleStructure): this {

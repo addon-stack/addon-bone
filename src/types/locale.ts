@@ -75,6 +75,65 @@ export const LocaleKeyMarker = "@";
 
 export const LanguageCodes: ReadonlySet<string> = new Set(Object.values(Language));
 
+/** Native language names, independent of the selected UI language. */
+export const LanguageNames: Readonly<Record<Language, string>> = Object.freeze({
+    [Language.Arabic]: "العربية",
+    [Language.Amharic]: "አማርኛ",
+    [Language.Bulgarian]: "Български",
+    [Language.Bengali]: "বাংলা",
+    [Language.Catalan]: "Català",
+    [Language.Czech]: "Čeština",
+    [Language.Danish]: "Dansk",
+    [Language.German]: "Deutsch",
+    [Language.Greek]: "Ελληνικά",
+    [Language.English]: "English",
+    [Language.EnglishAustralia]: "English (Australia)",
+    [Language.EnglishGreatBritain]: "English (United Kingdom)",
+    [Language.EnglishUSA]: "English (United States)",
+    [Language.Spanish]: "Español",
+    [Language.SpanishLatinAmericaAndCaribbean]: "Español (Latinoamérica y el Caribe)",
+    [Language.Estonian]: "Eesti",
+    [Language.Persian]: "فارسی",
+    [Language.Finnish]: "Suomi",
+    [Language.Filipino]: "Filipino",
+    [Language.French]: "Français",
+    [Language.Gujarati]: "ગુજરાતી",
+    [Language.Hebrew]: "עברית",
+    [Language.Hindi]: "हिन्दी",
+    [Language.Croatian]: "Hrvatski",
+    [Language.Hungarian]: "Magyar",
+    [Language.Indonesian]: "Bahasa Indonesia",
+    [Language.Italian]: "Italiano",
+    [Language.Japanese]: "日本語",
+    [Language.Kannada]: "ಕನ್ನಡ",
+    [Language.Korean]: "한국어",
+    [Language.Lithuanian]: "Lietuvių",
+    [Language.Latvian]: "Latviešu",
+    [Language.Malayalam]: "മലയാളം",
+    [Language.Marathi]: "मराठी",
+    [Language.Malay]: "Bahasa Melayu",
+    [Language.Dutch]: "Nederlands",
+    [Language.Norwegian]: "Norsk",
+    [Language.Polish]: "Polski",
+    [Language.PortugueseBrazil]: "Português (Brasil)",
+    [Language.PortuguesePortugal]: "Português (Portugal)",
+    [Language.Romanian]: "Română",
+    [Language.Russian]: "Русский",
+    [Language.Slovak]: "Slovenčina",
+    [Language.Slovenian]: "Slovenščina",
+    [Language.Serbian]: "Српски",
+    [Language.Swedish]: "Svenska",
+    [Language.Swahili]: "Kiswahili",
+    [Language.Tamil]: "தமிழ்",
+    [Language.Telugu]: "తెలుగు",
+    [Language.Thai]: "ไทย",
+    [Language.Turkish]: "Türkçe",
+    [Language.Ukrainian]: "Українська",
+    [Language.Vietnamese]: "Tiếng Việt",
+    [Language.ChineseChina]: "中文（简体）",
+    [Language.ChineseTaiwan]: "中文（繁體）",
+});
+
 export const LocaleFileExtensions: ReadonlySet<string> = new Set(["yaml", "yml", "json"]);
 
 export type LocaleValue = string | number | Array<string | number>;
@@ -164,6 +223,8 @@ export interface LocaleProvider<S> {
     lang(): Language;
 
     languages(): Set<Language>;
+
+    languageNames(): Map<Language, string>;
 
     keys(): ReadonlySet<keyof S>;
 

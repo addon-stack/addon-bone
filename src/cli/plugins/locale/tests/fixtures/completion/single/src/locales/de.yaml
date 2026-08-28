@@ -1,0 +1,7 @@
+app:
+    title: Deutscher Titel
+    greeting: Hallo {{name}}
+cart:
+    items:
+        - "{{count}} Artikel"
+        - "{{count}} Artikel"

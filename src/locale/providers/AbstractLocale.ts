@@ -1,5 +1,6 @@
 import {
     Language,
+    LanguageNames,
     LocaleNonPluralKeys,
     LocalePluralKeys,
     LocaleProvider,
@@ -15,6 +16,11 @@ export default abstract class<S extends object = LocaleStructure> implements Loc
     public abstract keys(): Set<keyof S>;
 
     public abstract languages(): Set<Language>;
+
+    /** Returns native names for this provider's languages, preserving their order. */
+    public languageNames(): Map<Language, string> {
+        return new Map([...this.languages()].map(language => [language, LanguageNames[language]]));
+    }
 
     protected abstract value(key: keyof S & string): string | undefined;
 

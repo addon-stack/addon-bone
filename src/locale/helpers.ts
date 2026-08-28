@@ -96,7 +96,8 @@ export const resolve = (input: string): string => {
     const localeKey = extractLocaleKey(input);
 
     if (localeKey) {
-        return t(localeKey as LocaleNonPluralKeys<LocaleNativeStructure>);
+        // Markers are runtime strings without substitutions; keep t() strict for typed callers.
+        return (t as (key: string) => string)(localeKey);
     }
 
     return input;

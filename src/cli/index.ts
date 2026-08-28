@@ -38,6 +38,7 @@ cli.command("watch [root]", "Start watch mode")
             });
         } catch (e) {
             consola.error(e);
+            process.exitCode = 1;
         }
     });
 
@@ -63,6 +64,7 @@ cli.command("build [root]", "Build for production")
             });
         } catch (e) {
             consola.error(e);
+            process.exitCode = 1;
         }
     });
 

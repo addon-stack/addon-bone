@@ -31,6 +31,14 @@ export default class implements LocaleContractValidator {
 
             const structure = builder.structure();
 
+            for (const [key, expected] of Object.entries(defaultStructure)) {
+                if (expected.plural && !Object.hasOwn(structure, key)) {
+                    throw new Error(
+                        `Locale "${language}" is missing plural key "${key}" required by default locale "${this.defaultLanguage}"`
+                    );
+                }
+            }
+
             for (const [key, locale] of Object.entries(structure)) {
                 const expected = defaultStructure[key];
 
