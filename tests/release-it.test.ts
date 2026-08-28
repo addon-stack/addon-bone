@@ -62,37 +62,40 @@ describe("release-it version policy", () => {
 });
 
 describe("release-it GitHub release notes", () => {
-    let release: {version: string; name: string; notes: string};
+    type Release = {version: string; name: string; notes: string};
 
-    beforeAll(() => {
-        // Exercise the installed ESM parser and writer without Jest transforms or release side effects.
-        release = JSON.parse(
+    const renderRelease = (message: string, currentVersion = "0.8.0"): Release =>
+        // Exercise the installed preset, parser, and writer without Jest transforms or release side effects.
+        JSON.parse(
             execFileSync(
                 process.execPath,
                 [
                     "--input-type=module",
                     "-e",
                     `
+                        import {readFileSync} from "node:fs";
                         import {CommitParser} from "conventional-commits-parser";
+                        import {loadPreset} from "conventional-changelog-preset-loader";
                         import {Bumper} from "conventional-recommended-bump";
                         import {writeChangelogString} from "conventional-changelog-writer";
                         import semver from "semver";
                         import createReleaseConfig from "./.release-it.cjs";
 
+                        const {message, currentVersion} = JSON.parse(readFileSync(0, "utf8"));
                         const config = createReleaseConfig();
                         const options = config.plugins["@release-it/conventional-changelog"];
-                        const commit = new CommitParser(options.parserOpts).parse(
-                            "feat(relay)!: update relay targets\\n\\nBREAKING CHANGE: targets are mutually exclusive"
-                        );
+                        const preset = await loadPreset(options.preset);
+                        const commit = new CommitParser({...preset.parser, ...options.parserOpts}).parse(message);
                         const {releaseType} = await new Bumper().commits([commit]).bump(
-                            commits => options.whatBump(commits, "0.8.0")
+                            commits => options.whatBump(commits, currentVersion)
                         );
-                        const version = semver.inc("0.8.0", releaseType);
+                        const version = semver.inc(currentVersion, releaseType);
                         const changelog = await writeChangelogString([commit], {
                             ...options.context,
+                            contributors: [],
                             version,
                             date: "2026-08-27",
-                        }, options.writerOpts);
+                        }, {...preset.writer, ...options.writerOpts});
 
                         process.stdout.write(JSON.stringify({
                             version,
@@ -101,8 +104,20 @@ describe("release-it GitHub release notes", () => {
                         }));
                     `,
                 ],
-                {cwd: path.resolve(__dirname, ".."), encoding: "utf8", timeout: 10_000}
+                {
+                    cwd: path.resolve(__dirname, ".."),
+                    encoding: "utf8",
+                    input: JSON.stringify({message, currentVersion}),
+                    timeout: 10_000,
+                }
             )
+        );
+
+    let release: Release;
+
+    beforeAll(() => {
+        release = renderRelease(
+            "feat(relay)!: update relay targets\n\nBREAKING CHANGE: targets are mutually exclusive"
         );
     });
 
@@ -119,5 +134,51 @@ describe("release-it GitHub release notes", () => {
     test("preserves the breaking changes section in a pre-1.0 release", () => {
         expect(release.notes).toContain("### 💥 Breaking Changes");
         expect(release.notes).toContain("targets are mutually exclusive");
+    });
+
+    test("renders a breaking commit description without repeating its header", () => {
+        expect(release.notes).toContain("* **relay:** update relay targets\n");
+    });
+
+    test.each([
+        ["feat(relay)!: update relay targets", "* **relay:** update relay targets\n"],
+        ["feat!: update relay targets", "* update relay targets\n"],
+    ])("renders %s without a breaking footer", (message, commitLine) => {
+        const {notes} = renderRelease(message);
+
+        expect(notes).toContain("### 💥 Breaking Changes\n\n* update relay targets\n");
+        expect(notes).toContain(`### ✨ Features\n\n${commitLine}`);
+    });
+
+    test.each([
+        ["0.8.0", "0.9.0"],
+        ["1.4.2", "2.0.0"],
+    ])("bumps %s to %s for a breaking fix without a footer", (currentVersion, expectedVersion) => {
+        const result = renderRelease("fix(relay)!: update relay targets", currentVersion);
+
+        expect(result.version).toBe(expectedVersion);
+    });
+
+    test("omits a pull request suffix from a breaking commit description", () => {
+        const {notes} = renderRelease("feat(relay)!: update relay targets (#42)");
+
+        expect(notes).toContain("### 💥 Breaking Changes\n\n* update relay targets\n");
+        expect(notes).toContain("### ✨ Features\n\n* **relay:** update relay targets\n");
+    });
+
+    test.each(["BREAKING CHANGE", "BREAKING-CHANGE"])("recognizes a %s footer without an exclamation mark", keyword => {
+        const result = renderRelease(`fix(relay): update relay targets\n\n${keyword}: targets are mutually exclusive`);
+
+        expect(result.version).toBe("0.9.0");
+        expect(result.notes).toContain("### 💥 Breaking Changes\n\n* targets are mutually exclusive\n");
+        expect(result.notes).toContain("### 🐛 Bug Fixed\n\n* **relay:** update relay targets\n");
+    });
+
+    test("keeps an ordinary fix as a patch without a breaking changes section", () => {
+        const result = renderRelease("fix(relay): update relay targets");
+
+        expect(result.version).toBe("0.8.1");
+        expect(result.notes).toContain("### 🐛 Bug Fixed\n\n* **relay:** update relay targets\n");
+        expect(result.notes).not.toContain("### 💥 Breaking Changes");
     });
 });
