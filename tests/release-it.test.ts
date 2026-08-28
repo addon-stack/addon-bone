@@ -110,8 +110,8 @@ describe("release-it GitHub release notes", () => {
         expect(release.version).toBe("0.9.0");
     });
 
-    test("uses the framework name in the GitHub release title and notes heading", () => {
-        expect(release.name).toBe("Addon Bone v0.9.0");
+    test("uses only the version in the GitHub release title and the framework name in the notes heading", () => {
+        expect(release.name).toBe("v0.9.0");
         expect(release.notes).toMatch(/^## 🚀 Release Addon Bone v0\.9\.0 \(2026-08-27\)/);
         expect(release.notes).not.toContain("`adnbn`");
     });

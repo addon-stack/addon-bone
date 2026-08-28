@@ -191,7 +191,7 @@ const createReleaseConfig = () => {
 
         github: {
             release: true,
-            releaseName: "Addon Bone v${version}",
+            releaseName: "v${version}",
             autoGenerate: false,
             releaseNotes: ({changelog}) => changelog,
         },
