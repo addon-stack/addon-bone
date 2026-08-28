@@ -1,5 +1,35 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.10.0 (2026-08-28)
+
+
+### ✨ Features
+
+* **options:** add options page entrypoint ([74cb6f3](https://github.com/addon-stack/addon-bone/commit/74cb6f3814dfdc4917e03fa9f6528055d1b61245))
+
+  Add shared View rendering for React and Vanilla with openInTab
+  configuration and options_ui manifest generation.
+
+  Rename AbstractOptionsFinder to AbstractParsedFinder and cover discovery,
+  parsing, manifests, and browser rendering with tests.
+
+
+
+### 🐛 Bug Fixed
+
+* **release:** correct breaking commit parsing in release notes ([f6aa5b2](https://github.com/addon-stack/addon-bone/commit/f6aa5b239853561488262167f9db50785825e766))
+
+
+* **release:** restore version-only GitHub release titles ([a790486](https://github.com/addon-stack/addon-bone/commit/a79048620e1d60d7e81324dfac4f0d6ffd0073fd))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 4
+
 ## 🚀 Release Addon Bone v0.9.0 (2026-08-28)
 
 ### 💥 Breaking Changes
