@@ -5,26 +5,43 @@ import yaml from "js-yaml";
 
 import AbstractAssetFinder from "./AbstractAssetFinder";
 import AssetPluginFinder from "./AssetPluginFinder";
+import {FileLayer, FileSpecificity, getFilePrecedence} from "./utils/filePrecedence";
 
-import localeFactory from "@cli/builders/locale";
+import localeFactory, {LocaleStructureValidator} from "@cli/builders/locale";
 import {isFileExtension} from "@cli/utils/path";
 
 import {ReadonlyConfig} from "@typing/config";
+import {EntrypointFile} from "@typing/entrypoint";
 import {
     Language,
     LanguageCodes,
-    LocaleBuilder,
+    LocaleBuilders,
     LocaleData,
     LocaleFileExtensions,
     LocaleKeys,
     LocaleStructure,
 } from "@typing/locale";
 
-export type LocaleBuilders = Map<Language, LocaleBuilder>;
+export type {LocaleBuilders} from "@typing/locale";
+
+const layerNames: Record<FileLayer, string> = {
+    [FileLayer.Plugin]: "plugin",
+    [FileLayer.Source]: "source",
+    [FileLayer.Shared]: "shared",
+    [FileLayer.App]: "app",
+    [FileLayer.AppSource]: "app source",
+};
+
+const specificityNames: Record<FileSpecificity, string> = {
+    [FileSpecificity.Generic]: "generic",
+    [FileSpecificity.Browser]: "browser-specific",
+};
 
 export default class extends AbstractAssetFinder {
     protected _plugin?: AssetPluginFinder;
     protected _builders?: LocaleBuilders;
+    protected _validator?: LocaleStructureValidator;
+    protected _validated = false;
 
     public constructor(config: ReadonlyConfig) {
         super(config);
@@ -66,6 +83,8 @@ export default class extends AbstractAssetFinder {
         return _.chain(Array.from(await this.plugin().files()))
             .groupBy(file => this.getLanguageFromFilename(file.file))
             .reduce((map, files, lang) => {
+                this.assertUniqueFiles(lang as Language, files);
+
                 const locale = localeFactory(lang as Language, this.config);
 
                 for (const {file} of files) {
@@ -85,6 +104,28 @@ export default class extends AbstractAssetFinder {
             .value();
     }
 
+    protected assertUniqueFiles(lang: Language, files: EntrypointFile[]): void {
+        const sources = new Map<string, EntrypointFile>();
+
+        for (const file of files) {
+            const {layer, order, specificity} = getFilePrecedence(file);
+            const source = [layer, order, specificity].join(":");
+            const duplicate = sources.get(source);
+
+            if (duplicate) {
+                throw new Error(
+                    `Locale "${lang}" has multiple ${specificityNames[specificity]} files in the ${layerNames[layer]} layer: "${duplicate.file}" and "${file.file}"`
+                );
+            }
+
+            sources.set(source, file);
+        }
+    }
+
+    protected getValidator(): LocaleStructureValidator {
+        return (this._validator ??= new LocaleStructureValidator(this.config.lang));
+    }
+
     protected getLanguageFromFilename(filename: string): Language {
         let {name} = path.parse(filename);
 
@@ -100,25 +141,34 @@ export default class extends AbstractAssetFinder {
     }
 
     public async builders(): Promise<LocaleBuilders> {
-        return (this._builders ??= await this.getBuilders());
+        if (this._builders) {
+            return this._builders;
+        }
+
+        return (this._builders = await this.getBuilders());
+    }
+
+    public async validate(): Promise<this> {
+        if (!this._validated) {
+            this.getValidator().validate(await this.builders());
+            this._validated = true;
+        }
+
+        return this;
     }
 
     public async keys(): Promise<LocaleKeys> {
         const builders = await this.builders();
+        const builder = this.getValidator().getDefaultBuilder(builders);
 
-        const keys = builders.values().reduce((keys, builder) => {
-            return keys.concat(...builder.keys());
-        }, [] as string[]);
-
-        return new Set(keys);
+        return builder?.keys() ?? new Set();
     }
 
     public async structure(): Promise<LocaleStructure> {
         const builders = await this.builders();
+        const builder = this.getValidator().getDefaultBuilder(builders);
 
-        return builders.values().reduce((structure, builder) => {
-            return _.merge(structure, builder.structure());
-        }, {} as LocaleStructure);
+        return builder?.structure() ?? {};
     }
 
     public async languages(): Promise<Set<Language>> {
@@ -135,6 +185,8 @@ export default class extends AbstractAssetFinder {
         this.plugin().clear();
 
         this._builders = undefined;
+        this._validator = undefined;
+        this._validated = false;
 
         return super.clear();
     }

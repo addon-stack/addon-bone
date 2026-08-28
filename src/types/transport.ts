@@ -1,8 +1,9 @@
 import {Required} from "utility-types";
 
 import {EntrypointOptions} from "@typing/entrypoint";
-import {Awaiter, DeepAsyncProxy} from "@typing/helpers";
+import {Awaiter} from "@typing/helpers";
 import {MessageSender, MessageSendOptions} from "@typing/message";
+import {RpcAsyncProxy} from "@typing/rpc";
 
 export type TransportType = ((...args: any[]) => Promise<any>) | {[key: string]: any | TransportType};
 
@@ -14,7 +15,7 @@ export type TransportName = Extract<keyof TransportDictionary, string>;
 
 export type TransportTarget<T extends TransportDictionary, K extends keyof T> = T[K];
 
-export type TransportProxyTarget<T extends TransportDictionary, K extends keyof T> = DeepAsyncProxy<T[K]>;
+export type TransportProxyTarget<T extends TransportDictionary, K extends keyof T> = RpcAsyncProxy<T[K]>;
 
 export interface TransportManager {
     add<K extends TransportName>(name: K, instance: TransportDictionary[K]): this;
@@ -33,11 +34,15 @@ export interface TransportMessageData {
     args: any[];
 }
 
-export interface TransportMessage {
-    send(data: TransportMessageData, options?: MessageSendOptions): any;
-
-    watch(handler: (data: TransportMessageData, sender: MessageSender) => any): void;
+export interface TransportReceiver {
+    watch(handler: (data: TransportMessageData, sender: MessageSender) => any): () => void;
 }
+
+export interface TransportSender {
+    send(data: TransportMessageData, options?: MessageSendOptions): any;
+}
+
+export interface TransportMessage extends TransportSender, TransportReceiver {}
 
 export interface TransportProvider<T extends TransportType> {
     get(): T;

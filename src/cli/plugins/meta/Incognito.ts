@@ -12,7 +12,7 @@ export default class extends AbstractMeta<ManifestIncognitoValue> {
         return this.config.incognito;
     }
 
-    protected isValid(value?: ManifestIncognitoValue): boolean {
+    protected isValid(value?: unknown): value is ManifestIncognito {
         return Object.values(ManifestIncognito).includes(value as ManifestIncognito);
     }
 }

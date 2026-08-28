@@ -1,21 +1,36 @@
-jest.mock("@adnbn/browser", () => ({
+jest.mock("@addon-core/browser", () => ({
     __esModule: true,
 
     throwRuntimeError: jest.fn(),
+    getManifest: jest.fn(() => ({manifest_version: 3, name: "Test extension", version: "1.0.0", permissions: []})),
     getManifestVersion: jest.fn(),
     isAvailableScripting: jest.fn(),
 
     browser: jest.fn(() => chrome),
+    isBackground: jest.fn(() => false),
     isManifestVersion3: jest.fn(() => true),
 
     hasOffscreen: jest.fn(),
+    getOffscreenContext: jest.fn(),
+    getOffscreenUrl: jest.fn(),
+    getOffscreenPath: jest.fn(),
+    hasOffscreenUrl: jest.fn(),
+    hasOffscreenPath: jest.fn(),
     closeOffscreen: jest.fn(),
     createOffscreen: jest.fn(),
 
     containsPermissions: jest.fn(() => true),
     requestPermissions: jest.fn(() => true),
+    onPermissionsAdded: jest.fn(() => jest.fn()),
+    onPermissionsRemoved: jest.fn(() => jest.fn()),
 
-    executeScript: chrome.scripting.executeScript,
+    getContexts: jest.fn(),
+    getAllFrames: jest.fn(),
+    getBrowserInfo: jest.fn(() => Promise.resolve({name: "Firefox", version: "153.0"})),
+
+    executeScript: (...args: Parameters<typeof chrome.scripting.executeScript>) => {
+        return chrome.scripting.executeScript(...args);
+    },
 
     sendMessage: (msg: any) => {
         return new Promise(resolve => {
@@ -45,4 +60,47 @@ jest.mock("nanoid", () => ({
 
 jest.mock("nanoid/non-secure", () => ({
     nanoid: jest.fn(() => "mocked-id"),
+}));
+
+jest.mock(
+    "@addon-core/storage",
+    () => {
+        type Unsubscribe = () => void;
+        type WatchMap = Record<string, (value: any) => void>;
+
+        const createMockStorage = () => {
+            const store = new Map<string, any>();
+            let watchers: WatchMap = {};
+
+            const get = jest.fn(async (key: string) => store.get(key));
+            const set = jest.fn(async (key: string, value: any) => {
+                store.set(key, value);
+                const cb = watchers[key];
+                if (cb) cb(value);
+            });
+            const watch = jest.fn((map: WatchMap): Unsubscribe => {
+                watchers = map;
+                return () => {
+                    watchers = {};
+                };
+            });
+
+            return {get, set, watch};
+        };
+
+        return {
+            __esModule: true,
+            Storage: {
+                Local: () => createMockStorage(),
+                Sync: () => createMockStorage(),
+                Session: () => createMockStorage(),
+            },
+        };
+    },
+    {virtual: true}
+);
+
+jest.mock("@main/env", () => ({
+    ...jest.requireActual("@main/env"),
+    isBrowser: jest.fn().mockReturnValue(false),
 }));

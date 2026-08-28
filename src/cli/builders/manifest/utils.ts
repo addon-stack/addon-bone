@@ -1,9 +1,10 @@
 import _ from "lodash";
+import {DataCollectionPermission, DataCollectionPermissions} from "@typing/browser";
 
 import {ManifestAccessibleResource, ManifestMatchSchemes, ManifestSpecialSchemes} from "@typing/manifest";
 
-type ManifestPermissions = chrome.runtime.ManifestPermissions;
-type ManifestOptionalPermissions = chrome.runtime.ManifestOptionalPermissions;
+type ManifestPermissions = chrome.runtime.ManifestPermission;
+type ManifestOptionalPermissions = chrome.runtime.ManifestOptionalPermission;
 
 type Permission = ManifestPermissions | ManifestOptionalPermissions;
 /**
@@ -12,6 +13,13 @@ type Permission = ManifestPermissions | ManifestOptionalPermissions;
  * @param permissions - Set of permissions to filter
  * @returns New set of permissions adapted for Manifest V2
  */
+export const filterPermissions = <T extends Permission>(permissions: Set<T>): Set<T> => {
+    if (permissions.has("tabs" as T)) {
+        permissions.delete("activeTab" as T);
+    }
+    return permissions;
+};
+
 export const filterPermissionsForMV2 = <T extends Permission>(permissions: Set<T>): Set<T> => {
     const filteredPermissions = new Set(permissions);
 
@@ -34,7 +42,7 @@ export const filterPermissionsForMV2 = <T extends Permission>(permissions: Set<T
 
     filteredPermissions.delete("offscreen" as T);
 
-    return filteredPermissions;
+    return filterPermissions(filteredPermissions);
 };
 
 export const filterPermissionsForMV3 = <T extends Permission>(permissions: Set<T>): Set<T> => {
@@ -52,7 +60,15 @@ export const filterPermissionsForMV3 = <T extends Permission>(permissions: Set<T
     filteredPermissions.delete("webRequestAuthProvider" as T);
     filteredPermissions.delete("webRequestBlocking" as T);
 
-    return filteredPermissions;
+    return filterPermissions(filteredPermissions);
+};
+
+export const filterOptionalPermissions = <O extends ManifestOptionalPermissions, R extends ManifestPermissions>(
+    optional: Set<O>,
+    required: Set<R>
+): O[] => {
+    const allPermissions = filterPermissions(new Set([...optional, ...required]));
+    return _.difference(Array.from(allPermissions), Array.from(required)) as O[];
 };
 
 export const filterHostPatterns = (patterns: Set<string>): Set<string> => {
@@ -202,7 +218,7 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
         if (entry.matches.includes("<all_urls>") || entry.matches.includes("*://*/*")) {
             for (const other of result) {
                 if (other === entry) continue;
-                // збігаються усі крім resources → можна чистити resources
+
                 if (
                     _.isEqual(other.matches, entry.matches) ||
                     other.useDynamicUrl !== entry.useDynamicUrl ||
@@ -245,4 +261,46 @@ export const mergeWebAccessibleResources = (resources: ManifestAccessibleResourc
         });
 
     return result;
+};
+
+/**
+ * Normalizes data collection permissions for the manifest.
+ *
+ * - Removes duplicate permissions.
+ * - Filters out invalid permissions not present in DataCollectionPermission enum.
+ * - Sets "none" as default if required permissions are empty.
+ * - Removes "none" if real permissions are added to required.
+ * - Removes "none" from optional permissions.
+ * - Removes any permission from optional if it's already in required.
+ * - Sorts both required and optional permissions alphabetically.
+ *
+ * @param permissions - The permissions object to normalize.
+ */
+export const normalizeDataCollectionPermissions = (
+    permissions?: DataCollectionPermissions
+): DataCollectionPermissions => {
+    const validPermissions = Object.values(DataCollectionPermission) as string[];
+
+    let required = _.uniq(permissions?.required || []).filter(
+        p => (p as string) === "none" || validPermissions.includes(p as string)
+    );
+
+    let optional = _.uniq(permissions?.optional || []).filter(
+        p => (p as string) !== "none" && validPermissions.includes(p as string)
+    );
+
+    if (required.length === 0) {
+        required = ["none" as any];
+    }
+
+    if (required.length > 1 && required.includes("none" as any)) {
+        required = _.without(required, "none" as any);
+    }
+
+    optional = _.difference(optional, required);
+
+    return {
+        required: required.toSorted() as DataCollectionPermissions["required"],
+        optional: optional.length > 0 ? (optional.toSorted() as DataCollectionPermissions["optional"]) : undefined,
+    };
 };

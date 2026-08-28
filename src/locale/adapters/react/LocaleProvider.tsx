@@ -10,31 +10,46 @@ import {Language} from "@typing/locale";
 
 export interface LocaleProviderProps {
     storage?: string | false;
+    container?: string | Element | false;
 }
 
-const LocaleProvider = ({children, storage}: PropsWithChildren<LocaleProviderProps>) => {
+const LocaleProvider = ({children, storage, container = "html"}: PropsWithChildren<LocaleProviderProps>) => {
     const locale = useMemo(() => new DynamicLocale(storage), []);
+    const langs = useMemo(() => locale.languageNames(), [locale]);
 
     const [lang, setLang] = useState<Language>(locale.lang());
 
-    const _: LocaleContract["_"] = useCallback((key, substitutions): string => {
-        return locale.trans(key, substitutions);
+    const t: LocaleContract["t"] = useCallback((key, ...args): string => {
+        return locale.trans(key, ...args);
     }, []);
 
-    const choice: LocaleContract["choice"] = useCallback((key, count, substitutions): string => {
-        return locale.choice(key, count, substitutions);
+    const choice: LocaleContract["choice"] = useCallback((key, count, ...args): string => {
+        return locale.choice(key, count, ...args);
     }, []);
 
     const change: LocaleContract["change"] = useCallback((lang): void => {
-        locale.change(lang).catch(err => console.error(`Cannot find locale file for "${lang}" language`, err));
+        locale
+            .change(lang)
+            .catch(err => console.error(`[LocaleProvider] Cannot find locale file for "${lang}" language`, err));
     }, []);
 
     useEffect(() => {
-        const html = document.querySelector("html");
+        if (container === false) {
+            return;
+        }
 
-        html?.setAttribute("lang", lang);
-        html?.setAttribute("dir", getLocaleDir(lang));
-    }, [lang]);
+        const element = typeof container === "string" ? document.querySelector(container) : container;
+
+        if (element) {
+            element.setAttribute("lang", lang);
+            element.setAttribute("dir", getLocaleDir(lang));
+
+            return () => {
+                element.removeAttribute("lang");
+                element.removeAttribute("dir");
+            };
+        }
+    }, [lang, container]);
 
     useEffect(() => {
         locale.sync().then(lang => setLang(lang));
@@ -47,10 +62,11 @@ const LocaleProvider = ({children, storage}: PropsWithChildren<LocaleProviderPro
     return (
         <LocaleContext.Provider
             value={{
-                _,
+                t,
                 choice,
                 change,
                 lang,
+                langs,
                 dir: getLocaleDir(lang),
                 isRtl: isLocaleRtl(lang),
             }}

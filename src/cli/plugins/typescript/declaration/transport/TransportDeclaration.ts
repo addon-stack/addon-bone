@@ -8,6 +8,7 @@ export enum TransportDeclarationLayer {
     Service = "service",
     Offscreen = "offscreen",
     Relay = "relay",
+    Sandbox = "sandbox",
 }
 
 export default class<T extends Record<string, string> = Record<string, string>> extends FileBuilder {
@@ -48,7 +49,7 @@ export default class<T extends Record<string, string> = Record<string, string>> 
         return this.readFile()
             .replaceAll(":layer", this.layer)
             .replaceAll("Layer", _.upperFirst(this.layer))
-            .replace(`{ [name: string]: any }`, `{\n\t\t${type}\n\t}`);
+            .replaceAll("__TRANSPORT_DICTIONARY__", type);
     }
 
     public dictionary(dictionary: T): this {

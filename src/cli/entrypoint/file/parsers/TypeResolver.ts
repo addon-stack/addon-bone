@@ -41,7 +41,7 @@ export default class TypeResolver {
         }
 
         // fallback: use textual representation
-        return typeNode.getText();
+        return this.normalizeSourceTypeText(typeNode.getText());
     }
 
     /**
@@ -347,6 +347,13 @@ export default class TypeResolver {
         }
 
         return name.getText();
+    }
+
+    /**
+     * Normalizes raw TypeScript source text before it enters generated declarations.
+     */
+    private normalizeSourceTypeText(text: string): string {
+        return text.replace(/\s+/g, " ").trim();
     }
 
     /**

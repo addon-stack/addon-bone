@@ -1,10 +1,10 @@
 import z from "zod";
 
-import ViewParser from "./ViewParser";
+import ViewCspParser from "./ViewCspParser";
 
 import {OffscreenEntrypointOptions, OffscreenReason} from "@typing/offscreen";
 
-export default class extends ViewParser<OffscreenEntrypointOptions> {
+export default class extends ViewCspParser<OffscreenEntrypointOptions> {
     protected definition(): string {
         return "defineOffscreen";
     }

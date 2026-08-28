@@ -1,5 +1,6 @@
 import {ContentScriptEntrypointOptions} from "@typing/content";
 import {EntrypointFile} from "@typing/entrypoint";
+import {ManifestOptionalPermissions, ManifestPermissions} from "@typing/manifest";
 
 export interface ContentItem<O extends ContentScriptEntrypointOptions> {
     file: EntrypointFile;
@@ -16,6 +17,10 @@ export interface ContentNameGenerator<O extends ContentScriptEntrypointOptions> 
 
 export interface ContentDriver<O extends ContentScriptEntrypointOptions> {
     items(): Promise<ContentItems<O>>;
+
+    permissions(): Promise<ManifestPermissions>;
+
+    optionalPermissions(): Promise<ManifestOptionalPermissions>;
 }
 
 export interface ContentProvider<O extends ContentScriptEntrypointOptions> {

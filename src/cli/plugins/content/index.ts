@@ -1,4 +1,4 @@
-import {Configuration as RspackConfig, DefinePlugin} from "@rspack/core";
+import {Configuration as RspackConfig, DefinePlugin, NormalModule} from "@rspack/core";
 import {merge as mergeConfig} from "webpack-merge";
 
 import ContentManager from "./ContentManager";
@@ -9,10 +9,10 @@ import RelayDeclaration from "./RelayDeclaration";
 import {definePlugin} from "@main/plugin";
 
 import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
+import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
 
 import {Command} from "@typing/app";
-import {RelayMethod, RelayOptions} from "@typing/relay";
-import {ContentScriptDeclarative} from "@typing/content";
+import {RelayOptions} from "@typing/relay";
 
 export default definePlugin(() => {
     let content: Content;
@@ -62,21 +62,35 @@ export default definePlugin(() => {
                     });
                 }
 
+                const entryTypeFilter = onlyViaTopLevelEntry(["content", "relay"]);
+
                 rspack = {
                     plugins: [plugin],
                     optimization: {
                         splitChunks: {
                             cacheGroups: {
-                                frameworkContent: {
+                                adnbnContent: {
                                     minChunks: 2,
                                     name: manager.chunkName(),
-                                    test: onlyViaTopLevelEntry(["content", "relay"]),
+                                    test: (module, context) => {
+                                        const nm = module as NormalModule;
+
+                                        if (!nm.resource) {
+                                            return false;
+                                        }
+
+                                        if (nm.resource.startsWith(getResolvePath(getSourcePath(config)))) {
+                                            return false;
+                                        }
+
+                                        return entryTypeFilter(module, context);
+                                    },
                                     chunks: (chunk): boolean => {
                                         return manager.likely(chunk.name);
                                     },
                                     enforce: false,
                                     reuseExistingChunk: true,
-                                    priority: 10,
+                                    priority: 20,
                                 },
                             },
                         },
@@ -97,15 +111,9 @@ export default definePlugin(() => {
             manifest
                 .setContentScripts(await manager.manifest())
                 .appendHostPermissions(await manager.hostPermissions())
-                .appendOptionalHostPermissions(await manager.optionalHostPermissions());
-
-            if ((await relay.exists()) && (await relay.hasMethod(RelayMethod.Scripting))) {
-                if (await relay.hasDeclarative(ContentScriptDeclarative.Required)) {
-                    manifest.addPermission("scripting");
-                } else if (await relay.hasDeclarative(ContentScriptDeclarative.Optional)) {
-                    manifest.addOptionalPermission("scripting");
-                }
-            }
+                .appendOptionalHostPermissions(await manager.optionalHostPermissions())
+                .appendPermissions(await manager.permissions())
+                .appendOptionalPermissions(await manager.optionalPermissions());
         },
     };
 });

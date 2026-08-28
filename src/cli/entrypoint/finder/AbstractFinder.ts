@@ -1,19 +1,13 @@
-import _ from "lodash";
 import path from "path";
 import fs from "fs";
 import {createRequire} from "module";
 import {fileURLToPath} from "url";
 
+import {compareFilePrecedence} from "./utils/filePrecedence";
+
 import {toPosixPath} from "@cli/utils/path";
 import {isFile} from "@cli/utils/fs";
-import {
-    getAppPath,
-    getAppSourcePath,
-    getResolvePath,
-    getSharedPath,
-    getSourcePath,
-    resolveRootPath,
-} from "@cli/resolvers/path";
+import {getResolvePath, getSourcePath, resolveRootPath} from "@cli/resolvers/path";
 import {resolveAssetsPath, resolveEntrypointPath} from "@cli/entrypoint/utils";
 
 import {ReadonlyConfig} from "@typing/config";
@@ -24,19 +18,9 @@ export default abstract class implements EntrypointFinder {
 
     private readonly require = createRequire(import.meta.url);
 
-    protected readonly priorityDirectories: string[];
-
     protected abstract getFiles(): Promise<Set<EntrypointFile>>;
 
-    protected constructor(protected readonly config: ReadonlyConfig) {
-        this.priorityDirectories = [
-            "node_modules",
-            getSourcePath(config),
-            getSharedPath(config),
-            getAppPath(config),
-            getAppSourcePath(config),
-        ];
-    }
+    protected constructor(protected readonly config: ReadonlyConfig) {}
 
     public clear(): this {
         this._files = undefined;
@@ -49,15 +33,14 @@ export default abstract class implements EntrypointFinder {
             return this._files;
         }
 
-        const files = Array.from(await this.getFiles()).toSorted((a, b) => {
-            const priorityA = this.priority(a);
-            const priorityB = this.priority(b);
+        const files = Array.from(await this.getFiles()).sort((a, b) => {
+            const precedence = compareFilePrecedence(a, b);
 
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
+            if (precedence !== 0) {
+                return precedence;
             }
 
-            return a.file.length - b.file.length;
+            return this.sortKey(a).localeCompare(this.sortKey(b));
         });
 
         return (this._files = new Set(files));
@@ -133,7 +116,7 @@ export default abstract class implements EntrypointFinder {
         }
     }
 
-    protected priority(file: EntrypointFile): number {
-        return _.findIndex(this.priorityDirectories, dir => file.file.includes(dir));
+    protected sortKey(file: EntrypointFile): string {
+        return toPosixPath(file.import || file.file);
     }
 }

@@ -1,74 +1,103 @@
 import {LocaleNativeStructure, NativeLocale} from "@locale/providers";
 import {convertLocaleMessageKey, extractLocaleKey} from "@locale/utils";
-import {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionsFor} from "@typing/locale";
+import {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionArgs} from "@typing/locale";
 
 /**
- * Translates a given locale key into the corresponding localized string.
+ * Translates a non-plural locale key.
  *
- * @template K - A type representing the non-plural keys of the locale structure.
- * @param {K} key - The locale key to be translated.
- * @param {LocaleSubstitutionsFor<LocaleNativeStructure, K>} [substitutions] - Optional substitutions to be applied
- * within the localized string. These are typically placeholders replaced with dynamic values.
- * @returns {string} - The translated string for the given key, with substitutions applied if provided.
+ * Substitutions are type-checked from the generated locale structure:
+ * keys without placeholders do not accept substitutions, while keys with
+ * placeholders require all declared substitution values.
+ *
+ * @example
+ * ```ts
+ * t("app.name");
+ * t("app.greeting", {name: "Alice"});
+ * ```
+ *
+ * @param key - The locale key to translate.
+ * @param args
+ * @returns The translated string.
  */
-export const _ = <K extends LocaleNonPluralKeys<LocaleNativeStructure>>(
+export const t = <K extends LocaleNonPluralKeys<LocaleNativeStructure>>(
     key: K,
-    substitutions?: LocaleSubstitutionsFor<LocaleNativeStructure, K>
+    ...args: LocaleSubstitutionArgs<LocaleNativeStructure, K>
 ): string => {
-    return NativeLocale.getInstance().trans(key, substitutions);
+    return NativeLocale.getInstance().trans(key, ...args);
 };
 
 /**
- * Translates a given locale key into the corresponding localized string
- * based on a specific count for pluralization.
+ * Translates a plural locale key using the provided count.
  *
- * @template K - A type representing the non-plural keys of the locale structure.
- * @param {K} key - The locale key to be translated.
- * @param {number} count - The count used to determine the pluralization form.
- * @param {LocaleSubstitutionsFor<LocaleNativeStructure, K>} [substitutions] - Optional substitutions to be applied
- * within the localized string. These are typically placeholders replaced with dynamic values.
- * @returns {string} - The translated string for the given key, adjusted for pluralization and with substitutions applied if provided.
+ * Substitutions are type-checked from the generated locale structure:
+ * keys without placeholders do not accept substitutions, while keys with
+ * placeholders require all declared substitution values.
+ *
+ * @example
+ * ```ts
+ * choice("cart.items", count, {count});
+ * ```
+ *
+ * @param key - The locale key to translate.
+ * @param count - The count used to select the plural form.
+ * @param args
+ * @returns The translated string.
  */
-export const _c = <K extends LocalePluralKeys<LocaleNativeStructure>>(
+export const choice = <K extends LocalePluralKeys<LocaleNativeStructure>>(
     key: K,
     count: number,
-    substitutions?: LocaleSubstitutionsFor<LocaleNativeStructure, K>
+    ...args: LocaleSubstitutionArgs<LocaleNativeStructure, K>
 ): string => {
-    return NativeLocale.getInstance().choice(key, count, substitutions);
+    return NativeLocale.getInstance().choice(key, count, ...args);
 };
 
 /**
- * Converts a locale key into a standardized format and logs a warning if the key is not found
- * in the current language's locale keys.
+ * Converts a locale key to a browser message reference.
  *
- * @param {Extract<keyof LocaleNativeStructure, string>} key - The locale key to be converted.
- * This key must be a string and exist within the `LocaleNativeStructure`.
- * @returns {string} - The converted locale message key.
+ * This is useful for browser-managed extension fields that expect
+ * `__MSG_name__` references instead of already translated text.
+ *
+ * A warning is logged when the key does not exist in the generated locale keys.
+ *
+ * @example
+ * ```ts
+ * key("app.name"); // "__MSG_app_name__"
+ * ```
+ *
+ * @param value - The locale key to convert.
+ * @returns The browser message reference.
  */
-export const __ = (key: keyof LocaleNativeStructure & string): string => {
+export const key = (value: keyof LocaleNativeStructure & string): string => {
     const locale = NativeLocale.getInstance();
 
-    if (!locale.keys().has(key)) {
-        console.warn(`Locale key "${key}" not found in "${locale.lang()}" language.`);
+    if (!locale.keys().has(value)) {
+        console.warn(`Locale key "${value}" not found in "${locale.lang()}" language.`);
     }
 
-    return convertLocaleMessageKey(key);
+    return convertLocaleMessageKey(value);
 };
 
 /**
- * Attempts to extract a locale key from the provided string and translates it
- * into the corresponding localized string. If no locale key can be extracted,
- * the original string is returned.
+ * Resolves a string that may contain a locale marker.
  *
- * @param {string} input - The input string from which a locale key is to be extracted.
- * @returns {string} - The translated string if a locale key is successfully extracted,
- * or the original string if no locale key is found.
+ * When the input contains a locale marker, the marker is extracted and translated.
+ * Plain strings are returned unchanged.
+ *
+ * @example
+ * ```ts
+ * resolve("@app.name");
+ * resolve("Plain title");
+ * ```
+ *
+ * @param input - A plain string or a marked locale key string.
+ * @returns The translated text when a marker is found, otherwise the original input.
  */
-export const __t = (input: string): string => {
+export const resolve = (input: string): string => {
     const localeKey = extractLocaleKey(input);
 
     if (localeKey) {
-        return _(localeKey as LocaleNonPluralKeys<LocaleNativeStructure>);
+        // Markers are runtime strings without substitutions; keep t() strict for typed callers.
+        return (t as (key: string) => string)(localeKey);
     }
 
     return input;

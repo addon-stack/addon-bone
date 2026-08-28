@@ -9,13 +9,3 @@ export type PickNonFunctionProperties<T> = {
 export type ExcludeFunctionsFromProperties<T> = {
     [K in keyof T]: ExcludeFunction<T[K]>;
 };
-
-export type DeepAsyncProxy<T> = {
-    [K in keyof T]: T[K] extends (...args: any[]) => any
-        ? (...args: Parameters<T[K]>) => Promise<Awaited<ReturnType<T[K]>>>
-        : T[K] extends object
-          ? DeepAsyncProxyObject<T[K]>
-          : () => Promise<Awaited<T[K]>>;
-};
-
-export type DeepAsyncProxyObject<T> = (() => Promise<DeepAsyncProxy<T>>) & DeepAsyncProxy<T>;

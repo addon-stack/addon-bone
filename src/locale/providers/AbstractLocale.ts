@@ -1,31 +1,37 @@
 import {
     Language,
+    LanguageNames,
     LocaleNonPluralKeys,
     LocalePluralKeys,
     LocaleProvider,
     LocaleStructure,
-    LocaleSubstitutionsFor,
+    LocaleSubstitutionArgs,
+    LocaleSubstitutionValue,
     LocaleValuesSeparator,
 } from "@typing/locale";
 
-export default abstract class<S extends LocaleStructure> implements LocaleProvider<S> {
+export default abstract class<S extends object = LocaleStructure> implements LocaleProvider<S> {
     public abstract lang(): Language;
 
     public abstract keys(): Set<keyof S>;
 
     public abstract languages(): Set<Language>;
 
+    /** Returns native names for this provider's languages, preserving their order. */
+    public languageNames(): Map<Language, string> {
+        return new Map([...this.languages()].map(language => [language, LanguageNames[language]]));
+    }
+
     protected abstract value(key: keyof S & string): string | undefined;
 
-    public trans<K extends LocaleNonPluralKeys<S>>(key: K, substitutions?: LocaleSubstitutionsFor<S, K>): string {
+    public trans<K extends LocaleNonPluralKeys<S>>(key: K, ...args: LocaleSubstitutionArgs<S, K>): string {
+        const [substitutions] = args;
+
         return this.get(key, substitutions);
     }
 
-    public choice<K extends LocalePluralKeys<S>>(
-        key: K,
-        count: number,
-        substitutions?: LocaleSubstitutionsFor<S, K>
-    ): string {
+    public choice<K extends LocalePluralKeys<S>>(key: K, count: number, ...args: LocaleSubstitutionArgs<S, K>): string {
+        const [substitutions] = args;
         const parts = this.get(key, substitutions).split(LocaleValuesSeparator);
 
         const idx = this.getPluralIndex(count);
@@ -33,7 +39,7 @@ export default abstract class<S extends LocaleStructure> implements LocaleProvid
         return parts[idx] ?? parts[0] ?? (key as string);
     }
 
-    public get<K extends keyof S & string>(key: K, substitutions?: LocaleSubstitutionsFor<S, K>): string {
+    public get<K extends keyof S & string>(key: K, substitutions?: Record<string, LocaleSubstitutionValue>): string {
         const template = this.value(key);
 
         if (template === undefined) {
@@ -44,15 +50,17 @@ export default abstract class<S extends LocaleStructure> implements LocaleProvid
 
         if (substitutions) {
             return template.replace(/{{(.*?)}}/g, (_, placeholder: string) => {
-                if (placeholder in substitutions) {
-                    return substitutions[placeholder]!.toString();
+                const substitution = placeholder.trim();
+
+                if (substitution in substitutions) {
+                    return substitutions[substitution]!.toString();
                 }
 
                 console.warn(
-                    `Locale substitution "${placeholder}" not found for key "${key}" in "${this.lang()}" language.`
+                    `Locale substitution "${substitution}" not found for key "${key}" in "${this.lang()}" language.`
                 );
 
-                return placeholder;
+                return substitution;
             });
         }
 

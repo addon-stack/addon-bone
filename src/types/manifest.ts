@@ -2,11 +2,14 @@ import {ContentScriptConfig} from "@typing/content";
 import {BackgroundConfig} from "@typing/background";
 import {CommandConfig} from "@typing/command";
 import {Language} from "@typing/locale";
+import {BrowserSpecific, DataCollectionPermission} from "@typing/browser";
+import {CspConfig} from "@typing/csp";
+import {SandboxCspConfig} from "@typing/sandbox";
 
 type ManifestCommon = chrome.runtime.Manifest;
 type ManifestBase = chrome.runtime.ManifestBase;
-type ManifestPermission = chrome.runtime.ManifestPermissions;
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissions;
+type ManifestPermission = chrome.runtime.ManifestPermission;
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
 
 export const ManifestMatchSchemes: ReadonlySet<string> = new Set<string>(["http", "https", "file", "ftp", "ws", "wss"]);
 
@@ -60,6 +63,10 @@ export type FirefoxManifest = ChromeManifest & {
             strict_min_version?: string;
             strict_max_version?: string;
             update_url?: string;
+            data_collection_permissions?: {
+                required?: ["none"] | `${DataCollectionPermission}`[];
+                optional?: `${DataCollectionPermission}`[];
+            };
         };
         gecko_android?: {
             strict_min_version?: string;
@@ -79,14 +86,14 @@ export type SafariManifest = ChromeManifest & {
 
 export type Manifest = ChromeManifest | FirefoxManifest | SafariManifest;
 
+export type OptionalManifest = Partial<Omit<Manifest, "manifest_version">>;
+
 export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setName(name: string): this;
 
     setShortName(shortName?: string): this;
 
     setDescription(description?: string): this;
-
-    setEmail(email?: string): this;
 
     setAuthor(author?: string): this;
 
@@ -99,6 +106,11 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setMinimumVersion(minimumVersion?: string): this;
 
     setLocale(lang?: Language): this;
+
+    // Specific settings
+    setSpecific(settings?: BrowserSpecific): this;
+
+    mergeSpecific(settings: BrowserSpecific): this;
 
     // Icons
     setIcons(icons?: ManifestIcons): this;
@@ -115,6 +127,22 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setPopup(popup?: ManifestPopup): this;
 
     setSidebar(sidebar?: ManifestSidebar): this;
+
+    setOptions(options?: ManifestOptions): this;
+
+    // Sandbox
+    addSandbox(sandbox: ManifestSandbox): this;
+
+    appendSandboxes(sandboxes: Iterable<ManifestSandbox>): this;
+
+    addSandboxCsp(csp: SandboxCspConfig): this;
+
+    appendSandboxCsp(csps: Iterable<SandboxCspConfig>): this;
+
+    // Content Security Policy
+    addCsp(csp: CspConfig): this;
+
+    appendCsp(csps: Iterable<CspConfig>): this;
 
     // System
     setDependencies(dependencies: ManifestDependencies): this;
@@ -148,7 +176,7 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     appendOptionalHostPermissions(permissions: ManifestHostPermissions): this;
 
     // Web Accessible Resource
-    setManifestAccessibleResource(accessibleResources: ManifestAccessibleResources): this;
+    setAccessibleResource(accessibleResources: ManifestAccessibleResources): this;
 
     appendAccessibleResources(accessibleResources: ManifestAccessibleResources): this;
 
@@ -158,6 +186,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     // Getter
     get(): T;
+
+    raw(manifest: OptionalManifest): this;
 }
 
 type Entry = string;
@@ -208,6 +238,20 @@ export interface ManifestSidebar {
     path?: string;
 }
 
+export interface ManifestOptions {
+    /**
+     * Path to the options page HTML file relative to the extension root.
+     * Written to `options_ui.page` in the manifest.
+     */
+    path: string;
+    /**
+     * Whether the options page should open in a browser tab.
+     * Written to `options_ui.open_in_tab` and defaults to `true` when omitted.
+     * Set to `false` to request an embedded page where supported by the browser.
+     */
+    openInTab?: boolean;
+}
+
 export interface ManifestAccessibleResource {
     resources: string[];
     matches?: string[];
@@ -216,6 +260,10 @@ export interface ManifestAccessibleResource {
 }
 
 export type ManifestAccessibleResources = Set<ManifestAccessibleResource>;
+
+export type ManifestSandbox = string;
+
+export type ManifestSandboxes = Set<ManifestSandbox>;
 
 export interface ManifestDependency {
     js: Set<string>;

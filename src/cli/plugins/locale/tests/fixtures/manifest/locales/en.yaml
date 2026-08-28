@@ -1,0 +1,4 @@
+app:
+    name: My App
+    short_name: Short
+    description: My app description

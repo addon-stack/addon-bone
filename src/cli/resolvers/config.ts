@@ -4,38 +4,69 @@ import {loadConfig} from "c12";
 import _ from "lodash";
 
 import {
-    assetPlugin,
-    backgroundPlugin,
-    bundlerPlugin,
-    contentPlugin,
-    dotenvPlugin,
-    htmlPlugin,
-    iconPlugin,
-    localePlugin,
-    metaPlugin,
-    offscreenPlugin,
-    optimizationPlugin,
-    outputPlugin,
-    pagePlugin,
-    popupPlugin,
-    publicPlugin,
-    reactPlugin,
-    sidebarPlugin,
-    stylePlugin,
-    typescriptPlugin,
-    versionPlugin,
-    viewPlugin,
+    pluginAsset,
+    pluginBackground,
+    pluginBundler,
+    pluginContent,
+    pluginDotenv,
+    pluginHtml,
+    pluginIcon,
+    pluginLocale,
+    pluginMeta,
+    pluginOffscreen,
+    pluginManifest,
+    pluginOptimization,
+    pluginOptions,
+    pluginOutput,
+    pluginPage,
+    pluginPopup,
+    pluginPublic,
+    pluginReact,
+    pluginSandbox,
+    pluginSidebar,
+    pluginStyle,
+    pluginTypescript,
+    pluginVersion,
+    pluginView,
 } from "../plugins";
 
 import {fromRootPath, getAppPath, getAppSourcePath, getConfigFile} from "../resolvers/path";
 
-import {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
-import {Command, Mode} from "@typing/app";
+import type {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
+import {Command, Mode, Workspace} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {Plugin} from "@typing/plugin";
 import {ManifestVersion} from "@typing/manifest";
-import {Language} from "@typing/locale";
+import {Language, LanguageCodes} from "@typing/locale";
 import {DefaultIconGroupName} from "@typing/icon";
+
+const resolveLanguage = (lang?: `${Language}` | Language): Language => {
+    if (!lang) {
+        return Language.English;
+    }
+
+    if (LanguageCodes.has(lang)) {
+        return lang as Language;
+    }
+
+    throw new Error(`Invalid language "${lang}" provided by config`);
+};
+
+const resolveWorkspace = (workspace?: Workspace | `${Workspace}`): Workspace => {
+    if (!workspace) {
+        return Workspace.Single;
+    }
+
+    if (Object.values(Workspace).includes(workspace as Workspace)) {
+        return workspace as Workspace;
+    }
+
+    throw new Error(`Invalid workspace "${workspace}" provided by config`);
+};
+
+const resolveSharedDir = (workspace: Workspace, sharedDir: string): string => {
+    return workspace === Workspace.Multi ? sharedDir : ".";
+};
 
 const getUserConfig = async (config: ReadonlyConfig): Promise<UserConfig> => {
     const configFilePath = getConfigFile(config);
@@ -134,7 +165,7 @@ const updateLocalDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
 };
 
 const loadDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
-    const {mode, browser} = config;
+    const {mode, browser, debug} = config;
 
     const preset = [
         `.env.${mode}.${browser}.local`,
@@ -153,7 +184,7 @@ const loadDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
 
     const paths = [...appSourcePaths, ...appPaths, ...rootPaths];
 
-    const {parsed: fileVars = {}} = dotenv.config({path: paths});
+    const {parsed: fileVars = {}} = dotenv.config({path: paths, quiet: !debug});
 
     return {...fileVars, ...updateLocalDotenv(config)};
 };
@@ -171,11 +202,12 @@ export default async (config: OptionalConfig): Promise<Config> => {
         version = "VERSION",
         minimumVersion = "MINIMUM_VERSION",
         author = undefined,
-        email = "EMAIL",
         homepage = "HOMEPAGE",
         icon = DefaultIconGroupName,
         lang = Language.English,
         incognito,
+        specific,
+        workspace = Workspace.Single,
         rootDir = ".",
         outDir = "dist",
         srcDir = "src",
@@ -193,6 +225,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         html = [],
         bundler = {},
         env = {},
+        manifest,
         manifestVersion = (new Set<Browser>([Browser.Safari]).has(browser) ? 2 : 3) as ManifestVersion,
         mode = Mode.Development,
         analyze = false,
@@ -213,6 +246,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         mergeRelay = false,
         mergeService = false,
         mergeOffscreen = false,
+        mergeSandbox = false,
         commonChunks = true,
         artifactName = "[name]-[browser]-[mv]",
         assetsFilename = mode === Mode.Production && command === Command.Build && !debug
@@ -240,13 +274,15 @@ export default async (config: OptionalConfig): Promise<Config> => {
         shortName,
         version,
         minimumVersion,
-        email,
         author,
         homepage,
-        lang,
+        lang: resolveLanguage(lang),
         icon,
         incognito,
+        specific,
+        manifest,
         manifestVersion,
+        workspace: resolveWorkspace(workspace),
         rootDir,
         outDir,
         srcDir,
@@ -283,6 +319,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         mergeRelay,
         mergeService,
         mergeOffscreen,
+        mergeSandbox,
         commonChunks,
         artifactName,
         assetsFilename,
@@ -293,9 +330,23 @@ export default async (config: OptionalConfig): Promise<Config> => {
 
     let vars = loadDotenv(resolvedConfig);
 
-    const {plugins: userPlugins = [], ...userConfig} = await getUserConfig(resolvedConfig);
+    const {
+        plugins: userPlugins = [],
+        lang: userLang,
+        workspace: userWorkspace,
+        ...userConfig
+    } = await getUserConfig(resolvedConfig);
 
-    resolvedConfig = validateConfig({...resolvedConfig, ...userConfig});
+    resolvedConfig = {
+        ...resolvedConfig,
+        ...userConfig,
+        lang: resolveLanguage(userLang ?? resolvedConfig.lang),
+        workspace: resolveWorkspace(userWorkspace ?? resolvedConfig.workspace),
+    };
+
+    resolvedConfig.sharedDir = resolveSharedDir(resolvedConfig.workspace, resolvedConfig.sharedDir);
+
+    resolvedConfig = validateConfig(resolvedConfig);
 
     vars = {...vars, ...loadDotenv(resolvedConfig)};
 
@@ -305,27 +356,30 @@ export default async (config: OptionalConfig): Promise<Config> => {
      * Reordering may result in missing artifacts, incorrect configuration, or build failures.
      */
     const corePlugins: Plugin[] = [
-        dotenvPlugin(vars),
-        outputPlugin(),
-        optimizationPlugin(),
-        typescriptPlugin(),
-        reactPlugin(),
-        iconPlugin(),
-        assetPlugin(),
-        stylePlugin(),
-        localePlugin(),
-        metaPlugin(),
-        contentPlugin(),
-        backgroundPlugin(),
-        popupPlugin(),
-        publicPlugin(),
-        sidebarPlugin(),
-        offscreenPlugin(),
-        pagePlugin(),
-        viewPlugin(),
-        htmlPlugin(),
-        versionPlugin(),
-        bundlerPlugin(),
+        pluginDotenv(vars),
+        pluginOutput(),
+        pluginOptimization(),
+        pluginTypescript(),
+        pluginReact(),
+        pluginIcon(),
+        pluginAsset(),
+        pluginStyle(),
+        pluginLocale(),
+        pluginMeta(),
+        pluginContent(),
+        pluginBackground(),
+        pluginOptions(),
+        pluginPopup(),
+        pluginPublic(),
+        pluginSidebar(),
+        pluginOffscreen(),
+        pluginSandbox(),
+        pluginPage(),
+        pluginView(),
+        pluginHtml(),
+        pluginVersion(),
+        pluginBundler(),
+        pluginManifest(),
     ];
 
     return {

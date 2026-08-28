@@ -1,4 +1,4 @@
-import {getUrl} from "@adnbn/browser";
+import {getUrl} from "@addon-core/browser";
 
 import {PageConfig, PageDefinition, PageProps} from "@typing/page";
 

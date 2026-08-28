@@ -1,8 +1,8 @@
 import ProxyOffscreen from "@offscreen/providers/ProxyOffscreen";
 
 import {type OffscreenDefinition, OffscreenReason, type OffscreenUnresolvedDefinition} from "@typing/offscreen";
-import {TransportDictionary, TransportType} from "@typing/transport";
-import {DeepAsyncProxy} from "@typing/helpers";
+import type {OffscreenName, OffscreenProxyTarget} from "@offscreen/index";
+import type {TransportType} from "@typing/transport";
 
 type OffscreenParameters = chrome.offscreen.CreateParameters;
 
@@ -31,14 +31,12 @@ export const getOffscreens = (): OffscreenMap => {
     return offscreens;
 };
 
-export const getOffscreen = <N extends Extract<keyof TransportDictionary, string>>(
-    name: N
-): DeepAsyncProxy<TransportDictionary[N]> => {
+export const getOffscreen = <N extends OffscreenName>(name: N): OffscreenProxyTarget<N> => {
     const parameters = getOffscreens().get(name);
 
     if (!parameters) {
         throw new Error(`Unable to get offscreen: ${name}`);
     }
 
-    return ProxyOffscreen.getInstance(name, parameters).get();
+    return new ProxyOffscreen(name, parameters).get();
 };

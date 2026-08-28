@@ -6,6 +6,7 @@ describe("CustomLocale", () => {
     const mockMessages = {
         title: "Adnbn",
         greeting: "Hello {{name}}",
+        spacedGreeting: "Hello {{ name }}",
         empty: "",
     };
 
@@ -40,6 +41,14 @@ describe("CustomLocale", () => {
         expect(locale.lang()).toBe(Language.English);
     });
 
+    test("languageNames() - follows the provider's languages", () => {
+        locale.setLang(Language.French);
+        expect(locale.languageNames()).toEqual(new Map([[Language.French, "Français"]]));
+
+        locale.setLang(Language.Ukrainian);
+        expect(locale.languageNames()).toEqual(new Map([[Language.Ukrainian, "Українська"]]));
+    });
+
     describe("trans()", () => {
         test("returned the correct message if key exists and is non-empty", () => {
             expect(locale.trans("title" as never)).toBe("Adnbn");
@@ -47,6 +56,10 @@ describe("CustomLocale", () => {
 
         test("returned the correct message with substitutions", () => {
             expect(locale.trans("greeting" as never, {name: "Alice"})).toBe("Hello Alice");
+        });
+
+        test("returned the correct message with spaced substitutions", () => {
+            expect(locale.trans("spacedGreeting" as never, {name: "Alice"})).toBe("Hello Alice");
         });
 
         test("returned placeholder name if substitution is missing", () => {
@@ -58,9 +71,9 @@ describe("CustomLocale", () => {
             expect(consoleWarnSpy).toHaveBeenCalledWith('Locale key "test" not found in "en" language.');
         });
 
-        test("returned key instead value if message is empty", () => {
-            expect(locale.trans("empty" as never)).toBe("empty");
-            expect(consoleWarnSpy).toHaveBeenCalledWith('Locale key "empty" not found in "en" language.');
+        test("returned empty value if message is empty", () => {
+            expect(locale.trans("empty" as never)).toBe("");
+            expect(consoleWarnSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -120,11 +133,11 @@ describe("CustomLocale", () => {
             });
         });
 
-        test("languages with 3 plural forms - Croatian, Russian, Serbian, Ukrainian", () => {
-            const arr = ["машина", "машини", "машин"];
+        test("languages with 3 plural forms - Russian", () => {
+            const arr = ["машина", "машины", "машин"];
             const messages = {[key]: arr.join(LocaleValuesSeparator)};
 
-            locale.setLang(Language.Ukrainian).setData(messages);
+            locale.setLang(Language.Russian).setData(messages);
 
             // Last number 1 but not 11
             [1, 21, 31, 101].forEach(item => {
@@ -266,7 +279,7 @@ describe("CustomLocale", () => {
             // For only 2
             expect(locale.choice(key, 2)).toBe(arr[2]);
 
-            // last two numbers  3<= and >=10
+            // last two numbers 3<= and >=10
             [3, 4, 5, 10, 106, 107, 108, 110].forEach(item => {
                 expect(locale.choice(key, item)).toBe(arr[3]);
             });

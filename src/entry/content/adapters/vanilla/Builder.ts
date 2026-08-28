@@ -1,4 +1,4 @@
-import {isValidContentScriptRenderValue} from "../../core/resolvers/render";
+import {isValidContentScriptRenderValue} from "../../core/resolvers";
 
 import MountBuilder from "../../core/MountBuilder";
 import EventNode from "../../core/EventNode";

@@ -4,7 +4,7 @@ import {getEnv} from "@main/env";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-export default abstract class AbstractMeta<V extends string = string> {
+export default abstract class AbstractMeta<V = string> {
     public static value<T extends AbstractMeta<any>>(
         this: new (config: ReadonlyConfig) => T,
         config: ReadonlyConfig
@@ -19,22 +19,22 @@ export default abstract class AbstractMeta<V extends string = string> {
     public getResolved(): V | undefined {
         const value = this.getValue();
 
-        let resolved = _.isFunction(value) ? value() : value;
+        const resolved = _.isFunction(value) ? value() : value;
 
         if (this.isValid(resolved)) {
             return resolved;
         }
 
         if (_.isString(resolved)) {
-            resolved = getEnv(resolved);
+            const valueFromEnv = getEnv(resolved);
 
-            if (this.isValid(resolved)) {
-                return resolved;
+            if (this.isValid(valueFromEnv)) {
+                return valueFromEnv;
             }
         }
     }
 
-    protected isValid(value?: V): boolean {
+    protected isValid(value?: unknown): value is V {
         return true;
     }
 }

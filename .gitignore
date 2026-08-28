@@ -2,6 +2,10 @@
 .env
 .env.*
 .idea
+.agents
+.codex
+.claude
+skills-lock.json
 .output
 addon
 *.log
@@ -15,4 +19,6 @@ TODOs.md
 stats.html
 .tool-versions
 .cache
+/tests/integration/browser/offscreen-service/.adnbn/
 *-stats.txt
+.npmrc

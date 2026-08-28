@@ -2,14 +2,15 @@ import fs, {Dirent} from "fs";
 import path from "path";
 import pluralize from "pluralize";
 
-import AbstractOptionsFinder from "./AbstractOptionsFinder";
+import AbstractParsedFinder from "./AbstractParsedFinder";
+import {FileLayer, setFilePrecedence} from "./utils/filePrecedence";
 
 import {getAppSourcePath, getSharedPath} from "@cli/resolvers/path";
 
 import {EntrypointFile, EntrypointFileExtensions, EntrypointOptions} from "@typing/entrypoint";
 import {ReadonlyConfig} from "@typing/config";
 
-export default abstract class<O extends EntrypointOptions> extends AbstractOptionsFinder<O> {
+export default abstract class<O extends EntrypointOptions> extends AbstractParsedFinder<O> {
     protected fileExtensionsPattern: string;
 
     protected possibleIndexFiles: Set<string>;
@@ -38,6 +39,10 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
 
         const appFiles = this.findFiles(getAppSourcePath(this.config));
 
+        for (const file of appFiles) {
+            setFilePrecedence(file, {layer: FileLayer.AppSource});
+        }
+
         if (appFiles.size > 0) {
             files = appFiles;
 
@@ -48,6 +53,10 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
 
         if ((appFiles.size > 0 && this.canMerge()) || appFiles.size === 0) {
             const sharedFiles = this.findFiles(getSharedPath(this.config));
+
+            for (const file of sharedFiles) {
+                setFilePrecedence(file, {layer: FileLayer.Shared});
+            }
 
             if (sharedFiles.size > 0) {
                 files = new Set([...files, ...sharedFiles]);
@@ -65,9 +74,10 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
         const entrypoint = this.type();
         const entrypointPluralize = pluralize(entrypoint);
 
-        const files: EntrypointFile[] = [];
+        const rootFiles: EntrypointFile[] = [];
+        const groupedFiles: EntrypointFile[] = [];
 
-        const finder = (dir: string): void => {
+        const collect = (dir: string, files: EntrypointFile[], collectGrouped: boolean): void => {
             let entries: Dirent[];
 
             try {
@@ -102,8 +112,8 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
                                 }
                             }
                         }
-                    } else if (entry.name === entrypointPluralize) {
-                        finder(fullPath);
+                    } else if (collectGrouped && entry.name === entrypointPluralize) {
+                        collect(fullPath, groupedFiles, false);
                     }
                 } else if (entry.isFile() && this.isValidFilename(entry.name)) {
                     files.push(this.file(fullPath));
@@ -111,25 +121,31 @@ export default abstract class<O extends EntrypointOptions> extends AbstractOptio
             }
         };
 
-        finder(directory);
+        collect(directory, rootFiles, true);
 
-        if (files.length === 0) {
-            try {
-                directory = path.join(directory, entrypoint);
+        if (groupedFiles.length > 0) {
+            return new Set(groupedFiles);
+        }
 
-                const stat = fs.statSync(directory);
+        if (rootFiles.length > 0) {
+            return new Set(rootFiles);
+        }
 
-                if (stat.isDirectory()) {
-                    finder(directory);
-                }
-            } catch (e) {
-                if (this.config.debug) {
-                    console.log("Error reading entrypoint directory:", directory);
-                }
+        try {
+            directory = path.join(directory, entrypoint);
+
+            const stat = fs.statSync(directory);
+
+            if (stat.isDirectory()) {
+                collect(directory, rootFiles, false);
+            }
+        } catch (e) {
+            if (this.config.debug) {
+                console.log("Error reading entrypoint directory:", directory);
             }
         }
 
-        return new Set(files);
+        return new Set(rootFiles);
     }
 
     protected isValidFilename(filename: string): boolean {

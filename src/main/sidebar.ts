@@ -1,6 +1,6 @@
-import {setSidebarPath, setSidebarTitle} from "@adnbn/browser";
+import {setSidebarPath, setSidebarTitle} from "@addon-core/browser";
 
-import {__t} from "@locale/helpers";
+import {resolve} from "@locale/helpers";
 
 import type {SidebarDefinition} from "@typing/sidebar";
 import type {ManifestSidebar} from "@typing/manifest";
@@ -50,6 +50,6 @@ export const changeSidebar = async (alias: SidebarAlias, tab?: number | Tab): Pr
     await setSidebarPath(path, tab);
 
     if (title) {
-        await setSidebarTitle(__t(title), tab);
+        await setSidebarTitle(resolve(title), tab);
     }
 };

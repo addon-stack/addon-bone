@@ -9,7 +9,9 @@ export {
     type LocaleProvider,
     type LocaleDynamicProvider,
     type LocaleKeys,
-    type LocaleSubstitutionsFor,
+    type LocaleSubstitutionArgs,
+    type LocaleSubstitutionKeys,
+    type LocaleSubstitutionValue,
     type LocaleNonPluralKeys,
     type LocalePluralKeys,
 } from "@typing/locale";

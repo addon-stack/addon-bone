@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+# Husky commit-msg hook: validate commit message with commitlint
+
+npx --no -- commitlint --edit "$1"

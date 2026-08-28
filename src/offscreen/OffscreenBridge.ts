@@ -1,6 +1,9 @@
-import {isBackground} from "@adnbn/browser";
+import {isBackground} from "@addon-core/browser";
 
 import {Message} from "@message/providers";
+import {ReadyFrame} from "@frame/index";
+
+import {OffscreenBridgeReadyMessageType} from "@typing/offscreen";
 
 type CreateParameters = chrome.offscreen.CreateParameters;
 
@@ -8,6 +11,10 @@ export default class OffscreenBridge {
     protected readonly key: string = "offscreen-background";
 
     protected readonly message = new Message();
+
+    protected readonly readyTimeout = 10000;
+
+    private readonly frames = new ReadyFrame();
 
     private static instance?: OffscreenBridge;
 
@@ -29,21 +36,17 @@ export default class OffscreenBridge {
         await this.message.send(this.key, parameters);
     }
 
-    protected apply({url}: CreateParameters): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            if (document.querySelector(`iframe[src="${url}"]`)) {
-                resolve();
-
-                return;
-            }
-
-            const iframe = document.createElement("iframe");
-
-            iframe.src = url;
-            iframe.onload = () => resolve();
-            iframe.onerror = () => reject();
-
-            document.body.appendChild(iframe);
+    protected async apply({url}: CreateParameters): Promise<void> {
+        await this.frames.make({
+            key: url,
+            url,
+            readyTimeout: this.readyTimeout,
+            isReady: (event, frame) =>
+                event.source === frame.contentWindow &&
+                event.origin === location.origin &&
+                event.data?.type === OffscreenBridgeReadyMessageType,
+            readyTimeoutMessage: () => `Offscreen iframe "${url}" was not ready in time.`,
+            loadErrorMessage: () => `Offscreen iframe failed to load: ${url}`,
         });
     }
 }

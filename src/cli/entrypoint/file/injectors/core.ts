@@ -1,8 +1,10 @@
 import {Command, Mode, PackageName} from "@typing/app";
 import {Browser} from "@typing/browser";
-import {RelayMethod} from "@typing/relay";
-import {ContentScriptAppend, ContentScriptDeclarative} from "@typing/content";
+import {RelayAllFrames, RelayMethod} from "@typing/relay";
+import {ContentScriptAppend, ContentScriptDeclarative, ContentScriptMarker} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
+import {SandboxAllow, SandboxSource} from "@typing/sandbox";
+import {CspSource} from "@typing/csp";
 
 import {Injector} from "../types";
 
@@ -54,6 +56,24 @@ export default (): Injector[] => {
         });
     });
 
+    Object.entries(ContentScriptMarker).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "ContentScriptMarker",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(CspSource).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "CspSource",
+            name: key,
+            value,
+        });
+    });
+
     Object.entries(RelayMethod).forEach(([key, value]) => {
         resolvers.push({
             from: PackageName,
@@ -63,10 +83,37 @@ export default (): Injector[] => {
         });
     });
 
+    Object.entries(RelayAllFrames).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "RelayAllFrames",
+            name: key,
+            value,
+        });
+    });
+
     Object.entries(OffscreenReason).forEach(([key, value]) => {
         resolvers.push({
             from: PackageName,
             target: "OffscreenReason",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(SandboxAllow).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "SandboxAllow",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(SandboxSource).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "SandboxSource",
             name: key,
             value,
         });

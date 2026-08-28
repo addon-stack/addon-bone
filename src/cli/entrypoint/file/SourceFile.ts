@@ -254,7 +254,7 @@ export default class EntryFile {
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return (node as ts.ObjectLiteralExpression).properties
                     .filter(
-                        (property): property is ts.PropertyAssignment =>
+                        (property): property is ts.PropertyAssignment | ts.ShorthandPropertyAssignment =>
                             ts.isPropertyAssignment(property) || ts.isShorthandPropertyAssignment(property)
                     )
                     .reduce(
@@ -264,8 +264,15 @@ export default class EntryFile {
                             }
 
                             const key = (property.name as ts.Identifier | ts.StringLiteral).text;
-                            let value = this.parseNode(property.initializer);
 
+                            // Determine the initializer node: for shorthand, use the identifier itself
+                            const initNode = ts.isShorthandPropertyAssignment(property)
+                                ? (property.name as ts.Identifier)
+                                : (property.initializer as ts.Expression | undefined);
+
+                            let value = this.parseNode(initNode);
+
+                            // If value is still just an identifier name, resolve from collected variables
                             if (typeof value === "string" && this.variables?.has(value)) {
                                 value = this.variables?.get(value)?.value;
                             }

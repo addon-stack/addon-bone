@@ -13,8 +13,6 @@ export {
     type GenerateJsonPluginUpdate,
 } from "./GenerateJsonPlugin";
 
-export {default as EntrypointMetaPlugin} from "./EntrypointMetaPlugin";
-
 export {default as ManifestPlugin} from "./ManifestPlugin";
 
 export {default as ReplacePlugin} from "./ReplacePlugin";

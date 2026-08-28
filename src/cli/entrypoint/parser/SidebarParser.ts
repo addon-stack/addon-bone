@@ -1,10 +1,10 @@
 import {z} from "zod";
 
-import ViewParser from "./ViewParser";
+import ViewCspParser from "./ViewCspParser";
 
 import {SidebarEntrypointOptions} from "@typing/sidebar";
 
-export default class extends ViewParser<SidebarEntrypointOptions> {
+export default class extends ViewCspParser<SidebarEntrypointOptions> {
     protected definition(): string {
         return "defineSidebar";
     }

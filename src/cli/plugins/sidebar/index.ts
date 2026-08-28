@@ -87,6 +87,7 @@ export default definePlugin(() => {
             }
 
             manifest.setSidebar(await sidebar.manifest());
+            manifest.appendCsp(await sidebar.csp());
 
             if ((await sidebar.exists()) && !SidebarAlternativeBrowsers.has(config.browser)) {
                 manifest.addPermission("sidePanel");

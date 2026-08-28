@@ -2,7 +2,7 @@ import TransportBuilder from "./TransportBuilder";
 
 import Builder from "../core/Builder";
 
-import {OffscreenGlobalAccess, OffscreenUnresolvedDefinition} from "@typing/offscreen";
+import {OffscreenBridgeReadyMessageType, OffscreenGlobalAccess, OffscreenUnresolvedDefinition} from "@typing/offscreen";
 import {TransportType} from "@typing/transport";
 import {ViewBuilder} from "@typing/view";
 
@@ -30,10 +30,20 @@ export default class<T extends TransportType = TransportType> extends Builder {
 
         await this._transport.build();
         await this._view?.build();
+
+        this.ready();
     }
 
     public async destroy(): Promise<void> {
         await this._transport.destroy();
         await this._view?.destroy();
+    }
+
+    private ready(): void {
+        if (window.parent === window) {
+            return;
+        }
+
+        window.parent.postMessage({type: OffscreenBridgeReadyMessageType}, location.origin);
     }
 }

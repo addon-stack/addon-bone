@@ -1,27 +1,15 @@
-import {decryptData} from "@cli/plugins/dotenv/crypt";
-
 import {Browser} from "@typing/browser";
 import {ManifestVersion} from "@typing/manifest";
 
-export const getEnv: {
-    <T extends string>(key: string): T | undefined;
-    <T extends string, D>(key: string, defaults: D): T | D;
-} = (() => {
-    let envCache: object;
+export const getEnv = <T extends string, D = undefined>(key: string, defaults?: D): T | D => {
+    let env: object = {};
 
-    return (key: string, defaults?: string) => {
-        let env: object;
+    if (typeof process.env === "object") {
+        env = process.env;
+    }
 
-        if (typeof process.env === "object") {
-            env = process.env;
-        } else {
-            envCache ??= decryptData(process.env);
-            env = envCache;
-        }
-
-        return (env[key] ?? defaults) as any;
-    };
-})();
+    return env[key] ?? defaults;
+};
 
 export const getApp = (): string => {
     const app = getEnv("APP");

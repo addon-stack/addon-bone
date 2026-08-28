@@ -1,4 +1,4 @@
-import {Config, ConfigDefinition, ReadonlyConfig, UserConfig} from "@typing/config";
+import type {Config, ConfigDefinition, ReadonlyConfig, UserConfig} from "@typing/config";
 
 export type {Config, ReadonlyConfig, ConfigDefinition, UserConfig};
 

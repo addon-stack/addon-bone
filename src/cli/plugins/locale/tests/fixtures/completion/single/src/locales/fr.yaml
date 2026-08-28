@@ -1,0 +1,8 @@
+app:
+    title: Titre français
+empty: ""
+extra: Seulement en français
+cart:
+    items:
+        - "{{count}} article"
+        - "{{count}} articles"

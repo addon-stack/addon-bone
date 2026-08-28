@@ -1,8 +1,11 @@
-import {mergeWebAccessibleResources} from "./utils";
+import _ from "lodash";
+
+import {Csp, type CspBuilder, SandboxCsp} from "../csp";
+
+import {mergeWebAccessibleResources, normalizeDataCollectionPermissions} from "./utils";
 
 import {
     CoreManifest,
-    FirefoxManifest,
     Manifest,
     ManifestAccessibleResource,
     ManifestAccessibleResources,
@@ -14,13 +17,19 @@ import {
     ManifestHostPermissions,
     ManifestIcons,
     ManifestIncognito,
-    ManifestPermissions,
     ManifestOptionalPermissions,
+    ManifestOptions,
+    ManifestPermissions,
     ManifestPopup,
+    ManifestSandbox,
+    ManifestSandboxes,
     ManifestSidebar,
     ManifestVersion,
+    OptionalManifest,
 } from "@typing/manifest";
-import {Browser} from "@typing/browser";
+import {CspConfig} from "@typing/csp";
+import {SandboxCspConfig} from "@typing/sandbox";
+import {Browser, BrowserSpecific} from "@typing/browser";
 import {Language} from "@typing/locale";
 import {CommandExecuteActionName} from "@typing/command";
 import {DefaultIconGroupName} from "@typing/icon";
@@ -28,8 +37,8 @@ import {SidebarAlternativeBrowsers} from "@typing/sidebar";
 import {ContentScriptMatches} from "@typing/content";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
-type ManifestPermission = chrome.runtime.ManifestPermissions;
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissions;
+type ManifestPermission = chrome.runtime.ManifestPermission;
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
 type CoreManifestIcons = chrome.runtime.ManifestIcons;
 
 export class ManifestError extends Error {
@@ -39,21 +48,25 @@ export class ManifestError extends Error {
 }
 
 export default abstract class<T extends CoreManifest> implements ManifestBuilder<T> {
-    protected name: string = "__MSG_app_name__";
-    protected email?: string;
+    protected name?: string;
     protected author?: string;
     protected homepage?: string;
     protected shortName?: string;
     protected description?: string;
     protected minimumVersion?: string;
-    protected version: string = "0.0.0";
+    protected version?: string;
     protected icon?: string;
     protected incognito?: ManifestIncognito;
+    protected specific?: BrowserSpecific;
     protected locale?: Language;
     protected icons: ManifestIcons = new Map();
     protected background?: ManifestBackground;
     protected popup?: ManifestPopup;
     protected sidebar?: ManifestSidebar;
+    protected options?: ManifestOptions;
+    protected sandboxes: ManifestSandboxes = new Set();
+    protected sandboxCsp: CspBuilder<SandboxCspConfig> = new SandboxCsp();
+    protected csp: CspBuilder<CspConfig> = new Csp();
     protected commands: ManifestCommands = new Set();
     protected contentScripts: ManifestContentScripts = new Set();
     protected dependencies: ManifestDependencies = new Map();
@@ -62,6 +75,9 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected hostPermissions: ManifestHostPermissions = new Set();
     protected optionalHostPermissions: ManifestHostPermissions = new Set();
     protected accessibleResources: ManifestAccessibleResources = new Set();
+
+    protected raws: Set<OptionalManifest> = new Set();
+    protected mergedRaws?: OptionalManifest;
 
     public abstract getManifestVersion(): ManifestVersion;
 
@@ -77,6 +93,66 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     protected abstract buildWebAccessibleResources(): Partial<T> | undefined;
 
+    protected abstract buildSandbox(): Partial<T> | undefined;
+
+    protected abstract buildCsp(): Partial<T> | undefined;
+
+    protected get combinedRaws(): OptionalManifest {
+        return (this.mergedRaws ??= Array.from(this.raws).reduce((result, raw) => {
+            return _.mergeWith(result, raw, (objValue, srcValue) => {
+                if (Array.isArray(objValue) && Array.isArray(srcValue)) {
+                    return objValue.concat(srcValue);
+                }
+            });
+        }, {}));
+    }
+
+    protected get combinedPermissions(): ManifestPermissions {
+        const result = new Set(this.permissions);
+
+        if (this.combinedRaws.permissions) {
+            for (const permission of this.combinedRaws.permissions) {
+                result.add(permission);
+            }
+        }
+
+        return result;
+    }
+
+    protected get combinedOptionalPermissions(): ManifestOptionalPermissions {
+        const result = new Set(this.optionalPermissions);
+
+        if (this.combinedRaws.optional_permissions) {
+            for (const permission of this.combinedRaws.optional_permissions) {
+                result.add(permission);
+            }
+        }
+
+        return result;
+    }
+
+    protected get combinedHostPermissions(): ManifestHostPermissions {
+        const result = new Set(this.hostPermissions);
+
+        if (this.combinedRaws.host_permissions) {
+            for (const permission of this.combinedRaws.host_permissions) {
+                result.add(permission);
+            }
+        }
+
+        return result;
+    }
+
+    protected get combinedOptionalHostPermissions(): ManifestHostPermissions {
+        const result = new Set(this.optionalHostPermissions);
+        if (this.combinedRaws.optional_host_permissions) {
+            for (const permission of this.combinedRaws.optional_host_permissions) {
+                result.add(permission);
+            }
+        }
+        return result;
+    }
+
     protected constructor(protected readonly browser: Browser = Browser.Chrome) {}
 
     public setAuthor(author?: string): this {
@@ -87,12 +163,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public setHomepage(homepage?: string): this {
         this.homepage = homepage;
-
-        return this;
-    }
-
-    public setEmail(email?: string): this {
-        this.email = email;
 
         return this;
     }
@@ -116,7 +186,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     }
 
     public setVersion(version?: string): this {
-        this.version = version || "0.0.0";
+        this.version = version;
 
         return this;
     }
@@ -135,6 +205,22 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public setIncognito(incognito?: ManifestIncognito): this {
         this.incognito = incognito;
+
+        return this;
+    }
+
+    public setSpecific(settings?: BrowserSpecific): this {
+        this.specific = settings;
+
+        return this;
+    }
+
+    public mergeSpecific(settings: BrowserSpecific): this {
+        this.specific = _.mergeWith({}, this.specific, settings, (objValue, srcValue) => {
+            if (_.isArray(objValue) && _.isArray(srcValue)) {
+                return _.union(objValue, srcValue);
+            }
+        });
 
         return this;
     }
@@ -177,6 +263,54 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public setSidebar(sidebar?: ManifestSidebar): this {
         this.sidebar = sidebar;
+
+        return this;
+    }
+
+    public setOptions(options?: ManifestOptions): this {
+        this.options = options;
+
+        return this;
+    }
+
+    public addSandbox(sandbox: ManifestSandbox): this {
+        this.sandboxes.add(sandbox);
+
+        return this;
+    }
+
+    public appendSandboxes(sandboxes: Iterable<ManifestSandbox>): this {
+        for (const sandbox of sandboxes) {
+            this.addSandbox(sandbox);
+        }
+
+        return this;
+    }
+
+    public addSandboxCsp(csp: SandboxCspConfig): this {
+        this.sandboxCsp.add(csp);
+
+        return this;
+    }
+
+    public appendSandboxCsp(csps: Iterable<SandboxCspConfig>): this {
+        for (const csp of csps) {
+            this.addSandboxCsp(csp);
+        }
+
+        return this;
+    }
+
+    public addCsp(csp: CspConfig): this {
+        this.csp.add(csp);
+
+        return this;
+    }
+
+    public appendCsp(csps: Iterable<CspConfig>): this {
+        for (const csp of csps) {
+            this.addCsp(csp);
+        }
 
         return this;
     }
@@ -281,20 +415,61 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
-    public setManifestAccessibleResource(accessibleResources: ManifestAccessibleResources): this {
+    public setAccessibleResource(accessibleResources: ManifestAccessibleResources): this {
         this.accessibleResources = accessibleResources;
 
         return this;
     }
 
-    private marge<T extends CoreManifest>(manifest: T, ...sources: Array<Partial<T> | undefined>): T {
+    public raw(manifest: OptionalManifest): this {
+        this.raws.add(manifest);
+
+        return this;
+    }
+
+    public build(): T {
+        return this.merge<Manifest>(
+            this.buildName(),
+            this.buildShortName(),
+            this.buildDescription(),
+            this.buildVersion(),
+            this.buildManifestVersion(),
+            this.buildMinimumChromeVersion(),
+            this.buildAuthor(),
+            this.buildHomepageUrl(),
+            this.buildIncognito(),
+            this.buildLocale(),
+            this.buildIcons(),
+            this.buildBackground(),
+            this.buildCommands(),
+            this.buildAction(),
+            this.buildSidebar(),
+            this.buildOptions(),
+            this.buildContentScripts(),
+            this.buildPermissions(),
+            this.buildOptionalPermissions(),
+            this.buildHostPermissions(),
+            this.buildOptionalHostPermissions(),
+            this.buildWebAccessibleResources(),
+            this.buildSandbox(),
+            this.buildCsp(),
+            this.buildBrowserSpecificSettings(),
+            this.buildRaw()
+        ) as T;
+    }
+
+    public get(): T {
+        return this.build();
+    }
+
+    private merge<T extends CoreManifest>(...sources: Array<Partial<T> | undefined>): T {
         sources = sources.filter(source => source !== undefined);
 
         if (sources.length === 0) {
-            return manifest;
+            throw new ManifestError("No sources provided for manifest merging");
         }
 
-        const result = {...manifest};
+        const result = {} as T;
 
         for (const source of sources) {
             Object.assign(result, source);
@@ -303,43 +478,59 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return result;
     }
 
-    public build(): T {
-        let manifest: Manifest = {
-            name: this.name,
-            short_name: this.shortName,
-            description: this.description,
-            version: this.version,
-            manifest_version: this.getManifestVersion(),
-            minimum_chrome_version: this.minimumVersion,
-            author: this.author,
-            homepage_url: this.homepage,
-            incognito: this.incognito,
-        };
+    protected buildName(): Partial<CoreManifest> {
+        return {name: this.name || this.combinedRaws.name || "__MSG_app_name__"};
+    }
 
-        manifest = this.marge<Manifest>(
-            manifest,
-            this.buildLocale(),
-            this.buildIcons(),
-            this.buildBackground(),
-            this.buildCommands(),
-            this.buildAction(),
-            this.buildSidebar(),
-            this.buildContentScripts(),
-            this.buildPermissions(),
-            this.buildOptionalPermissions(),
-            this.buildHostPermissions(),
-            this.buildOptionalHostPermissions(),
-            this.buildWebAccessibleResources(),
-            this.buildBrowserSpecificSettings()
-        );
+    protected buildShortName(): Partial<CoreManifest> | undefined {
+        const shortName = this.shortName || this.combinedRaws.short_name;
+        return shortName ? {short_name: shortName} : undefined;
+    }
 
-        return manifest as T;
+    protected buildDescription(): Partial<CoreManifest> | undefined {
+        const description = this.description || this.combinedRaws.description;
+        return description ? {description} : undefined;
+    }
+
+    protected buildVersion(): Partial<CoreManifest> {
+        return {version: this.version || this.combinedRaws.version || "0.0.0"};
+    }
+
+    protected buildManifestVersion(): Partial<CoreManifest> {
+        return {manifest_version: this.getManifestVersion()};
+    }
+
+    protected buildMinimumChromeVersion(): Partial<CoreManifest> | undefined {
+        const version = this.minimumVersion || this.combinedRaws.minimum_chrome_version;
+        return version ? {minimum_chrome_version: version} : undefined;
+    }
+
+    protected buildAuthor(): Partial<CoreManifest> | undefined {
+        const author = this.author || this.combinedRaws.author;
+        return author ? {author} : undefined;
+    }
+
+    protected buildHomepageUrl(): Partial<CoreManifest> | undefined {
+        const homepage = this.homepage || this.combinedRaws.homepage_url;
+        return homepage ? {homepage_url: homepage} : undefined;
+    }
+
+    protected buildIncognito(): Partial<CoreManifest> | undefined {
+        const incognito = this.incognito || this.combinedRaws.incognito;
+        return incognito !== undefined ? {incognito} : undefined;
+    }
+
+    protected buildLocale(): Partial<CoreManifest> | undefined {
+        const defaultLocale = this.locale || this.combinedRaws.default_locale;
+        return defaultLocale ? {default_locale: defaultLocale} : undefined;
     }
 
     protected buildIcons(): Partial<CoreManifest> | undefined {
-        if (this.icon) {
-            return {icons: this.getIconsByName(this.icon)};
-        }
+        const icons = {
+            ...this.combinedRaws.icons,
+            ...this.getIconsByName(this.icon),
+        };
+        return Object.keys(icons).length ? {icons} : undefined;
     }
 
     protected buildBackground(): Partial<CoreManifest> | undefined {
@@ -363,10 +554,11 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     }
 
     protected buildCommands(): Partial<CoreManifest> | undefined {
-        if (this.commands.size > 0) {
-            const commands = Array.from(this.commands).reduce(
-                (commands, command) => {
-                    const item = {
+        const internalCommands = Array.from(this.commands).reduce(
+            (commands, command) => {
+                return {
+                    ...commands,
+                    [command.name]: {
                         suggested_key: {
                             default: command?.defaultKey,
                             windows: command?.windowsKey,
@@ -378,21 +570,25 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
                             command?.description ||
                             (command.name === CommandExecuteActionName ? undefined : command.name),
                         global: command?.global,
-                    };
+                    },
+                };
+            },
+            {} as CoreManifest["commands"]
+        );
 
-                    return {...commands, [command.name]: item};
-                },
-                {} as CoreManifest["commands"]
-            );
+        const commands = _.merge(this.combinedRaws.commands, internalCommands);
 
-            return {commands};
-        }
+        if (Object.keys(commands).length) return {commands};
     }
 
     protected buildContentScripts(): Partial<CoreManifest> | undefined {
-        if (this.contentScripts.size > 0) {
-            const contentScripts: ManifestV3["content_scripts"] = [];
+        const contentScripts: ManifestV3["content_scripts"] = [];
 
+        if (this.combinedRaws.content_scripts) {
+            contentScripts.push(...this.combinedRaws.content_scripts);
+        }
+
+        if (this.contentScripts.size > 0) {
             for (const script of this.contentScripts.values()) {
                 const {
                     entry,
@@ -435,13 +631,22 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
                     world,
                 });
             }
-
-            return {content_scripts: contentScripts};
         }
+
+        return contentScripts.length ? {content_scripts: contentScripts} : undefined;
     }
 
     protected buildSidebar(): Partial<CoreManifest> | undefined {
         if (!this.sidebar) {
+            const sidebarAction = this.combinedRaws.sidebar_action;
+            const sidePanel = this.combinedRaws.side_panel;
+
+            if (SidebarAlternativeBrowsers.has(this.browser)) {
+                if (sidebarAction) return {sidebar_action: sidebarAction};
+            } else {
+                if (sidePanel) return {side_panel: sidePanel};
+            }
+
             return;
         }
 
@@ -458,27 +663,135 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             : {side_panel: {...commonProps, default_path: path}};
     }
 
-    protected buildLocale(): Partial<CoreManifest> | undefined {
-        if (this.locale) {
-            return {default_locale: this.locale};
+    protected buildOptions(): Partial<CoreManifest> {
+        if (this.options) {
+            return {
+                options_ui: {
+                    page: this.options.path,
+                    open_in_tab: this.options.openInTab ?? true,
+                },
+            };
         }
+
+        return _.pick(this.combinedRaws, ["options_ui", "options_page"]);
     }
 
-    protected buildBrowserSpecificSettings(): Partial<FirefoxManifest> | undefined {
-        if (this.browser === Browser.Firefox && this.email && this.permissions.has("storage")) {
+    protected buildBrowserSpecificSettings(): Partial<Manifest> | undefined {
+        const optionalSettings = this.combinedRaws.browser_specific_settings;
+        const {safari, gecko, geckoAndroid} = this.specific || {};
+
+        if (this.browser === Browser.Firefox) {
+            const id = gecko?.id || optionalSettings?.gecko?.id;
+            const updateUrl = gecko?.updateUrl || optionalSettings?.gecko?.update_url;
+            const geckoMinVersion = gecko?.strictMinVersion || optionalSettings?.gecko?.strict_min_version;
+            const geckoMaxVersion = gecko?.strictMaxVersion || optionalSettings?.gecko?.strict_max_version;
+            const dataCollectionPermissions = _.mergeWith(
+                optionalSettings?.gecko?.data_collection_permissions,
+                gecko?.dataCollectionPermissions,
+                (objValue, srcValue) => {
+                    if (Array.isArray(objValue) && Array.isArray(srcValue)) {
+                        return objValue.concat(srcValue);
+                    }
+                }
+            );
+
+            const androidMinVersion =
+                geckoAndroid?.strictMinVersion || optionalSettings?.gecko_android?.strict_min_version;
+            const androidMaxVersion =
+                geckoAndroid?.strictMaxVersion || optionalSettings?.gecko_android?.strict_max_version;
+
             return {
                 browser_specific_settings: {
                     gecko: {
-                        id: this.email,
-                        // strict_min_version: this.minimumVersion,
+                        id,
+                        update_url: updateUrl,
+                        strict_min_version: geckoMinVersion,
+                        strict_max_version: geckoMaxVersion,
+                        data_collection_permissions: normalizeDataCollectionPermissions(dataCollectionPermissions),
+                    },
+                    gecko_android:
+                        _.isEmpty(androidMinVersion) && _.isEmpty(androidMaxVersion)
+                            ? undefined
+                            : {
+                                  strict_min_version: androidMinVersion,
+                                  strict_max_version: androidMaxVersion,
+                              },
+                },
+            };
+        } else if (this.browser === Browser.Safari) {
+            const minVersion = safari?.strictMinVersion || optionalSettings?.safari?.strict_min_version;
+            const maxVersion = safari?.strictMaxVersion || optionalSettings?.safari?.strict_max_version;
+
+            if (_.isEmpty(minVersion) && _.isEmpty(maxVersion)) {
+                return;
+            }
+
+            return {
+                browser_specific_settings: {
+                    safari: {
+                        strict_min_version: minVersion,
+                        strict_max_version: maxVersion,
                     },
                 },
             };
         }
     }
 
+    protected buildRaw(): Partial<Manifest> | undefined {
+        const {
+            name,
+            short_name,
+            description,
+            version,
+            minimum_chrome_version,
+            author,
+            homepage_url,
+            incognito,
+            default_locale,
+            icons,
+            background,
+            commands,
+            action,
+            sidebar,
+            options_ui,
+            options_page,
+            content_scripts,
+            permissions,
+            optional_permissions,
+            host_permissions,
+            optional_host_permissions,
+            web_accessible_resources,
+            sandbox,
+            content_security_policy,
+            browser_specific_settings,
+            ...other
+        } = this.combinedRaws;
+
+        return other;
+    }
+
+    protected getSandboxes(): string[] {
+        const sandboxes = new Set<string>();
+        const rawSandbox = this.combinedRaws.sandbox as {pages?: string[]} | undefined;
+
+        for (const sandbox of rawSandbox?.pages || []) {
+            sandboxes.add(sandbox);
+        }
+
+        for (const sandbox of this.sandboxes) {
+            sandboxes.add(sandbox);
+        }
+
+        return Array.from(sandboxes);
+    }
+
     protected hasExecuteActionCommand(): boolean {
-        return this.commands.size > 0 && Array.from(this.commands).some(({name}) => name === CommandExecuteActionName);
+        const optionalCommands = this.combinedRaws.commands;
+
+        const inInternalCommands =
+            this.commands.size > 0 && Array.from(this.commands).some(({name}) => name === CommandExecuteActionName);
+        const inOptionalCommands = optionalCommands && Object.keys(optionalCommands).includes(CommandExecuteActionName);
+        return inInternalCommands || inOptionalCommands;
     }
 
     protected getIconsByName(name?: string): CoreManifestIcons | undefined {
@@ -497,10 +810,6 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         }
     }
 
-    public get(): T {
-        return this.build();
-    }
-
     public getWebAccessibleResources(): ManifestAccessibleResource[] {
         const resources: ManifestAccessibleResource[] = [...this.accessibleResources];
 
@@ -513,6 +822,10 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
                     matches: contentScript.matches || ContentScriptMatches,
                 });
             }
+        }
+
+        if (this.combinedRaws.web_accessible_resources) {
+            resources.push(...this.combinedRaws.web_accessible_resources);
         }
 
         return mergeWebAccessibleResources(resources);

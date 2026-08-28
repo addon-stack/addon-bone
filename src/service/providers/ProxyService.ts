@@ -1,14 +1,14 @@
-import {isBackground} from "@adnbn/browser";
+import {isBackground} from "@addon-core/browser";
 
 import ProxyTransport from "@transport/ProxyTransport";
 
 import ServiceManager from "../ServiceManager";
 import ServiceMessage from "../ServiceMessage";
 
-import type {DeepAsyncProxy} from "@typing/helpers";
+import type {RpcAsyncProxy} from "@typing/rpc";
 import type {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
-export default class<N extends TransportName, T = DeepAsyncProxy<TransportDictionary[N]>> extends ProxyTransport<N, T> {
+export default class<N extends TransportName, T = RpcAsyncProxy<TransportDictionary[N]>> extends ProxyTransport<N, T> {
     protected message: TransportMessage;
 
     constructor(name: N) {

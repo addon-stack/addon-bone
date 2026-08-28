@@ -1,12 +1,46 @@
 import RelayPermission from "@relay/RelayPermission";
 import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 
-import {DeepAsyncProxy} from "@typing/helpers";
-import {TransportDictionary, TransportType} from "@typing/transport";
-import {RelayDefinition, RelayMethod, RelayOptions, RelayOptionsMap, RelayUnresolvedDefinition} from "@typing/relay";
+import type {RelayName} from "@relay/index";
+import type {TransportType} from "@typing/transport";
+import {
+    RelayDefinition,
+    RelayAllFrames,
+    RelayFrameErrorKind,
+    RelayMethod,
+    RelayOptions,
+    RelayOptionsMap,
+    type RelayBatchOptions,
+    type RelayBatchProxyTarget,
+    type RelayProxyTarget,
+    type RelayScalarOptions,
+} from "@typing/relay";
 
-export {RelayMethod};
-export type {RelayDefinition, RelayUnresolvedDefinition};
+export {RelayAllFrames, RelayFrameErrorKind, RelayMethod};
+export {RelayDiscoveryError} from "@relay/discovery/RelayDiscovery";
+export type {
+    RelayAllFramesOptions,
+    RelayAnyFramesOptions,
+    RelayBatchOptions,
+    RelayBatchProxyTarget,
+    RelayBatchRpcProxy,
+    RelayCallOptions,
+    RelayDocumentOptions,
+    RelayDocumentsOptions,
+    RelayExecutionOptions,
+    RelayEveryFrameOptions,
+    RelayFrameError,
+    RelayFrameOptions,
+    RelayFrameResult,
+    RelayFramesOptions,
+    RelayFramesResult,
+    RelayNonEmptyReadonlyArray,
+    RelayProxyTarget,
+    RelayResultTarget,
+    RelayScalarOptions,
+    RelayTopFrameOptions,
+    RelayDefinition,
+} from "@typing/relay";
 
 export const defineRelay = <T extends TransportType>(options: RelayDefinition<T>): RelayDefinition<T> => {
     return options;
@@ -25,19 +59,22 @@ const getRelayOptionsMap = (): RelayOptionsMap => {
     return relays;
 };
 
-export const getRelay = <N extends Extract<keyof TransportDictionary, string>>(
+export function getRelay<N extends RelayName>(name: N, params: number | RelayScalarOptions): RelayProxyTarget<N>;
+
+export function getRelay<N extends RelayName>(name: N, params: RelayBatchOptions): RelayBatchProxyTarget<N>;
+
+export function getRelay<N extends RelayName>(
     name: N,
     params: ProxyRelayParams
-): DeepAsyncProxy<TransportDictionary[N]> => {
+): RelayProxyTarget<N> | RelayBatchProxyTarget<N> {
     const relays = getRelayOptionsMap();
-
-    RelayPermission.init(relays);
-
     const options = relays.get(name);
 
     if (!options) {
         throw new Error(`Failed to get relay "${name}"`);
     }
 
-    return new ProxyRelay(name, options, params).get();
-};
+    return new ProxyRelay(name, options, params, RelayPermission.getInstance(relays)).get() as
+        | RelayProxyTarget<N>
+        | RelayBatchProxyTarget<N>;
+}

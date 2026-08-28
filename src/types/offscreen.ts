@@ -1,9 +1,11 @@
 import {TransportConfig, TransportDefinition, TransportType} from "@typing/transport";
 import {ViewOptions} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
+import {CspOptions} from "@typing/csp";
 
 export const OffscreenGlobalKey = "adnbnOffscreen";
 export const OffscreenGlobalAccess = "adnbnOffscreenAccess";
+export const OffscreenBridgeReadyMessageType = "adnbn:offscreen:ready";
 
 export enum OffscreenReason {
     /** A reason used for testing purposes only. */
@@ -43,7 +45,7 @@ export interface OffscreenConfig extends TransportConfig {
     justification?: string;
 }
 
-export type OffscreenOptions = OffscreenConfig & ViewOptions;
+export type OffscreenOptions = OffscreenConfig & CspOptions & ViewOptions;
 
 export type OffscreenEntrypointOptions = Partial<OffscreenOptions>;
 
@@ -53,8 +55,7 @@ export type OffscreenMainHandler<T extends TransportType> = (
 ) => Awaiter<void>;
 
 export interface OffscreenDefinition<T extends TransportType>
-    extends TransportDefinition<OffscreenOptions, T>,
-        OffscreenEntrypointOptions {
+    extends TransportDefinition<OffscreenOptions, T>, OffscreenEntrypointOptions {
     main?: OffscreenMainHandler<T>;
 }
 

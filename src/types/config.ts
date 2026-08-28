@@ -1,17 +1,18 @@
 import type {Configuration as RspackConfig, Filename} from "@rspack/core";
 import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
-import {Command, Mode} from "@typing/app";
-import {Browser} from "@typing/browser";
-import {ManifestIncognitoValue, ManifestVersion} from "@typing/manifest";
+import {Command, Mode, Workspace} from "@typing/app";
+import {Browser, BrowserSpecific} from "@typing/browser";
+import {ManifestIncognitoValue, ManifestVersion, ManifestBuilder, OptionalManifest} from "@typing/manifest";
 import {Plugin} from "@typing/plugin";
 import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
 import {EnvFilterOptions, EnvFilterVariant} from "@typing/env";
 
 /**
- * Configuration object for defining various settings and build parameters
- * for an extension application.
+ * Configuration options for building a browser extension. This interface defines
+ * all the properties required to customize the build process, extension metadata,
+ * file structure, and other build-related settings.
  */
 export interface Config {
     /**
@@ -151,15 +152,17 @@ export interface Config {
     icon: string;
 
     /**
-     * Used for Firefox under `browser_specific_settings.gecko.id`,
-     * but only if the "storage" permission is declared.
-     * Can be either:
-     * - a valid email
-     * - a function that returns the email
+     * Browser-specific settings (populate manifest.browser_specific_settings).
      *
-     * @default EMAIL
+     * Two forms are supported:
+     * - object — fixed values for browsers (e.g., gecko, safari);
+     * - function — lazy evaluation at build time; if it returns undefined, the field is omitted.
+     *
+     * Examples:
+     * - { gecko: { id: "addon@example.com", strictMinVersion: "109.0" } }
+     * - () => ({ gecko: { id: "addon@example.com" } })
      */
-    email: string | (() => string | undefined);
+    specific?: BrowserSpecific | (() => BrowserSpecific | undefined);
 
     /**
      * Used to specify how this extension will behave in incognito mode
@@ -167,6 +170,20 @@ export interface Config {
      * @default "not_allowed"
      */
     incognito?: ManifestIncognitoValue | (() => ManifestIncognitoValue | undefined);
+
+    /**
+     * Extension manifest without the version.
+     * Allows customizing the manifest.json file beyond the standard fields handled by the builder.
+     * The structure and available APIs depend on the manifest version (v2 or v3).
+     *
+     * Accepts:
+     * - an object with additional manifest fields
+     * - a function that receives a ManifestBuilder instance and returns manifest fields
+     *
+     * Note: Some fields like name, version, and permissions are handled automatically
+     * by the builder and should not be included here unless you need to override them.
+     */
+    manifest?: OptionalManifest | ((builder: ManifestBuilder) => OptionalManifest | undefined);
 
     /**
      * Extension manifest version (e.g., v2 or v3).
@@ -178,7 +195,17 @@ export interface Config {
      * Default locale for the extension.
      * @example "en"
      */
-    lang?: string | Language;
+    lang: Language;
+
+    /**
+     * Project workspace mode.
+     *
+     * - `single` uses the source directory itself as the shared layer.
+     * - `multi` uses the configured shared directory.
+     *
+     * @default "single"
+     */
+    workspace: Workspace;
 
     /**
      * Path to the directory with source files for building.
@@ -208,10 +235,13 @@ export interface Config {
     srcDir: string;
 
     /**
-     * Directory with common modules, content scripts, and background scripts.
-     * Contains code used by multiple extensions.
+     * Directory with shared modules (content scripts, background scripts, common code)
+     * used across multiple extensions. Applies only when `workspace` is `"multi"`;
+     * for a `"single"` workspace the value is forced to `"."`, since a single-app
+     * project has no separate shared layer.
+     *
      * @example "shared"
-     * @path Full path: `{{inputDir}}/{{srcDir}}//{{sharedDir}}`
+     * @path Full path: `{{inputDir}}/{{srcDir}}/{{sharedDir}}`
      *
      * @default "shared"
      */
@@ -437,6 +467,14 @@ export interface Config {
      * Flag indicating whether to merge localizations from App and Shared directories.
      * When `true`, localization files from both directories will be combined.
      *
+     * Locale values are resolved from the least specific source to the most specific:
+     * plugins, source root, Shared, and App. Within each layer, a browser-specific
+     * file overrides its generic file. A value from a later source overrides the
+     * same key from an earlier source. When `false`, plugin locales remain available
+     * as a baseline and only the highest available workspace layer is selected.
+     * Multiple generic or browser-specific files for the same language in one layer
+     * are rejected as ambiguous.
+     *
      * @default true
      */
     mergeLocales: boolean;
@@ -510,6 +548,14 @@ export interface Config {
     mergeOffscreen: boolean;
 
     /**
+     * Flag indicating whether to merge sandbox files from App and Shared directories.
+     * When `true`, sandbox files from both directories will be combined.
+     *
+     * @default false
+     */
+    mergeSandbox: boolean;
+
+    /**
      * Path to the directory containing public assets to be copied into the build output.
      * Must be relative to the project root and cannot be "." (the project root itself).
      *
@@ -531,9 +577,26 @@ export interface Config {
      * and improved caching. This allows the browser to load common modules once
      * and reuse them across different parts of the extension.
      *
+     * When a function is provided, it receives a Set of entry point names that share common code
+     * and should return a string representing the chunk name, or undefined to skip chunk creation.
+     * The function allows dynamic naming of common chunks based on the entries that use them.
+     *
+     * @example
+     * // Boolean usage:
+     * true // Creates common chunks with auto-generated names
+     * false // Disables common chunk creation
+     *
+     * @example
+     * // Function usage:
+     * (names) => {
+     *   const entryList = Array.from(names).toSorted().join("-");
+     *
+     *   return `${entryList}.common`;
+     * }
+     *
      * @default true
      */
-    commonChunks: boolean;
+    commonChunks: boolean | ((names: Set<string>) => string | undefined);
 
     /**
      * Build artifact name.
@@ -679,7 +742,11 @@ export interface Config {
     cssIdentName: string;
 }
 
-export type OptionalConfig = Partial<Config>;
+export type OptionalConfig = Omit<Partial<Config>, "lang" | "workspace"> & {
+    lang?: Language | `${Language}`;
+    workspace?: Workspace | `${Workspace}`;
+};
+
 export type UserConfig = Omit<OptionalConfig, "configFile" | "command">;
 export type ReadonlyConfig = Readonly<Config>;
 

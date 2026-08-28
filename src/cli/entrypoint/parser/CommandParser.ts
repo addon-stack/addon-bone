@@ -13,11 +13,24 @@ export default class extends BackgroundParser<CommandEntrypointOptions> {
     }
 
     protected schema(): typeof this.CommonPropertiesSchema {
+        const key =
+            "(?:[A-Z0-9]|F(?:[1-9]|1[0-2])|Comma|Period|Home|End|PageUp|PageDown|Space|Insert|Delete|Up|Down|Left|Right)";
+        const mediaKey = "(?:MediaNextTrack|MediaPlayPause|MediaPrevTrack|MediaStop)";
+        const shortcutMessage =
+            "Invalid shortcut key, expected format like: Ctrl+Shift+K, Alt+Shift+U, or MediaPlayPause";
+        const macShortcutMessage =
+            "Invalid mac shortcut key, expected format like: Command+Shift+P, MacCtrl+K, Option+Shift+U, or MediaPlayPause";
+
         const ShortcutKeySchema = z
             .string()
+            .regex(new RegExp(`^(?:(?:Ctrl|Alt)(?:\\+Shift)?\\+${key}|${mediaKey})$`), shortcutMessage)
+            .optional();
+
+        const MacShortcutKeySchema = z
+            .string()
             .regex(
-                /^(Ctrl|Command|MacCtrl|Alt|Option)(\+Shift)?\+[A-Z0-9]$/,
-                "Invalid shortcut key, expected format like: Ctrl+Shift+K or Command+Shift+P"
+                new RegExp(`^(?:(?:Ctrl|Alt|Command|MacCtrl|Option)(?:\\+Shift)?\\+${key}|${mediaKey})$`),
+                macShortcutMessage
             )
             .optional();
 
@@ -27,7 +40,7 @@ export default class extends BackgroundParser<CommandEntrypointOptions> {
             global: z.boolean().optional(),
             defaultKey: ShortcutKeySchema,
             windowsKey: ShortcutKeySchema,
-            macKey: ShortcutKeySchema,
+            macKey: MacShortcutKeySchema,
             chromeosKey: ShortcutKeySchema,
             linuxKey: ShortcutKeySchema,
         });
@@ -37,7 +50,19 @@ export default class extends BackgroundParser<CommandEntrypointOptions> {
         const {defaultKey, windowsKey, macKey, chromeosKey, linuxKey, ...options} = super.options(file);
 
         if (!defaultKey && !windowsKey && !macKey && !chromeosKey && !linuxKey) {
-            throw new Error("Invalid command options: At least one suggested key must be defined");
+            throw new Error(`Invalid command options in "${file.file}": At least one suggested key must be defined`);
+        }
+
+        if (options.global) {
+            const globalShortcut = /^Ctrl\+Shift\+[0-9]$/;
+            const keys = {defaultKey, windowsKey, macKey, chromeosKey, linuxKey};
+            const invalidKey = Object.entries(keys).find(([, key]) => key && !globalShortcut.test(key));
+
+            if (invalidKey) {
+                throw new Error(
+                    `Invalid command options in "${file.file}": Global command shortcut "${invalidKey[1]}" in "${invalidKey[0]}" must use Ctrl+Shift+[0..9]`
+                );
+            }
         }
 
         return {

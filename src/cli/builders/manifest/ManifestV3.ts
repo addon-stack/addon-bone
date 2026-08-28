@@ -1,6 +1,6 @@
 import ManifestBase, {ManifestError} from "./ManifestBase";
 
-import {filterHostPatterns, filterPermissionsForMV3} from "./utils";
+import {filterHostPatterns, filterOptionalPermissions, filterPermissionsForMV3} from "./utils";
 
 import {CoreManifest, ManifestAccessibleResource, ManifestVersion} from "@typing/manifest";
 import {Browser} from "@typing/browser";
@@ -73,7 +73,7 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildPermissions(): Partial<ManifestV3> | undefined {
-        const permissions = Array.from(filterPermissionsForMV3(this.permissions));
+        const permissions = Array.from(filterPermissionsForMV3(this.combinedPermissions));
 
         if (permissions.length > 0) {
             return {permissions};
@@ -81,10 +81,10 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildOptionalPermissions(): Partial<ManifestV3> | undefined {
-        // prettier-ignore
-        const optionalPermissions = Array
-            .from(filterPermissionsForMV3(this.optionalPermissions))
-            .filter((permission) => !this.permissions.has(permission));
+        const optionalPermissions = filterOptionalPermissions(
+            filterPermissionsForMV3(this.combinedOptionalPermissions),
+            filterPermissionsForMV3(this.combinedPermissions)
+        );
 
         if (optionalPermissions.length > 0) {
             return {optional_permissions: optionalPermissions};
@@ -92,16 +92,16 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildHostPermissions(): Partial<ManifestV3> | undefined {
-        if (this.hostPermissions.size > 0) {
-            return {host_permissions: [...filterHostPatterns(this.hostPermissions)]};
+        if (this.combinedHostPermissions.size > 0) {
+            return {host_permissions: [...filterHostPatterns(this.combinedHostPermissions)]};
         }
     }
 
     protected buildOptionalHostPermissions(): Partial<ManifestV3> | undefined {
         // prettier-ignore
         const optionalHostPermissions = Array
-            .from(filterHostPatterns(new Set([...this.hostPermissions, ...this.optionalHostPermissions])))
-            .filter((permission) => !this.hostPermissions.has(permission));
+            .from(filterHostPatterns(new Set([...this.combinedHostPermissions, ...this.combinedOptionalHostPermissions])))
+            .filter((permission) => !this.combinedHostPermissions.has(permission));
 
         if (optionalHostPermissions.length > 0) {
             return {optional_host_permissions: optionalHostPermissions};
@@ -119,5 +119,91 @@ export default class extends ManifestBase<ManifestV3> {
         if (resources.length > 0) {
             return {web_accessible_resources: transformedResources};
         }
+    }
+
+    protected buildSandbox(): Partial<ManifestV3> | undefined {
+        if (this.browser === Browser.Firefox) {
+            return;
+        }
+
+        const rawSandbox = (this.combinedRaws.sandbox || {}) as Record<string, any>;
+        const sandboxes = this.getSandboxes();
+
+        if (sandboxes.length === 0 && Object.keys(rawSandbox).length === 0) {
+            return;
+        }
+
+        return {
+            sandbox: {
+                ...rawSandbox,
+                pages: sandboxes,
+            },
+        } as Partial<ManifestV3>;
+    }
+
+    protected buildCsp(): Partial<ManifestV3> | undefined {
+        const rawCsp = this.combinedRaws.content_security_policy;
+        const csp = this.csp.build();
+        const sandboxCsp = this.sandboxCsp.build();
+
+        if (this.browser === Browser.Firefox) {
+            if (!rawCsp && !csp) {
+                return;
+            }
+
+            if (typeof rawCsp === "string") {
+                if (csp) {
+                    throw new ManifestError(
+                        "Cannot merge extension pages content security policy with a string content_security_policy."
+                    );
+                }
+
+                return {content_security_policy: rawCsp} as Partial<ManifestV3>;
+            }
+
+            const {sandbox, ...contentCsp} = rawCsp || {};
+
+            if (csp && contentCsp.extension_pages) {
+                throw new ManifestError(
+                    "Cannot merge extension pages content security policy with raw content_security_policy.extension_pages."
+                );
+            }
+
+            if (csp) {
+                contentCsp.extension_pages = csp;
+            }
+
+            return Object.keys(contentCsp).length > 0
+                ? ({content_security_policy: contentCsp} as Partial<ManifestV3>)
+                : undefined;
+        }
+
+        if (!rawCsp && !sandboxCsp && !csp) {
+            return;
+        }
+
+        if (typeof rawCsp === "string") {
+            if (sandboxCsp || csp) {
+                throw new ManifestError(
+                    "Cannot merge framework content security policy with a string content_security_policy."
+                );
+            }
+
+            return {content_security_policy: rawCsp} as Partial<ManifestV3>;
+        }
+
+        if (csp && rawCsp?.extension_pages) {
+            throw new ManifestError(
+                "Cannot merge extension pages content security policy with raw content_security_policy.extension_pages."
+            );
+        }
+
+        return {
+            content_security_policy: {
+                ...rawCsp,
+                ...(csp ? {extension_pages: csp} : {}),
+                ...(sandboxCsp || rawCsp?.sandbox ? {sandbox: sandboxCsp || rawCsp?.sandbox} : {}),
+            },
+        } as Partial<ManifestV3>;
     }
 }

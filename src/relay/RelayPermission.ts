@@ -1,4 +1,4 @@
-import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPermissions} from "@adnbn/browser";
+import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPermissions} from "@addon-core/browser";
 
 import {RelayMethod, RelayOptionsMap} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";
@@ -10,22 +10,17 @@ export interface RelayPermissionValue {
     permissions?: Permissions;
 }
 
+export const RelayPermissionGlobalKey = "adnbnRelayPermission";
+
 export default class RelayPermission {
-    private static _instance?: RelayPermission;
-
     private permissions = new Map<string, RelayPermissionValue>();
+    private started = false;
 
-    public static getInstance(): RelayPermission {
-        return (this._instance ??= new RelayPermission());
+    private constructor(relays: RelayOptionsMap) {
+        this.configure(relays);
     }
 
-    public static init(relays: RelayOptionsMap) {
-        if (this._instance || relays.size === 0) {
-            return;
-        }
-
-        const instance = RelayPermission.getInstance();
-
+    private configure(relays: RelayOptionsMap): void {
         for (const [name, {declarative, method, matches}] of relays) {
             if (declarative === false && method === RelayMethod.Scripting) {
                 console.warn(
@@ -46,15 +41,40 @@ export default class RelayPermission {
                           permissions: ["scripting"],
                       };
 
-            instance.set(name, {allow, permissions});
+            this.set(name, {allow, permissions});
+        }
+    }
+
+    public static getInstance(relays: RelayOptionsMap): RelayPermission {
+        const current = globalThis[RelayPermissionGlobalKey] as RelayPermission | undefined;
+
+        if (current) {
+            return current;
         }
 
-        const checkPermissions = async () => await instance.check();
+        const instance = new RelayPermission(relays);
+
+        globalThis[RelayPermissionGlobalKey] = instance;
+
+        return instance.start();
+    }
+
+    public start(): this {
+        if (this.started) {
+            return this;
+        }
+
+        this.started = true;
+
+        const checkPermissions = (): void => {
+            void this.check().catch(error => console.error(error));
+        };
 
         onPermissionsAdded(checkPermissions);
         onPermissionsRemoved(checkPermissions);
+        checkPermissions();
 
-        checkPermissions().catch(e => console.error(e));
+        return this;
     }
 
     public set(name: string, value: Partial<RelayPermissionValue>): this {
@@ -114,6 +134,6 @@ export default class RelayPermission {
     }
 
     private async check(): Promise<void> {
-        await Promise.allSettled(Object.keys(this.permissions).map(name => this.contains(name)));
+        await Promise.allSettled([...this.permissions.keys()].map(name => this.contains(name)));
     }
 }

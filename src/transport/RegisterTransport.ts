@@ -2,7 +2,7 @@ import get from "get-value";
 
 import BaseTransport from "./BaseTransport";
 
-import {TransportDictionary, TransportMessage, TransportName, TransportRegister} from "@typing/transport";
+import {TransportDictionary, TransportName, TransportReceiver, TransportRegister} from "@typing/transport";
 import {MessageSender, MessageSenderProperty} from "@typing/message";
 
 // prettier-ignore
@@ -11,6 +11,8 @@ export default abstract class<
     T extends object = TransportDictionary[N],
     A extends any[] = []
 > extends BaseTransport<N, T> implements TransportRegister<T, A> {
+    private unwatch?: () => void;
+
     protected constructor(
         name: N,
         protected readonly init: (...args: A) => T
@@ -18,7 +20,7 @@ export default abstract class<
         super(name);
     }
 
-    protected abstract message(): TransportMessage;
+    protected abstract message(): TransportReceiver;
 
     public register(...args: A): T {
         if (this.manager().has(this.name)) {
@@ -29,11 +31,11 @@ export default abstract class<
 
         this.manager().add(this.name, instance);
 
-        this.message().watch(async ({path, args}, sender) => {
+        this.unwatch = this.message().watch(async ({path, args}, sender) => {
             try {
-                this.injectSender(instance, sender);
+                const context = this.withSender(instance, sender);
 
-                const property = path == null ? instance : get(instance, path);
+                const property = path == null ? context : get(context, path);
 
                 if (property === undefined) {
                     throw new Error(`Property not found at path "${path}" in "${this.name}"`);
@@ -42,18 +44,14 @@ export default abstract class<
                 let result: any;
 
                 if (typeof property === "function") {
-                    result = await property.apply(instance, args);
+                    result = await property.apply(context, args);
                 } else {
                     result = property;
                 }
 
-                this.clearSender(instance);
-
                 return result;
             } catch (error) {
                 console.error(`Error during message handler registration for transport "${this.name}"`, error);
-
-                this.clearSender(instance);
 
                 throw error;
             }
@@ -62,22 +60,22 @@ export default abstract class<
         return instance;
     }
 
-    private injectSender(instance: T, sender: MessageSender): void {
-        if (!Object.getOwnPropertyDescriptor(instance, MessageSenderProperty)) {
-            Object.defineProperty(instance, MessageSenderProperty, {
-                configurable: true,
-                enumerable: false,
-                writable: true,
-                value: undefined,
-            });
-        }
+    public destroy(): void {
+        this.unwatch?.();
+        this.unwatch = undefined;
 
-        (instance as any)[MessageSenderProperty] = sender;
+        super.destroy();
     }
 
-    private clearSender(instance: T): void {
-        if (Object.getOwnPropertyDescriptor(instance, MessageSenderProperty)) {
-            (instance as any)[MessageSenderProperty] = undefined;
-        }
+    private withSender(instance: T, sender: MessageSender): T {
+        return new Proxy(instance, {
+            get(target, property, receiver) {
+                if (property === MessageSenderProperty) {
+                    return sender;
+                }
+
+                return Reflect.get(target, property, receiver);
+            },
+        });
     }
 }

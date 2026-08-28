@@ -1,4 +1,4 @@
-import {isBackground} from "@adnbn/browser";
+import {isBackground} from "@addon-core/browser";
 
 import MessageManager from "@message/MessageManager";
 
@@ -6,11 +6,11 @@ import ProxyService from "./ProxyService";
 import RegisterService from "./RegisterService";
 import ServiceManager from "../ServiceManager";
 
-import {DeepAsyncProxy} from "@typing/helpers";
+import {RpcAsyncProxy} from "@typing/rpc";
 import {MessageTypeSeparator} from "@typing/message";
 
-jest.mock("@adnbn/browser", () => {
-    const actual = jest.requireActual("@adnbn/browser");
+jest.mock("@addon-core/browser", () => {
+    const actual = jest.requireActual("@addon-core/browser");
     return {
         ...actual,
         isBackground: jest.fn(),
@@ -39,7 +39,7 @@ const MatchService = {
 };
 
 type ServiceType = typeof MatchService;
-type ServiceProxyType = DeepAsyncProxy<ServiceType>;
+type ServiceProxyType = RpcAsyncProxy<ServiceType>;
 
 const serviceName = "math";
 

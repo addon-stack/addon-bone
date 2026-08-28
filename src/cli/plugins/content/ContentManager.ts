@@ -6,7 +6,12 @@ import {getContentScriptConfigFromOptions} from "./utils";
 import {ReadonlyConfig} from "@typing/config";
 import {ContentScriptDeclarative, ContentScriptEntrypointOptions} from "@typing/content";
 import {EntrypointEntries, EntrypointFile, EntrypointType} from "@typing/entrypoint";
-import {ManifestContentScripts, ManifestHostPermissions} from "@typing/manifest";
+import {
+    ManifestContentScripts,
+    ManifestHostPermissions,
+    ManifestOptionalPermissions,
+    ManifestPermissions,
+} from "@typing/manifest";
 
 export default class {
     protected readonly providers = new Set<ContentProvider<ContentScriptEntrypointOptions>>();
@@ -15,7 +20,9 @@ export default class {
 
     protected _group?: ContentGroupItems<ContentScriptEntrypointOptions>;
 
-    protected _permissions?: [ManifestHostPermissions, ManifestHostPermissions];
+    protected _hostPermissions?: [ManifestHostPermissions, ManifestHostPermissions];
+
+    protected _permissions?: Promise<[ManifestPermissions, ManifestOptionalPermissions]>;
 
     constructor(config: ReadonlyConfig) {
         this.names = new ContentName(config);
@@ -78,16 +85,16 @@ export default class {
     }
 
     public async hostPermissions(): Promise<ManifestHostPermissions> {
-        return (await this.calculatePermissions())[0];
+        return (await this.calculateHostPermissions())[0];
     }
 
     public async optionalHostPermissions(): Promise<ManifestHostPermissions> {
-        return (await this.calculatePermissions())[1];
+        return (await this.calculateHostPermissions())[1];
     }
 
-    protected async calculatePermissions(): Promise<[ManifestHostPermissions, ManifestHostPermissions]> {
-        if (this._permissions) {
-            return this._permissions;
+    protected async calculateHostPermissions(): Promise<[ManifestHostPermissions, ManifestHostPermissions]> {
+        if (this._hostPermissions) {
+            return this._hostPermissions;
         }
 
         const hostPermissions = new Set<string>();
@@ -119,15 +126,57 @@ export default class {
             }
         }
 
-        return (this._permissions = [hostPermissions, optionalHostPermissions]);
+        return (this._hostPermissions = [hostPermissions, optionalHostPermissions]);
+    }
+
+    public async permissions(): Promise<ManifestPermissions> {
+        return (await this.getPermissions())[0];
+    }
+
+    public async optionalPermissions(): Promise<ManifestOptionalPermissions> {
+        return (await this.getPermissions())[1];
+    }
+
+    protected getPermissions(): Promise<[ManifestPermissions, ManifestOptionalPermissions]> {
+        return (this._permissions ??= this.calculatePermissions());
+    }
+
+    protected async calculatePermissions(): Promise<[ManifestPermissions, ManifestOptionalPermissions]> {
+        const permissions: ManifestPermissions = new Set();
+        const optionalPermissions: ManifestOptionalPermissions = new Set();
+
+        const contributions = await Promise.all(
+            Array.from(this.providers, async provider => {
+                const driver = provider.driver();
+
+                return Promise.all([driver.permissions(), driver.optionalPermissions()]);
+            })
+        );
+
+        for (const [required, optional] of contributions) {
+            for (const permission of required) {
+                permissions.add(permission);
+            }
+
+            for (const permission of optional) {
+                optionalPermissions.add(permission);
+            }
+        }
+
+        for (const permission of optionalPermissions) {
+            if (permissions.has(permission)) {
+                optionalPermissions.delete(permission);
+            }
+        }
+
+        return [permissions, optionalPermissions];
     }
 
     public virtual(file: EntrypointFile): string {
         for (const provider of this.providers) {
             try {
                 return provider.virtual(file);
-            } catch {
-            }
+            } catch {}
         }
 
         throw new Error(`Virtual file "${file.file}" not found.`);
@@ -159,6 +208,7 @@ export default class {
         this.names.reset();
 
         this._group = undefined;
+        this._hostPermissions = undefined;
         this._permissions = undefined;
 
         return this;

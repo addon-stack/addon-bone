@@ -22,13 +22,50 @@
     ],
     "baseUrl": "./src",
     "paths": {
+      "adnbn": ["index.ts"],
+      "adnbn/entry/content/*": [
+        "entry/content/adapters/*/index.ts"
+      ],
+      "adnbn/entry/view/*": [
+        "entry/view/adapters/*/index.ts"
+      ],
+      "adnbn/entry/*": [
+        "entry/*/index.ts"
+      ],
+      "adnbn/locale": [
+        "locale/index.ts"
+      ],
+      "adnbn/locale/*": [
+        "locale/adapters/*/index.ts"
+      ],
+      "adnbn/message": [
+        "message/index.ts"
+      ],
+      "adnbn/message/*": [
+        "message/adapters/*/index.ts"
+      ],
+      "adnbn/offscreen": [
+        "offscreen/index.ts"
+      ],
+      "adnbn/relay": ["relay/index.ts"],
+      "adnbn/sandbox": [
+        "sandbox/index.ts"
+      ],
+      "adnbn/service": [
+        "service/index.ts"
+      ],
+      "adnbn/transport": [
+        "transport/index.ts"
+      ],
       "@cli/*": ["cli/*"],
       "@entry/*": ["entry/*"],
+      "@frame/*": ["frame/*"],
       "@locale/*": ["locale/*"],
       "@main/*": ["main/*"],
       "@message/*": ["message/*"],
       "@offscreen/*": ["offscreen/*"],
       "@relay/*": ["relay/*"],
+      "@sandbox/*": ["sandbox/*"],
       "@service/*": ["service/*"],
       "@storage/*": ["storage/*"],
       "@transport/*": ["transport/*"],

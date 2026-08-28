@@ -1,3 +1,4 @@
+// Only placeholders belong here; real adnbn imports resolve to their source modules via tsconfig.json.
 declare module "*?raw" {
     const content: string;
     export default content;
@@ -37,16 +38,20 @@ declare module "virtual:content-entrypoint" {
 }
 
 declare module "virtual:content-framework" {
-    import {ContentScriptDefinition, ContentScriptBuilder} from "@typing/content";
+    export const Builder:
+        | typeof import("@entry/content/adapters/vanilla").Builder
+        | typeof import("@entry/content/adapters/react").Builder;
 
-    export const Builder = ContentScriptBuilder;
-
-    const module: (definition: ContentScriptDefinition) => void;
-    export = module;
+    const content:
+        | typeof import("@entry/content/adapters/vanilla").default
+        | typeof import("@entry/content/adapters/react").default;
+    export default content;
 }
 
 declare module "virtual:offscreen-entrypoint" {
-    type OffscreenDefinition = import("@typing/offscreen").OffscreenDefinition<any, any>;
+    type OffscreenDefinition = import("@typing/offscreen").OffscreenDefinition<
+        import("@typing/transport").TransportType
+    >;
 
     interface ModuleType extends OffscreenDefinition {
         default: OffscreenDefinition | OffscreenDefinition["init"] | undefined;
@@ -57,20 +62,50 @@ declare module "virtual:offscreen-entrypoint" {
 }
 
 declare module "virtual:relay-entrypoint" {
-    type RelayDefinition = import("@typing/relay").RelayDefinition<any, any>;
+    type RelayDefinition = import("@typing/relay").RelayDefinition<import("@typing/transport").TransportType>;
 
-    interface ModuleType extends RelayDefinition {
-        default: RelayDefinition | RelayDefinition["init"] | undefined;
+    export const {
+        init,
+        main,
+        name,
+        method,
+        allFrames,
+        matches,
+        excludeMatches,
+        includeGlobs,
+        excludeGlobs,
+        runAt,
+        world,
+        matchAboutBlank,
+        matchOriginAsFallback,
+        declarative,
+        marker,
+        anchor,
+        mount,
+        render,
+        container,
+        watch,
+        includeBrowser,
+        excludeBrowser,
+        includeApp,
+        excludeApp,
+        mode,
+        manifestVersion,
+        debug,
+    }: Partial<RelayDefinition>;
+
+    const definition: RelayDefinition | RelayDefinition["init"] | undefined;
+    export default definition;
+}
+
+declare module "virtual:sandbox-entrypoint" {
+    type SandboxDefinition = import("@typing/sandbox").SandboxDefinition<any>;
+
+    interface ModuleType extends SandboxDefinition {
+        default: SandboxDefinition | SandboxDefinition["init"] | undefined;
     }
 
     const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:relay-framework" {
-    type RelayUnresolvedDefinition = import("@typing/relay").RelayUnresolvedDefinition<any>;
-
-    const module: (definition: RelayUnresolvedDefinition) => void;
     export = module;
 }
 
@@ -88,14 +123,14 @@ declare module "virtual:view-entrypoint" {
 }
 
 declare module "virtual:view-framework" {
-    import {ViewOptions, ViewBuilder} from "@typing/view";
+    export const Builder:
+        | typeof import("@entry/view/adapters/vanilla").Builder
+        | typeof import("@entry/view/adapters/react").Builder;
 
-    type ViewDefinition = import("@typing/view").ViewDefinition<ViewOptions>;
-
-    export const Builder = ViewBuilder;
-
-    const module: (definition: ViewDefinition) => void;
-    export = module;
+    const view:
+        | typeof import("@entry/view/adapters/vanilla").default
+        | typeof import("@entry/view/adapters/react").default;
+    export default view;
 }
 
 declare module "virtual:transport-entrypoint" {
@@ -107,4 +142,11 @@ declare module "virtual:transport-entrypoint" {
 
     const module: ModuleType;
     export = module;
+}
+
+declare module "adnbn/entry/:entry" {
+    import type {TransportUnresolvedDefinition, TransportOptions, TransportType} from "@typing/transport";
+
+    const transport: (definition: TransportUnresolvedDefinition<TransportOptions, TransportType>) => void;
+    export default transport;
 }

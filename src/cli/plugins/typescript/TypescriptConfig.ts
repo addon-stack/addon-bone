@@ -7,8 +7,14 @@ import FileBuilder from "./FileBuilder";
 import {getResolvePath} from "@cli/resolvers/path";
 
 import {ReadonlyConfig} from "@typing/config";
+import {PackageName} from "@typing/app";
 
 export default class extends FileBuilder {
+    protected readonly vendorAliases = {
+        [`${PackageName}/browser`]: "@addon-core/browser",
+        [`${PackageName}/storage`]: "@addon-core/storage",
+    };
+
     public constructor(config: ReadonlyConfig) {
         super(config);
     }
@@ -42,7 +48,21 @@ export default class extends FileBuilder {
     }
 
     public aliases(): Record<string, string> {
-        return _.mapValues(this.alias(), value => getResolvePath(value));
+        return _.merge(
+            this.vendorAliases,
+            _.mapValues(this.alias(), value => getResolvePath(value))
+        );
+    }
+
+    public paths(): Record<string, string[]> {
+        return _.reduce(
+            this.alias(),
+            (paths, value, key) => ({
+                ...paths,
+                [path.posix.join(key, "*")]: [path.posix.join("..", value, "*")],
+            }),
+            {} as Record<string, string[]>
+        );
     }
 
     public json(): TsConfigJson {
@@ -60,27 +80,9 @@ export default class extends FileBuilder {
                 skipLibCheck: true,
                 noEmit: true,
                 outDir: outputDir,
-                paths: _.reduce(
-                    this.alias(),
-                    (paths, value, key) => ({
-                        ...paths,
-                        [path.posix.join(key, "*")]: [path.posix.join("..", value, "*")],
-                    }),
-                    {} as Record<string, string[]>
-                ),
+                paths: this.paths(),
             },
-            include: [
-                "../**/*",
-                "./vendor.d.ts",
-                "./locale.d.ts",
-                "./service.d.ts",
-                "./relay.d.ts",
-                "./offscreen.d.ts",
-                "./icon.d.ts",
-                "./page.d.ts",
-                "./popup.d.ts",
-                "./sidebar.d.ts",
-            ],
+            include: ["../**/*", "./*.d.ts"],
             exclude: [outputDir],
         };
     }

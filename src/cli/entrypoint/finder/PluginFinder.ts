@@ -1,6 +1,7 @@
 import _ from "lodash";
 
-import AbstractOptionsFinder from "./AbstractOptionsFinder";
+import AbstractParsedFinder from "./AbstractParsedFinder";
+import {FileLayer, setFilePrecedence} from "./utils/filePrecedence";
 
 import {processPluginHandler} from "@cli/resolvers/plugin";
 
@@ -8,11 +9,11 @@ import {ReadonlyConfig} from "@typing/config";
 import {PluginHandlerKeys} from "@typing/plugin";
 import {EntrypointFile, EntrypointOptions, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class<O extends EntrypointOptions> extends AbstractOptionsFinder<O> {
+export default class<O extends EntrypointOptions> extends AbstractParsedFinder<O> {
     constructor(
         config: ReadonlyConfig,
         protected readonly key: PluginHandlerKeys,
-        protected readonly finder: AbstractOptionsFinder<O>
+        protected readonly finder: AbstractParsedFinder<O>
     ) {
         super(config);
     }
@@ -34,7 +35,8 @@ export default class<O extends EntrypointOptions> extends AbstractOptionsFinder<
 
         const files = new Set<EntrypointFile>();
 
-        for (const {name, result} of pluginResult) {
+        for (let pluginIndex = 0; pluginIndex < pluginResult.length; pluginIndex++) {
+            const {name, result} = pluginResult[pluginIndex];
             let endpoints: Array<string | EntrypointFile> = [];
 
             if (_.isBoolean(result)) {
@@ -47,8 +49,16 @@ export default class<O extends EntrypointOptions> extends AbstractOptionsFinder<
                 endpoints = Array.from(result as Set<EntrypointFile>);
             }
 
-            for (const endpoint of endpoints) {
-                files.add(_.isString(endpoint) ? this.resolve(name, endpoint) : endpoint);
+            for (let sequence = 0; sequence < endpoints.length; sequence++) {
+                const endpoint = endpoints[sequence];
+                const file = _.isString(endpoint) ? this.resolve(name, endpoint) : endpoint;
+
+                setFilePrecedence(file, {
+                    layer: FileLayer.Plugin,
+                    order: pluginIndex,
+                    sequence,
+                });
+                files.add(file);
             }
         }
 

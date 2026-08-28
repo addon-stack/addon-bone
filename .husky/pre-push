@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+# Husky pre-push hook: typecheck, run full tests, and build
+
+npm run typecheck || exit 1
+npm run test:ci || exit 1
+npm run build || exit 1

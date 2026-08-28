@@ -1,6 +1,7 @@
 import Builder from "./Builder";
 import Node from "./Node";
 import MountNode from "./MountNode";
+import MarkerNode from "./MarkerNode";
 
 import {ContentScriptNode, ContentScriptProps, ContentScriptRenderValue} from "@typing/content";
 
@@ -42,7 +43,7 @@ export default abstract class extends Builder {
             container = (await this.definition.container(this.getProps(anchor))) as Element | undefined;
         }
 
-        return new MountNode(new Node(anchor, container), this.definition.mount);
+        return new MountNode(new MarkerNode(new Node(anchor, container), this.marker), this.definition.mount);
     }
 
     protected cleanupNode(anchor: Element): void {
