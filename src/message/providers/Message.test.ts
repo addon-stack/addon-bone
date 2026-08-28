@@ -1,5 +1,8 @@
 import Message from "./Message";
+import {getBrowserInfo} from "@addon-core/browser";
 import * as env from "@main/env";
+
+import {isRemoteMessageError, UnsupportedMessageTargetError} from "../error";
 
 type MessageMap = {
     getStringLength: (data: string) => number;
@@ -17,9 +20,17 @@ type MessageMap = {
 
 let message: Message<MessageMap>;
 const mockedEnv = env as jest.Mocked<typeof env>;
+const mockedGetBrowserInfo = getBrowserInfo as jest.MockedFunction<typeof getBrowserInfo>;
 
 beforeEach(async () => {
     jest.clearAllMocks();
+    mockedEnv.isBrowser.mockReturnValue(false);
+    mockedGetBrowserInfo.mockResolvedValue({
+        name: "Firefox",
+        vendor: "Mozilla",
+        version: "153.0",
+        buildID: "test",
+    });
     message = new Message<MessageMap>();
     message["manager"].clear();
 });
@@ -163,7 +174,7 @@ describe("send method", () => {
         expect(result).toBe(4);
     });
 
-    test("sends a message to tab when options is a object with tabId, frameId and documentId in Firefox", async () => {
+    test("preserves documentId for Firefox 153 and newer", async () => {
         mockedEnv.isBrowser.mockReturnValue(true);
 
         message.watch("getStringLength", str => str.length);
@@ -173,10 +184,36 @@ describe("send method", () => {
         expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(
             123,
             expect.objectContaining({type: "getStringLength", data: "test"}),
-            {frameId: 1},
+            {frameId: 1, documentId: "1"},
             expect.any(Function)
         );
+        expect(mockedGetBrowserInfo).toHaveBeenCalledTimes(1);
         expect(result).toBe(4);
+    });
+
+    test("rejects documentId targeting on Firefox older than 153", async () => {
+        mockedEnv.isBrowser.mockReturnValue(true);
+        mockedGetBrowserInfo.mockResolvedValue({
+            name: "Firefox",
+            vendor: "Mozilla",
+            version: "152.0",
+            buildID: "test",
+        });
+
+        await expect(
+            message.send("getStringLength", "test", {tabId: 123, documentId: "document-1"})
+        ).rejects.toBeInstanceOf(UnsupportedMessageTargetError);
+        expect(chrome.tabs.sendMessage).not.toHaveBeenCalled();
+    });
+
+    test("caches the Firefox version used for documentId capability checks", async () => {
+        mockedEnv.isBrowser.mockReturnValue(true);
+        message.watch("getStringLength", str => str.length);
+
+        await message.send("getStringLength", "test", {tabId: 123, documentId: "document-1"});
+        await message.send("getStringLength", "test", {tabId: 123, documentId: "document-2"});
+
+        expect(mockedGetBrowserInfo).toHaveBeenCalledTimes(1);
     });
 
     test("rejects when a sync handler throws", async () => {
@@ -189,6 +226,17 @@ describe("send method", () => {
             message: "sync boom",
         });
         await expect(message.send("throwSync", "sync boom")).rejects.toBeInstanceOf(TypeError);
+    });
+
+    test("marks restored handler errors as remote", async () => {
+        message.watch("throwSync", data => {
+            throw new TypeError(data);
+        });
+
+        const error = await message.send("throwSync", "sync boom").catch(cause => cause);
+
+        expect(error).toBeInstanceOf(TypeError);
+        expect(isRemoteMessageError(error)).toBe(true);
     });
 
     test("rejects when an async handler rejects", async () => {

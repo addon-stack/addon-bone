@@ -41,6 +41,14 @@ describe("CustomLocale", () => {
         expect(locale.lang()).toBe(Language.English);
     });
 
+    test("languageNames() - follows the provider's languages", () => {
+        locale.setLang(Language.French);
+        expect(locale.languageNames()).toEqual(new Map([[Language.French, "Français"]]));
+
+        locale.setLang(Language.Ukrainian);
+        expect(locale.languageNames()).toEqual(new Map([[Language.Ukrainian, "Українська"]]));
+    });
+
     describe("trans()", () => {
         test("returned the correct message if key exists and is non-empty", () => {
             expect(locale.trans("title" as never)).toBe("Adnbn");

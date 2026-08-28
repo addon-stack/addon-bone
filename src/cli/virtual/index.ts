@@ -8,7 +8,7 @@ import relay from "./relay.ts?raw";
 import sandbox from "./sandbox.ts?raw";
 import view from "./view.ts?raw";
 
-import {inferEntrypointFramework} from "@cli/entrypoint";
+import {inferEntrypointFramework} from "../entrypoint/index.js";
 
 import {PackageName} from "@typing/app";
 import {EntrypointFile} from "@typing/entrypoint";

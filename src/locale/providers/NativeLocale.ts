@@ -4,9 +4,10 @@ import AbstractLocale from "./AbstractLocale";
 
 import {convertLocaleKey, resolveLanguage} from "@locale/utils";
 
-import {Language, LocaleCustomKeyForLanguage, LocaleProvider, LocaleStructure} from "@typing/locale";
+import {Language, LocaleCustomKeyForLanguage, LocaleProvider} from "@typing/locale";
 
-export interface LocaleNativeStructure extends LocaleStructure {}
+/** Augmented by the generated .adnbn/locale.d.ts for the current app. */
+export interface LocaleNativeStructure {}
 
 export default class NativeLocale<S extends object = LocaleNativeStructure> extends AbstractLocale<S> {
     private static instance?: LocaleProvider<LocaleNativeStructure>;
@@ -75,7 +76,8 @@ export default class NativeLocale<S extends object = LocaleNativeStructure> exte
     protected value(key: Extract<keyof S, string>): string | undefined {
         const value = getI18nMessage(convertLocaleKey(key));
 
-        if (!value || value.length === 0) {
+        // Native i18n returns an empty string for missing messages too; build keys distinguish valid empty translations.
+        if (value === "" && !this.keys().has(key)) {
             return undefined;
         }
 

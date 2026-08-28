@@ -67,6 +67,31 @@ describe("LocaleStructureValidator", () => {
         );
     });
 
+    test("rejects an omitted plural key before default-locale completion", () => {
+        const builders = makeBuilders([
+            [Language.English, {cart: {items: ["{{count}} item", "{{count}} items"]}}],
+            [Language.French, {title: "Panier"}],
+        ]);
+
+        const validator = new LocaleStructureValidator(Language.English);
+
+        expect(() => validator.validate(builders)).toThrow(
+            'Locale "fr" is missing plural key "cart.items" required by default locale "en"'
+        );
+        expect(validator.isValid(builders)).toBe(false);
+    });
+
+    test("accepts a target-language plural supplied by an earlier merge", () => {
+        const builders = makeBuilders([
+            [Language.English, {cart: {items: ["item", "items"]}}],
+            [Language.French, {cart: {items: ["article", "articles"]}}],
+        ]);
+
+        builders.get(Language.French)!.merge({title: "Panier"});
+
+        expect(new LocaleStructureValidator(Language.English).isValid(builders)).toBe(true);
+    });
+
     test("warns about keys outside the default locale contract", () => {
         const builders = makeBuilders([
             [Language.English, {app: {name: "My App"}}],

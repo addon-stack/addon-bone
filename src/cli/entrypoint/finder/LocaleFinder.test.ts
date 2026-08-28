@@ -3,7 +3,7 @@ import path from "path";
 import LocaleFinder from "./LocaleFinder";
 
 import {ReadonlyConfig} from "@typing/config";
-import {Command} from "@typing/app";
+import {Command, Mode} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {Language} from "@typing/locale";
 
@@ -27,7 +27,7 @@ const makeFinder = (fixture: string, config: Partial<ReadonlyConfig> = {}): Test
         lang: Language.English,
         localeDir: "locales",
         mergeLocales: true,
-        mode: "production",
+        mode: Mode.Production,
         plugins: [
             {
                 name: root,
@@ -52,7 +52,7 @@ const makeLayeredFinder = (config: Partial<ReadonlyConfig> = {}): TestLocaleFind
         lang: Language.English,
         localeDir: "locales",
         mergeLocales: true,
-        mode: "production",
+        mode: Mode.Production,
         plugins: [],
         rootDir: path.join(root, "project"),
         sharedDir: "shared",
@@ -256,24 +256,10 @@ describe("LocaleFinder", () => {
 
     test("rejects ambiguous locale files in the same layer", async () => {
         const root = path.join(fixtures, "duplicate-layer");
-        const config = {
-            app: "app",
-            appSrcDir: ".",
-            appsDir: "apps",
-            browser: Browser.Chrome,
-            command: Command.Build,
-            lang: Language.English,
-            localeDir: "locales",
-            mergeLocales: true,
-            mode: "production",
-            plugins: [],
-            rootDir: root,
-            sharedDir: "shared",
-            srcDir: "src",
-        } as ReadonlyConfig;
-        const finder = new TestLocaleFinder(config);
+        const plugins: ReadonlyConfig["plugins"] = [];
+        const finder = makeFinder("duplicate-layer", {plugins});
 
-        config.plugins.push({
+        plugins.push({
             name: "adnbn:locale",
             locale: () => finder.files(),
         });

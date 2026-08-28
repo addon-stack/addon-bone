@@ -1,14 +1,28 @@
-import {RelayGlobalKey} from "../src/types/relay";
+const resolveScriptingResult = async (
+    injection: Parameters<typeof chrome.scripting.executeScript>[0]
+): Promise<chrome.scripting.InjectionResult<unknown>[]> => {
+    const {func, target} = injection;
 
-const resolveScriptingResult = async ({
-    args,
-}: chrome.scripting.ScriptInjection): Promise<chrome.scripting.InjectionResult[]> => {
-    const [name, path, callArgs] = args || [];
-    const relay = (globalThis as any)[RelayGlobalKey].get(name);
-    const target = path?.split(".").reduce((acc: any, key: string) => acc?.[key], relay);
-    const result = typeof target === "function" ? await target(...callArgs) : target;
+    if (!func) {
+        return [];
+    }
 
-    return [{result}];
+    const args = "args" in injection ? injection.args : [];
+    const frameIds = target.allFrames ? [0, 2] : target.frameIds || [0];
+    const documentIds = target.documentIds || [];
+    const targets = documentIds.length
+        ? documentIds.map(documentId => ({
+              documentId,
+              frameId: Number.parseInt(documentId.match(/\d+$/)?.[0] ?? "0", 10),
+          }))
+        : frameIds.map(frameId => ({frameId, documentId: `document-${frameId}`}));
+
+    return Promise.all(
+        targets.map(async target => ({
+            ...target,
+            result: await func(...args),
+        }))
+    );
 };
 
 chrome.scripting = {

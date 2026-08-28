@@ -1,33 +1,37 @@
 type MessageSender = chrome.runtime.MessageSender;
 
-let listener: ((...args: any[]) => boolean | void) | null = null;
+type MessageListener = (...args: any[]) => boolean | void;
 
-chrome.runtime.onMessage.addListener = jest.fn(cb => (listener = cb));
-chrome.runtime.onMessage.removeListener = jest.fn(cb => listener === cb && (listener = null));
-chrome.runtime.onMessage.hasListeners = jest.fn(() => !!listener);
+const listeners = new Set<MessageListener>();
 
-chrome.runtime.sendMessage = jest.fn().mockImplementation((msg, callback) => {
-    if (!listener) return;
+chrome.runtime.onMessage.addListener = jest.fn((callback: MessageListener) => listeners.add(callback));
+chrome.runtime.onMessage.removeListener = jest.fn((callback: MessageListener) => listeners.delete(callback));
+chrome.runtime.onMessage.hasListeners = jest.fn(() => listeners.size > 0);
 
+const dispatch = (message: unknown, sender: MessageSender, callback?: (response: any) => void): void => {
     let called = false;
-    const result = listener(msg, {} as MessageSender, (response: any) => {
-        callback?.(response);
-        called = true;
-    });
+    let asynchronous = false;
 
-    if (result === true) return;
-    if (!called) callback?.(undefined);
+    for (const listener of listeners) {
+        const result = listener(message, sender, (response: any) => {
+            if (called) return;
+
+            called = true;
+            callback?.(response);
+        });
+
+        asynchronous ||= result === true;
+    }
+
+    if (!asynchronous && !called) {
+        callback?.(undefined);
+    }
+};
+
+chrome.runtime.sendMessage = jest.fn().mockImplementation((message, callback) => {
+    dispatch(message, {} as MessageSender, callback);
 });
 
-chrome.tabs.sendMessage = jest.fn().mockImplementation((tabId, msg, options, callback) => {
-    if (!listener) return;
-
-    let called = false;
-    const result = listener(msg, {} as MessageSender, (response: any) => {
-        callback?.(response);
-        called = true;
-    });
-
-    if (result === true) return;
-    if (!called) callback?.(undefined);
+chrome.tabs.sendMessage = jest.fn().mockImplementation((tabId, message, options, callback) => {
+    dispatch(message, {} as MessageSender, callback);
 });

@@ -1,4 +1,4 @@
-import {restoreError, serializeError} from "./error";
+import {isRemoteMessageError, markRemoteMessageError, restoreError, serializeError} from "./error";
 
 describe("message error", () => {
     test("serializes a real Error with name, message and stack", () => {
@@ -35,5 +35,13 @@ describe("message error", () => {
 
         expect(restored).toBeInstanceOf(Error);
         expect(restored.message).toBe("Request failed.");
+    });
+
+    test("brands restored remote errors without changing their native class", () => {
+        const restored = markRemoteMessageError(restoreError({name: "TypeError", message: "boom"}));
+
+        expect(restored).toBeInstanceOf(TypeError);
+        expect(isRemoteMessageError(restored)).toBe(true);
+        expect(isRemoteMessageError(new TypeError("local"))).toBe(false);
     });
 });

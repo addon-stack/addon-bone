@@ -9,7 +9,7 @@ import ProxyOffscreen from "./ProxyOffscreen";
 import RegisterOffscreen from "./RegisterOffscreen";
 import OffscreenManager from "../OffscreenManager";
 
-import {DeepAsyncProxy} from "@typing/helpers";
+import {RpcAsyncProxy} from "@typing/rpc";
 import {MessageTypeSeparator} from "@typing/message";
 
 jest.mock("@offscreen/utils", () => ({isOffscreen: jest.fn()}));
@@ -167,7 +167,7 @@ const MatchService = {
 };
 
 type OffscreenType = typeof MatchService;
-type OffscreenProxyType = DeepAsyncProxy<OffscreenType>;
+type OffscreenProxyType = RpcAsyncProxy<OffscreenType>;
 
 const offscreenName = "math";
 const parameters = {

@@ -91,9 +91,10 @@ export default defineConfig([
         clean: false,
         dts: false,
         sourcemap: false,
-        external: [/^@cli/],
+        external: ["../entrypoint/index.js"],
+        // Raw templates are source text; output-wide import rewrites corrupt their package specifiers.
         // @ts-ignore
-        esbuildPlugins: [fixVirtualIndexImportPlugin(), rawPlugin(), fixImportsPlugin()],
+        esbuildPlugins: [rawPlugin()],
         esbuildOptions: options => {
             options.outbase = "src";
         },

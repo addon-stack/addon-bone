@@ -191,7 +191,7 @@ const createReleaseConfig = () => {
 
         github: {
             release: true,
-            releaseName: "v${version}",
+            releaseName: "Addon Bone v${version}",
             autoGenerate: false,
             releaseNotes: ({changelog}) => changelog,
         },
@@ -226,8 +226,7 @@ const createReleaseConfig = () => {
 
                 whatBump,
                 writerOpts: {
-                    headerPartial:
-                        "## 🚀 Release {{#if name}}`{{name}}` {{else}}{{#if @root.pkg}}`{{@root.pkg.name}}` {{/if}}{{/if}}v{{version}} ({{date}})\n\n",
+                    headerPartial: "## 🚀 Release Addon Bone v{{version}} ({{date}})\n\n",
                     footerPartial: `{{#if @root.contributors.length}}\n### 🙌 Contributors\n\n{{#each @root.contributors}}- {{#if url}}{{#if name}}[{{name}}]({{url}}){{#if login}} (@{{login}}){{/if}}{{else}}[@{{login}}]({{url}}){{/if}}{{else}}{{#if email}}{{#if name}}[{{name}}](mailto:{{email}}){{else}}{{email}}{{/if}}{{else}}{{name}}{{/if}}{{/if}} — commits: {{count}}\n{{/each}}{{/if}}`,
                     mainTemplate:
                         "{{> header}}\n" +

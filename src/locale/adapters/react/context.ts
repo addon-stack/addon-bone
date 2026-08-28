@@ -7,6 +7,8 @@ import {LocaleNativeStructure} from "@locale/providers";
 export interface LocaleContract<S extends object = LocaleNativeStructure> {
     lang: Language;
 
+    langs: ReadonlyMap<Language, string>;
+
     dir: LocaleDir;
 
     isRtl: boolean;
@@ -20,12 +22,13 @@ export interface LocaleContract<S extends object = LocaleNativeStructure> {
 
 export const DefaultLocale: LocaleContract = {
     lang: Language.English,
+    langs: new Map(),
     isRtl: false,
     dir: LocaleDir.LeftToRight,
-    t(key: string): string {
-        return key as string;
+    t(key, ..._args): string {
+        return key;
     },
-    choice(key: string): string {
+    choice(key, _count, ..._args): string {
         return key;
     },
     change(_lang: Language) {},

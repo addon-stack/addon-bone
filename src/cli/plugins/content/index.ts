@@ -12,8 +12,7 @@ import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
 import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
 
 import {Command} from "@typing/app";
-import {RelayMethod, RelayOptions} from "@typing/relay";
-import {ContentScriptDeclarative} from "@typing/content";
+import {RelayOptions} from "@typing/relay";
 
 export default definePlugin(() => {
     let content: Content;
@@ -112,15 +111,9 @@ export default definePlugin(() => {
             manifest
                 .setContentScripts(await manager.manifest())
                 .appendHostPermissions(await manager.hostPermissions())
-                .appendOptionalHostPermissions(await manager.optionalHostPermissions());
-
-            if ((await relay.exists()) && (await relay.hasMethod(RelayMethod.Scripting))) {
-                if (await relay.hasDeclarative(ContentScriptDeclarative.Required)) {
-                    manifest.addPermission("scripting");
-                } else if (await relay.hasDeclarative(ContentScriptDeclarative.Optional)) {
-                    manifest.addOptionalPermission("scripting");
-                }
-            }
+                .appendOptionalHostPermissions(await manager.optionalHostPermissions())
+                .appendPermissions(await manager.permissions())
+                .appendOptionalPermissions(await manager.optionalPermissions());
         },
     };
 });

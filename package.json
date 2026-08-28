@@ -107,7 +107,8 @@
     "prepublishOnly": "npm run build",
     "build": "tsup && tsc -p tsconfig.build.json && node ./scripts/copy-dts.js && tsc-alias -p tsconfig.build.json -f -fe .js",
     "format": "prettier --write .",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck:tests",
+    "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",
     "check:node-version": "node ./scripts/check-node-version.js",
     "test": "npm run build && jest",
     "test:ci": "npm run test -- --ci --passWithNoTests --coverage",
@@ -126,8 +127,8 @@
     "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.7.1",
-    "@addon-core/inject-script": "^0.3.1",
+    "@addon-core/browser": "^0.7.2",
+    "@addon-core/inject-script": "^0.5.0",
     "@addon-core/storage": "^0.7.0",
     "@rsdoctor/rspack-plugin": "^1.5.1",
     "@rspack/cli": "^1.7.5",

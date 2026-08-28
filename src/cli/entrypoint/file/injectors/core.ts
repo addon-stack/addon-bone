@@ -1,6 +1,6 @@
 import {Command, Mode, PackageName} from "@typing/app";
 import {Browser} from "@typing/browser";
-import {RelayMethod} from "@typing/relay";
+import {RelayAllFrames, RelayMethod} from "@typing/relay";
 import {ContentScriptAppend, ContentScriptDeclarative, ContentScriptMarker} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
 import {SandboxAllow, SandboxSource} from "@typing/sandbox";
@@ -78,6 +78,15 @@ export default (): Injector[] => {
         resolvers.push({
             from: PackageName,
             target: "RelayMethod",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(RelayAllFrames).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "RelayAllFrames",
             name: key,
             value,
         });

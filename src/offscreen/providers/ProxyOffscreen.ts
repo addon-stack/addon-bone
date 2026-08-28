@@ -11,7 +11,7 @@ import OffscreenBridge from "../OffscreenBridge";
 import {isOffscreen} from "../utils";
 
 import {Browser} from "@typing/browser";
-import {DeepAsyncProxy} from "@typing/helpers";
+import {RpcAsyncProxy} from "@typing/rpc";
 import {TransportDictionary, TransportManager, TransportMessage, TransportName} from "@typing/transport";
 
 type CreateParameters = chrome.offscreen.CreateParameters;
@@ -22,7 +22,7 @@ const ActiveLockName = "adnbn:offscreen:active";
 
 export default class ProxyOffscreen<
     N extends TransportName,
-    T = DeepAsyncProxy<TransportDictionary[N]>,
+    T = RpcAsyncProxy<TransportDictionary[N]>,
 > extends ProxyTransport<N, T> {
     protected message: TransportMessage;
 

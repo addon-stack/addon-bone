@@ -1,3 +1,4 @@
+// Only placeholders belong here; real adnbn imports resolve to their source modules via tsconfig.json.
 declare module "*?raw" {
     const content: string;
     export default content;
@@ -37,16 +38,20 @@ declare module "virtual:content-entrypoint" {
 }
 
 declare module "virtual:content-framework" {
-    import {ContentScriptDefinition, ContentScriptBuilder} from "@typing/content";
+    export const Builder:
+        | typeof import("@entry/content/adapters/vanilla").Builder
+        | typeof import("@entry/content/adapters/react").Builder;
 
-    export const Builder = ContentScriptBuilder;
-
-    const module: (definition: ContentScriptDefinition) => void;
-    export = module;
+    const content:
+        | typeof import("@entry/content/adapters/vanilla").default
+        | typeof import("@entry/content/adapters/react").default;
+    export default content;
 }
 
 declare module "virtual:offscreen-entrypoint" {
-    type OffscreenDefinition = import("@typing/offscreen").OffscreenDefinition<any, any>;
+    type OffscreenDefinition = import("@typing/offscreen").OffscreenDefinition<
+        import("@typing/transport").TransportType
+    >;
 
     interface ModuleType extends OffscreenDefinition {
         default: OffscreenDefinition | OffscreenDefinition["init"] | undefined;
@@ -57,14 +62,40 @@ declare module "virtual:offscreen-entrypoint" {
 }
 
 declare module "virtual:relay-entrypoint" {
-    type RelayDefinition = import("@typing/relay").RelayDefinition<any, any>;
+    type RelayDefinition = import("@typing/relay").RelayDefinition<import("@typing/transport").TransportType>;
 
-    interface ModuleType extends RelayDefinition {
-        default: RelayDefinition | RelayDefinition["init"] | undefined;
-    }
+    export const {
+        init,
+        main,
+        name,
+        method,
+        allFrames,
+        matches,
+        excludeMatches,
+        includeGlobs,
+        excludeGlobs,
+        runAt,
+        world,
+        matchAboutBlank,
+        matchOriginAsFallback,
+        declarative,
+        marker,
+        anchor,
+        mount,
+        render,
+        container,
+        watch,
+        includeBrowser,
+        excludeBrowser,
+        includeApp,
+        excludeApp,
+        mode,
+        manifestVersion,
+        debug,
+    }: Partial<RelayDefinition>;
 
-    const module: ModuleType;
-    export = module;
+    const definition: RelayDefinition | RelayDefinition["init"] | undefined;
+    export default definition;
 }
 
 declare module "virtual:sandbox-entrypoint" {
@@ -75,13 +106,6 @@ declare module "virtual:sandbox-entrypoint" {
     }
 
     const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:relay-framework" {
-    type RelayUnresolvedDefinition = import("@typing/relay").RelayUnresolvedDefinition<any>;
-
-    const module: (definition: RelayUnresolvedDefinition) => void;
     export = module;
 }
 
@@ -99,14 +123,14 @@ declare module "virtual:view-entrypoint" {
 }
 
 declare module "virtual:view-framework" {
-    import {ViewOptions, ViewBuilder} from "@typing/view";
+    export const Builder:
+        | typeof import("@entry/view/adapters/vanilla").Builder
+        | typeof import("@entry/view/adapters/react").Builder;
 
-    type ViewDefinition = import("@typing/view").ViewDefinition<ViewOptions>;
-
-    export const Builder = ViewBuilder;
-
-    const module: (definition: ViewDefinition) => void;
-    export = module;
+    const view:
+        | typeof import("@entry/view/adapters/vanilla").default
+        | typeof import("@entry/view/adapters/react").default;
+    export default view;
 }
 
 declare module "virtual:transport-entrypoint" {
@@ -118,125 +142,6 @@ declare module "virtual:transport-entrypoint" {
 
     const module: ModuleType;
     export = module;
-}
-
-declare module "adnbn" {
-    export type BackgroundDefinition = import("@typing/background").BackgroundDefinition;
-    export type CommandUnresolvedDefinition = import("@typing/command").CommandUnresolvedDefinition;
-    export type ContentScriptDefinition = import("@typing/content").ContentScriptDefinition;
-    export type ViewOptions = import("@typing/view").ViewOptions;
-    export type ViewDefinition<T extends ViewOptions = ViewOptions> = import("@typing/view").ViewDefinition<T>;
-    export type OffscreenUnresolvedDefinition<T extends import("@typing/transport").TransportType> =
-        import("@typing/offscreen").OffscreenUnresolvedDefinition<T>;
-    export type RelayUnresolvedDefinition<T extends import("@typing/transport").TransportType> =
-        import("@typing/relay").RelayUnresolvedDefinition<T>;
-    export type SandboxUnresolvedDefinition<T extends import("@typing/transport").TransportType> =
-        import("@typing/sandbox").SandboxUnresolvedDefinition<T>;
-}
-
-declare module "adnbn/transport" {
-    export type TransportType = import("@typing/transport").TransportType;
-    export type TransportOptions = import("@typing/transport").TransportOptions;
-    export type TransportUnresolvedDefinition<
-        O extends import("@typing/transport").TransportOptions,
-        T extends import("@typing/transport").TransportType,
-    > = import("@typing/transport").TransportUnresolvedDefinition<O, T>;
-}
-
-declare module "adnbn/locale" {
-    export function resolve(value: string): string;
-}
-
-declare module "adnbn/entry/background" {
-    import type {BackgroundDefinition, BackgroundMainHandler} from "@typing/background";
-
-    export function isValidBackgroundDefinition(value: unknown): value is BackgroundDefinition;
-
-    export function isValidBackgroundMainHandler(value: unknown): value is BackgroundMainHandler;
-
-    const background: (definition: BackgroundDefinition) => void;
-    export default background;
-}
-
-declare module "adnbn/entry/command" {
-    import type {CommandDefinition, CommandExecute, CommandUnresolvedDefinition} from "@typing/command";
-
-    export function isValidCommandDefinition(value: unknown): value is CommandDefinition;
-
-    export function isValidCommandExecuteFunction(value: unknown): value is CommandExecute;
-
-    const command: (definition: CommandUnresolvedDefinition) => void;
-    export default command;
-}
-
-declare module "adnbn/entry/content" {
-    import type {ContentScriptDefinition, ContentScriptRenderValue} from "@typing/content";
-
-    export function isContentScriptDefinition(value: unknown): value is ContentScriptDefinition;
-
-    export function isValidContentScriptDefinitionRenderValue(value: unknown): value is ContentScriptRenderValue;
-}
-
-declare module "adnbn/entry/view" {
-    import type {ViewOptions, ViewDefinition, ViewRenderValue} from "@typing/view";
-
-    export function isViewDefinition(value: unknown): value is ViewDefinition<ViewOptions>;
-
-    export function isValidViewDefinitionRenderValue(value: unknown): value is ViewRenderValue<ViewOptions>;
-}
-
-declare module "adnbn/entry/transport" {
-    export function isValidTransportDefinition(value: unknown): value is any;
-
-    export function isValidTransportInitFunction(value: unknown): value is (...args: any[]) => any;
-}
-
-declare module "adnbn/entry/offscreen" {
-    import type {OffscreenDefinition, OffscreenUnresolvedDefinition} from "@typing/offscreen";
-    import type {TransportType} from "@typing/transport";
-    import type {ViewBuilder} from "@typing/view";
-
-    export class Builder {
-        constructor(options: OffscreenDefinition<TransportType> | OffscreenUnresolvedDefinition<TransportType>);
-
-        view(builder: ViewBuilder): this;
-
-        build(): Promise<void>;
-    }
-}
-
-declare module "adnbn/entry/relay" {
-    import type {RelayDefinition, RelayUnresolvedDefinition} from "@typing/relay";
-    import type {TransportType} from "@typing/transport";
-    import type {ContentScriptBuilder} from "@typing/content";
-
-    export class Builder {
-        constructor(options: RelayDefinition<TransportType> | RelayUnresolvedDefinition<TransportType>);
-
-        content(builder: ContentScriptBuilder): this;
-
-        build(): Promise<void>;
-    }
-}
-
-declare module "adnbn/entry/sandbox" {
-    import type {SandboxDefinition, SandboxUnresolvedDefinition} from "@typing/sandbox";
-    import type {TransportType} from "@typing/transport";
-    import type {ViewBuilder} from "@typing/view";
-
-    export class Builder {
-        constructor(options: SandboxDefinition<TransportType> | SandboxUnresolvedDefinition<TransportType>);
-
-        view(builder: ViewBuilder): this;
-
-        build(): Promise<void>;
-    }
-}
-
-declare module "adnbn/offscreen" {
-    export class OffscreenBackground {
-        build(): void | Promise<void>;
-    }
 }
 
 declare module "adnbn/entry/:entry" {

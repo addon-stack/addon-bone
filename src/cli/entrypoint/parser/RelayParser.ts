@@ -2,7 +2,7 @@ import z from "zod";
 
 import ContentParser from "./ContentParser";
 
-import {RelayEntrypointOptions, RelayMethod} from "@typing/relay";
+import {RelayAllFrames, RelayEntrypointOptions, RelayMethod} from "@typing/relay";
 import {EntrypointFile} from "@typing/entrypoint";
 import {ContentScriptDeclarative} from "@typing/content";
 
@@ -17,6 +17,7 @@ export default class extends ContentParser<RelayEntrypointOptions> {
 
     protected schema(): typeof this.CommonPropertiesSchema {
         return super.schema().extend({
+            allFrames: z.union([z.boolean(), z.nativeEnum(RelayAllFrames)]).optional(),
             name: z
                 .string()
                 .trim()

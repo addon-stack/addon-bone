@@ -1,12 +1,12 @@
 import BaseTransport from "./BaseTransport";
 
-import type {DeepAsyncProxy} from "@typing/helpers";
+import type {RpcAsyncProxy} from "@typing/rpc";
 import type {TransportDictionary, TransportName} from "@typing/transport";
 
-export default abstract class<
-    N extends TransportName,
-    T = DeepAsyncProxy<TransportDictionary[N]>,
-> extends BaseTransport<N, T> {
+export default abstract class<N extends TransportName, T = RpcAsyncProxy<TransportDictionary[N]>> extends BaseTransport<
+    N,
+    T
+> {
     protected abstract apply(args: any[], path?: string): any;
 
     protected createProxy(path?: string): T {

@@ -8,11 +8,9 @@ import {
     ContentScriptMarker,
     ContentScriptMatches,
 } from "@typing/content";
-import {EntrypointFile} from "@typing/entrypoint";
+import {EntrypointFile, EntrypointOptions} from "@typing/entrypoint";
 
-export default class<
-    O extends ContentScriptEntrypointOptions = ContentScriptEntrypointOptions,
-> extends AbstractParser<O> {
+export default class<O extends EntrypointOptions = ContentScriptEntrypointOptions> extends AbstractParser<O> {
     protected definition(): string | string[] {
         return ["defineContentScript", "defineContentScriptAppend"];
     }

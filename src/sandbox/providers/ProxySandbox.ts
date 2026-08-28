@@ -3,11 +3,11 @@ import ProxyTransport from "@transport/ProxyTransport";
 import SandboxManager from "../SandboxManager";
 import SandboxMessage from "../SandboxMessage";
 
-import type {DeepAsyncProxy} from "@typing/helpers";
+import type {RpcAsyncProxy} from "@typing/rpc";
 import type {SandboxParameters} from "@typing/sandbox";
 import type {TransportDictionary, TransportManager, TransportName} from "@typing/transport";
 
-export default class<N extends TransportName, T = DeepAsyncProxy<TransportDictionary[N]>> extends ProxyTransport<N, T> {
+export default class<N extends TransportName, T = RpcAsyncProxy<TransportDictionary[N]>> extends ProxyTransport<N, T> {
     constructor(
         name: N,
         private readonly parameters: SandboxParameters

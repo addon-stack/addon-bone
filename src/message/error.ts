@@ -1,5 +1,20 @@
 import {MessageError} from "@typing/message";
 
+const RemoteMessageErrorMarker = Symbol("RemoteMessageError");
+
+export class UnsupportedMessageTargetError extends Error {
+    public override readonly cause?: unknown;
+
+    public constructor(message: string, cause?: unknown) {
+        super(message);
+        this.name = "UnsupportedMessageTargetError";
+
+        if (cause !== undefined) {
+            this.cause = cause;
+        }
+    }
+}
+
 const build = (name: string, message: string, stack?: string): MessageError => {
     return stack ? {name, message, stack} : {name, message};
 };
@@ -68,4 +83,17 @@ export const restoreError = (error?: MessageError): Error => {
     }
 
     return restored;
+};
+
+export const markRemoteMessageError = <T extends Error>(error: T): T => {
+    Object.defineProperty(error, RemoteMessageErrorMarker, {value: true});
+
+    return error;
+};
+
+export const isRemoteMessageError = (error: unknown): error is Error => {
+    return (
+        error instanceof Error &&
+        (error as Error & {[RemoteMessageErrorMarker]?: boolean})[RemoteMessageErrorMarker] === true
+    );
 };

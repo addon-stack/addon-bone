@@ -1,0 +1,9 @@
+app:
+    title: Updated English title
+    greeting: Welcome {{ name }}
+empty: Updated default value
+zero: 0
+cart:
+    items:
+        - "{{count}} item"
+        - "{{count}} items"

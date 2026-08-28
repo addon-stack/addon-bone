@@ -1,19 +1,19 @@
-import ContentDriver from "./ContentDriver";
+import RelayDriver from "./RelayDriver";
 
 import {ContentProvider} from "./types";
 
 import {RelayFinder} from "@cli/entrypoint";
 import {virtualRelayModule} from "@cli/virtual";
 
-import {RelayEntrypointOptions, RelayMethod, RelayOptions} from "@typing/relay";
-import {ContentScriptDeclarative} from "@typing/content";
+import {RelayMethod, RelayOptions} from "@typing/relay";
+import {ContentScriptEntrypointOptions} from "@typing/content";
 import {EntrypointFile} from "@typing/entrypoint";
 
-export default class extends RelayFinder implements ContentProvider<RelayEntrypointOptions> {
-    protected _driver?: ContentDriver<RelayEntrypointOptions>;
+export default class extends RelayFinder implements ContentProvider<ContentScriptEntrypointOptions> {
+    protected _driver?: RelayDriver;
 
-    public driver(): ContentDriver<RelayEntrypointOptions> {
-        return (this._driver ??= new ContentDriver(this));
+    public driver(): RelayDriver {
+        return (this._driver ??= new RelayDriver(this));
     }
 
     /**
@@ -44,21 +44,6 @@ export default class extends RelayFinder implements ContentProvider<RelayEntrypo
             },
             {} as Record<string, RelayOptions>
         );
-    }
-
-    public async hasMethod(method: RelayMethod): Promise<boolean> {
-        return Object.values(await this.getOptionsMap())
-            .map(({method}) => method)
-            .includes(method);
-    }
-
-    public async hasDeclarative(declarative: ContentScriptDeclarative): Promise<boolean> {
-        return !!Object.values(await this.getOptionsMap()).filter(options => {
-            if (declarative === ContentScriptDeclarative.Required && options.declarative === true) {
-                return true;
-            }
-            return declarative === options.declarative;
-        }).length;
     }
 
     public clear(): this {

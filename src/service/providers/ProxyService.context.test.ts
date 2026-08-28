@@ -45,9 +45,11 @@ describe("ProxyService context detection", () => {
 
     test("creates a service proxy in an offscreen-like context with no runtime.getManifest", async () => {
         const expectedResult = "background:value";
-        const sendMessage = jest.fn<RuntimeSendMessage>((_message, callback) => {
-            callback({[MessageResultEnvelopeProperty]: true, ok: true, payload: expectedResult});
-        });
+        const sendMessage = jest.fn<ReturnType<RuntimeSendMessage>, Parameters<RuntimeSendMessage>>(
+            (_message, callback) => {
+                callback({[MessageResultEnvelopeProperty]: true, ok: true, payload: expectedResult});
+            }
+        );
 
         setRuntime({sendMessage});
         setExtensionDocument("/offscreen.html");
@@ -72,13 +74,15 @@ describe("ProxyService context detection", () => {
     });
 
     test("restores serialized background errors in an offscreen-like context", async () => {
-        const sendMessage = jest.fn<RuntimeSendMessage>((_message, callback) => {
-            callback({
-                [MessageResultEnvelopeProperty]: true,
-                ok: false,
-                error: {name: "TypeError", message: "background failed"},
-            });
-        });
+        const sendMessage = jest.fn<ReturnType<RuntimeSendMessage>, Parameters<RuntimeSendMessage>>(
+            (_message, callback) => {
+                callback({
+                    [MessageResultEnvelopeProperty]: true,
+                    ok: false,
+                    error: {name: "TypeError", message: "background failed"},
+                });
+            }
+        );
 
         setRuntime({sendMessage});
         setExtensionDocument("/offscreen.html");

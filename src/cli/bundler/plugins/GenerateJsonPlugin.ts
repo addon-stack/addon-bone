@@ -21,14 +21,11 @@ export default class GenerateJsonPlugin {
 
     public apply(compiler: Compiler): void {
         compiler.hooks.watchRun.tapPromise(this.pluginName, async () => {
-            try {
-                const update = this.update;
+            const update = this.update;
 
-                if (update) {
-                    this.data = await update();
-                }
-            } catch (e) {
-                console.error("GenerateJsonPlugin: Error updating data", e);
+            if (update) {
+                // Let the compiler fail this rebuild rather than emit stale JSON.
+                this.data = await update();
             }
         });
 
