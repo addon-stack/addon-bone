@@ -1,7 +1,8 @@
+import ManifestV2 from "./ManifestV2";
 import ManifestV3 from "./ManifestV3";
 import {Browser, DataCollectionPermission} from "@typing/browser";
 import {Language} from "@typing/locale";
-import {ManifestIncognito} from "@typing/manifest";
+import {ManifestIncognito, type OptionalManifest} from "@typing/manifest";
 
 describe("Manifest primitive properties", () => {
     it("name", () => {
@@ -261,6 +262,83 @@ describe("Manifest common builder methods", () => {
         expect(builder.getWebAccessibleResources()).not.toEqual(
             expect.arrayContaining([{resources: ["img/add.png"], matches: ["https://add.example.com/*"]}])
         );
+    });
+});
+
+describe.each([
+    ["ManifestV2", ManifestV2],
+    ["ManifestV3", ManifestV3],
+] as const)("%s options page", (_, Builder) => {
+    describe.each([Browser.Chrome, Browser.Edge, Browser.Opera, Browser.Safari, Browser.Firefox])("%s", browser => {
+        const rawOptionsUi = {
+            page: "raw-options.html",
+            open_in_tab: false,
+            browser_style: true,
+            chrome_style: true,
+        };
+        const rawOptions = {
+            options_ui: rawOptionsUi,
+            options_page: "legacy-options.html",
+        };
+        const rawCases: {name: string; raw: OptionalManifest}[] = [
+            {name: "options_ui", raw: {options_ui: rawOptionsUi}},
+            {name: "options_page", raw: {options_page: "legacy-options.html"}},
+            {name: "both options keys", raw: rawOptions},
+        ];
+
+        it("defaults the generated options page to a browser tab", () => {
+            const manifest = new Builder(browser).setOptions({path: "options.html"}).build();
+
+            expect(manifest.options_ui).toStrictEqual({page: "options.html", open_in_tab: true});
+            expect(manifest).not.toHaveProperty("options_page");
+        });
+
+        it.each([true, false])("preserves explicit openInTab=%s", openInTab => {
+            const manifest = new Builder(browser).setOptions({path: "options.html", openInTab}).build();
+
+            expect(manifest.options_ui).toStrictEqual({page: "options.html", open_in_tab: openInTab});
+        });
+
+        it.each(rawCases)("preserves raw $name without an options entrypoint", ({raw}) => {
+            const manifest = new Builder(browser).raw(raw).build();
+
+            expect(manifest.options_ui).toStrictEqual(raw.options_ui);
+            expect(manifest.options_page).toBe(raw.options_page);
+        });
+
+        it("replaces both raw options keys with only the generated page and open_in_tab", () => {
+            const manifest = new Builder(browser).setOptions({path: "options.html"}).raw(rawOptions).build();
+
+            expect(manifest.options_ui).toStrictEqual({page: "options.html", open_in_tab: true});
+            expect(manifest).not.toHaveProperty("options_page");
+        });
+
+        it("restores both raw options keys after clearing a generated options page", () => {
+            const builder = new Builder(browser).raw(rawOptions).setOptions({path: "options.html"});
+
+            builder.build();
+            const manifest = builder.setOptions(undefined).build();
+
+            expect(manifest.options_ui).toStrictEqual(rawOptions.options_ui);
+            expect(manifest.options_page).toBe(rawOptions.options_page);
+        });
+
+        it("omits both options keys when there is no options page", () => {
+            const manifest = new Builder(browser).build();
+
+            expect(manifest).not.toHaveProperty("options_ui");
+            expect(manifest).not.toHaveProperty("options_page");
+        });
+
+        it("omits both options keys after clearing an options page without raw fallback", () => {
+            const builder = new Builder(browser).setOptions({path: "options.html", openInTab: false});
+
+            builder.build();
+            const manifest = builder.setOptions(undefined).build();
+
+            expect(manifest).not.toHaveProperty("options_ui");
+            expect(manifest).not.toHaveProperty("options_page");
+        });
     });
 });
 

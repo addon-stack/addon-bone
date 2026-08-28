@@ -1,0 +1,6 @@
+{
+  "extends": "./.adnbn/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react"
+  }
+}

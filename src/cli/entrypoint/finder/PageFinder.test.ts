@@ -64,10 +64,10 @@ describe("PageFinder", () => {
         expect(new PageFinder(makeConfig({mergePages: false})).canMerge()).toBe(false);
     });
 
-    test("keeps page filenames away from reserved entrypoint output", async () => {
-        const page = new ExposedPageFinder(config, new Map([[file("sandbox.ts"), {as: "sandbox"}]]));
+    test.each(["sandbox", "options"])("keeps page filenames away from reserved %s output", async name => {
+        const page = new ExposedPageFinder(config, new Map([[file(`${name}.ts`), {as: name}]]));
 
-        await expect(page.views()).resolves.toMatchObject(new Map([["sandbox.page", {filename: "sandbox1.html"}]]));
+        await expect(page.views()).resolves.toMatchObject(new Map([[`${name}.page`, {filename: `${name}1.html`}]]));
     });
 
     test("uses page name as an alias when it is defined", () => {

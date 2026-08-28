@@ -14,6 +14,7 @@ jest.mock("../plugins", () => {
         pluginMeta: plugin("meta"),
         pluginOffscreen: plugin("offscreen"),
         pluginOptimization: plugin("optimization"),
+        pluginOptions: plugin("options"),
         pluginOutput: plugin("output"),
         pluginPage: plugin("page"),
         pluginPopup: plugin("popup"),

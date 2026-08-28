@@ -11,7 +11,7 @@ export default definePlugin(() => {
     return {
         name: "adnbn:view",
         bundler: ({config}) => {
-            const entryTypeFilter = onlyViaTopLevelEntry(["page", "popup", "sidebar", "offscreen"]);
+            const entryTypeFilter = onlyViaTopLevelEntry(["page", "popup", "sidebar", "offscreen", "options"]);
 
             return {
                 optimization: {

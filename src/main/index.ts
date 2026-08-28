@@ -9,6 +9,7 @@ export * from "./env";
 export * from "./icon";
 export * from "./manifest";
 export * from "./offscreen";
+export * from "./options";
 export * from "./page";
 export * from "./plugin";
 export * from "./popup";
