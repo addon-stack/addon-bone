@@ -1,5 +1,57 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.9.0 (2026-08-28)
+
+### 💥 Breaking Changes
+
+* Secondary locales must define default plural keys. Direct LocaleProvider
+implementations must add languageNames(). Generated types now augment LocaleNativeStructure.
+
+* Relay calls use mutually exclusive frame/document targets.
+Remote Relay types are exported from adnbn, with entrypoint internals under
+adnbn/entry/relay. DeepAsyncProxy is replaced by RpcAsyncProxy.
+
+
+### ✨ Features
+
+* **locale:** feat(locale)!: complete catalogs and unify locale contracts ([df3b468](https://github.com/addon-stack/addon-bone/commit/df3b4682381ca645232f08e29160bba14d6d75be))
+
+  Fill ordinary gaps from the assembled app default and validate plural keys before JSON generation.
+  Expose native language names through providers and React, and generate registry-only declarations.
+  Preserve known empty native messages and return nonzero CLI status on initialization failures.
+
+* **relay:** feat(relay)!: support multi-frame calls and unified results ([b9888a8](https://github.com/addon-stack/addon-bone/commit/b9888a859e2f1c6aa3336e6ea8481cf2b4d15ca4))
+
+  Add frame and document targets, Any/All modes, and per-target outcomes.
+  Centralize permission handling and align public exports and generated types.
+  Protect raw virtual templates from alias rewrites and expand regression tests.
+  Document the Relay runtime contract and user-gesture constraints.
+
+
+
+### 🐛 Bug Fixed
+
+* **release:** use Addon Bone in GitHub release headings ([8ca422c](https://github.com/addon-stack/addon-bone/commit/8ca422ca44c195ee3f30bc0e230b7feb7c5180ca))
+
+  Brand release titles and changelog headings with the framework name.
+  Verify pre-1.0 breaking bumps and generated release notes.
+
+
+
+### 🧪 Tests
+
+* **relay:** normalize declaration paths across platforms ([a644da8](https://github.com/addon-stack/addon-bone/commit/a644da84b972b241b199833541c2d5c430da35cc))
+
+  Normalize virtual declaration and resolved API paths before comparison.
+  Exercise POSIX and Windows separators for source and package contracts.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 5
+
 ## 🚀 Release `adnbn` v0.8.0 (2026-08-18)
 
 
