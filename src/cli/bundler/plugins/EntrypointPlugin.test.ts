@@ -1,5 +1,7 @@
 /** @jest-environment node */
 
+import path from "path";
+
 import type {Compiler, EntryNormalized} from "@rspack/core";
 
 import EntrypointPlugin from "./EntrypointPlugin";
@@ -43,7 +45,7 @@ test("applies entry options while preserving existing entry configuration", () =
     plugin.applyEntryOptions(entry);
 
     expect(entry["example.content"]).toMatchObject({
-        import: ["existing.js", "virtual/example.content.ts"],
+        import: ["existing.js", path.join("virtual", "example.content.ts")],
         filename: "custom/[name].js",
         asyncChunks: false,
         publicPath: "",
