@@ -1,0 +1,9 @@
+{
+  "name": "adnbn-test-offscreen-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "adnbn": "file:../../../../.."
+  }
+}

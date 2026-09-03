@@ -4,10 +4,16 @@ import {Optional} from "utility-types";
 import {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";
 import {Awaiter, PickNonFunctionProperties} from "@typing/helpers";
 
-type ExecutionWorld = chrome.scripting.ExecutionWorld;
 type RunAt = chrome.extensionTypes.RunAt;
 
 export const ContentScriptMatches = ["http://*/*", "https://*/*"];
+
+export enum ContentScriptWorld {
+    Isolated = "ISOLATED",
+    Main = "MAIN",
+}
+
+export type ContentScriptWorldValue = ContentScriptWorld | `${chrome.scripting.ExecutionWorld}`;
 
 export enum ContentScriptDeclarative {
     Required = "required",
@@ -43,8 +49,13 @@ export interface ContentScriptConfig {
     runAt?: RunAt;
     /**
      * See https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts#isolated_world
+     *
+     * Dynamic imports keep physical async chunks in ISOLATED. MAIN keeps the same Promise-based
+     * execution semantics but includes dynamic dependencies in the initial entrypoint graph.
+     * Manifest V2 builds always use ISOLATED. Requesting MAIN emits a build warning and applies
+     * ISOLATED grouping and chunk loading rules before generating the manifest.
      */
-    world?: ExecutionWorld;
+    world?: ContentScriptWorldValue;
     /**
      * See https://developer.chrome.com/docs/extensions/mv3/content_scripts/
      * @default false

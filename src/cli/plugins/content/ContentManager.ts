@@ -1,11 +1,16 @@
 import ContentName from "./ContentName";
 
 import {ContentGroupItems, ContentProvider} from "./types";
-import {getContentScriptConfigFromOptions} from "./utils";
+import {getContentChunkName, getContentScriptConfigFromOptions} from "./utils";
 
 import {ReadonlyConfig} from "@typing/config";
-import {ContentScriptDeclarative, ContentScriptEntrypointOptions} from "@typing/content";
-import {EntrypointEntries, EntrypointFile, EntrypointType} from "@typing/entrypoint";
+import {
+    ContentScriptDeclarative,
+    ContentScriptEntrypointOptions,
+    ContentScriptWorld,
+    type ContentScriptWorldValue,
+} from "@typing/content";
+import {EntrypointEntries, EntrypointFile} from "@typing/entrypoint";
 import {
     ManifestContentScripts,
     ManifestHostPermissions,
@@ -13,7 +18,7 @@ import {
     ManifestPermissions,
 } from "@typing/manifest";
 
-export default class {
+export default class ContentManager {
     protected readonly providers = new Set<ContentProvider<ContentScriptEntrypointOptions>>();
 
     protected readonly names: ContentName;
@@ -24,8 +29,10 @@ export default class {
 
     protected _permissions?: Promise<[ManifestPermissions, ManifestOptionalPermissions]>;
 
-    constructor(config: ReadonlyConfig) {
+    constructor(protected readonly config: ReadonlyConfig) {
         this.names = new ContentName(config);
+
+        Object.values(ContentScriptWorld).forEach(world => this.names.reserve(getContentChunkName(world)));
     }
 
     public provider(provider: ContentProvider<ContentScriptEntrypointOptions>): this {
@@ -44,13 +51,33 @@ export default class {
 
         for (const items of content) {
             for (const [name, item] of items) {
-                const entry = this.names.create(name, item.options);
+                const options = this.normalizeOptions(item.file, item.options);
+                const entry = this.names.create(name, options);
 
-                group.set(entry, new Set([...(group.get(entry) || []), item]));
+                group.set(entry, new Set([...(group.get(entry) || []), {...item, options}]));
             }
         }
 
         return group;
+    }
+
+    protected normalizeOptions(
+        file: EntrypointFile,
+        options: ContentScriptEntrypointOptions
+    ): ContentScriptEntrypointOptions {
+        const world = this.resolveWorld(options.world);
+
+        if (this.config.manifestVersion !== 2) {
+            return options;
+        }
+
+        if (world === ContentScriptWorld.Main) {
+            console.warn(
+                `Content script "${file.file}" requests world "MAIN", but Addon Bone does not support MAIN content scripts in Manifest V2. It will be built and run in ISOLATED.`
+            );
+        }
+
+        return {...options, world: ContentScriptWorld.Isolated};
     }
 
     public async group(): Promise<ContentGroupItems<ContentScriptEntrypointOptions>> {
@@ -186,18 +213,33 @@ export default class {
         return (await this.group()).size === 0;
     }
 
-    public chunkName(): string {
-        return this.names.getChunkName();
-    }
+    public async entryWorlds(): Promise<ReadonlyMap<string, ContentScriptWorld>> {
+        const entries = new Map<string, ContentScriptWorld>();
 
-    public likely(name?: string): boolean {
-        if (!name) {
-            return false;
+        for (const [entry, items] of await this.group()) {
+            const worlds = new Set(Array.from(items, ({options}) => this.resolveWorld(options.world)));
+            const world = worlds.values().next().value;
+
+            if (worlds.size !== 1 || !world) {
+                throw new Error(`Content entrypoint "${entry}" cannot mix execution worlds`);
+            }
+
+            entries.set(entry, world);
         }
 
-        return [EntrypointType.Relay, EntrypointType.ContentScript].some(
-            type => name === type || name.endsWith(`.${type}`)
-        );
+        return entries;
+    }
+
+    protected resolveWorld(world?: ContentScriptWorldValue): ContentScriptWorld {
+        switch (world) {
+            case undefined:
+            case ContentScriptWorld.Isolated:
+                return ContentScriptWorld.Isolated;
+            case ContentScriptWorld.Main:
+                return ContentScriptWorld.Main;
+            default:
+                throw new Error(`Unsupported content script execution world "${String(world)}"`);
+        }
     }
 
     public clear(): this {

@@ -1,8 +1,25 @@
-import rspack, {Chunk, Compilation, Compiler} from "@rspack/core";
+import rspack, {Compilation, Compiler} from "@rspack/core";
 
-import {toPosix} from "@cli/utils/path";
+import {getCompilationBuildAssets} from "@cli/bundler/utils/output";
 
 import {ManifestBuilder, ManifestDependencies, ManifestDependency} from "@typing/manifest";
+import {EntrypointAssetsMap} from "@typing/entrypoint";
+
+export const createManifestDependencies = (buildAssets: EntrypointAssetsMap): ManifestDependencies => {
+    const entryDependencies: ManifestDependencies = new Map();
+
+    Object.entries(buildAssets).forEach(([entryName, assets]) => {
+        const dependencies: ManifestDependency = {
+            assets: new Set([...assets.assets, ...assets.async.js, ...assets.async.css]),
+            css: new Set(assets.initial.css),
+            js: new Set(assets.initial.js),
+        };
+
+        entryDependencies.set(entryName, dependencies);
+    });
+
+    return entryDependencies;
+};
 
 class ManifestPlugin {
     constructor(private readonly manifest: ManifestBuilder) {}
@@ -12,80 +29,22 @@ class ManifestPlugin {
             compilation.hooks.processAssets.tap(
                 {
                     name: "ManifestPlugin",
-                    stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONS,
+                    stage: Compilation.PROCESS_ASSETS_STAGE_REPORT,
                 },
                 () => {
-                    const entryDependencies: ManifestDependencies = new Map();
+                    const buildAssets = getCompilationBuildAssets(compilation);
 
-                    compilation.entrypoints.forEach((entryPoint, entryName) => {
-                        const dependencies: ManifestDependency = {
-                            assets: new Set(),
-                            css: new Set(),
-                            js: new Set(),
-                        };
+                    if (!buildAssets) {
+                        throw new Error("Build assets are unavailable before manifest generation");
+                    }
 
-                        const allChunks = new Set<Chunk>();
-
-                        this.collectAllChunks(entryPoint, allChunks);
-
-                        allChunks.forEach((chunk: Chunk) => {
-                            chunk.files.forEach((fileName: string) => {
-                                fileName = toPosix(fileName);
-
-                                if (fileName.endsWith(".js")) {
-                                    dependencies.js.add(fileName);
-                                } else if (fileName.endsWith(".css")) {
-                                    dependencies.css.add(fileName);
-                                } else if (this.isAsset(fileName)) {
-                                    dependencies.assets.add(fileName);
-                                }
-                            });
-
-                            const auxiliaryFiles = chunk.auxiliaryFiles || [];
-
-                            auxiliaryFiles.forEach((fileName: string) => {
-                                fileName = toPosix(fileName);
-
-                                if (fileName.endsWith(".css")) {
-                                    dependencies.css.add(fileName);
-                                } else if (this.isAsset(fileName)) {
-                                    dependencies.assets.add(fileName);
-                                }
-                            });
-                        });
-
-                        entryDependencies.set(entryName, dependencies);
-                    });
-
-                    const manifest = this.manifest.setDependencies(entryDependencies).get();
+                    const manifest = this.manifest.setDependencies(createManifestDependencies(buildAssets)).get();
                     const json = JSON.stringify(manifest, null, 2);
 
                     compilation.emitAsset("manifest.json", new rspack.sources.RawSource(json));
                 }
             );
         });
-    }
-
-    private collectAllChunks(entryPointOrChunkGroup: any, collectedChunks: Set<Chunk>): Set<Chunk> {
-        if (entryPointOrChunkGroup.chunks) {
-            entryPointOrChunkGroup.chunks.forEach((chunk: Chunk) => {
-                if (!collectedChunks.has(chunk)) {
-                    collectedChunks.add(chunk);
-                }
-            });
-        }
-
-        if (entryPointOrChunkGroup.childrenIterable) {
-            for (const childGroup of entryPointOrChunkGroup.childrenIterable) {
-                this.collectAllChunks(childGroup, collectedChunks);
-            }
-        }
-
-        return collectedChunks;
-    }
-
-    private isAsset(file: string): boolean {
-        return /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)$/.test(file);
     }
 }
 

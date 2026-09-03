@@ -65,16 +65,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up Firefox
+        if: matrix.os == 'ubuntu-latest'
+        id: firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Typecheck integration fixtures
+        run: npm run typecheck:integration
 
       - name: Test
         if: matrix.os == 'ubuntu-latest'
         run: npm run test:ci
         env:
           ADNBN_CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          ADNBN_FIREFOX_BIN: ${{ steps.firefox.outputs.firefox-path }}
 
-      # The CDP extension-loading scenario is verified on Chrome's Linux runner.
+      # Chrome CDP and Firefox BiDi extension scenarios run on the Linux runner.
       # The rest of the test suite remains part of the full OS x Node matrix.
       - name: Test (non-browser)
         if: matrix.os != 'ubuntu-latest'

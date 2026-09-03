@@ -1,6 +1,7 @@
 import _ from "lodash";
 
-import {ContentScriptConfig, ContentScriptEntrypointOptions} from "@typing/content";
+import {ContentScriptConfig, ContentScriptEntrypointOptions, ContentScriptWorld} from "@typing/content";
+import {EntrypointType} from "@typing/entrypoint";
 
 export const getContentScriptConfigFromOptions = (options: ContentScriptEntrypointOptions): ContentScriptConfig => {
     const config = _.pick(options, [
@@ -24,4 +25,12 @@ export const getContentScriptConfigFromOptions = (options: ContentScriptEntrypoi
         includeGlobs: sort(config.includeGlobs),
         excludeGlobs: sort(config.excludeGlobs),
     };
+};
+
+export const getContentChunkName = (world: ContentScriptWorld): string => {
+    return `${world === ContentScriptWorld.Main ? "common-main" : "common"}.${EntrypointType.ContentScript}`;
+};
+
+export const getContentLayer = (world: ContentScriptWorld): string => {
+    return `adnbn:content:${world.toLowerCase()}`;
 };

@@ -1,7 +1,7 @@
 import _ from "lodash";
 import path from "path";
 
-import {Compiler, EntryNormalized} from "@rspack/core";
+import {Compiler, type EntryDescription, EntryNormalized} from "@rspack/core";
 import {RspackVirtualModulePlugin as VirtualModulesPlugin} from "rspack-plugin-virtual-module";
 
 import {EntrypointEntries, EntrypointFile} from "@typing/entrypoint";
@@ -26,11 +26,16 @@ export type EntrypointPluginModules = Map<EntrypointFile, EntrypointPluginModule
 
 export type EntrypointPluginEntryModules = Map<string, EntrypointPluginModules>;
 
+export type EntrypointPluginEntryOptions = Omit<EntryDescription, "import">;
+
+export type EntrypointPluginEntryOptionsResolver = (name: string) => EntrypointPluginEntryOptions;
+
 export default class EntrypointPlugin {
     private readonly pluginName: string = "EntrypointPlugin";
 
     private _plugin?: VirtualModulesPlugin;
     private _modules?: EntrypointPluginEntryModules;
+    private readonly _entryOptions: EntrypointPluginEntryOptionsResolver[] = [];
 
     protected template?: EntrypointPluginTemplate;
     protected update?: EntrypointPluginUpdate;
@@ -81,6 +86,12 @@ export default class EntrypointPlugin {
         return this;
     }
 
+    public entryOptions(options: EntrypointPluginEntryOptions | EntrypointPluginEntryOptionsResolver): this {
+        this._entryOptions.push(_.isFunction(options) ? options : () => options);
+
+        return this;
+    }
+
     public watch(update: EntrypointPluginUpdate): this {
         this.update = update;
 
@@ -106,15 +117,20 @@ export default class EntrypointPlugin {
     protected hookEntryOption(entry: EntryNormalized): void {
         if (_.isPlainObject(entry)) {
             this.modules.entries().forEach(([name, modules]) => {
-                let currentFiles = structuredClone(entry[name] ?? []);
+                const current = structuredClone(entry[name] ?? []);
+                let currentFiles = current;
+                let currentOptions: EntrypointPluginEntryOptions = {};
 
                 if ("import" in currentFiles) {
+                    currentOptions = currentFiles;
                     currentFiles = currentFiles.import;
                 }
 
                 currentFiles.push(...Array.from(modules.values(), ({name}) => name));
 
                 entry[name] = {
+                    ...currentOptions,
+                    ...this.resolveEntryOptions(name),
                     import: _.uniq(currentFiles),
                 };
             });
@@ -149,33 +165,50 @@ export default class EntrypointPlugin {
 
         const removedContents = new Map(Array.from(currentContents).filter(entry => !updatedContents.has(entry[0])));
 
-        const addedContents = new Map(Array.from(updatedContents).filter(entry => !currentContents.has(entry[0])));
+        const changedContents = new Map(
+            Array.from(updatedContents).filter(([name, content]) => currentContents.get(name) !== content)
+        );
 
-        if (removedContents.size > 0 || addedContents.size > 0) {
-            removedContents.keys().forEach(name => {
-                this.plugin.writeModule(name, "");
-            });
+        removedContents.keys().forEach(name => {
+            this.plugin.writeModule(name, "");
+        });
 
-            addedContents.forEach((content, name) => {
-                this.plugin.writeModule(name, content);
-            });
+        changedContents.forEach((content, name) => {
+            this.plugin.writeModule(name, content);
+        });
 
-            updatedModules.entries().forEach(([name, modules]) => {
-                let entry: string[] = structuredClone(compiler.options.entry[name]);
+        this.modules.keys().forEach(name => {
+            if (!updatedModules.has(name)) {
+                delete compiler.options.entry[name];
+            }
+        });
 
-                if ("import" in entry) {
-                    entry = entry.import as string[];
-                }
+        updatedModules.entries().forEach(([name, modules]) => {
+            const current = structuredClone(compiler.options.entry[name] ?? []);
+            let entry = current;
+            let currentOptions: EntrypointPluginEntryOptions = {};
 
-                entry = entry.filter(file => !removedContents.has(file));
+            if ("import" in entry) {
+                currentOptions = entry;
+                entry = entry.import as string[];
+            }
 
-                entry.push(...Array.from(modules.values(), ({name}) => name));
+            entry = entry.filter(file => !removedContents.has(file));
 
-                compiler.options.entry[name] = _.uniq(entry);
-            });
-        }
+            entry.push(...Array.from(modules.values(), ({name}) => name));
+
+            compiler.options.entry[name] = {
+                ...currentOptions,
+                ...this.resolveEntryOptions(name),
+                import: _.uniq(entry),
+            };
+        });
 
         this._modules = updatedModules;
+    }
+
+    protected resolveEntryOptions(name: string): EntrypointPluginEntryOptions {
+        return Object.assign({}, ...this._entryOptions.map(resolve => resolve(name)));
     }
 
     protected createModules(entries: EntrypointEntries): EntrypointPluginEntryModules {

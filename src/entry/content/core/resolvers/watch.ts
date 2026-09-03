@@ -14,7 +14,7 @@ export const contentScriptMutationObserverResolver =
 
             const observer = new MutationObserver(handle);
 
-            observer.observe(document.body, {
+            observer.observe(document.body ?? document.documentElement ?? document, {
                 childList: true,
                 subtree: true,
                 attributes: true,

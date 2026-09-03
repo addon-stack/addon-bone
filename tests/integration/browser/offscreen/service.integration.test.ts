@@ -1,25 +1,16 @@
 /** @jest-environment node */
 
-import {mkdir, mkdtemp, rm, symlink} from "fs/promises";
+import {mkdtemp, rm} from "fs/promises";
 import os from "os";
 import path from "path";
 import {spawn, type ChildProcess} from "child_process";
 
-import {
-    browserVersion,
-    CdpClient,
-    type CdpTarget,
-    findChromeBinary,
-    getFreePort,
-    run,
-    stop,
-    targets,
-    waitFor,
-} from "./utils/chrome";
+import {browserVersion, CdpClient, type CdpTarget, findChromeBinary, targets} from "../utils/chrome";
+import {getFreePort, stop, waitFor} from "../utils/browser";
+import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..");
-const fixtureDir = path.join(__dirname, "offscreen-service");
-const extensionDir = path.join(fixtureDir, "dist", "myapp-chrome-mv3");
+const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+const fixtureDir = path.join(__dirname, "service");
 const chromeBinary = findChromeBinary(rootDir);
 
 jest.setTimeout(60_000);
@@ -31,17 +22,16 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
         );
     }
 
-    const frameworkLink = path.join(fixtureDir, "node_modules", "adnbn");
     const userDataDir = await mkdtemp(path.join(os.tmpdir(), "adnbn-offscreen-service-"));
     const debuggingPort = await getFreePort();
     let chrome: ChildProcess | undefined;
     let browser: CdpClient | undefined;
+    let fixture: IntegrationFixture | undefined;
     let chromeOutput = "";
 
     try {
-        await mkdir(path.dirname(frameworkLink), {recursive: true});
-        await symlink(rootDir, frameworkLink, "dir");
-        await run(process.execPath, [path.join(rootDir, "bin", "adnbn.js"), "build", ".", "-b", "chrome"], fixtureDir);
+        fixture = await createIntegrationFixture(rootDir, fixtureDir);
+        const extensionDir = await fixture.build();
 
         chrome = spawn(
             chromeBinary,
@@ -140,9 +130,7 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
             await stop(chrome);
         }
 
-        await rm(path.join(fixtureDir, "node_modules"), {recursive: true, force: true});
-        await rm(path.join(fixtureDir, ".adnbn"), {recursive: true, force: true});
-        await rm(path.join(fixtureDir, "dist"), {recursive: true, force: true});
+        await fixture?.dispose();
         await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 });

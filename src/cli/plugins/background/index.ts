@@ -44,6 +44,7 @@ export default definePlugin(() => {
 
             // prettier-ignore
             const backgroundPlugin = EntrypointPlugin.from(await background.entry().entries())
+                .entryOptions({asyncChunks: false, runtime: false})
                 .virtual(file => virtualBackgroundModule(file));
 
             // prettier-ignore

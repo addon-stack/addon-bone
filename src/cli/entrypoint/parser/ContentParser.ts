@@ -7,6 +7,7 @@ import {
     ContentScriptEntrypointOptions,
     ContentScriptMarker,
     ContentScriptMatches,
+    ContentScriptWorld,
 } from "@typing/content";
 import {EntrypointFile, EntrypointOptions} from "@typing/entrypoint";
 
@@ -23,7 +24,7 @@ export default class<O extends EntrypointOptions = ContentScriptEntrypointOption
             includeGlobs: z.array(z.string()).optional(),
             excludeGlobs: z.array(z.string()).optional(),
             allFrames: z.boolean().optional(),
-            world: z.enum(["ISOLATED", "MAIN"]).optional(),
+            world: z.nativeEnum(ContentScriptWorld).optional(),
             runAt: z.enum(["document_start", "document_end", "document_idle"]).optional(),
             matchOriginAsFallback: z.boolean().optional(),
             declarative: z.union([z.nativeEnum(ContentScriptDeclarative), z.boolean()]).optional(),

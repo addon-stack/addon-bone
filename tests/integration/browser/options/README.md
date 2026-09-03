@@ -1,31 +1,18 @@
-# Options integration fixtures
+# Options browser fixtures
 
-Run from the repository root after installing its dependencies:
+See the [integration guide](../../README.md) for editor preparation, dependency setup, and test isolation.
 
-```bash
-npm run build
-node ./node_modules/jest/bin/jest.js tests/integration/browser/options.integration.test.ts --runInBand
-```
-
-The test builds the local framework fixtures, loads each browser fixture in an isolated Chrome profile through CDP, and calls `chrome.runtime.openOptionsPage()` from its real background service worker. Set `ADNBN_CHROME_BIN` to an absolute Chrome executable path if automatic discovery selects the wrong browser. Chrome must support `Extensions.loadUnpacked`; Node must provide the built-in `WebSocket` API.
-
-| Fixture    | Coverage                                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| `vanilla`  | `options.ts`, default `openInTab: true`, DOM rendering and event handling                                          |
-| `react`    | `options.tsx`, explicit `openInTab: true`, React rendering and state, custom `as` and `htmlDir`                    |
-| `embedded` | Build-only verification that explicit `openInTab: false` reaches the manifest for all five browsers in MV2 and MV3 |
-
-The two browser cases check the exact `options_ui` object, the absence of `options_page`, loading of the common View chunk shared with a second Page, CSS application, and runtime errors. Their expected output paths are `options.html` and `ui/preferences.options.html` inside each fixture's `dist/myapp-chrome-mv3` directory.
-
-The suite creates temporary package links, generated files, build output, and Chrome profiles, then removes them. It does not use your regular browser profile or modify the `addon` playground.
-
-Each fixture has its own package boundary so it does not inherit the framework
-package's `sideEffects: false` and lose CSS imports during production builds.
-
-To run only the embedded manifest build without launching Chrome:
+Run only the Options browser cases from the repository root:
 
 ```bash
-node ./node_modules/jest/bin/jest.js tests/integration/browser/options.integration.test.ts --runInBand -t "preserves explicit"
+npm run test -- tests/integration/browser/options/options.integration.test.ts --runInBand
 ```
 
-Browser execution covers Chrome MV3. The `embedded` cases build Chrome, Edge, Opera, Safari, and Firefox targets in MV2 and MV3; they do not test embedded settings UI. Loading in other browsers or MV2, and opening settings through the browser's own menus, require separate checks.
+- `vanilla/src/options/index.ts` uses DOM rendering and event handling with default `openInTab: true`.
+- `react/src/options/index.tsx` uses React state, explicit `openInTab: true`, and custom `as` and `htmlDir` values.
+
+Each Options entrypoint keeps its `styles.css` in the same directory. `background.ts` and the independent `help.page.ts` or `help.page.tsx` remain standalone files.
+
+Both cases open Options from the real background service worker in Chrome MV3. They check the exact `options_ui` object, the absence of `options_page`, a View chunk shared with the Help page, CSS application, state changes, and runtime errors. Expected pages are `options.html` and `ui/preferences.options.html`.
+
+The embedded Options manifest matrix lives separately in `tests/integration/build/options/embedded` and runs without Chrome through `npm run test:integration:build`. It does not verify embedded settings UI in a browser.

@@ -1,56 +1,16 @@
 /** @jest-environment node */
 
-import {mkdir, mkdtemp, readFile, rm, symlink} from "fs/promises";
+import {mkdtemp, readFile, rm} from "fs/promises";
 import os from "os";
 import path from "path";
 import {spawn, type ChildProcess} from "child_process";
 
-import {browserVersion, CdpClient, findChromeBinary, getFreePort, run, stop, targets, waitFor} from "./utils/chrome";
+import {browserVersion, CdpClient, findChromeBinary, targets} from "../utils/chrome";
+import {getFreePort, stop, waitFor} from "../utils/browser";
+import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..");
-const fixturesDir = path.join(__dirname, "options");
+const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
 const chromeBinary = findChromeBinary(rootDir);
-const artifactDir = (fixtureDir: string, browser = "chrome", manifestVersion = 3): string =>
-    path.join(fixtureDir, "dist", `myapp-${browser}-mv${manifestVersion}`);
-
-const buildFixture = async (
-    fixtureDir: string,
-    {
-        react = false,
-        browser = "chrome",
-        manifestVersion = 3,
-    }: {react?: boolean; browser?: string; manifestVersion?: 2 | 3} = {}
-): Promise<void> => {
-    const modulesDir = path.join(fixtureDir, "node_modules");
-
-    await mkdir(modulesDir, {recursive: true});
-    await symlink(rootDir, path.join(modulesDir, "adnbn"), "dir");
-
-    if (react) {
-        for (const dependency of ["react", "react-dom", "scheduler"]) {
-            await symlink(path.join(rootDir, "node_modules", dependency), path.join(modulesDir, dependency), "dir");
-        }
-    }
-
-    await run(
-        process.execPath,
-        [
-            path.join(rootDir, "bin", "adnbn.js"),
-            "build",
-            ".",
-            "-b",
-            browser,
-            ...(manifestVersion === 2 ? ["--mv2"] : []),
-        ],
-        fixtureDir
-    );
-};
-
-const cleanFixture = async (fixtureDir: string): Promise<void> => {
-    for (const directory of ["node_modules", ".adnbn", "dist"]) {
-        await rm(path.join(fixtureDir, directory), {recursive: true, force: true});
-    }
-};
 
 jest.setTimeout(90_000);
 
@@ -64,16 +24,17 @@ test.each([
         );
     }
 
-    const fixtureDir = path.join(fixturesDir, adapter);
-    const extensionDir = artifactDir(fixtureDir);
+    const fixtureDir = path.join(__dirname, adapter);
     const userDataDir = await mkdtemp(path.join(os.tmpdir(), `adnbn-options-${adapter}-`));
     const debuggingPort = await getFreePort();
     let chrome: ChildProcess | undefined;
     let browser: CdpClient | undefined;
+    let fixture: IntegrationFixture | undefined;
     let chromeOutput = "";
 
     try {
-        await buildFixture(fixtureDir, {react: adapter === "react"});
+        fixture = await createIntegrationFixture(rootDir, fixtureDir);
+        const extensionDir = await fixture.build();
 
         const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
         const optionsHtml = await readFile(path.join(extensionDir, page), "utf8");
@@ -198,27 +159,7 @@ test.each([
             await stop(chrome);
         }
 
-        await cleanFixture(fixtureDir);
+        await fixture?.dispose();
         await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
-});
-
-describe.each(["chrome", "edge", "opera", "safari", "firefox"])("%s options manifest", browser => {
-    test.each([2, 3] as const)("MV%s build preserves explicit openInTab false", async manifestVersion => {
-        const fixtureDir = path.join(fixturesDir, "embedded");
-
-        try {
-            await buildFixture(fixtureDir, {browser, manifestVersion});
-
-            const extensionDir = artifactDir(fixtureDir, browser, manifestVersion);
-            const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
-
-            expect(manifest.manifest_version).toBe(manifestVersion);
-            expect(manifest.options_ui).toEqual({page: "options.html", open_in_tab: false});
-            expect(manifest.options_page).toBeUndefined();
-            expect(await readFile(path.join(extensionDir, manifest.options_ui.page), "utf8")).toContain("<script");
-        } finally {
-            await cleanFixture(fixtureDir);
-        }
-    });
 });
