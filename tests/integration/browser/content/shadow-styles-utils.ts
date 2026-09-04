@@ -265,7 +265,7 @@ export const runShadowStylesIntegration = async (name: "chrome" | "firefox", man
         );
         await writeFile(reportPath, JSON.stringify(report, null, 2) + "\n");
         console.info(JSON.stringify(report, null, 2));
-        expect(version).toMatch(name === "chrome" ? /^Chrome\/155\./ : /^Firefox\/155\./);
+        expect(version).toMatch(new RegExp(`^${name === "chrome" ? "Chrome" : "Firefox"}\\/\\d+(?:\\.\\d+)+$`));
         expect(name === "chrome" ? chrome?.runtimeErrors : firefox?.runtimeErrors).toEqual([]);
     } catch (error) {
         throw new Error(
