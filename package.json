@@ -105,7 +105,7 @@
     "prepare": "husky",
     "preinstall": "npm run check:node-version",
     "prepublishOnly": "npm run build",
-    "build": "tsup && tsc -p tsconfig.build.json && node ./scripts/copy-dts.js && tsc-alias -p tsconfig.build.json -f -fe .js",
+    "build": "node ./scripts/clean-dist.js && tsup && tsc -p tsconfig.build.json && node ./scripts/copy-dts.js && tsc-alias -p tsconfig.build.json -f -fe .js",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck:tests",
     "typecheck:tests": "tsc -p tsconfig.tests.json --noEmit",

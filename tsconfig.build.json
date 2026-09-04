@@ -15,8 +15,11 @@
   },
   "include": ["./src/**/*"],
   "exclude": [
-    "**/*.test.ts",
-    "**/tests/**/*.ts",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/tests/**/*",
+    "**/__tests__/**/*",
+    "**/__mocks__/**/*",
     "dist",
     "src/cli/entrypoint/file/fixtures/**"
   ]
