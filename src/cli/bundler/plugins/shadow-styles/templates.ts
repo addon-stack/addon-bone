@@ -1,7 +1,7 @@
 import cssLoaderTemplate from "./templates/css-loader.template.js?raw";
 import runtimeTemplate from "./templates/runtime.template.js?raw";
 
-import {renderRuntimeTemplate} from "@cli/bundler/utils/runtime-template";
+import {renderRuntimeTemplate} from "@cli/bundler/plugins/utils";
 
 interface ShadowStylesRuntimeTemplateOptions {
     readonly entry: string;

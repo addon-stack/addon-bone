@@ -5,8 +5,8 @@ import {merge as mergeConfig} from "webpack-merge";
 import manifestFactory from "../builders/manifest";
 import {processPluginHandler} from "./plugin";
 
-import ManifestPlugin from "@cli/bundler/plugins/ManifestPlugin";
-import WatchPlugin from "@cli/bundler/plugins/WatchPlugin";
+import ManifestPlugin from "@cli/bundler/plugins/manifest";
+import WatchPlugin from "@cli/bundler/plugins/watch";
 
 import {ReadonlyConfig} from "@typing/config";
 import {Command} from "@typing/app";
