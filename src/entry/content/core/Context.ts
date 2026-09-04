@@ -43,6 +43,14 @@ export default class implements ContentScriptContext {
         }
     }
 
+    public clear(): void {
+        for (const node of this.collection) {
+            node.unmount();
+            this.collection.delete(node);
+            this.emitter.emitRemove(node);
+        }
+    }
+
     public watch(callback: ContentScriptEventCallback): () => void {
         this.emitter.on(callback);
 

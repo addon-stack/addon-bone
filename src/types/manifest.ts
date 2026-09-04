@@ -198,7 +198,11 @@ export interface ManifestEntry {
 
 export type ManifestBackground = ManifestEntry & BackgroundConfig;
 
-export type ManifestContentScript = ManifestEntry & ContentScriptConfig;
+export type ManifestContentScript = ManifestEntry &
+    ContentScriptConfig & {
+        /** Internal build flag. It is never emitted to manifest.json. */
+        shadow?: boolean;
+    };
 export type ManifestContentScripts = Set<ManifestContentScript>;
 
 export type ManifestCommand = CommandConfig;

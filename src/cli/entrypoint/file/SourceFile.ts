@@ -240,6 +240,10 @@ export default class EntryFile {
                 // imported constant: try to resolve its value from source file
                 const importPath = this.getImports().get(name);
                 if (importPath) {
+                    if (/\.[^.\\/]+$/.test(importPath) && !/\.[cm]?[jt]sx?$/.test(importPath)) {
+                        return name;
+                    }
+
                     // load imported file and check its variables
                     const parser = EntryFile.make(importPath);
                     const imported = parser.getVariables().get(name);

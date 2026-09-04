@@ -12,6 +12,10 @@ export default class implements ContentScriptNode {
         }
     }
 
+    public get target(): Element | undefined {
+        return this.container;
+    }
+
     public mount(): boolean {
         if (!this.container && this._container) {
             this.container = this._container.cloneNode(false) as Element;

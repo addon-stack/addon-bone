@@ -19,6 +19,10 @@ export default definePlugin(() => {
                 module: {
                     rules: [
                         {
+                            test: /\.(woff2?|eot|ttf|otf)$/i,
+                            type: "asset/resource",
+                        },
+                        {
                             test: /\.(png|apng|jpe?g|gif|webp|svg|avif|tiff|bmp|ico)$/i,
                             resourceQuery: {
                                 not: [/react/],

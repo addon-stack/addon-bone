@@ -68,6 +68,10 @@ export default class ContentManager {
         const world = this.resolveWorld(options.world);
 
         if (this.config.manifestVersion !== 2) {
+            if (world === ContentScriptWorld.Main && options.shadow) {
+                throw new Error(`Content script "${file.file}" cannot use Shadow DOM in the MAIN execution world`);
+            }
+
             return options;
         }
 
@@ -105,7 +109,7 @@ export default class ContentManager {
                     return {...acc, ...opt};
                 }, {} as ContentScriptEntrypointOptions);
 
-            manifest.add({entry, ...getContentScriptConfigFromOptions(options)});
+            manifest.add({entry, shadow: !!options.shadow, ...getContentScriptConfigFromOptions(options)});
         }
 
         return manifest;
@@ -225,6 +229,23 @@ export default class ContentManager {
             }
 
             entries.set(entry, world);
+        }
+
+        return entries;
+    }
+
+    public async entryShadows(): Promise<ReadonlyMap<string, boolean>> {
+        const entries = new Map<string, boolean>();
+
+        for (const [entry, items] of await this.group()) {
+            const shadows = new Set(Array.from(items, ({options}) => !!options.shadow));
+            const shadow = shadows.values().next().value;
+
+            if (shadows.size !== 1 || shadow === undefined) {
+                throw new Error(`Content entrypoint "${entry}" cannot mix Shadow DOM modes`);
+            }
+
+            entries.set(entry, shadow);
         }
 
         return entries;

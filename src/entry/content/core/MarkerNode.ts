@@ -14,6 +14,10 @@ export default class implements ContentScriptNode {
         return this.node.container;
     }
 
+    public get target(): Element | undefined {
+        return this.node.target;
+    }
+
     public mount(): boolean | undefined | void {
         this.marker.mount(this.anchor);
 

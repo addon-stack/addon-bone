@@ -14,7 +14,11 @@ tests/integration/
 │   │   ├── entrypoint-assets.integration.test.ts
 │   │   ├── entrypoint-assets.firefox.integration.test.ts
 │   │   ├── utils.ts
-│   │   └── entrypoint-assets/
+│   │   ├── entrypoint-assets/
+│   │   ├── shadow-styles.integration.test.ts
+│   │   ├── shadow-styles.firefox.integration.test.ts
+│   │   ├── shadow-styles-utils.ts
+│   │   └── shadow-styles/
 │   ├── offscreen/
 │   │   ├── service.integration.test.ts
 │   │   └── service/
@@ -47,7 +51,7 @@ Install dependencies once at the repository root, then run:
 npm run prepare:integration
 ```
 
-This builds the framework, links each fixture's declared dependencies to the local framework or root `node_modules`, and builds all five applications. The generated `.adnbn` configuration and declarations remain beside their sources, so the editor can resolve `adnbn`, virtual imports such as `adnbn/browser`, CSS/SVG modules, and generated transport contracts.
+This builds the framework, links each fixture's declared dependencies to the local framework or root `node_modules`, and builds all six applications. The generated `.adnbn` configuration and declarations remain beside their sources, so the editor can resolve `adnbn`, virtual imports such as `adnbn/browser`, CSS/SVG modules, and generated transport contracts.
 
 No separate install or lockfile is needed in each fixture. Dependency versions come from the root installation. Preparation can be repeated; matching links are reused, while conflicting existing dependency locations produce an error instead of being overwritten.
 
@@ -82,6 +86,7 @@ Tests copy application inputs to unique directories under `.cache/integration`. 
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
 - `browser/offscreen/service`: one Chrome MV3 round trip from background through Offscreen to a registered background service.
 - `browser/content/entrypoint-assets`: one Chrome MV3 case and two Firefox cases (MV2 and MV3) using the same application and probe assertions. They cover current asset getters, rejecting the full-map getter outside background, common chunks, dynamic imports, CSS/SVG resource URLs, world separation, and top/child frames. The Chrome case also reads the full-map readiness flag in background.
+- `browser/content/shadow-styles`: production Shadow DOM coverage in Chrome MV3 and Firefox MV2/MV3. Two shadow entrypoints and one ordinary entrypoint verify file-backed initial/lazy/shared CSS, independent runtime registries, strict CSP, local `FontFace` registration, watch-driven remount, top documents, and child iframes. The shared CSS remains manifest CSS for the ordinary consumer and a web accessible resource for the shadow consumers.
 
 In MV3, ISOLATED retains physical async chunks and MAIN includes dynamic dependencies in its initial graph. In Addon Bone's MV2 pipeline, every content entry uses ISOLATED, including entries requesting MAIN. Such requests emit a build warning before entrypoint grouping; the runtime test verifies async JS/CSS and the absence of page-visible globals for the downgraded entries. This is a framework policy, not a claim that all Firefox versions lack native MAIN support in MV2.
 

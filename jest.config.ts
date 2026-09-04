@@ -4,6 +4,7 @@ const config: Config = {
     verbose: true,
     testEnvironment: "jsdom",
     setupFiles: ["<rootDir>/tests/jest.setup.ts"],
+    resolver: "<rootDir>/tests/raw-module-resolver.cjs",
     moduleNameMapper: {
         "^@cli/(.*)$": "<rootDir>/src/cli/$1",
         "^@entry/(.*)$": "<rootDir>/src/entry/$1",
@@ -20,6 +21,7 @@ const config: Config = {
     },
     extensionsToTreatAsEsm: [".ts", ".tsx"],
     transform: {
+        "^.+\\.template\\.js$": "<rootDir>/tests/raw-module-transformer.cjs",
         "^.+\\.(t|j)sx?$": [
             "@swc/jest",
             {

@@ -19,10 +19,14 @@ export default class implements ContentScriptNode {
         return this.node.container;
     }
 
+    public get target(): Element | undefined {
+        return this.node.target;
+    }
+
     public mount(): boolean {
         this.node.mount();
 
-        if (!this.container || this.root) {
+        if (!this.target || this.root) {
             return false;
         }
 
@@ -32,7 +36,7 @@ export default class implements ContentScriptNode {
             return false;
         }
 
-        this.root = createRoot(this.container);
+        this.root = createRoot(this.target);
 
         this.root.render(this.component);
 

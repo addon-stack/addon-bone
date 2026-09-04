@@ -7,7 +7,10 @@ export interface IntegrationSite {
     close(): Promise<void>;
 }
 
-export const startIntegrationSite = async (directory: string): Promise<IntegrationSite> => {
+export const startIntegrationSite = async (
+    directory: string,
+    contentSecurityPolicy: string | null = "default-src 'none'; frame-src 'self'; img-src 'self'"
+): Promise<IntegrationSite> => {
     const server = createServer(async (request, response) => {
         try {
             const pathname = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
@@ -24,7 +27,7 @@ export const startIntegrationSite = async (directory: string): Promise<Integrati
 
             response.writeHead(200, {
                 "Content-Type": "text/html; charset=utf-8",
-                "Content-Security-Policy": "default-src 'none'; frame-src 'self'; img-src 'self'",
+                ...(contentSecurityPolicy === null ? {} : {"Content-Security-Policy": contentSecurityPolicy}),
             });
             response.end(content);
         } catch {

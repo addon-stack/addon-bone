@@ -16,19 +16,23 @@ export default class implements ContentScriptNode {
         return this.node.container;
     }
 
+    public get target(): Element | undefined {
+        return this.node.target;
+    }
+
     public mount(): boolean {
         this.node.mount();
 
-        if (!this.container || this.mounted) {
+        if (!this.target || this.mounted) {
             return false;
         }
 
         let result: boolean = true;
 
         if (this.value instanceof Element) {
-            this.container.appendChild(this.value);
+            this.target.appendChild(this.value);
         } else if (typeof this.value === "string" || typeof this.value === "number") {
-            this.container.textContent = String(this.value);
+            this.target.textContent = String(this.value);
         } else if (this.value === null || this.value === undefined || this.value === false) {
             result = false;
 

@@ -230,6 +230,12 @@ const chunkHasCss = (compilation: Compilation, chunk: Chunk): boolean => {
     });
 };
 
+const chunkHasJavaScript = (compilation: Compilation, chunk: Chunk): boolean => {
+    return Array.from(compilation.chunkGraph.getChunkModulesIterable(chunk)).some(module => {
+        return module.type.startsWith("javascript");
+    });
+};
+
 const getEntrypointRuntimeAssets = (
     compilation: Compilation,
     name: string,
@@ -254,14 +260,16 @@ const getEntrypointRuntimeAssets = (
 
     return {
         initial: {
-            js: initialChunks.map(chunk => {
-                return resolveChunkFilename(
-                    compilation,
-                    chunk,
-                    chunk === entryChunk ? jsFilename : jsChunkFilename,
-                    JavaScriptContentHashType
-                );
-            }),
+            js: initialChunks
+                .filter(chunk => chunkHasJavaScript(compilation, chunk))
+                .map(chunk => {
+                    return resolveChunkFilename(
+                        compilation,
+                        chunk,
+                        chunk === entryChunk ? jsFilename : jsChunkFilename,
+                        JavaScriptContentHashType
+                    );
+                }),
             css: initialChunks
                 .filter(chunk => chunkHasCss(compilation, chunk))
                 .map(chunk => {
@@ -274,9 +282,11 @@ const getEntrypointRuntimeAssets = (
                 }),
         },
         async: {
-            js: asyncChunks.map(chunk => {
-                return resolveChunkFilename(compilation, chunk, jsChunkFilename, JavaScriptContentHashType);
-            }),
+            js: asyncChunks
+                .filter(chunk => chunkHasJavaScript(compilation, chunk))
+                .map(chunk => {
+                    return resolveChunkFilename(compilation, chunk, jsChunkFilename, JavaScriptContentHashType);
+                }),
             css: asyncChunks
                 .filter(chunk => chunkHasCss(compilation, chunk))
                 .map(chunk => {
@@ -692,7 +702,9 @@ const validateCurrentEntrypointMaps = (
         };
 
         if (stringify(runtimeAssets) !== stringify(finalizedAssets)) {
-            throw new Error(`Build assets changed after the runtime map for entrypoint "${name}" was embedded`);
+            throw new Error(
+                `Build assets changed after the runtime map for entrypoint "${name}" was embedded: ${JSON.stringify({embedded: runtimeAssets, finalized: finalizedAssets})}`
+            );
         }
     }
 };

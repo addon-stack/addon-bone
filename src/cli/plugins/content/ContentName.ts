@@ -17,7 +17,7 @@ export default class ContentName extends NameGenerator implements ContentNameGen
     }
 
     public create(name: string, options: ContentScriptEntrypointOptions): string {
-        if (!this.config.concatContentScripts) {
+        if (!this.config.concatContentScripts || options.shadow) {
             return this.name(name);
         }
 

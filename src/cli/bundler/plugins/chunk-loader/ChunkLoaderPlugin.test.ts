@@ -8,7 +8,7 @@ import {type Compiler, rspack, type Stats} from "@rspack/core";
 
 import ChunkLoaderPlugin from "./ChunkLoaderPlugin";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "chunk-loader");
+const fixtures = path.resolve(__dirname, "tests", "fixtures");
 
 const closeCompiler = (compiler: Compiler): Promise<void> => {
     return new Promise((resolve, reject) => compiler.close(error => (error ? reject(error) : resolve())));

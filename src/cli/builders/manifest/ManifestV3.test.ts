@@ -100,6 +100,34 @@ describe("ManifestV3", () => {
         });
     });
 
+    it("keeps shadow initial CSS out of content_scripts and exposes it through WAR", () => {
+        const manifest: any = new ManifestV3(Browser.Chrome)
+            .setDependencies(
+                new Map([
+                    ["shadow", dependency(["shadow.js"], ["shared.css", "shadow.css"], ["lazy.css"])],
+                    ["normal", dependency(["normal.js"], ["shared.css"], ["normal-lazy.css"])],
+                ])
+            )
+            .setContentScripts(
+                new Set([
+                    {entry: "shadow", matches: ["https://example.com/*"], shadow: true},
+                    {entry: "normal", matches: ["https://example.com/*"]},
+                ])
+            )
+            .build();
+
+        expect(manifest.content_scripts).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({js: ["shadow.js"], css: undefined}),
+                expect.objectContaining({js: ["normal.js"], css: ["shared.css"]}),
+            ])
+        );
+        expect(manifest.web_accessible_resources[0].resources).toEqual(
+            expect.arrayContaining(["lazy.css", "normal-lazy.css", "shared.css", "shadow.css"])
+        );
+        expect(manifest.content_scripts[0]).not.toHaveProperty("shadow");
+    });
+
     it("builds permissions separately from host permissions", () => {
         const manifest: any = new ManifestV3(Browser.Chrome)
             .setPermissions(new Set(["storage"]))

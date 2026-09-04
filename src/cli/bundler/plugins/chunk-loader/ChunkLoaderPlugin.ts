@@ -1,5 +1,7 @@
 import {type Chunk, type Compiler, RuntimeGlobals, RuntimeModule} from "@rspack/core";
 
+import {renderChunkLoaderRuntime} from "./templates";
+
 const PluginName = "ChunkLoaderPlugin";
 
 export interface ChunkLoaderPluginOptions {
@@ -12,44 +14,11 @@ class ChunkLoaderRuntimeModule extends RuntimeModule {
     }
 
     public generate(): string {
-        const ensureChunk = RuntimeGlobals.ensureChunk;
-        const loadScript = RuntimeGlobals.loadScript;
-        const publicPath = RuntimeGlobals.publicPath;
-
-        return `var resolveExtensionChunkPublicPath = function() {
-            if (!${publicPath}) {
-                var extensionApi = globalThis.browser && globalThis.browser.runtime && globalThis.browser.runtime.getURL
-                    ? globalThis.browser
-                    : globalThis.chrome;
-
-                if (!extensionApi || !extensionApi.runtime || !extensionApi.runtime.getURL) {
-                    return Promise.reject(new Error("Unable to resolve the extension URL for chunk loading"));
-                }
-
-                ${publicPath} = extensionApi.runtime.getURL("/");
-            }
-
-            return Promise.resolve();
-        };
-
-        var ensureExtensionChunk = ${ensureChunk};
-
-        ${ensureChunk} = function(chunkId) {
-            return resolveExtensionChunkPublicPath().then(function() {
-                return ensureExtensionChunk(chunkId);
-            });
-        };
-
-        ${loadScript} = function(url, done) {
-            import(url).then(
-                function() {
-                    done({type: "load", target: {src: url}});
-                },
-                function(error) {
-                    done({type: "error", target: {src: url}, error: error});
-                }
-            );
-        };`;
+        return renderChunkLoaderRuntime({
+            ensureChunk: RuntimeGlobals.ensureChunk,
+            loadScript: RuntimeGlobals.loadScript,
+            publicPath: RuntimeGlobals.publicPath,
+        });
     }
 }
 

@@ -16,7 +16,7 @@ export default class<O extends EntrypointOptions = ContentScriptEntrypointOption
         return ["defineContentScript", "defineContentScriptAppend"];
     }
 
-    protected schema(): typeof this.CommonPropertiesSchema {
+    protected schema(): z.AnyZodObject {
         return this.CommonPropertiesSchema.extend({
             matches: z.array(z.string()).optional(),
             excludeMatches: z.array(z.string()).optional(),
@@ -29,10 +29,21 @@ export default class<O extends EntrypointOptions = ContentScriptEntrypointOption
             matchOriginAsFallback: z.boolean().optional(),
             declarative: z.union([z.nativeEnum(ContentScriptDeclarative), z.boolean()]).optional(),
             marker: z.union([z.nativeEnum(ContentScriptMarker), z.boolean()]).optional(),
+            shadow: z.union([z.boolean(), z.record(z.unknown()).transform(() => true)]).optional(),
         });
     }
 
     public options(file: EntrypointFile): O {
+        const shadow = this.getOptions(file).shadow;
+
+        if (
+            shadow !== undefined &&
+            typeof shadow !== "boolean" &&
+            (typeof shadow !== "object" || shadow === null || Array.isArray(shadow))
+        ) {
+            throw new Error(`Invalid options shadow in "${file.file}": shadow must be a boolean literal or an object`);
+        }
+
         const options = super.options(file);
 
         return {

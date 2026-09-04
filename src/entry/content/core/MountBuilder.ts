@@ -2,6 +2,7 @@ import Builder from "./Builder";
 import Node from "./Node";
 import MountNode from "./MountNode";
 import MarkerNode from "./MarkerNode";
+import ShadowNode from "./ShadowNode";
 
 import {ContentScriptNode, ContentScriptProps, ContentScriptRenderValue} from "@typing/content";
 
@@ -9,7 +10,7 @@ export default abstract class extends Builder {
     private values = new Map<Element, null | ContentScriptRenderValue>();
 
     protected getProps(anchor: Element): ContentScriptProps {
-        const {anchor: _, mount, watch, render, container, main, ...options} = this.definition;
+        const {anchor: _, mount, watch, render, container, main, shadow, ...options} = this.definition;
 
         return {...options, anchor};
     }
@@ -43,7 +44,9 @@ export default abstract class extends Builder {
             container = (await this.definition.container(this.getProps(anchor))) as Element | undefined;
         }
 
-        return new MountNode(new MarkerNode(new Node(anchor, container), this.marker), this.definition.mount);
+        const node = new MountNode(new MarkerNode(new Node(anchor, container), this.marker), this.definition.mount);
+
+        return this.definition.shadow ? new ShadowNode(node) : node;
     }
 
     protected cleanupNode(anchor: Element): void {

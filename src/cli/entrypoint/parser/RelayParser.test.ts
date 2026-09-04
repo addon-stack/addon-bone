@@ -27,4 +27,8 @@ describe("RelayParser", () => {
             })
         );
     });
+
+    test("does not project the content shadow option into Relay build options", () => {
+        expect(parser.options(file("options", "shadow", "relay.ts"))).not.toHaveProperty("shadow");
+    });
 });

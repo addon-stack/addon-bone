@@ -86,7 +86,27 @@ export interface ContentScriptConfig {
 
 export type ContentScriptOptions = ContentScriptConfig & EntrypointOptions;
 
-export type ContentScriptEntrypointOptions = Partial<ContentScriptOptions>;
+export type ContentScriptEntrypointOptions = Partial<ContentScriptOptions> & {
+    shadow?: boolean;
+};
+
+/**
+ * Renders the content UI inside an open ShadowRoot. An object enables Shadow DOM and configures
+ * the document-level resources required by that UI.
+ */
+export type ContentScriptShadow = boolean | ContentScriptShadowOptions;
+
+export interface ContentScriptShadowOptions {
+    /** Local imported font files registered for this entrypoint through FontFace. */
+    fonts?: ContentScriptShadowFontOptions[];
+}
+
+export interface ContentScriptShadowFontOptions extends FontFaceDescriptors {
+    /** A family name unique enough not to collide with the host page or another entrypoint. */
+    family: string;
+    /** A local font import emitted by the framework asset pipeline. Remote URLs are unsupported. */
+    source: string;
+}
 
 // Append
 export enum ContentScriptAppend {
@@ -245,12 +265,16 @@ export type ContentScriptMainFunction = (context: ContentScriptContext, options:
 export interface ContentScriptNode extends ContentScriptMount {
     anchor: Element;
     container?: Element;
+
+    /** Element used by the active adapter as the destination for rendered UI. */
+    target?: Element;
 }
 
 export type ContentScriptNodeSet = Set<ContentScriptNode>;
 
 // Definition
-export interface ContentScriptDefinition extends ContentScriptEntrypointOptions {
+export interface ContentScriptDefinition extends Omit<ContentScriptEntrypointOptions, "shadow"> {
+    shadow?: ContentScriptShadow;
     marker?: ContentScriptMarkerType | ContentScriptMarkerGetter;
     anchor?: ContentScriptAnchor | ContentScriptAnchorGetter;
     mount?: ContentScriptMountFunction;
@@ -261,7 +285,8 @@ export interface ContentScriptDefinition extends ContentScriptEntrypointOptions 
 }
 
 // prettier-ignore
-export interface ContentScriptResolvedDefinition extends Omit<ContentScriptDefinition, "anchor" | "marker" | "mount" | "container" | "render" | "watch"> {
+export interface ContentScriptResolvedDefinition extends Omit<ContentScriptDefinition, "anchor" | "marker" | "mount" | "container" | "render" | "shadow" | "watch"> {
+    shadow?: ContentScriptShadowOptions;
     marker: ContentScriptMarkerResolver;
     anchor: ContentScriptAnchorGetter;
     mount: ContentScriptMountFunction;

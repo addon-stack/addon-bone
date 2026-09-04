@@ -1,9 +1,3 @@
-// Only placeholders belong here; real adnbn imports resolve to their source modules via tsconfig.json.
-declare module "*?raw" {
-    const content: string;
-    export default content;
-}
-
 declare module "virtual:background-entrypoint" {
     type BackgroundDefinition = import("@typing/background").BackgroundDefinition;
 

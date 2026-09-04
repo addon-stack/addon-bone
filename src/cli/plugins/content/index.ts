@@ -9,7 +9,7 @@ import {getContentChunkName, getContentLayer} from "./utils";
 
 import {definePlugin} from "@main/plugin";
 
-import {ChunkLoaderPlugin, EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
+import {ChunkLoaderPlugin, EntrypointPlugin, onlyViaTopLevelEntry, ShadowStylesPlugin} from "@cli/bundler";
 
 import {Command} from "@typing/app";
 import {ContentScriptWorld} from "@typing/content";
@@ -51,6 +51,7 @@ export default definePlugin(() => {
 
                 const entries = await manager.entries();
                 let entryWorlds = await manager.entryWorlds();
+                let entryShadows = await manager.entryShadows();
                 const getEntryWorld = (name: string): ContentScriptWorld => {
                     const world = entryWorlds.get(name);
 
@@ -84,6 +85,7 @@ export default definePlugin(() => {
 
                         const entries = await manager.entries();
                         entryWorlds = await manager.entryWorlds();
+                        entryShadows = await manager.entryShadows();
 
                         return entries;
                     });
@@ -118,6 +120,9 @@ export default definePlugin(() => {
                         plugin,
                         new ChunkLoaderPlugin({
                             test: entry => entryWorlds.get(entry) === ContentScriptWorld.Isolated,
+                        }),
+                        new ShadowStylesPlugin({
+                            test: entry => entryShadows.get(entry) === true,
                         }),
                     ],
                     optimization: config.commonChunks

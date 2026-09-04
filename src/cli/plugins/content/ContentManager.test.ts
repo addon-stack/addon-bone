@@ -181,4 +181,109 @@ describe("ContentManager execution worlds", () => {
 
         await expect(manager.entries()).resolves.toEqual(new Map([["renamed.content", new Set([renamed])]]));
     });
+
+    test("normalizes MAIN shadow entrypoints to ISOLATED for Manifest V2", async () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const file = {file: "shadow.content.ts", import: "./shadow.content"};
+        const items: ContentItems<ContentScriptEntrypointOptions> = new Map([
+            ["shadow", {file, options: {shadow: true, world: ContentScriptWorld.Main}}],
+        ]);
+        const manager = new ContentManager({
+            manifestVersion: 2,
+            concatContentScripts: true,
+            rootDir: process.cwd(),
+        } as ReadonlyConfig).provider(new ProviderFixture(new DriverFixture(new Set(), new Set(), items)));
+
+        try {
+            await expect(manager.entryWorlds()).resolves.toEqual(
+                new Map([["shadow.content", ContentScriptWorld.Isolated]])
+            );
+            await expect(manager.entryShadows()).resolves.toEqual(new Map([["shadow.content", true]]));
+        } finally {
+            warn.mockRestore();
+        }
+    });
+
+    test("rejects Shadow DOM in the MAIN world for Manifest V3", async () => {
+        const file = {file: "shadow.content.ts", import: "./shadow.content"};
+        const items: ContentItems<ContentScriptEntrypointOptions> = new Map([
+            ["shadow", {file, options: {shadow: true, world: ContentScriptWorld.Main}}],
+        ]);
+        const manager = new ContentManager({
+            manifestVersion: 3,
+            concatContentScripts: false,
+            rootDir: process.cwd(),
+        } as ReadonlyConfig).provider(new ProviderFixture(new DriverFixture(new Set(), new Set(), items)));
+
+        await expect(manager.entries()).rejects.toThrow(/cannot use Shadow DOM in the MAIN execution world/);
+    });
+});
+
+describe("ContentManager Shadow DOM entries", () => {
+    test("never concatenates shadow entries and keeps ordinary entries eligible for concatenation", async () => {
+        const matches = ["https://example.com/*"];
+        const normalA = {file: "normal-a.content.ts", import: "./normal-a.content"};
+        const normalB = {file: "normal-b.content.ts", import: "./normal-b.content"};
+        const shadowA = {file: "shadow-a.content.ts", import: "./shadow-a.content"};
+        const shadowB = {file: "shadow-b.content.ts", import: "./shadow-b.content"};
+        const items: ContentItems<ContentScriptEntrypointOptions> = new Map([
+            ["normal-a", {file: normalA, options: {matches}}],
+            ["normal-b", {file: normalB, options: {matches}}],
+            ["shadow-a", {file: shadowA, options: {matches, shadow: true}}],
+            ["shadow-b", {file: shadowB, options: {matches, shadow: true}}],
+        ]);
+        const manager = new ContentManager({
+            manifestVersion: 3,
+            concatContentScripts: true,
+            rootDir: process.cwd(),
+        } as ReadonlyConfig).provider(new ProviderFixture(new DriverFixture(new Set(), new Set(), items)));
+
+        await expect(manager.entries()).resolves.toEqual(
+            new Map([
+                ["normal-a.content", new Set([normalA, normalB])],
+                ["shadow-a.content", new Set([shadowA])],
+                ["shadow-b.content", new Set([shadowB])],
+            ])
+        );
+        await expect(manager.entryShadows()).resolves.toEqual(
+            new Map([
+                ["normal-a.content", false],
+                ["shadow-a.content", true],
+                ["shadow-b.content", true],
+            ])
+        );
+    });
+
+    test("recalculates shadow mode after clear for watch rebuilds", async () => {
+        const file = {file: "changing.content.ts", import: "./changing.content"};
+        const driver = new DriverFixture(
+            new Set(),
+            new Set(),
+            new Map([["changing", {file, options: {shadow: true}}]])
+        );
+        const manager = new ContentManager({
+            manifestVersion: 3,
+            concatContentScripts: false,
+            rootDir: process.cwd(),
+        } as ReadonlyConfig).provider(new ProviderFixture(driver));
+
+        await expect(manager.entryShadows()).resolves.toEqual(new Map([["changing.content", true]]));
+        await expect(manager.manifest()).resolves.toEqual(
+            new Set([expect.objectContaining({entry: "changing.content", shadow: true})])
+        );
+
+        driver.setItems(new Map([["changing", {file, options: {shadow: false}}]]));
+        manager.clear();
+        await expect(manager.entryShadows()).resolves.toEqual(new Map([["changing.content", false]]));
+        await expect(manager.manifest()).resolves.toEqual(
+            new Set([expect.objectContaining({entry: "changing.content", shadow: false})])
+        );
+
+        driver.setItems(new Map([["changing", {file, options: {shadow: true}}]]));
+        manager.clear();
+        await expect(manager.entryShadows()).resolves.toEqual(new Map([["changing.content", true]]));
+        await expect(manager.manifest()).resolves.toEqual(
+            new Set([expect.objectContaining({entry: "changing.content", shadow: true})])
+        );
+    });
 });

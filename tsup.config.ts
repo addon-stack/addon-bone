@@ -56,6 +56,11 @@ const fixVirtualIndexImportPlugin = (): Plugin => ({
     },
 });
 
+const runtimeTemplateEntries = [
+    "src/cli/bundler/plugins/chunk-loader/templates.ts",
+    "src/cli/bundler/plugins/shadow-styles/templates.ts",
+];
+
 export default defineConfig([
     {
         entry: [
@@ -66,6 +71,7 @@ export default defineConfig([
             "!src/**/*.{test,spec}.{ts,tsx}",
             "!src/**/*.d.ts",
             "!src/cli/virtual/**/*",
+            ...runtimeTemplateEntries.map(entry => `!${entry}`),
             "!src/cli/entrypoint/file/fixtures/**",
         ],
         bundle: false,
@@ -93,6 +99,24 @@ export default defineConfig([
         sourcemap: false,
         external: ["../entrypoint/index.js"],
         // Raw templates are source text; output-wide import rewrites corrupt their package specifiers.
+        // @ts-ignore
+        esbuildPlugins: [rawPlugin()],
+        esbuildOptions: options => {
+            options.outbase = "src";
+        },
+        outExtension: () => ({js: ".js"}),
+    },
+    {
+        entry: runtimeTemplateEntries,
+        format: ["esm"],
+        bundle: true,
+        outDir: "dist",
+        target: "node14",
+        clean: false,
+        dts: false,
+        sourcemap: false,
+        splitting: false,
+        // Raw runtime templates stay colocated with their owning plugins and are embedded here.
         // @ts-ignore
         esbuildPlugins: [rawPlugin()],
         esbuildOptions: options => {

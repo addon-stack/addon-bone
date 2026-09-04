@@ -31,8 +31,8 @@ const UnrelatedFile = "public/unrelated.txt";
 const FullMapPlaceholder = "__ADNBN_BUILD_ASSETS_FULL_MAP_PLACEHOLDER__";
 const ChunkLoadingGlobal = "buildAssetsFixtureChunks";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "build-assets");
-const projectRoot = path.resolve(__dirname, "../../../..");
+const fixtures = path.resolve(__dirname, "tests", "fixtures");
+const projectRoot = path.resolve(__dirname, "../../../../..");
 
 interface BuildResult {
     readonly assets: EntrypointAssetsMap;
@@ -232,6 +232,7 @@ const compile = async (
         renameBetaCssAtEmit?: boolean;
         resolvedHashFilename?: boolean;
         separateRuntime?: boolean;
+        sharedCssChunk?: boolean;
         sharedChange?: boolean;
     } = {}
 ): Promise<BuildResult> => {
@@ -342,6 +343,18 @@ const compile = async (
                               enforce: true,
                               reuseExistingChunk: true,
                           },
+                          ...(options.sharedCssChunk
+                              ? {
+                                    fixtureSharedStyles: {
+                                        chunks: "all",
+                                        enforce: true,
+                                        minChunks: 2,
+                                        name: "shared-styles",
+                                        test: /[\\/]shared\.css$/,
+                                        type: "css/mini-extract",
+                                    },
+                                }
+                              : {}),
                       },
                   }
                 : false,
@@ -359,6 +372,13 @@ const compile = async (
                 ? [
                       new NormalModuleReplacementPlugin(/shared\.js$/, resource => {
                           resource.request = path.resolve(fixtures, "shared.changed.js");
+                      }),
+                  ]
+                : []),
+            ...(options.sharedCssChunk
+                ? [
+                      new NormalModuleReplacementPlugin(/shared\.js$/, resource => {
+                          resource.request = path.resolve(fixtures, "shared-with-css.js");
                       }),
                   ]
                 : []),
@@ -809,6 +829,21 @@ describe("BuildAssetsMapPlugin Plan A", () => {
         }
 
         expectNoChangedBytesUnderStableNames(before, after);
+    });
+
+    test("does not invent a JavaScript file for a CSS-only shared chunk", async () => {
+        const build = await compile(true, {sharedCssChunk: true});
+        const sharedCss = build.assets.alpha.initial.css.find(file => build.assets.beta.initial.css.includes(file));
+
+        expect(sharedCss).toMatch(/^custom\/css\/shared-styles\..+\.css$/);
+        expect(build.assets.alpha.initial.js.some(file => file.includes("shared-styles"))).toBe(false);
+        expect(build.assets.beta.initial.js.some(file => file.includes("shared-styles"))).toBe(false);
+        expect(executeEntrypoint(build, "alpha").sandbox.__alphaEntrypointAssets).toEqual(
+            runtimeAssets(build.assets.alpha)
+        );
+        expect(executeEntrypoint(build, "beta").sandbox.__betaEntrypointAssets).toEqual(
+            runtimeAssets(build.assets.beta)
+        );
     });
 
     test("keeps configured CSS directories inside callback-generated names", async () => {

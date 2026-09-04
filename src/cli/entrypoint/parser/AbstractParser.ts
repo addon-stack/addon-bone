@@ -21,7 +21,7 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
         manifestVersion: z.union([z.literal(2), z.literal(3)]).optional(),
     });
 
-    protected abstract schema(): typeof this.CommonPropertiesSchema;
+    protected abstract schema(): z.AnyZodObject;
 
     protected abstract definition(): string | string[];
 

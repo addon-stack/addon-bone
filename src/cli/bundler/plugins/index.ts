@@ -9,9 +9,11 @@ export {
     type EntrypointPluginUpdate,
 } from "./EntrypointPlugin";
 
-export {default as ChunkLoaderPlugin, type ChunkLoaderPluginOptions} from "./ChunkLoaderPlugin";
+export {default as ChunkLoaderPlugin, type ChunkLoaderPluginOptions} from "./chunk-loader";
 
-export {default as BuildAssetsMapPlugin} from "./BuildAssetsMapPlugin";
+export {default as ShadowStylesPlugin, type ShadowStylesPluginOptions} from "./shadow-styles";
+
+export {default as BuildAssetsMapPlugin, type BuildAssetsMapPluginOptions} from "./build-assets-map";
 
 export {
     default as GenerateJsonPlugin,
