@@ -1,10 +1,8 @@
-import FrameNode from "./nodes/FrameNode";
-import {isContentScriptFrameNavigation} from "@shared/content";
 import Builder from "./Builder";
-import Node from "./nodes/Node";
-import MountNode from "./nodes/MountNode";
-import MarkerNode from "./nodes/MarkerNode";
-import ShadowNode from "./nodes/ShadowNode";
+
+import {FrameNode, MountNode, MarkerNode, ShadowNode, Node} from "./nodes";
+
+import {isContentScriptFrameNavigation} from "@shared/content";
 
 import {ContentScriptIsolation, ContentScriptNode, ContentScriptProps, ContentScriptRenderValue} from "@typing/content";
 

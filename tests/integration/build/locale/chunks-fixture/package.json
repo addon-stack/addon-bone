@@ -1,0 +1,9 @@
+{
+  "name": "adnbn-test-locale-chunks",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "adnbn": "*"
+  }
+}

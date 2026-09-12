@@ -1,0 +1,10 @@
+{
+  "app": {
+    "title": "Catalogue de traductions"
+  },
+  "secondaryOnly": "Only in French",
+  "items": [
+    "{{count}} article",
+    "{{count}} articles"
+  ]
+}

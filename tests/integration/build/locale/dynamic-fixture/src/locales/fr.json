@@ -1,0 +1,9 @@
+{
+  "greeting": "Bonjour depuis DynamicLocale !",
+  "app": {
+    "title": "Traductions intégrées"
+  },
+  "welcome": "Bienvenue {{ name }}",
+  "items": "{{count}} article|{{count}} articles",
+  "empty": ""
+}

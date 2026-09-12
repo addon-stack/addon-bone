@@ -15,7 +15,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualCommandModule",
-            imports: ["adnbn", "adnbn/locale", "adnbn/entry/command", "{entry}"],
+            imports: ["adnbn", "adnbn/entry/command", "{entry}"],
         },
         {
             generator: "virtualContentScriptModule",
@@ -64,7 +64,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualViewModule",
-            imports: ["adnbn", "adnbn/locale", "adnbn/entry/view", "adnbn/entry/view/{framework}", "{entry}"],
+            imports: ["adnbn", "adnbn/entry/view", "adnbn/entry/view/{framework}", "{entry}"],
         },
     ];
     let generated: Record<"ts" | "tsx", Record<Generator, string>>;

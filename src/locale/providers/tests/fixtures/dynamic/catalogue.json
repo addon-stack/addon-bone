@@ -1,0 +1,29 @@
+{
+  "en": {
+    "locale": "en",
+    "greeting": "Hello {{ name }}",
+    "items": "{{count}} item|{{count}} items",
+    "app_title": "Catalogue",
+    "fallback": "Shared default message",
+    "empty": "",
+    "__proto__": "Ordinary message"
+  },
+  "fr": {
+    "locale": "fr",
+    "greeting": "Bonjour {{ name }}",
+    "items": "{{count}} article|{{count}} articles",
+    "app_title": "Catalogue français",
+    "fallback": "Shared default message",
+    "empty": "",
+    "__proto__": "Message ordinaire"
+  },
+  "en_GB": {
+    "locale": "en_GB",
+    "greeting": "Hello {{ name }}",
+    "items": "{{count}} item|{{count}} items",
+    "app_title": "British catalogue",
+    "fallback": "Shared default message",
+    "empty": "",
+    "__proto__": "Ordinary message"
+  }
+}

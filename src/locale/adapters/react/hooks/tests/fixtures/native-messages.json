@@ -1,0 +1,9 @@
+{
+  "locale": "en",
+  "app_title": "Native title",
+  "app_greeting": "Hello {{ name }}! Again: {{name}}.",
+  "app_action": "Open {{action}}",
+  "app_items": "{{count}} item|{{count}} items",
+  "app_literal": "<b>{{name}}</b> {{}} {{   }} {{broken} {broken}}",
+  "app_empty": ""
+}

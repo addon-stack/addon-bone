@@ -41,15 +41,21 @@ describe("CustomLocale", () => {
         expect(locale.lang()).toBe(Language.English);
     });
 
-    test("languageNames() - follows the provider's languages", () => {
+    test("langNames() - follows the provider's languages", () => {
         locale.setLang(Language.French);
-        expect(locale.languageNames()).toEqual(new Map([[Language.French, "Français"]]));
+        expect(locale.langNames()).toEqual(new Map([[Language.French, "Français"]]));
 
         locale.setLang(Language.Ukrainian);
-        expect(locale.languageNames()).toEqual(new Map([[Language.Ukrainian, "Українська"]]));
+        expect(locale.langNames()).toEqual(new Map([[Language.Ukrainian, "Українська"]]));
     });
 
     describe("trans()", () => {
+        test("leaves malformed and empty placeholders as text", () => {
+            locale.setData({literal: "{{ name }} {{}} {{   }} {{broken} {broken}}"});
+            expect(locale.get("literal", {name: "Ada"})).toBe("Ada {{}} {{   }} {{broken} {broken}}");
+            expect(consoleWarnSpy).not.toHaveBeenCalled();
+        });
+
         test("returned the correct message if key exists and is non-empty", () => {
             expect(locale.trans("title" as never)).toBe("Adnbn");
         });
@@ -79,6 +85,11 @@ describe("CustomLocale", () => {
 
     describe("choice()", () => {
         const key = "car" as never;
+
+        test("selects the form before substituting values containing the plural separator", () => {
+            locale.setData({car: "{{count}} car|{{count}} cars"});
+            expect(locale.choice(key, 2, {count: "one|two"})).toBe("one|two cars");
+        });
 
         test("languages with 1 plural forms", () => {
             const arr = ["車"];

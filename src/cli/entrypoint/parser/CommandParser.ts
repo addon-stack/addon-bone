@@ -2,7 +2,7 @@ import {z} from "zod";
 
 import BackgroundParser from "./BackgroundParser";
 
-import {modifyLocaleMessageKey} from "@locale/utils";
+import {modifyLocaleMessageKey} from "@shared/locale";
 
 import {CommandEntrypointOptions, CommandExecuteActionName} from "@typing/command";
 import {EntrypointFile} from "@typing/entrypoint";

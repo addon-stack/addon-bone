@@ -1,0 +1,10 @@
+{
+  "greeting": "Hello from DynamicLocale!",
+  "app": {
+    "title": "Bundled translations"
+  },
+  "welcome": "Welcome {{ name }}",
+  "items": "{{count}} item|{{count}} items",
+  "fallback": "Completed from English",
+  "empty": ""
+}

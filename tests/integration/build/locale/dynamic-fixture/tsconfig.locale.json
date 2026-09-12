@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "strict": true,
+    "skipLibCheck": false,
+    "noEmit": true,
+    "types": ["chrome", "node"]
+  },
+  "files": [
+    ".adnbn/locale.d.ts",
+    "src/contract.ts"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "app": {
+    "title": "Locale catalogue",
+    "greeting": "Hello {{name}}"
+  },
+  "items": [
+    "{{count}} item",
+    "{{count}} items"
+  ],
+  "empty": "",
+  "literal": "Quotes: \"hello\"; slash: \\; line:\nnext; dollar: $&",
+  "__proto__": "An ordinary translation key"
+}

@@ -42,6 +42,7 @@ export class CdpClient {
     private readonly pending = new Map<number, CdpPendingRequest>();
 
     public readonly runtimeErrors: string[] = [];
+    public readonly requests: string[] = [];
 
     private constructor(private readonly socket: WebSocket) {
         socket.addEventListener("message", event => this.receive(JSON.parse(String(event.data))));
@@ -125,6 +126,11 @@ export class CdpClient {
     }
 
     private receive(message: CdpMessage): void {
+        if (message.method === "Network.requestWillBeSent") {
+            const request = message.params?.request as {url: string};
+            this.requests.push(request.url);
+        }
+
         if (message.method === "Runtime.exceptionThrown") {
             const details = message.params?.exceptionDetails as
                 | {text?: string; exception?: {description?: string}}

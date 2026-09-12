@@ -3,10 +3,12 @@ import type {Config} from "jest";
 const config: Config = {
     verbose: true,
     testEnvironment: "jsdom",
+    globals: {ADNBN_TEST_ROOT: import.meta.dirname},
     setupFiles: ["<rootDir>/tests/jest.setup.ts"],
     modulePathIgnorePatterns: ["<rootDir>/.cache/"],
     resolver: "<rootDir>/tests/raw-module-resolver.cjs",
     moduleNameMapper: {
+        "^#adnbn/locale$": "<rootDir>/src/locale/catalogue/index.ts",
         "^@cli/(.*)$": "<rootDir>/src/cli/$1",
         "^@entry/(.*)$": "<rootDir>/src/entry/$1",
         "^@frame/(.*)$": "<rootDir>/src/frame/$1",

@@ -172,6 +172,9 @@ export interface LocaleBuilder {
 
 export type LocaleBuilders = Map<Language, LocaleBuilder>;
 
+/** Completed messages keyed by language and browser-compatible message key. */
+export type LocaleCatalogue = Partial<Record<Language, Record<string, string>>>;
+
 export interface LocaleValidator {
     isValid(locale: LocaleBuilder): boolean;
 
@@ -192,6 +195,9 @@ export interface LocaleFutures {
 export interface LocaleStructure {
     [key: string]: LocaleFutures;
 }
+
+/** Augmented through adnbn/locale by the generated .adnbn/locale.d.ts for the current app. */
+export interface LocaleRegistry {}
 
 export type LocaleNonPluralKeys<T> = {
     [K in keyof T]: T[K] extends {plural: false} ? K : never;
@@ -220,11 +226,14 @@ export type LocaleSubstitutionArgs<T, K extends keyof T> = string extends keyof 
       : [substitutions: LocaleSubstitutionsFor<T, K>];
 
 export interface LocaleProvider<S> {
+    /** Currently selected language code. */
     lang(): Language;
 
-    languages(): Set<Language>;
+    /** Available language codes. */
+    langs(): ReadonlySet<Language>;
 
-    languageNames(): Map<Language, string>;
+    /** Native names keyed by the available language codes. */
+    langNames(): ReadonlyMap<Language, string>;
 
     keys(): ReadonlySet<keyof S>;
 
@@ -237,4 +246,23 @@ export interface LocaleProvider<S> {
 
 export interface LocaleDynamicProvider<S> extends LocaleProvider<S> {
     change(lang: Language): Promise<Language>;
+}
+
+/** Read-only message access for one selected language. */
+export interface LocaleSnapshot<S> {
+    readonly lang: () => Language;
+    readonly langs: () => ReadonlySet<Language>;
+    readonly langNames: () => ReadonlyMap<Language, string>;
+    readonly get: <K extends keyof S & string>(key: K) => string;
+}
+
+/** Persists one language selection independently of the application's translation catalogue. */
+export interface LocaleStorageDriver {
+    /** No saved selection leaves the provider's current language unchanged. */
+    get(): Promise<Language | undefined>;
+
+    set(lang: Language): Promise<void>;
+
+    /** Observes valid selections, including own writes; does not emit an initial value or deletions. */
+    watch(handler: (lang: Language) => void): () => void;
 }

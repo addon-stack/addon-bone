@@ -85,11 +85,14 @@
     "./src/**/*",
     "./src/**/*.d.ts",
     "./src/cli/virtual/virtual.d.ts",
-    "node_modules/@types/node/*.d.ts"
+    "node_modules/@types/node/*.d.ts",
+    "tests/**/*.test.ts",
+    "tests/integration/*.ts",
+    "tests/jest*.ts"
   ],
   "exclude": [
-    "**/*.test.ts",
-    "**/tests/**/*.ts",
-    "dist"
+    "**/tests/fixtures/**",
+    "dist",
+    "node_modules"
   ]
 }

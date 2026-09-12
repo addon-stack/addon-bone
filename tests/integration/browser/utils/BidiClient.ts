@@ -2,7 +2,7 @@ interface BidiMessage {
     id?: number;
     type: string;
     method?: string;
-    params?: {level?: string; text?: string};
+    params?: {level?: string; text?: string; request?: {url: string}};
     result?: Record<string, any>;
     error?: string;
     message?: string;
@@ -20,6 +20,7 @@ export default class BidiClient {
     private readonly pending = new Map<number, BidiPendingRequest>();
 
     public readonly runtimeErrors: string[] = [];
+    public readonly requests: string[] = [];
 
     private constructor(private readonly socket: WebSocket) {
         socket.addEventListener("message", event => this.receive(JSON.parse(String(event.data))));
@@ -109,6 +110,10 @@ export default class BidiClient {
     }
 
     private receive(message: BidiMessage): void {
+        if (message.method === "network.beforeRequestSent" && message.params?.request) {
+            this.requests.push(message.params.request.url);
+        }
+
         if (message.method === "log.entryAdded" && message.params?.level === "error") {
             this.runtimeErrors.push(message.params.text ?? "Firefox runtime error");
         }
