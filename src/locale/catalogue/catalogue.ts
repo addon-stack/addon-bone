@@ -1,6 +1,6 @@
 import {Language, type LocaleCatalogue} from "@typing/locale";
 
-/** Package fallback; extension builds replace #adnbn/locale with virtual/locale. */
+/** Package fallback; extension builds supply #adnbn/locale as a generated module. */
 const catalogue: LocaleCatalogue = {};
 
 export const lang: Language = Language.English;

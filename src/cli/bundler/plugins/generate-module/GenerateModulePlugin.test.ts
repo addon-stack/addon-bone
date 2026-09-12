@@ -69,7 +69,7 @@ test("bundles imports and arbitrary JavaScript exports without executing unused 
     await expect(fs.access(file)).rejects.toMatchObject({code: "ENOENT"});
 });
 
-test("updates before compilation, skips unchanged sources and propagates callback errors", async () => {
+test("updates before compilation, skips unchanged sources and reports recoverable callback errors", async () => {
     let value = 3;
     let fail = false;
     const compiler = createCompiler(
@@ -93,12 +93,47 @@ test("updates before compilation, skips unchanged sources and propagates callbac
     expect(await run(compiler)).toBe(14);
 
     fail = true;
-    await expect(compiler.hooks.watchRun.promise(compiler)).rejects.toThrow("Cannot generate module");
+    await compiler.hooks.watchRun.promise(compiler);
+    await expect(run(compiler)).rejects.toThrow("Cannot generate module");
     expect(await fs.readFile(file, "utf8")).toBe("export default 7;");
     fail = false;
     value = 9;
     await compiler.hooks.watchRun.promise(compiler);
     expect(await run(compiler)).toBe(18);
+});
+
+test("recomputes file and directory dependencies after each refresh, including invalid updates", async () => {
+    const first = path.join(directory, "first.json");
+    const second = path.join(directory, "second.json");
+    const missing = path.join(directory, "new-directory");
+    let files = [first];
+    let fail = false;
+    const compiler = createCompiler(
+        new GenerateModulePlugin(modules).watch(
+            async () => {
+                if (fail) throw new Error("Invalid source");
+                return modules;
+            },
+            async () => ({files, directories: [directory, missing]})
+        )
+    );
+    const dependencies = () => {
+        const compilation = compiler._lastCompilation!;
+        expect(compilation.contextDependencies.has(directory)).toBe(true);
+        expect(compilation.missingDependencies.has(missing)).toBe(true);
+        return compilation.fileDependencies;
+    };
+
+    await compiler.hooks.watchRun.promise(compiler);
+    await run(compiler);
+    expect(dependencies().has(first)).toBe(true);
+
+    files = [second];
+    fail = true;
+    await compiler.hooks.watchRun.promise(compiler);
+    await expect(run(compiler)).rejects.toThrow("Invalid source");
+    expect(dependencies().has(first)).toBe(false);
+    expect(dependencies().has(second)).toBe(true);
 });
 
 test("isolates compilers with identical initial sources, updates and cleanup", async () => {

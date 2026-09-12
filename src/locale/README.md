@@ -22,9 +22,11 @@ description: Runtime translation providers, shared formatting, catalogue access,
 
 ## Ownership and data flow
 
-Shared languages, contracts, and module identifiers belong to `src/types/locale.ts`. It also declares the empty `LocaleRegistry`, re-exported through `adnbn/locale`. Generated `.adnbn/locale.d.ts` augments that registry, defining the application's keys and required substitutions from its default language for providers, helpers, and adapters.
+Shared languages and contracts belong to `src/types/locale.ts`. It also declares the empty `LocaleRegistry`, re-exported through `adnbn/locale`. Generated `.adnbn/locale.d.ts` augments that registry, defining the application's keys and required substitutions from its default language for providers, helpers, and adapters. The private module name and bundler layer belong to `src/cli/plugins/locale/module.ts`.
 
 Locale discovery, merging, validation, fallback preparation, native `_locales/*/messages.json`, and declaration generation belong to the CLI locale pipeline. The locale feature plugin supplies the generated data; Rspack integration and chunk delivery belong to the bundler.
+
+In watch mode, one refresh prepares the locale data before the JSON and module generators read it. File and directory dependencies are refreshed on every rebuild, including newly added languages. Invalid edits produce compilation errors without replacing the last successful output; fixing the source allows the next rebuild to proceed.
 
 Common algorithms live in `src/shared/locale`. Its `index.ts` re-exports the helpers; CLI, providers, and adapters import them from `@shared/locale`:
 
@@ -36,7 +38,7 @@ Common algorithms live in `src/shared/locale`. Its `index.ts` re-exports the hel
 
 These modules depend only on shared contracts and have no browser, DOM, React, storage, or CLI dependencies. Consumers supply missing-substitution diagnostics; React node rendering stays inside the React adapter.
 
-During extension builds, the private `#adnbn/locale` import resolves to `virtual/locale`: a default catalogue export plus named `keys`, `languages`, and `lang` (the configured default language). `DynamicLocale` reads the catalogue; `NativeLocale` imports only the named lists, allowing unused translations to be removed from optimized bundles. Outside these builds, `catalogue/` provides a resolvable empty module with `lang: "en"`.
+During extension builds, the private `#adnbn/locale` import resolves directly to a generated module: a default catalogue export plus named `keys`, `languages`, and `lang` (the configured default language). `DynamicLocale` reads the catalogue; `NativeLocale` imports only the named lists, allowing unused translations to be removed from optimized bundles. Outside these builds, `catalogue/` provides a resolvable empty module with `lang: "en"`.
 
 Views and ISOLATED content scripts can share `locale.js`. MAIN retains its own content layer: its catalogue stays in the entrypoint or joins `common-main.content.js` under the regular content chunk rules. Background keeps translations in its single bundle. This separates file delivery across content execution worlds; the same translations may occur in their respective bundles.
 

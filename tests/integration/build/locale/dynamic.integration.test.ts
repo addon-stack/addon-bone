@@ -48,7 +48,6 @@ test.each(["chrome", "firefox"])(
                 "utf8"
             );
             expect(declaration).not.toContain("#adnbn/locale");
-            expect(declaration).not.toContain("virtual/locale");
             expect(declaration).toContain("extends AbstractLocale<T>");
         } finally {
             await fixture.dispose();

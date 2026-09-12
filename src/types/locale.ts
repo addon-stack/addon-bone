@@ -63,10 +63,6 @@ export enum LocaleDir {
 
 export const RtlLanguages: ReadonlySet<Language> = new Set([Language.Arabic, Language.Persian, Language.Hebrew]);
 
-export const LocaleModuleName = "virtual/locale";
-
-export const LocaleModuleLayer = "adnbn:locale";
-
 export const LocaleNestedKeysSeparator = ".";
 
 export const LocaleKeysSeparator = "_";

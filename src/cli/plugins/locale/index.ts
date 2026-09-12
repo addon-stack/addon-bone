@@ -1,19 +1,18 @@
 import _ from "lodash";
-import type {Configuration as RspackConfig} from "@rspack/core";
+import type {Configuration as RspackConfig, RspackPluginInstance} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
-import {GenerateJsonPlugin, GenerateModulePlugin} from "@cli/bundler";
+import {GenerateJsonPlugin, GenerateModulePlugin, WatchPlugin} from "@cli/bundler";
 import {getContentLayer} from "@cli/bundler/utils/layers";
 import {extractLocaleKey, modifyLocaleMessageKey} from "@shared/locale";
 
 import Locale from "./Locale";
 import {LocaleDeclaration} from "./declaration";
-import {createLocaleModule} from "./module";
+import {createLocaleModule, LocaleModuleLayer, LocaleModuleName} from "./module";
 
 import {Command} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {ContentScriptWorld} from "@typing/content";
-import {LocaleModuleLayer, LocaleModuleName} from "@typing/locale";
 
 export default definePlugin(() => {
     let locale: Locale;
@@ -43,26 +42,28 @@ export default definePlugin(() => {
             const modulePlugin = new GenerateModulePlugin(await getModules()).layer(LocaleModuleLayer, {
                 not: [getContentLayer(ContentScriptWorld.Main)],
             });
+            const plugins: RspackPluginInstance[] = [];
 
             if (config.command === Command.Watch) {
-                jsonPlugin.watch(async () => {
-                    locale.clear();
-                    await prepareLocale();
+                plugins.push(
+                    new WatchPlugin(async () => {
+                        locale.clear();
+                        await prepareLocale();
+                    })
+                );
 
-                    return locale.json();
-                });
-
-                const watchFiles = [...(await locale.plugin().files())].map(({file}) => file);
-                modulePlugin.watch(getModules, watchFiles);
+                jsonPlugin.watch(() => locale.json());
+                modulePlugin.watch(getModules, () => locale.dependencies());
             }
 
+            plugins.push(jsonPlugin, modulePlugin);
+
             return {
-                // JSON refresh clears and prepares the shared cache before the module reads it.
-                plugins: [jsonPlugin, modulePlugin],
-                resolve: {alias: {"#adnbn/locale$": LocaleModuleName}},
-                optimization: config.commonChunks
-                    ? {
-                          splitChunks: {
+                plugins,
+                optimization: {
+                    emitOnErrors: false,
+                    splitChunks: config.commonChunks
+                        ? {
                               cacheGroups: {
                                   adnbnLocaleShared: {
                                       layer: LocaleModuleLayer,
@@ -84,9 +85,9 @@ export default definePlugin(() => {
                                       priority: 70,
                                   },
                               },
-                          },
-                      }
-                    : undefined,
+                          }
+                        : undefined,
+                },
             } satisfies RspackConfig;
         },
         manifest: async ({config, manifest}) => {

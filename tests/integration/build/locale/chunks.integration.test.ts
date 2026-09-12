@@ -75,10 +75,6 @@ test.each<Scenario>([
         }
 
         const directory = await fixture.build({browser});
-        const groups: string[] = JSON.parse(await readFile(path.join(fixture.directory, "cache-groups.json"), "utf8"));
-        expect(groups.filter(name => name.startsWith("adnbnLocale")).sort()).toEqual(
-            enabled ? ["adnbnLocaleLarge", "adnbnLocaleShared"] : []
-        );
         const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));
         const backgroundFiles: string[] = manifest.background.service_worker
             ? [manifest.background.service_worker]
@@ -91,6 +87,8 @@ test.each<Scenario>([
                 sources.set(filename.split(path.sep).join("/"), await readFile(path.join(directory, filename), "utf8"));
             }
         }
+        if (!enabled) expect([...sources.keys()].filter(file => /^js\/locale\.[^.]+\.js$/.test(file))).toEqual([]);
+
         const catalogueFiles = [...sources.keys()].filter(file => sources.get(file)!.includes(Greeting));
         expect(catalogueFiles).toContain(backgroundFiles[0]);
 

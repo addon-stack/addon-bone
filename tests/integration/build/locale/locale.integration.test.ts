@@ -93,7 +93,7 @@ test("exports the configured default language even when it is not the first cata
     }
 });
 
-test("CLI watch refreshes the catalogue, JSON and declarations from the same locale edit", async () => {
+test("CLI watch discovers, edits and removes locales and recovers from invalid translations", async () => {
     const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
     let watcher: ChildProcess | undefined;
     let output = "";
@@ -113,6 +113,30 @@ test("CLI watch refreshes the catalogue, JSON and declarations from the same loc
             path.join(fixture.directory, "src/locales/de.json"),
             await readFile(path.join(__dirname, "states/de.json"))
         );
+        await waitFor(
+            async () => {
+                const {catalogue, languages} = await inspect(directory);
+                expect([...languages].sort()).toEqual(["de", "en", "fr"]);
+                expect(catalogue.de.app_title).toBe("Übersetzungskatalog");
+                return true;
+            },
+            15000,
+            "a new locale without editing an existing file"
+        );
+
+        await copyFile(
+            path.join(__dirname, "states/de-updated.json"),
+            path.join(fixture.directory, "src/locales/de.json")
+        );
+        await waitFor(
+            async () => {
+                expect((await inspect(directory)).catalogue.de.app_title).toBe("Aktualisierter Katalog");
+                return true;
+            },
+            15000,
+            "an edit to the newly discovered locale"
+        );
+
         await writeFile(
             path.join(fixture.directory, "src/locales/en.json"),
             await readFile(path.join(__dirname, "states/en.json"))
@@ -121,7 +145,7 @@ test("CLI watch refreshes the catalogue, JSON and declarations from the same loc
             async () => {
                 const {catalogue, keys, languages} = await inspect(directory);
                 expect([...languages].sort()).toEqual(["de", "en", "fr"]);
-                expect(catalogue.de.app_title).toBe("Übersetzungskatalog");
+                expect(catalogue.de.app_title).toBe("Aktualisierter Katalog");
                 expect(catalogue.fr.app_greeting).toBe("Welcome {{name}}");
                 expect(catalogue.fr.newKey).toBe("Added during watch");
                 expect(catalogue.fr).not.toHaveProperty("empty");
@@ -134,6 +158,47 @@ test("CLI watch refreshes the catalogue, JSON and declarations from the same loc
             15000,
             "updated locale catalogue, languages and JSON"
         );
+
+        await rm(path.join(fixture.directory, "src/locales/de.json"));
+        await waitFor(
+            async () => {
+                expect((await inspect(directory)).languages).toEqual(["en", "fr"]);
+                return true;
+            },
+            15000,
+            "removal of a locale and its generated JSON"
+        );
+
+        const declarationFile = path.join(fixture.directory, ".adnbn/locale.d.ts");
+        for (const invalid of ["invalid-plural.json", "invalid-json.txt"]) {
+            const previousDeclaration = await readFile(declarationFile, "utf8");
+            const previousJson = await readFile(path.join(directory, "_locales/en/messages.json"), "utf8");
+            const previousBundle = await readFile(path.join(directory, "js/background.js"), "utf8");
+            const offset = output.length;
+            await copyFile(
+                path.join(__dirname, "states", invalid),
+                path.join(fixture.directory, "src/locales/de.json")
+            );
+            await waitFor(
+                async () => output.slice(offset).includes("compiled with") || undefined,
+                15000,
+                "invalid locale diagnostics"
+            );
+            expect(watcher.exitCode).toBeNull();
+            expect(await readFile(declarationFile, "utf8")).toBe(previousDeclaration);
+            expect(await readFile(path.join(directory, "_locales/en/messages.json"), "utf8")).toBe(previousJson);
+            expect(await readFile(path.join(directory, "js/background.js"), "utf8")).toBe(previousBundle);
+
+            await copyFile(path.join(__dirname, "states/de.json"), path.join(fixture.directory, "src/locales/de.json"));
+            await waitFor(
+                async () => {
+                    expect((await inspect(directory)).catalogue.de.app_title).toBe("Übersetzungskatalog");
+                    return true;
+                },
+                15000,
+                "recovery after fixing the invalid locale"
+            );
+        }
     } catch (error) {
         throw new Error(`${String(error)}\n${output}`, {cause: error});
     } finally {

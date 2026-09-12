@@ -1,4 +1,7 @@
 import {Compilation, Compiler, sources} from "@rspack/core";
+import path from "path";
+import {promisify} from "util";
+import {watchCompilation} from "../utils";
 
 type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
 
@@ -20,11 +23,12 @@ export default class GenerateJsonPlugin {
     constructor(protected data: GenerateJsonPluginData) {}
 
     public apply(compiler: Compiler): void {
-        compiler.hooks.watchRun.tapPromise(this.pluginName, async () => {
+        let emitted = new Set<string>();
+
+        watchCompilation(compiler, this.pluginName, async () => {
             const update = this.update;
 
             if (update) {
-                // Let the compiler fail this rebuild rather than emit stale JSON.
                 this.data = await update();
             }
         });
@@ -37,6 +41,18 @@ export default class GenerateJsonPlugin {
                 },
                 () => this.generateFiles(compilation)
             );
+        });
+
+        compiler.hooks.afterEmit.tapPromise(this.pluginName, async compilation => {
+            if (compilation.errors.length) return;
+
+            const current = new Set(Object.keys(this.data));
+            for (const filename of emitted) {
+                if (!current.has(filename) && !compilation.getAsset(filename)) {
+                    await this.removeFile(compiler, filename);
+                }
+            }
+            emitted = current;
         });
     }
 
@@ -52,5 +68,31 @@ export default class GenerateJsonPlugin {
 
             compilation.emitAsset(filename, new sources.RawSource(json));
         });
+    }
+
+    private async removeFile(compiler: Compiler, filename: string): Promise<void> {
+        const filesystem = compiler.outputFileSystem!;
+        const output = compiler.options.output.path!;
+        const file = path.join(output, filename);
+        await promisify(filesystem.unlink.bind(filesystem))(file).catch((error: NodeJS.ErrnoException) => {
+            if (error.code !== "ENOENT") throw error;
+        });
+
+        // Remove only empty parent directories owned by the removed output, stopping at output.path.
+        for (
+            let directory = path.dirname(file);
+            directory.startsWith(output + path.sep);
+            directory = path.dirname(directory)
+        ) {
+            const removed = await promisify(filesystem.rmdir.bind(filesystem))(directory).then(
+                () => true,
+                (error: NodeJS.ErrnoException) => {
+                    if (error.code === "ENOENT") return true;
+                    if (error.code === "ENOTEMPTY" || error.code === "EEXIST") return false;
+                    throw error;
+                }
+            );
+            if (!removed) break;
+        }
     }
 }

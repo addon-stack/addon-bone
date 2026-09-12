@@ -1,5 +1,8 @@
 import type {Language, LocaleCatalogue} from "@typing/locale";
 
+export const LocaleModuleName = "#adnbn/locale";
+export const LocaleModuleLayer = "adnbn:locale";
+
 export const createLocaleModule = (catalogue: LocaleCatalogue, keys: ReadonlySet<string>, lang: Language): string =>
     // JSON.parse preserves own __proto__ keys; the pure annotation lets native consumers omit the catalogue.
     `export const lang = ${JSON.stringify(lang)};\n` +

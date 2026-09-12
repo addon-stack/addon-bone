@@ -27,6 +27,8 @@ export {
 
 export {
     GenerateModulePlugin,
+    type GenerateModulePluginDependencies,
+    type GenerateModulePluginDependenciesResolver,
     type GenerateModulePluginModules,
     type GenerateModulePluginUpdate,
 } from "./generate-module";

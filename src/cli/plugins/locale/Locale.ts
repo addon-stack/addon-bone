@@ -1,5 +1,7 @@
+import path from "path";
 import {LocaleFinder} from "@cli/entrypoint";
-import {GenerateJsonPluginData} from "@cli/bundler";
+import type {GenerateJsonPluginData, GenerateModulePluginDependencies} from "@cli/bundler";
+import {getSourcePath, getSharedPath, getAppPath, getAppSourcePath} from "@cli/resolvers/path";
 
 import {flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
 
@@ -7,6 +9,20 @@ import type {Language, LocaleCatalogue, LocaleMessages} from "@typing/locale";
 
 export default class Locale extends LocaleFinder {
     private _messages?: Promise<Map<Language, LocaleMessages>>;
+
+    public async dependencies(): Promise<GenerateModulePluginDependencies> {
+        const files = [...(await this.plugin().files())].map(({file}) => file);
+        const directory = this.getDirectory();
+        const directories = new Set([
+            getSourcePath(this.config, directory),
+            getSharedPath(this.config, directory),
+            getAppPath(this.config, directory),
+            getAppSourcePath(this.config, directory),
+            ...files.map(file => path.dirname(file)),
+        ]);
+
+        return {files, directories};
+    }
 
     public async json(): Promise<GenerateJsonPluginData> {
         return Object.fromEntries(

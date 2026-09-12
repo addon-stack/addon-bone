@@ -1,5 +1,5 @@
 import {defineContentScript} from "adnbn";
-import catalogue from "virtual/locale";
+import catalogue from "#adnbn/locale";
 import {createPanel} from "./panel";
 
 export default defineContentScript({
