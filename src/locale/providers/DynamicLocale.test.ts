@@ -1,27 +1,14 @@
 jest.mock("@addon-core/browser", () => ({getI18nMessage: jest.fn(() => "en")}));
 jest.mock("@addon-core/storage", () => ({Storage: {Local: jest.fn()}}));
-jest.mock("#adnbn/locale", () => ({
-    __esModule: true,
-    default: require("./tests/fixtures/dynamic/catalogue.json"),
-    lang: "fr",
-    keys: ["greeting", "items", "app.title", "fallback", "empty", "__proto__"],
-    languages: ["en", "fr", "en_GB"],
-}));
+jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic"));
 
 import {getI18nMessage} from "@addon-core/browser";
 import {Storage, type StorageProvider} from "@addon-core/storage";
 import DynamicLocale from "./DynamicLocale";
-import {createLocaleStorage} from "../tests/fixtures/storage";
+import {MemoryLocaleStorage} from "../tests/fixtures";
 import {Language} from "@typing/locale";
 
-interface Structure {
-    greeting: {plural: false; substitutions: ["name"]};
-    items: {plural: true; substitutions: ["count"]};
-    "app.title": {plural: false; substitutions: []};
-    fallback: {plural: false; substitutions: []};
-    empty: {plural: false; substitutions: []};
-    __proto__: {plural: false; substitutions: []};
-}
+import type {Structure} from "./tests/fixtures/dynamic";
 
 type Watcher = Record<string, (value: string | undefined) => void>;
 const keys = ["greeting", "items", "app.title", "fallback", "empty", "__proto__"];
@@ -68,6 +55,31 @@ test("reads the initial language from browser i18n and translates synchronously 
     expect(driver.watch).not.toHaveBeenCalled();
 });
 
+test("exposes completed messages while retaining previously selected dictionaries", async () => {
+    const locale = new DynamicLocale<Structure>(false);
+    const english = locale.messages();
+    expect(locale.messages()).toBe(english);
+    expect(english).toMatchObject({
+        locale: "en",
+        greeting: "Hello {{ name }}",
+        app_title: "Catalogue",
+        items: "{{count}} item|{{count}} items",
+        fallback: "Shared default message",
+        empty: "",
+    });
+    expect(Object.hasOwn(english, "app.title")).toBe(false);
+
+    const changed = locale.change(Language.French);
+    const french = locale.messages();
+    expect(french).not.toBe(english);
+    expect(french.app_title).toBe("Catalogue français");
+    expect(french.fallback).toBe("Shared default message");
+    expect(english.app_title).toBe("Catalogue");
+    await changed;
+    await locale.change(Language.English);
+    expect(locale.messages()).toBe(english);
+});
+
 test("normalizes the native marker before selecting catalogue data", () => {
     jest.mocked(getI18nMessage).mockReturnValue("en-GB");
     const locale = new DynamicLocale<Structure>(false);
@@ -102,20 +114,36 @@ test("rejects a recognized native language that is absent from the catalogue", (
     expect(() => new DynamicLocale(false)).toThrow('Language "de" is not available');
 });
 
-test("keeps public dot keys separate from catalogue keys and returns independent language collections", () => {
+test("keeps public dot keys separate from catalogue keys and exposes available languages", () => {
     const locale = new DynamicLocale<Structure>(false);
     expect([...locale.keys()]).toEqual(keys);
-    expect([...locale.languageNames()]).toEqual([
+    expect([...locale.langs()]).toEqual([Language.English, Language.French, Language.EnglishGreatBritain]);
+    expect([...locale.langNames()]).toEqual([
         [Language.English, "English"],
         [Language.French, "Français"],
         [Language.EnglishGreatBritain, "English (United Kingdom)"],
     ]);
-    locale.languages().clear();
-    locale.languageNames().clear();
     locale.keys().clear();
-    expect(locale.languages().size).toBe(3);
-    expect(locale.languageNames().size).toBe(3);
     expect(locale.keys().size).toBe(keys.length);
+});
+
+test("selects without saving and throws synchronously for an unavailable language without changing state", () => {
+    stored = Language.English;
+    const locale = new DynamicLocale<Structure>();
+
+    expect(locale.select(Language.French)).toBe(Language.French);
+    expect(locale.lang()).toBe(Language.French);
+    expect(locale.trans("greeting", {name: "Ada"})).toBe("Bonjour Ada");
+    expect(driver.set).not.toHaveBeenCalled();
+    expect(stored).toBe(Language.English);
+
+    const messages = locale.messages();
+
+    expect(() => locale.select(Language.German)).toThrow('Language "de" is not available');
+    expect(locale.lang()).toBe(Language.French);
+    expect(locale.messages()).toBe(messages);
+    expect(driver.set).not.toHaveBeenCalled();
+    expect(stored).toBe(Language.English);
 });
 
 test("switches messages immediately while waiting for storage persistence", async () => {
@@ -252,7 +280,7 @@ test("uses a custom driver without constructing extension storage, including wit
     jest.mocked(getI18nMessage).mockImplementationOnce(() => {
         throw new TypeError("Browser i18n is unavailable");
     });
-    const storage = createLocaleStorage(Language.English);
+    const storage = new MemoryLocaleStorage(Language.English);
     const write = jest.spyOn(storage, "set");
     const locale = new DynamicLocale<Structure>(storage);
     expect(locale.lang()).toBe(Language.French);
@@ -273,10 +301,10 @@ test("uses a custom driver without constructing extension storage, including wit
 });
 
 test("shares a supplied driver while keeping different drivers independent", async () => {
-    const storage = createLocaleStorage();
+    const storage = new MemoryLocaleStorage();
     const first = new DynamicLocale(storage);
     const second = new DynamicLocale(storage);
-    const independent = new DynamicLocale(createLocaleStorage());
+    const independent = new DynamicLocale(new MemoryLocaleStorage());
     const stopFirst = first.watch();
     const stopSecond = second.watch();
     const stopIndependent = independent.watch();
@@ -291,7 +319,7 @@ test("shares a supplied driver while keeping different drivers independent", asy
 });
 
 test("propagates custom driver read and write errors without rolling back the selected language", async () => {
-    const storage = createLocaleStorage();
+    const storage = new MemoryLocaleStorage();
     const error = new Error("Custom storage failed");
     jest.spyOn(storage, "get").mockRejectedValueOnce(error);
     jest.spyOn(storage, "set").mockRejectedValueOnce(error);

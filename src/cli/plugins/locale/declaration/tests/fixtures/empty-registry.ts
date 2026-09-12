@@ -1,9 +1,11 @@
 import {NativeLocale, DynamicLocale, t, choice, key, resolve, type LocaleRegistry} from "adnbn/locale";
-import {useLocale} from "adnbn/locale/react";
+import {useLocale, useNativeLocale} from "adnbn/locale/react";
 
 const emptyKeys: ReadonlySet<never> = new NativeLocale().keys();
 const emptyDynamicKeys: ReadonlySet<never> = new DynamicLocale(false).keys();
 const plain: string = resolve("Plain title");
+// @ts-expect-error the dynamic React hook shares the empty registry
+useLocale(false).t("app.title");
 declare const runtimeMarker: string;
 resolve(runtimeMarker);
 // @ts-expect-error an empty registry has no keys
@@ -20,5 +22,7 @@ new NativeLocale().trans("app.title");
 NativeLocale.getInstance().trans("app.title");
 // @ts-expect-error dynamic providers share the empty registry
 new DynamicLocale(false).choice("cart.items", 2);
-// @ts-expect-error React shares the empty registry
-useLocale().t("app.title");
+// @ts-expect-error the native React hook shares the empty registry
+useNativeLocale().t("app.title");
+// @ts-expect-error an empty registry has no plural keys
+useNativeLocale().choice("cart.items", 2, {count: 2});

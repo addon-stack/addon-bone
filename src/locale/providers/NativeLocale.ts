@@ -5,12 +5,12 @@ import AbstractLocale from "./AbstractLocale";
 
 import {convertLocaleKey, resolveLanguage} from "@shared/locale";
 
-import {Language, LocaleCustomKeyForLanguage, type LocaleProvider, type LocaleRegistry} from "@typing/locale";
+import {Language, LocaleCustomKeyForLanguage, type LocaleRegistry} from "@typing/locale";
 
 export default class NativeLocale<S extends object = LocaleRegistry> extends AbstractLocale<S> {
-    private static instance?: LocaleProvider<LocaleRegistry>;
+    private static instance?: NativeLocale<LocaleRegistry>;
 
-    public static getInstance(): LocaleProvider<LocaleRegistry> {
+    public static getInstance(): NativeLocale<LocaleRegistry> {
         return (NativeLocale.instance ??= new NativeLocale());
     }
 
@@ -53,7 +53,7 @@ export default class NativeLocale<S extends object = LocaleRegistry> extends Abs
         return new Set(keys) as Set<keyof S>;
     }
 
-    public languages(): Set<Language> {
+    public langs(): ReadonlySet<Language> {
         return new Set(languages);
     }
 

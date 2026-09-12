@@ -16,11 +16,11 @@ export default abstract class AbstractLocale<S extends object = LocaleStructure>
 
     public abstract keys(): Set<keyof S>;
 
-    public abstract languages(): Set<Language>;
+    public abstract langs(): ReadonlySet<Language>;
 
     /** Returns native names for this provider's languages, preserving their order. */
-    public languageNames(): Map<Language, string> {
-        return new Map([...this.languages()].map(language => [language, LanguageNames[language]]));
+    public langNames(): ReadonlyMap<Language, string> {
+        return new Map([...this.langs()].map(language => [language, LanguageNames[language]]));
     }
 
     protected abstract value(key: keyof S & string): string | undefined;

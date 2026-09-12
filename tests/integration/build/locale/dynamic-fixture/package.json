@@ -4,6 +4,9 @@
   "type": "module",
   "version": "1.0.0",
   "dependencies": {
-    "adnbn": "*"
+    "adnbn": "*",
+    "react": "*",
+    "react-dom": "*",
+    "scheduler": "*"
   }
 }

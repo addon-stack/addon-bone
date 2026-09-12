@@ -19,7 +19,7 @@ export default class DynamicLocale<T extends object = LocaleRegistry>
     implements LocaleDynamicProvider<T>
 {
     private language!: Language;
-    private messages!: Record<string, string>;
+    private data!: Readonly<Record<string, string>>;
 
     protected storage?: LocaleStorageDriver;
     protected unsubscribe?: () => void;
@@ -40,6 +40,23 @@ export default class DynamicLocale<T extends object = LocaleRegistry>
         this.storage = storage === false ? undefined : (storage ?? new LocaleStorage());
     }
 
+    /**
+     * Selects a language synchronously without saving it.
+     * With storage enabled, a later sync() or watched storage update can replace this local selection.
+     * @throws If the language is absent from the catalogue.
+     */
+    public select(lang: Language): Language {
+        if (!Object.hasOwn(catalogue, lang)) {
+            throw new Error(`[DynamicLocale] Language "${lang}" is not available in the catalogue.`);
+        }
+
+        this.language = lang;
+        this.data = catalogue[lang]!;
+
+        return lang;
+    }
+
+    /** Selects a language immediately and saves it when storage is enabled. */
     public async change(lang: Language): Promise<Language> {
         this.select(lang);
 
@@ -100,28 +117,22 @@ export default class DynamicLocale<T extends object = LocaleRegistry>
         return this.language;
     }
 
+    /** Completed messages for the current language, with underscore keys and no substitutions applied. */
+    public messages(): Readonly<Record<string, string>> {
+        return this.data;
+    }
+
     public keys(): Set<keyof T> {
         return new Set(keys) as Set<keyof T>;
     }
 
-    public languages(): Set<Language> {
+    public langs(): ReadonlySet<Language> {
         return new Set(languages);
     }
 
     protected value(key: Extract<keyof T, string>): string | undefined {
         const name = convertLocaleKey(key);
 
-        return Object.hasOwn(this.messages, name) ? this.messages[name] : undefined;
-    }
-
-    private select(lang: Language): Language {
-        if (!Object.hasOwn(catalogue, lang)) {
-            throw new Error(`[DynamicLocale] Language "${lang}" is not available in the catalogue.`);
-        }
-
-        this.language = lang;
-        this.messages = catalogue[lang]!;
-
-        return lang;
+        return Object.hasOwn(this.data, name) ? this.data[name] : undefined;
     }
 }

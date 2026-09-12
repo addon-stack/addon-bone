@@ -10,6 +10,7 @@ export {
     type LocaleRegistry,
     type LocaleProvider,
     type LocaleDynamicProvider,
+    type LocaleSnapshot,
     type LocaleStorageDriver,
     type LocaleKeys,
     type LocaleSubstitutionArgs,

@@ -34,7 +34,7 @@ export default class CustomLocale<T extends object = LocaleStructure> extends Ab
         return new Set(Object.keys(this.data)) as Set<keyof T>;
     }
 
-    public languages(): Set<Language> {
+    public langs(): ReadonlySet<Language> {
         return new Set([this.lang()]);
     }
 

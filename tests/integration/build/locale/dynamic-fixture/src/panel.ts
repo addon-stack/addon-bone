@@ -5,7 +5,7 @@ export const createPanel = (context: string, storage?: LocaleStorageDriver | fal
     const panel = document.createElement("div");
     panel.dataset.localeContext = context;
     const select = document.createElement("select");
-    for (const [language, name] of locale.languageNames()) select.add(new Option(name, language));
+    for (const [language, name] of locale.langNames()) select.add(new Option(name, language));
     const message = document.createElement("p");
     const update = () => {
         select.value = locale.lang();

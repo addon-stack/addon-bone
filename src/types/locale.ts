@@ -226,11 +226,14 @@ export type LocaleSubstitutionArgs<T, K extends keyof T> = string extends keyof 
       : [substitutions: LocaleSubstitutionsFor<T, K>];
 
 export interface LocaleProvider<S> {
+    /** Currently selected language code. */
     lang(): Language;
 
-    languages(): Set<Language>;
+    /** Available language codes. */
+    langs(): ReadonlySet<Language>;
 
-    languageNames(): Map<Language, string>;
+    /** Native names keyed by the available language codes. */
+    langNames(): ReadonlyMap<Language, string>;
 
     keys(): ReadonlySet<keyof S>;
 
@@ -243,6 +246,14 @@ export interface LocaleProvider<S> {
 
 export interface LocaleDynamicProvider<S> extends LocaleProvider<S> {
     change(lang: Language): Promise<Language>;
+}
+
+/** Read-only message access for one selected language. */
+export interface LocaleSnapshot<S> {
+    readonly lang: () => Language;
+    readonly langs: () => ReadonlySet<Language>;
+    readonly langNames: () => ReadonlyMap<Language, string>;
+    readonly get: <K extends keyof S & string>(key: K) => string;
 }
 
 /** Persists one language selection independently of the application's translation catalogue. */

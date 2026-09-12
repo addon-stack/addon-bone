@@ -76,8 +76,8 @@ test("native-only consumers do not include the catalogue despite importing the p
             nativeLocale: undefined as
                 | {
                       keys(): Set<string>;
-                      languages(): Set<string>;
-                      languageNames(): Map<string, string>;
+                      langs(): ReadonlySet<string>;
+                      langNames(): ReadonlyMap<string, string>;
                       trans(key: string): string;
                   }
                 | undefined,
@@ -93,11 +93,38 @@ test("native-only consumers do not include the catalogue despite importing the p
             "welcome",
         ]);
         expect(sandbox.nativeLocale!.trans("empty")).toBe("");
-        expect([...sandbox.nativeLocale!.languages()]).toEqual(["en", "fr"]);
-        expect([...sandbox.nativeLocale!.languageNames()]).toEqual([
+        expect([...sandbox.nativeLocale!.langs()]).toEqual(["en", "fr"]);
+        expect([...sandbox.nativeLocale!.langNames()]).toEqual([
             ["en", "English"],
             ["fr", "Français"],
         ]);
+    } finally {
+        await fixture.dispose();
+    }
+});
+
+test("the native React hook builds through the public adapter without bundling the catalogue", async () => {
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, fixtureDirectory);
+    try {
+        for (const file of ["background.ts", "options.ts", "locale.content.ts", "main.content.ts"])
+            await rm(path.join(fixture.directory, "src", file));
+        await copyFile(path.join(__dirname, "states/native-popup.ts"), path.join(fixture.directory, "src/popup.ts"));
+
+        const directory = await fixture.build();
+        const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));
+        expect(manifest.action.default_popup).toBe("popup.html");
+        const files = (await readdir(path.join(directory, "js"))).filter(file => file.endsWith(".js"));
+        expect(files).toContain("popup.js");
+        for (const file of files) {
+            const source = await readFile(path.join(directory, "js", file), "utf8");
+            expect(source).not.toContain("Hello from DynamicLocale!");
+            expect(source).not.toContain("Bonjour depuis DynamicLocale");
+        }
+        await run(
+            process.execPath,
+            [path.join(ADNBN_TEST_ROOT, "node_modules/typescript/bin/tsc"), "--noEmit", "-p", "tsconfig.json"],
+            fixture.directory
+        );
     } finally {
         await fixture.dispose();
     }

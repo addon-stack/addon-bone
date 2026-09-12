@@ -20,7 +20,8 @@ const typecheck = (files: string[], declaration?: string, target: "source" | "pa
         moduleResolution: ts.ModuleResolutionKind.Bundler,
         target: ts.ScriptTarget.ESNext,
         strict: true,
-        skipLibCheck: true,
+        skipLibCheck: target === "source",
+        jsx: ts.JsxEmit.ReactJSX,
         noEmit: true,
         types: [],
         paths:
@@ -73,8 +74,8 @@ describe("locale declarations", () => {
         expect(content).not.toContain("[key: string]");
         expect(content).not.toContain("export function");
         expect(content).not.toContain("class ");
-        expect(content).not.toContain("LocaleContract");
-        expect(content).not.toContain("languageNames");
+        expect(content).not.toContain("LocaleReactContract");
+        expect(content).not.toContain("langNames");
         expect(content).not.toContain("langs");
         expect(content).not.toContain("adnbn/locale/react");
     });
@@ -101,7 +102,17 @@ describe("locale declarations", () => {
             });
 
             expect(
-                typecheck(["language-names.ts", "custom-structure.ts", "generated-registry.ts"], declaration, target)
+                typecheck(
+                    [
+                        "language-names.ts",
+                        "custom-structure.ts",
+                        "generated-registry.ts",
+                        "native-react.tsx",
+                        "dynamic-react.tsx",
+                    ],
+                    declaration,
+                    target
+                )
             ).toEqual([]);
         });
     });

@@ -41,12 +41,12 @@ describe("CustomLocale", () => {
         expect(locale.lang()).toBe(Language.English);
     });
 
-    test("languageNames() - follows the provider's languages", () => {
+    test("langNames() - follows the provider's languages", () => {
         locale.setLang(Language.French);
-        expect(locale.languageNames()).toEqual(new Map([[Language.French, "Français"]]));
+        expect(locale.langNames()).toEqual(new Map([[Language.French, "Français"]]));
 
         locale.setLang(Language.Ukrainian);
-        expect(locale.languageNames()).toEqual(new Map([[Language.Ukrainian, "Українська"]]));
+        expect(locale.langNames()).toEqual(new Map([[Language.Ukrainian, "Українська"]]));
     });
 
     describe("trans()", () => {

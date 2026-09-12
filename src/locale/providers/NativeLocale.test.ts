@@ -89,14 +89,12 @@ describe("NativeLocale", () => {
 
     test("reads available languages from the module independently of the selected native language", () => {
         expect(locale.lang()).toBe("ru");
-        expect([...locale.languages()]).toEqual(["en", "fr", "ru"]);
-        expect([...locale.languageNames()]).toEqual([
+        expect([...locale.langs()]).toEqual(["en", "fr", "ru"]);
+        expect([...locale.langNames()]).toEqual([
             ["en", "English"],
             ["fr", "Français"],
             ["ru", "Русский"],
         ]);
-        locale.languages().clear();
-        expect([...locale.languages()]).toEqual(["en", "fr", "ru"]);
         expect(error).not.toHaveBeenCalled();
     });
 });
