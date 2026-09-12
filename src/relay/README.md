@@ -290,7 +290,7 @@ npm run test:relay -- --runInBand
 npm run test:message -- --runInBand
 ```
 
-`typecheck` includes `typecheck:tests`; passing Jest alone does not prove test files are type-correct. For the full non-browser regression suite, including shared transport and content aggregation tests:
+`typecheck` checks both source and test files; passing Jest alone does not prove test files are type-correct. For the full non-browser regression suite, including shared transport and content aggregation tests:
 
 ```bash
 npm test -- --runInBand --testPathIgnorePatterns=tests/integration/browser
