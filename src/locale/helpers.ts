@@ -1,5 +1,5 @@
 import {NativeLocale} from "@locale/providers";
-import {convertLocaleMessageKey, extractLocaleKey} from "@locale/utils";
+import {convertLocaleMessageKey, extractLocaleKey} from "@shared/locale";
 import type {LocaleNonPluralKeys, LocalePluralKeys, LocaleRegistry, LocaleSubstitutionArgs} from "@typing/locale";
 
 /**

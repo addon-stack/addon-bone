@@ -59,6 +59,14 @@ describe("NativeLocale", () => {
         expect(warn).not.toHaveBeenCalled();
     });
 
+    test("can translate a known message even when the language marker is missing", () => {
+        jest.mocked(getI18nMessage).mockImplementation(key => (key === "locale" ? "" : "Hello {{name}}"));
+        const withoutMarker = new NativeLocale<Structure>();
+
+        expect(withoutMarker.trans("demo.title")).toBe("Hello {{name}}");
+        expect(withoutMarker.get("demo.title", {name: "Ada"})).toBe("Hello Ada");
+    });
+
     test("does not treat an undefined API result as a valid empty translation", () => {
         jest.mocked(getI18nMessage).mockReturnValue(undefined);
 

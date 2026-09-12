@@ -4,7 +4,7 @@ import type {Configuration as RspackConfig} from "@rspack/core";
 import {definePlugin} from "@main/plugin";
 import {GenerateJsonPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {getContentLayer} from "@cli/bundler/utils/layers";
-import {extractLocaleKey, modifyLocaleMessageKey} from "@locale/utils";
+import {extractLocaleKey, modifyLocaleMessageKey} from "@shared/locale";
 
 import Locale from "./Locale";
 import {LocaleDeclaration} from "./declaration";

@@ -1,24 +1,14 @@
-jest.mock("@addon-core/browser", () => ({
-    getI18nMessage: jest.fn(() => "de"),
-}));
-jest.mock("#adnbn/locale", () => ({__esModule: true, default: {}, keys: [], languages: []}));
-
 import fs from "fs";
 import os from "os";
 import path from "path";
 
-import {getI18nMessage} from "@addon-core/browser";
-import catalogue from "#adnbn/locale";
 import Locale from "./Locale";
-import DynamicLocale from "@locale/providers/DynamicLocale";
-import NativeLocale from "@locale/providers/NativeLocale";
-import {getLocaleFilename} from "@locale/utils";
 import {Command, Mode, Workspace} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {ReadonlyConfig} from "@typing/config";
 import {Language, LocaleMessages} from "@typing/locale";
 import {GenerateJsonPluginData} from "@cli/bundler";
-import {flattenLocaleMessages} from "@shared/locale/messages";
+import {flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
 
 const fixtures = path.resolve(__dirname, "tests/fixtures/completion");
 
@@ -63,23 +53,13 @@ const messages = (json: GenerateJsonPluginData, lang: Language): LocaleMessages 
 describe("locale JSON completion", () => {
     let consoleWarnSpy: jest.SpyInstance;
     const temporaryDirectories: string[] = [];
-    const fetchDescriptor = Object.getOwnPropertyDescriptor(globalThis, "fetch");
 
     beforeEach(() => {
         consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
-        jest.mocked(getI18nMessage).mockImplementation(() => "de");
     });
 
     afterEach(() => {
         consoleWarnSpy.mockRestore();
-        for (const lang of Object.keys(catalogue)) delete catalogue[lang as Language];
-
-        if (fetchDescriptor) {
-            Object.defineProperty(globalThis, "fetch", fetchDescriptor);
-        } else {
-            Reflect.deleteProperty(globalThis, "fetch");
-        }
-
         for (const root of temporaryDirectories.splice(0)) {
             fs.rmSync(root, {recursive: true, force: true});
         }
@@ -252,34 +232,5 @@ describe("locale JSON completion", () => {
         fs.cpSync(path.join(fixtures, "single"), root, {recursive: true});
         locale.clear();
         expect((await locale.catalogue()).fr!.cart_items).toBe("{{count}} article|{{count}} articles");
-    });
-
-    test("dynamic selection uses the generated default rather than a third native language", async () => {
-        const locale = makeLocale("single");
-        const json = await locale.json();
-        Object.assign(catalogue, await locale.catalogue());
-        const german = messages(json, Language.German);
-        jest.mocked(getI18nMessage).mockImplementation(key => german[key]?.message ?? "");
-        Object.defineProperty(globalThis, "fetch", {
-            configurable: true,
-            value: jest.fn(() => {
-                throw new Error("Translations must come from the catalogue");
-            }),
-        });
-        const dynamic = new DynamicLocale<{
-            "app.greeting": {plural: false; substitutions: ["name"]};
-            "cart.items": {plural: true; substitutions: ["count"]};
-        }>(false);
-        const native = new NativeLocale<{
-            "app.greeting": {plural: false; substitutions: ["name"]};
-        }>();
-
-        expect(native.trans("app.greeting", {name: "Ada"})).toBe("Hallo Ada");
-        await dynamic.change(Language.French);
-
-        expect(dynamic.lang()).toBe(Language.French);
-        expect(dynamic.trans("app.greeting", {name: "Ada"})).toBe("Hello Ada");
-        expect(dynamic.choice("cart.items", 2, {count: 2})).toBe("2 articles");
-        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 });

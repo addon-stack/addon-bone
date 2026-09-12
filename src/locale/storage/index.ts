@@ -1,1 +1,1 @@
-export {LocaleStorage} from "./LocaleStorage";
+export {default as LocaleStorage} from "./LocaleStorage";

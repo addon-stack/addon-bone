@@ -4,7 +4,7 @@ import OperaLocaleValidator from "./OperaLocaleValidator";
 import FirefoxLocaleValidator from "./FirefoxLocaleValidator";
 import LocaleStructureValidator from "./LocaleStructureValidator";
 
-import {extractLocaleKey} from "@locale/utils";
+import {extractLocaleKey} from "@shared/locale";
 
 import {Language, LocaleBuilder as LocaleBuilderContract} from "@typing/locale";
 import {ReadonlyConfig} from "@typing/config";

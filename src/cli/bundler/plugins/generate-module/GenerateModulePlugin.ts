@@ -9,7 +9,7 @@ export type GenerateModulePluginModules = Record<string, string>;
 /** Returns source updates for the registered modules. */
 export type GenerateModulePluginUpdate = () => Promise<GenerateModulePluginModules>;
 
-export class GenerateModulePlugin {
+export default class GenerateModulePlugin {
     private readonly pluginName = "GenerateModulePlugin";
     private update?: GenerateModulePluginUpdate;
     private files: readonly string[] = [];

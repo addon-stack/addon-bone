@@ -4,7 +4,7 @@ import {PackageName} from "@typing/app";
 import {Language, LanguageCodes, type LocaleStorageDriver} from "@typing/locale";
 
 /** Stores the selected language in extension local storage under the framework namespace. */
-export class LocaleStorage implements LocaleStorageDriver {
+export default class LocaleStorage implements LocaleStorageDriver {
     private readonly storage = Storage.Local<Record<string, Language>>({namespace: PackageName});
 
     constructor(protected key: string = "locale") {}

@@ -50,6 +50,12 @@ describe("CustomLocale", () => {
     });
 
     describe("trans()", () => {
+        test("leaves malformed and empty placeholders as text", () => {
+            locale.setData({literal: "{{ name }} {{}} {{   }} {{broken} {broken}}"});
+            expect(locale.get("literal", {name: "Ada"})).toBe("Ada {{}} {{   }} {{broken} {broken}}");
+            expect(consoleWarnSpy).not.toHaveBeenCalled();
+        });
+
         test("returned the correct message if key exists and is non-empty", () => {
             expect(locale.trans("title" as never)).toBe("Adnbn");
         });
@@ -79,6 +85,11 @@ describe("CustomLocale", () => {
 
     describe("choice()", () => {
         const key = "car" as never;
+
+        test("selects the form before substituting values containing the plural separator", () => {
+            locale.setData({car: "{{count}} car|{{count}} cars"});
+            expect(locale.choice(key, 2, {count: "one|two"})).toBe("one|two cars");
+        });
 
         test("languages with 1 plural forms", () => {
             const arr = ["車"];

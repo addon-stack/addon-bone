@@ -1,12 +1,12 @@
-import {convertLocaleKey} from "../utils";
+import {convertLocaleKey} from "@shared/locale";
 
 import AbstractLocale from "./AbstractLocale";
 
 import {Language, LocaleStructure} from "@typing/locale";
 
-export type CustomLocaleData = Record<string, string>;
+export type CustomLocaleData = Readonly<Record<string, string>>;
 
-export default class<T extends object = LocaleStructure> extends AbstractLocale<T> {
+export default class CustomLocale<T extends object = LocaleStructure> extends AbstractLocale<T> {
     constructor(
         protected language: Language = Language.English,
         protected data: CustomLocaleData = {}
@@ -39,7 +39,8 @@ export default class<T extends object = LocaleStructure> extends AbstractLocale<
     }
 
     protected value(key: string): string | undefined {
-        const value = this.data[convertLocaleKey(key)];
+        const name = convertLocaleKey(key);
+        const value = Object.hasOwn(this.data, name) ? this.data[name] : undefined;
 
         if (value === undefined) {
             return undefined;

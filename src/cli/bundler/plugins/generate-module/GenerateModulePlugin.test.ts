@@ -5,7 +5,7 @@ import os from "os";
 import path from "path";
 import vm from "vm";
 import {rspack, type Compiler, type NormalModule, type Stats} from "@rspack/core";
-import {GenerateModulePlugin} from "./GenerateModulePlugin";
+import {GenerateModulePlugin} from "./index";
 
 const fixtures = path.join(__dirname, "tests/fixtures");
 const modules = {

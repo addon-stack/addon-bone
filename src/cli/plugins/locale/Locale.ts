@@ -1,9 +1,7 @@
-import {getLocaleFilename} from "@locale/utils";
-
 import {LocaleFinder} from "@cli/entrypoint";
 import {GenerateJsonPluginData} from "@cli/bundler";
 
-import {flattenLocaleMessages} from "@shared/locale/messages";
+import {flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
 
 import type {Language, LocaleCatalogue, LocaleMessages} from "@typing/locale";
 

@@ -3,7 +3,7 @@ import {keys, languages} from "#adnbn/locale";
 
 import AbstractLocale from "./AbstractLocale";
 
-import {convertLocaleKey, resolveLanguage} from "@locale/utils";
+import {convertLocaleKey, resolveLanguage} from "@shared/locale";
 
 import {Language, LocaleCustomKeyForLanguage, type LocaleProvider, type LocaleRegistry} from "@typing/locale";
 

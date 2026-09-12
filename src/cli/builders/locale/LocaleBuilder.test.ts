@@ -59,7 +59,7 @@ describe("LocaleBuilder", () => {
 
     test("normalizes substitution names in locale structure", () => {
         const builder = new LocaleBuilder(Browser.Chrome, Language.English).merge({
-            greeting: "Hello {{ name }} {{name}} {{ count }}",
+            greeting: "Hello {{ name }} {{name}} {{ count }} {{}} {{   }} {{broken} {broken}}",
             cars: ["{{count}} car", "{{count}} cars"],
         });
 

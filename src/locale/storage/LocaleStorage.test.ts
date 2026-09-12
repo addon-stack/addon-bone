@@ -1,7 +1,7 @@
 jest.mock("@addon-core/storage", () => ({Storage: {Local: jest.fn()}}));
 
 import {Storage, type StorageProvider} from "@addon-core/storage";
-import {LocaleStorage} from "./LocaleStorage";
+import {LocaleStorage} from "./index";
 import {Language} from "@typing/locale";
 
 type Watcher = {locale?: (value: unknown) => void};

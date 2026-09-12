@@ -1,6 +1,6 @@
 import {View} from "../view";
 
-import {modifyLocaleMessageKey} from "@locale/utils";
+import {modifyLocaleMessageKey} from "@shared/locale";
 
 import {PopupFinder} from "@cli/entrypoint";
 

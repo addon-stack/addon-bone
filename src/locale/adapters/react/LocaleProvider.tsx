@@ -2,7 +2,7 @@ import React, {PropsWithChildren, useCallback, useEffect, useMemo, useState} fro
 
 import {LocaleContext, LocaleContract} from "./context";
 
-import {getLocaleDir, isLocaleRtl} from "@locale/utils";
+import {getLocaleDir, isLocaleRtl} from "@shared/locale";
 
 import {DynamicLocale} from "@locale/providers";
 

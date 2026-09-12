@@ -77,6 +77,11 @@
 - Name classes after their responsibility and role, such as `LocaleFinder` or `ContentParser`. Avoid names tied only to a temporary implementation detail or former file location.
 - Keep private helpers and local variables concise when their surrounding scope already supplies the domain. Do not mechanically repeat a long public prefix everywhere.
 
+## Class exports
+
+- When a class is the main export of a file, always export it by default. Keep the class explicitly named to match the file, for example `export default class ReactLocale` in `ReactLocale.ts`.
+- When a directory's `index.ts` exposes that class, use a named re-export of its default: `export {default as ReactLocale} from "./ReactLocale";`. Consumers import the class by name from that index.
+
 ## Public API naming
 
 - Use **verb + domain concept** for exported functions. Prefer explicit names over ambiguous shortcuts, and use the same terminology as the associated types.
@@ -93,7 +98,7 @@
 
 ## File and directory naming
 
-- Use PascalCase for a file whose primary export is a class or React component, matching that export's name: `LocaleFinder.ts`, `BuildAssetsMapPlugin.ts`, and `DiagnosticPanel.tsx`. Prefer a named class/component export so the relationship is explicit.
+- Use PascalCase for a file whose primary export is a class or React component, matching that export's name: `LocaleFinder.ts`, `BuildAssetsMapPlugin.ts`, and `DiagnosticPanel.tsx`. Prefer a named export for function components; primary classes follow the default-export rule above.
 - Name tests for a specific class after that class, preserving PascalCase and adding the test suffix: `BuildAssetsMapPlugin.test.ts`, `ChunkLoaderPlugin.test.ts`, and `ContentManager.test.ts`.
 - Use lowercase kebab-case for other multiword filenames, including helper modules, types, enums, configuration modules, and tests that are not dedicated to a class: `file-precedence.ts`, `entrypoint-assets.ts`, and `entrypoint-assets.integration.test.ts`.
 - Use lowercase kebab-case for multiword directory names, including directories containing classes or React components: `entrypoint-assets` and `diagnostic-panel`.

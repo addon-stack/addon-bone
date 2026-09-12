@@ -10,12 +10,11 @@ description: Runtime translation providers, shared formatting, catalogue access,
 
 | Area                          | Responsibility                                                                                                                |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `providers/AbstractLocale.ts` | Common string rendering, plural rules, missing-message diagnostics, and language names.                                       |
+| `providers/AbstractLocale.ts` | Common string rendering, missing-message diagnostics, and language names.                                                     |
 | `providers/NativeLocale.ts`   | Browser i18n message lookup and a singleton used by the public helpers.                                                       |
 | `providers/DynamicLocale.ts`  | Compiled translations, language state per instance, and optional storage synchronization.                                     |
 | `providers/CustomLocale.ts`   | Internal provider for an explicitly supplied language and flat message dictionary; not re-exported by the public entrypoint.  |
 | `helpers.ts`                  | Native shortcuts: `t`, `choice`, `key` for browser message references, and `resolve` for strings prefixed with `@`.           |
-| `utils.ts`                    | Key conversion, locale markers, language resolution, and text direction.                                                      |
 | `catalogue/`                  | Empty package fallback and typing for the generated data module.                                                              |
 | `storage/`                    | Built-in `LocaleStorage` implementation of the public `LocaleStorageDriver` contract.                                         |
 | `adapters/react/`             | `LocaleProvider`, its context, and `useLocale`; connects dynamic localization to React state and DOM `lang`/`dir` attributes. |
@@ -25,7 +24,17 @@ description: Runtime translation providers, shared formatting, catalogue access,
 
 Shared languages, contracts, and module identifiers belong to `src/types/locale.ts`. It also declares the empty `LocaleRegistry`, re-exported through `adnbn/locale`. Generated `.adnbn/locale.d.ts` augments that registry, defining the application's keys and required substitutions from its default language for providers, helpers, and adapters.
 
-Locale discovery, merging, validation, fallback preparation, native `_locales/*/messages.json`, and declaration generation belong to the CLI locale pipeline. The locale feature plugin supplies the generated data; Rspack integration and chunk delivery belong to the bundler. Shared message-flattening logic lives in `src/shared/locale`.
+Locale discovery, merging, validation, fallback preparation, native `_locales/*/messages.json`, and declaration generation belong to the CLI locale pipeline. The locale feature plugin supplies the generated data; Rspack integration and chunk delivery belong to the bundler.
+
+Common algorithms live in `src/shared/locale`. Its `index.ts` re-exports the helpers; CLI, providers, and adapters import them from `@shared/locale`:
+
+- `keys.ts`: key conversion and locale markers.
+- `language.ts`: language resolution and text direction.
+- `messages.ts`: flattening browser messages into a string dictionary and `getLocaleFilename` for native message paths.
+- `plural.ts`: plural rules and form selection through `selectPluralForm`.
+- `substitutions.ts`: `parsePlaceholders` finds placeholder names and positions; `applySubstitutions` inserts values into message parts, preserving their types.
+
+These modules depend only on shared contracts and have no browser, DOM, React, storage, or CLI dependencies. Consumers supply missing-substitution diagnostics; React node rendering stays inside the React adapter.
 
 During extension builds, the private `#adnbn/locale` import resolves to `virtual/locale`: a default catalogue export plus named `keys`, `languages`, and `lang` (the configured default language). `DynamicLocale` reads the catalogue; `NativeLocale` imports only the named lists, allowing unused translations to be removed from optimized bundles. Outside these builds, `catalogue/` provides a resolvable empty module with `lang: "en"`.
 

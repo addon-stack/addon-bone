@@ -5,7 +5,7 @@ import catalogue, {keys, lang as defaultLanguage, languages} from "#adnbn/locale
 import AbstractLocale from "./AbstractLocale";
 import {LocaleStorage} from "../storage";
 
-import {convertLocaleKey, resolveLanguage} from "../utils";
+import {convertLocaleKey, resolveLanguage} from "@shared/locale";
 import {
     Language,
     LocaleCustomKeyForLanguage,
