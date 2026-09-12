@@ -1,7 +1,5 @@
 import {setActionPopup, setActionTitle} from "@addon-core/browser";
 
-import {resolve} from "@locale/helpers";
-
 import {changeActionIcon} from "./icon";
 
 import {PopupDefinition} from "@typing/popup";
@@ -52,7 +50,7 @@ export const changePopup = async (alias: PopupAlias, tab?: number | Tab): Promis
     await setActionPopup(path, tab);
 
     if (title) {
-        await setActionTitle(resolve(title), tab);
+        await setActionTitle(title, tab);
     }
 
     if (icon) {

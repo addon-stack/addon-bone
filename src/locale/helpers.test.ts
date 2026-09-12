@@ -11,7 +11,7 @@ jest.mock("@addon-core/browser", () => ({
 }));
 
 import {getI18nMessage} from "@addon-core/browser";
-import {resolve} from "./helpers";
+import {resolve} from "./index";
 
 jest.mock("#adnbn/locale", () => ({keys: ["locale", "app.title", "app.greeting"], languages: ["en"]}));
 
