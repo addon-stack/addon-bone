@@ -95,6 +95,12 @@ test("exports the configured default language even when it is not the first cata
 
 test("CLI watch discovers, edits and removes locales and recovers from invalid translations", async () => {
     const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    // Save like an editor: Windows copyFile can preserve the fixture's old mtime and hide an edit from watch.
+    const updateLocale = async (language: string, state: string) =>
+        writeFile(
+            path.join(fixture.directory, "src/locales", `${language}.json`),
+            await readFile(path.join(__dirname, "states", state))
+        );
     let watcher: ChildProcess | undefined;
     let output = "";
     try {
@@ -109,10 +115,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
         // Assets exist before Rspack finishes the compilation and reconnects its watcher.
         await waitFor(async () => output.includes("compiled") || undefined, 15000, "initial locale watch compilation");
         await waitFor(() => inspect(directory), 15000, "initial locale watch build");
-        await writeFile(
-            path.join(fixture.directory, "src/locales/de.json"),
-            await readFile(path.join(__dirname, "states/de.json"))
-        );
+        await updateLocale("de", "de.json");
         await waitFor(
             async () => {
                 const {catalogue, languages} = await inspect(directory);
@@ -124,10 +127,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
             "a new locale without editing an existing file"
         );
 
-        await copyFile(
-            path.join(__dirname, "states/de-updated.json"),
-            path.join(fixture.directory, "src/locales/de.json")
-        );
+        await updateLocale("de", "de-updated.json");
         await waitFor(
             async () => {
                 expect((await inspect(directory)).catalogue.de.app_title).toBe("Aktualisierter Katalog");
@@ -137,10 +137,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
             "an edit to the newly discovered locale"
         );
 
-        await writeFile(
-            path.join(fixture.directory, "src/locales/en.json"),
-            await readFile(path.join(__dirname, "states/en.json"))
-        );
+        await updateLocale("en", "en.json");
         await waitFor(
             async () => {
                 const {catalogue, keys, languages} = await inspect(directory);
@@ -175,10 +172,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
             const previousJson = await readFile(path.join(directory, "_locales/en/messages.json"), "utf8");
             const previousBundle = await readFile(path.join(directory, "js/background.js"), "utf8");
             const offset = output.length;
-            await copyFile(
-                path.join(__dirname, "states", invalid),
-                path.join(fixture.directory, "src/locales/de.json")
-            );
+            await updateLocale("de", invalid);
             await waitFor(
                 async () => output.slice(offset).includes("compiled with") || undefined,
                 15000,
@@ -189,7 +183,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
             expect(await readFile(path.join(directory, "_locales/en/messages.json"), "utf8")).toBe(previousJson);
             expect(await readFile(path.join(directory, "js/background.js"), "utf8")).toBe(previousBundle);
 
-            await copyFile(path.join(__dirname, "states/de.json"), path.join(fixture.directory, "src/locales/de.json"));
+            await updateLocale("de", "de.json");
             await waitFor(
                 async () => {
                     expect((await inspect(directory)).catalogue.de.app_title).toBe("Übersetzungskatalog");
