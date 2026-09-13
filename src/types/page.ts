@@ -1,9 +1,6 @@
 import {ViewDefinition, ViewOptions} from "@typing/view";
 import {CspOptions} from "@typing/csp";
 
-/** Shared property used to write and read page aliases on the bundler runtime. */
-export const PageAliasesRuntimeProperty = "__adnbnPageAliases";
-
 /** Augmented by the generated page declarations of the consuming application. */
 export interface PageAliasRegistry {}
 

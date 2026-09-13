@@ -9,6 +9,49 @@ import {stop, waitFor} from "../../browser/utils/browser";
 
 jest.setTimeout(90_000);
 
+test("generated page and Relay data follow their consumers through the public barrel", async () => {
+    const fixture = await createIntegrationFixture(
+        ADNBN_TEST_ROOT,
+        path.join(ADNBN_TEST_ROOT, "tests/integration/browser/content/relay-styles")
+    );
+
+    try {
+        for (const file of ["control.relay.ts", "iframe.relay.ts"]) await rm(path.join(fixture.directory, "src", file));
+        await copyFile(
+            path.join(__dirname, "states/messaging.ts"),
+            path.join(fixture.directory, "src/shadow.relay.ts")
+        );
+        await copyFile(
+            path.join(__dirname, "states/page.ts"),
+            path.join(fixture.directory, "src/control.page/index.ts")
+        );
+
+        for (const state of ["unused-background", "page-background", "background"]) {
+            await copyFile(
+                path.join(__dirname, "states", `${state}.ts`),
+                path.join(fixture.directory, "src/background.ts")
+            );
+            const directory = await fixture.build();
+            const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));
+            const source = await readFile(path.join(directory, manifest.background.service_worker), "utf8");
+            expect(source.includes("data-page-alias")).toBe(state === "page-background");
+            expect(source.includes("observer")).toBe(state === "background");
+
+            const sandbox = {
+                definitions: undefined as unknown,
+                readPages: undefined as undefined | (() => unknown),
+                readRelayOptions: undefined as undefined | (() => Record<string, unknown>),
+            };
+            vm.runInNewContext(source, sandbox);
+            if (state === "page-background") expect(sandbox.readPages!()).toEqual({"data-page-alias": "control.html"});
+            if (state === "background") expect(Object.keys(sandbox.readRelayOptions!())).toEqual(["observer"]);
+            if (state === "unused-background") expect(sandbox.definitions).toHaveLength(2);
+        }
+    } finally {
+        await fixture.dispose();
+    }
+});
+
 test("content plugin delivers Relay options and refreshes names, methods and optional values in CLI watch", async () => {
     const root = path.resolve(__dirname, "../../../..");
     // Reuse the browser application: the same production configuration also exercises real Relay RPC.

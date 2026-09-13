@@ -38,7 +38,7 @@
   ],
   "sideEffects": false,
   "imports": {
-    "#adnbn/locale": "./dist/locale/catalogue/index.js"
+    "#adnbn/*": "./dist/virtual/*.js"
   },
   "engines": {
     "node": ">=22.0.0"

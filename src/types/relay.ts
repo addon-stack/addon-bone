@@ -17,9 +17,6 @@ import type {MessageError} from "@typing/message";
 
 export const RelayGlobalKey = "adnbnRelay";
 
-/** Shared build/runtime key for the serialized Relay options map. */
-export const RelayOptionsRuntimeProperty = "__adnbnRelayOptions";
-
 /** Augmented through adnbn/relay by the generated Relay declarations of the consuming application. */
 export interface RelayRegistry {}
 

@@ -2,6 +2,7 @@
 import {spawn, type ChildProcess} from "child_process";
 import {copyFile, readFile, rm, writeFile} from "fs/promises";
 import path from "path";
+import vm from "vm";
 import {createIntegrationFixture} from "../../utils/fixture";
 import {waitFor, stop} from "../../browser/utils/browser";
 
@@ -16,6 +17,7 @@ test("real CLI watch changes isolation and page aliases and removes outdated WAR
     let watcher: ChildProcess | undefined;
     let output = "";
     try {
+        await copyFile(path.join(__dirname, "states/background.ts"), path.join(fixture.directory, "src/background.ts"));
         await rm(path.join(fixture.directory, "src/source.content.ts"));
         await copyFile(
             path.join(root, "tests/integration/browser/content/isolation-shadow/src/probe.content/probe.woff2"),
@@ -33,6 +35,14 @@ test("real CLI watch changes isolation and page aliases and removes outdated WAR
         );
         await setState("none");
         const directory = await fixture.build({browser: "chrome"});
+        const readPages = async () => {
+            const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));
+            const source = await readFile(path.join(directory, manifest.background.service_worker), "utf8");
+            const sandbox = {readPages: undefined as undefined | (() => unknown)};
+            vm.runInNewContext(source, sandbox);
+            return sandbox.readPages!();
+        };
+        expect(await readPages()).toEqual({panel: "panel.html"});
         await rm(path.join(directory, "manifest.json"));
         watcher = spawn(process.execPath, [path.join(root, "bin/adnbn.js"), "watch", ".", "-b", "chrome"], {
             cwd: fixture.directory,
@@ -105,6 +115,15 @@ test("real CLI watch changes isolation and page aliases and removes outdated WAR
         await setState("renamed");
         const renamed = await observe("renamed");
         expect(renamed.source).toContain("renamed-panel");
+        await waitFor(
+            async () => {
+                const pages = await readPages();
+                expect(pages).toEqual({"renamed-panel": "panel.html"});
+                return pages;
+            },
+            15000,
+            "CLI watch to refresh page data without editing its background consumer"
+        );
         const compiled = output;
         await writeFile(page, pageSource.replace('name: "panel"', 'name: "renamed-panel"'));
         await waitFor(

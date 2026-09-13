@@ -1,6 +1,7 @@
 import {getUrl} from "@addon-core/browser";
+import {aliases} from "#adnbn/page";
 
-import {PageAliasesRuntimeProperty, type PageAlias, type PageDefinition, type PageMap} from "@typing/page";
+import type {PageAlias, PageDefinition, PageMap} from "@typing/page";
 
 export type {PageDefinition, PageProps, PageConfig, PageAliasRegistry, PageAlias, PageMap} from "@typing/page";
 
@@ -8,13 +9,11 @@ export const definePage = (options: PageDefinition): PageDefinition => {
     return options;
 };
 
-declare const __webpack_require__: {[PageAliasesRuntimeProperty]?: Record<string, string>};
-
 export const getPages = (): PageMap => {
     const pages: PageMap = new Map();
 
     try {
-        Object.entries(__webpack_require__[PageAliasesRuntimeProperty] ?? {}).forEach(([key, value]) => {
+        Object.entries(aliases).forEach(([key, value]) => {
             pages.set(key, value);
         });
     } catch (e) {

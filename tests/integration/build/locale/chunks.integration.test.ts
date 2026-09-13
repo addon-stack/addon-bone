@@ -4,7 +4,7 @@ import {readFile, readdir, rm, writeFile} from "fs/promises";
 import path from "path";
 import vm from "vm";
 
-import {createLocaleModule} from "@cli/plugins/locale/module";
+import {createLocaleModule} from "@cli/plugins/locale/locale-module";
 import {Language} from "@typing/locale";
 import {createIntegrationFixture} from "../../utils/fixture";
 

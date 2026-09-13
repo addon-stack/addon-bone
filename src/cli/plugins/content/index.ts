@@ -6,6 +6,7 @@ import Relay from "./Relay";
 import RelayDeclaration from "./RelayDeclaration";
 import {hasIsolatedTarget} from "./utils";
 import {createPageAccessRequirements, getContentChunkName, validateContentStyles} from "./bundler";
+import {createRelayModule, RelayModuleName} from "./relay-module";
 
 import {definePlugin} from "@main/plugin";
 import {PageFinder} from "@cli/entrypoint";
@@ -18,13 +19,11 @@ import {
     onlyViaTopLevelEntry,
     IsolatedStylesPlugin,
     ResourceAccessPlugin,
-    RuntimeDataPlugin,
-    type RuntimeDataPluginData,
+    GenerateModulePlugin,
 } from "@cli/bundler";
 
 import {Command} from "@typing/app";
 import {ContentScriptStylesRuntimeProperty, ContentScriptWorld} from "@typing/content";
-import {RelayOptionsRuntimeProperty} from "@typing/relay";
 
 export default definePlugin(() => {
     let contentProvider: Content;
@@ -52,18 +51,17 @@ export default definePlugin(() => {
 
             let entryOptionsByName = await contentManager.entryOptions();
 
-            const getRelayData = async (): Promise<RuntimeDataPluginData> => {
-                // Preserve the previous JSON payload: absent optional values must not become undefined data.
-                return JSON.parse(JSON.stringify(await relayProvider.getOptionsMap()));
-            };
-
-            const relayDataPlugin = new RuntimeDataPlugin({
-                property: RelayOptionsRuntimeProperty,
-                data: await getRelayData(),
+            const getModules = async () => ({
+                [RelayModuleName]: createRelayModule(await relayProvider.getOptionsMap()),
             });
+            const modulePlugin = new GenerateModulePlugin(await getModules());
+
+            if (config.command === Command.Watch) {
+                modulePlugin.watch(getModules);
+            }
 
             const basePlugins: Plugins = [
-                relayDataPlugin,
+                modulePlugin,
                 new ResourceAccessPlugin({
                     requirements: async () => {
                         if (
@@ -125,8 +123,6 @@ export default definePlugin(() => {
 
                     const entries = await contentManager.entries();
                     entryOptionsByName = await contentManager.entryOptions();
-
-                    relayDataPlugin.update(await getRelayData());
 
                     return entries;
                 });

@@ -1,7 +1,6 @@
-// Expose only the compiled runtime payload; no browser APIs are needed to inspect it in the build test.
-declare const __webpack_require__: {__adnbnRelayOptions?: Record<string, unknown>};
+import {options} from "#adnbn/relay";
 
-(globalThis as typeof globalThis & {readRelayOptions: () => unknown}).readRelayOptions = () =>
-    __webpack_require__.__adnbnRelayOptions;
+// Inspect the generated payload independently of browser APIs; Relay RPC has browser coverage.
+(globalThis as typeof globalThis & {readRelayOptions: () => unknown}).readRelayOptions = () => options;
 
 export default () => {};

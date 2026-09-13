@@ -8,7 +8,7 @@ import {extractLocaleKey, modifyLocaleMessageKey} from "@shared/locale";
 
 import Locale from "./Locale";
 import {LocaleDeclaration} from "./declaration";
-import {createLocaleModule, LocaleModuleLayer, LocaleModuleName} from "./module";
+import {createLocaleModule, LocaleModuleLayer, LocaleModuleName} from "./locale-module";
 
 import {Command} from "@typing/app";
 import {Browser} from "@typing/browser";

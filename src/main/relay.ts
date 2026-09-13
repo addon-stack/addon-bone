@@ -1,5 +1,6 @@
 import RelayPermission from "@relay/RelayPermission";
 import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
+import {options as relayOptions} from "#adnbn/relay";
 
 import type {TransportType} from "@typing/transport";
 import {
@@ -7,9 +8,7 @@ import {
     RelayAllFrames,
     RelayFrameErrorKind,
     RelayMethod,
-    RelayOptions,
     RelayOptionsMap,
-    RelayOptionsRuntimeProperty,
     type RelayBatchOptions,
     type RelayBatchProxyTarget,
     type RelayName,
@@ -47,15 +46,11 @@ export const defineRelay = <T extends TransportType>(options: RelayDefinition<T>
     return options;
 };
 
-declare const __webpack_require__: {[RelayOptionsRuntimeProperty]?: Record<string, RelayOptions>};
-
 const getRelayOptionsMap = (): RelayOptionsMap => {
     const relays: RelayOptionsMap = new Map();
 
     try {
-        Object.entries(__webpack_require__[RelayOptionsRuntimeProperty] ?? {}).forEach(([name, options]) =>
-            relays.set(name, options)
-        );
+        Object.entries(relayOptions).forEach(([name, options]) => relays.set(name, options));
     } catch (e) {
         console.error("Failed getting relays: ", e);
     }
