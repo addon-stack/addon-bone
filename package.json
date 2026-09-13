@@ -36,15 +36,15 @@
     "scripts",
     "types"
   ],
-  "sideEffects": false,
-  "imports": {
-    "#adnbn/*": "./dist/virtual/*.js"
-  },
   "engines": {
     "node": ">=22.0.0"
   },
   "bin": {
     "adnbn": "bin/adnbn.js"
+  },
+  "sideEffects": false,
+  "imports": {
+    "#adnbn/*": "./dist/virtual/*.js"
   },
   "exports": {
     ".": {

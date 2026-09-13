@@ -1,11 +1,10 @@
+import type {ContentScriptIsolationFrameOptions, ContentScriptNode, ContentScriptStylesRuntime} from "@typing/content";
 import {ContentScriptIsolation} from "@typing/content";
 import {getPageUrl} from "@main/page";
 
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
 import {isContentScriptFrameNavigation} from "@shared/content";
-
-import type {ContentScriptStylesRuntime, ContentScriptIsolationFrameOptions, ContentScriptNode} from "@typing/content";
 
 /** Owns the child document, but never moves the content script's JavaScript into it. */
 export default class FrameNode implements ContentScriptNode {
