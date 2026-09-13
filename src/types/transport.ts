@@ -42,6 +42,10 @@ export interface TransportSender {
     send(data: TransportMessageData, options?: MessageSendOptions): any;
 }
 
+/**
+ * Combines message sending and receiving without introducing additional members.
+ * Its members are inherited from TransportSender and TransportReceiver, rather than generated or augmented.
+ */
 export interface TransportMessage extends TransportSender, TransportReceiver {}
 
 export interface TransportProvider<T extends TransportType> {

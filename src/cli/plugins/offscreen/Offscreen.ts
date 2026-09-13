@@ -7,10 +7,8 @@ import {OffscreenFinder, OffscreenViewFinder} from "@cli/entrypoint";
 import {virtualOffscreenModule} from "@cli/virtual";
 
 import {ReadonlyConfig} from "@typing/config";
-import {OffscreenEntrypointOptions} from "@typing/offscreen";
+import {OffscreenEntrypointOptions, OffscreenParametersMap} from "@typing/offscreen";
 import {EntrypointFile} from "@typing/entrypoint";
-
-export type OffscreenParameters = Record<string, chrome.offscreen.CreateParameters>;
 
 export default class extends OffscreenFinder {
     protected _view?: View<OffscreenEntrypointOptions>;
@@ -53,8 +51,8 @@ export default class extends OffscreenFinder {
         return virtualOffscreenModule(file, options.name);
     }
 
-    public async parameters(): Promise<OffscreenParameters> {
-        const offscreens: OffscreenParameters = {};
+    public async parameters(): Promise<OffscreenParametersMap> {
+        const offscreens: OffscreenParametersMap = {};
 
         const files = await this.transport();
         const filenames = await this.views().getFilenames();

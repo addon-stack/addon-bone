@@ -5,12 +5,63 @@ import {Optional} from "utility-types";
 import {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";
 import {Awaiter, PickNonFunctionProperties} from "@typing/helpers";
 
-type RunAt = chrome.extensionTypes.RunAt;
-
 export const ContentScriptMatches = ["http://*/*", "https://*/*"];
 
 /** Shared property used by the bundler plugin and the content script's style runtime getter. */
 export const ContentScriptStylesRuntimeProperty = "__adnbnIsolatedStyles";
+
+export enum ContentScriptWorld {
+    Isolated = "ISOLATED",
+    Main = "MAIN",
+}
+
+export enum ContentScriptDeclarative {
+    Required = "required",
+    Optional = "optional",
+}
+
+export enum ContentScriptIsolation {
+    None = "none",
+    Shadow = "shadow",
+    Iframe = "iframe",
+}
+
+export enum ContentScriptShadowMode {
+    Open = "open",
+    Closed = "closed",
+}
+
+// Append
+export enum ContentScriptAppend {
+    Last = "last",
+    First = "first",
+    Replace = "replace",
+    Before = "before",
+    After = "after",
+}
+
+// Marker
+export enum ContentScriptMarker {
+    /** In-memory marking (no DOM mutations). */
+    Weak = "weak",
+    /** DOM attribute-based marking. */
+    Attribute = "attribute",
+}
+
+export enum ContentScriptMarkerValue {
+    Mounted = "1",
+    Unmounted = "0",
+}
+
+// Event
+export enum ContentScriptEvent {
+    Mount = "mount",
+    Unmount = "unmount",
+    Add = "add",
+    Remove = "remove",
+}
+
+type RunAt = chrome.extensionTypes.RunAt;
 
 export interface ContentScriptStylesRuntime {
     /** Resolves initial stylesheet URLs once, before the first root is registered. */
@@ -21,17 +72,7 @@ export interface ContentScriptStylesRuntime {
     load(url: string): Promise<void>;
 }
 
-export enum ContentScriptWorld {
-    Isolated = "ISOLATED",
-    Main = "MAIN",
-}
-
 export type ContentScriptWorldValue = ContentScriptWorld | `${chrome.scripting.ExecutionWorld}`;
-
-export enum ContentScriptDeclarative {
-    Required = "required",
-    Optional = "optional",
-}
 
 export interface ContentScriptConfig {
     matches?: string[];
@@ -98,17 +139,6 @@ export interface ContentScriptConfig {
 }
 
 export type ContentScriptOptions = ContentScriptConfig & EntrypointOptions;
-
-export enum ContentScriptIsolation {
-    None = "none",
-    Shadow = "shadow",
-    Iframe = "iframe",
-}
-
-export enum ContentScriptShadowMode {
-    Open = "open",
-    Closed = "closed",
-}
 
 export interface ContentScriptShadowOptions {
     /**
@@ -182,15 +212,6 @@ export type ContentScriptEntrypointOptions = Partial<ContentScriptOptions> & {
     isolation?: ContentScriptIsolationOptions;
 };
 
-// Append
-export enum ContentScriptAppend {
-    Last = "last",
-    First = "first",
-    Replace = "replace",
-    Before = "before",
-    After = "after",
-}
-
 // Mount
 export type ContentScriptMountFunction = (anchor: Element, container: Element) => void | (() => void);
 
@@ -207,20 +228,8 @@ export interface ContentScriptProps extends ContentScriptEntrypointOptions {
 
 // Anchor
 export type ContentScriptAnchor = string | Element | null | undefined;
+
 export type ContentScriptAnchorGetter = () => Awaiter<ContentScriptAnchor>;
-
-// Marker
-export enum ContentScriptMarker {
-    /** In-memory marking (no DOM mutations). */
-    Weak = "weak",
-    /** DOM attribute-based marking. */
-    Attribute = "attribute",
-}
-
-export enum ContentScriptMarkerValue {
-    Mounted = "1",
-    Unmounted = "0",
-}
 
 export interface ContentScriptMarkerContract {
     for(anchor: ContentScriptAnchor): ContentScriptMarkerContract;
@@ -255,11 +264,14 @@ export type ContentScriptMarkerType =
     | undefined;
 
 export type ContentScriptMarkerGetter = (options: ContentScriptOptions) => Awaiter<ContentScriptMarkerType>;
+
 export type ContentScriptMarkerResolver = (options: ContentScriptOptions) => Awaiter<ContentScriptMarkerContract>;
 
 // Render
 export type ContentScriptRenderReactComponent = FC<ContentScriptProps>;
+
 export type ContentScriptRenderValue = Element | ReactNode | ContentScriptRenderReactComponent;
+
 export type ContentScriptRenderHandler = (props: ContentScriptProps) => Awaiter<undefined | ContentScriptRenderValue>;
 
 // Container
@@ -274,18 +286,11 @@ export type ContentScriptContainerOptions = {
 export type ContentScriptContainerFactory = (
     props: ContentScriptProps
 ) => Awaiter<Element | ContentScriptContainerTag | ContentScriptContainerOptions>;
+
 export type ContentScriptContainerCreator = (props: ContentScriptProps) => Awaiter<Element>;
 
 // Watch
 export type ContentScriptWatchStrategy = (update: () => void, context: ContentScriptContext) => () => void;
-
-// Event
-export enum ContentScriptEvent {
-    Mount = "mount",
-    Unmount = "unmount",
-    Add = "add",
-    Remove = "remove",
-}
 
 export type ContentScriptEventCallback = (event: ContentScriptEvent, node: ContentScriptNode) => void;
 
@@ -388,6 +393,7 @@ export interface ContentScriptResolvedDefinition extends Omit<
 }
 
 type ContentScriptAppendVariant<T> = T extends unknown ? Omit<T, "mount"> & {append?: ContentScriptAppend} : never;
+
 export type ContentScriptAppendDefinition = ContentScriptAppendVariant<ContentScriptDefinition>;
 
 // Builder

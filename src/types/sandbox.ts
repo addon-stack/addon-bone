@@ -2,12 +2,18 @@ import {TransportConfig, TransportDefinition, TransportType} from "@typing/trans
 import {ViewOptions} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
 import {MessageError, MessageSender} from "@typing/message";
+import type {RpcAsyncProxy} from "@typing/rpc";
 
 export const SandboxGlobalKey = "adnbnSandbox";
+
 export const SandboxGlobalAccess = "adnbnSandboxAccess";
+
 export const SandboxNamespace = "adnbn:sandbox";
+
 export const SandboxReadyMessageType = `${SandboxNamespace}:ready`;
+
 export const SandboxRequestMessageType = `${SandboxNamespace}:request`;
+
 export const SandboxResponseMessageType = `${SandboxNamespace}:response`;
 
 export enum SandboxAllow {
@@ -26,6 +32,20 @@ export enum SandboxSource {
     Blob = "blob:",
     UnsafeInline = "'unsafe-inline'",
 }
+
+/**
+ * Empty because sandbox names and contracts belong to the consuming application.
+ * Generated `.adnbn/sandbox.d.ts` declarations populate it by augmenting `adnbn/sandbox`.
+ */
+export interface SandboxRegistry {}
+
+export type SandboxName = Extract<keyof SandboxRegistry, string>;
+
+export type SandboxProxyTarget<N extends keyof SandboxRegistry> = RpcAsyncProxy<SandboxRegistry[N]>;
+
+export type SandboxAlias = string;
+
+export type SandboxMap = Map<SandboxAlias, SandboxParameters>;
 
 export interface SandboxCspSources {
     connect?: Array<SandboxSource | `${SandboxSource}`>;
@@ -74,6 +94,8 @@ export type SandboxParameters = {url: string} & Pick<
     SandboxConfig,
     "readyTimeout" | "requestTimeout" | "removeOnRequestTimeout"
 >;
+
+export type SandboxParametersMap = Record<string, SandboxParameters>;
 
 export interface SandboxReadyMessage {
     type: typeof SandboxReadyMessageType;

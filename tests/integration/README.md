@@ -1,6 +1,6 @@
 # Integration tests
 
-These tests build local Addon Bone applications through the public CLI. Build checks live in `build`; tests that launch Chrome or Firefox live in `browser`. Each area keeps its test beside the application scenarios it uses.
+These tests cover application builds, browser execution, and generated TypeScript contracts. Build checks through the public CLI live in `build`; tests that launch Chrome or Firefox live in `browser`; declaration and consumer type checks live in `types`. Each area keeps its tests beside their fixtures.
 
 ## Layout
 
@@ -35,6 +35,9 @@ tests/integration/
 │       ├── chrome.ts
 │       ├── firefox.ts
 │       └── site.ts
+├── types/
+│   ├── registries.integration.test.ts
+│   └── fixtures/registries/
 ├── utils/
 │   ├── fixture.ts
 │   └── process.ts
@@ -68,6 +71,8 @@ npm run typecheck:integration
 
 The root `typecheck` checks framework and test-runner code; `typecheck:integration` additionally checks the fixture applications against their generated declarations. CI runs both.
 
+The fixtures in `types` are checked by their Jest tests with isolated TypeScript programs against source and built package APIs. They do not have application configs and are not part of `prepare:integration` or `typecheck:integration`.
+
 ## Run tests
 
 Run these commands from the repository root:
@@ -85,6 +90,7 @@ Tests copy application inputs to unique directories under `.cache/integration`. 
 
 ## Coverage
 
+- `types/registries`: generated registry augmentation, empty fallbacks, public and internal type agreement, and message contracts against source and built package APIs. Compiler-host path checks cover both slash styles.
 - `build/options/embedded`: ten manifest checks covering explicit `openInTab: false` across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. No browser is launched.
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
 - `browser/offscreen/service`: one Chrome MV3 round trip from background through Offscreen to a registered background service.

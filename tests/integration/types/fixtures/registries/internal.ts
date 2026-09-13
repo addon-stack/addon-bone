@@ -1,0 +1,28 @@
+import type {PopupAlias, PopupAliasRegistry, PopupMap} from "@typing/popup";
+import type {SidebarAlias, SidebarAliasRegistry, SidebarMap} from "@typing/sidebar";
+import type {IconName, IconNameRegistry, IconsMap} from "@typing/icon";
+import type {ServiceName, ServiceRegistry} from "@typing/service";
+import type {OffscreenName, OffscreenRegistry, OffscreenMap} from "@typing/offscreen";
+import type {SandboxName, SandboxRegistry, SandboxMap} from "@typing/sandbox";
+import type {MessageRegistry} from "@typing/message";
+import type * as api from "adnbn";
+import type {Equal, Expect} from "./assert";
+
+type PopupKeys = Expect<Equal<keyof PopupAliasRegistry, "popup" | 'quoted"popup'>>;
+type SidebarKeys = Expect<Equal<keyof SidebarAliasRegistry, "sidebar">>;
+type IconKeys = Expect<Equal<keyof IconNameRegistry, "brand">>;
+type ServiceKeys = Expect<Equal<keyof ServiceRegistry, "worker">>;
+type OffscreenKeys = Expect<Equal<keyof OffscreenRegistry, "document">>;
+type SandboxKeys = Expect<Equal<keyof SandboxRegistry, "frame">>;
+type PopupNames = Expect<Equal<PopupAlias, api.PopupAlias>>;
+type SidebarNames = Expect<Equal<SidebarAlias, api.SidebarAlias>>;
+type IconNames = Expect<Equal<IconName, api.IconName>>;
+type ServiceNames = Expect<Equal<ServiceName, "worker">>;
+type OffscreenNames = Expect<Equal<OffscreenName, "document">>;
+type SandboxNames = Expect<Equal<SandboxName, "frame">>;
+type PopupCollection = Expect<Equal<PopupMap, api.PopupMap>>;
+type SidebarCollection = Expect<Equal<SidebarMap, api.SidebarMap>>;
+type IconCollection = Expect<Equal<IconsMap, api.IconsMap>>;
+type OffscreenCollection = Expect<Equal<OffscreenMap, api.OffscreenMap>>;
+type SandboxCollection = Expect<Equal<SandboxMap, api.SandboxMap>>;
+type MessageData = Expect<Equal<Parameters<MessageRegistry["app:lookup"]>[0], {id: number}>>;

@@ -4,9 +4,7 @@ import {SandboxFinder, SandboxViewFinder} from "@cli/entrypoint";
 import {virtualSandboxModule} from "@cli/virtual";
 
 import {EntrypointFile} from "@typing/entrypoint";
-import {SandboxEntrypointOptions, SandboxParameters} from "@typing/sandbox";
-
-export type SandboxParametersMap = Record<string, SandboxParameters>;
+import {SandboxEntrypointOptions, SandboxParametersMap} from "@typing/sandbox";
 
 export default class extends SandboxFinder {
     protected _view?: View<SandboxEntrypointOptions>;

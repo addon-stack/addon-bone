@@ -1,65 +1,6 @@
-export enum Language {
-    Arabic = "ar",
-    Amharic = "am",
-    Bulgarian = "bg",
-    Bengali = "bn",
-    Catalan = "ca",
-    Czech = "cs",
-    Danish = "da",
-    German = "de",
-    Greek = "el",
-    English = "en",
-    EnglishAustralia = "en_AU",
-    EnglishGreatBritain = "en_GB",
-    EnglishUSA = "en_US",
-    Spanish = "es",
-    SpanishLatinAmericaAndCaribbean = "es_419",
-    Estonian = "et",
-    Persian = "fa",
-    Finnish = "fi",
-    Filipino = "fil",
-    French = "fr",
-    Gujarati = "gu",
-    Hebrew = "he",
-    Hindi = "hi",
-    Croatian = "hr",
-    Hungarian = "hu",
-    Indonesian = "id",
-    Italian = "it",
-    Japanese = "ja",
-    Kannada = "kn",
-    Korean = "ko",
-    Lithuanian = "lt",
-    Latvian = "lv",
-    Malayalam = "ml",
-    Marathi = "mr",
-    Malay = "ms",
-    Dutch = "nl",
-    Norwegian = "no",
-    Polish = "pl",
-    PortugueseBrazil = "pt_BR",
-    PortuguesePortugal = "pt_PT",
-    Romanian = "ro",
-    Russian = "ru",
-    Slovak = "sk",
-    Slovenian = "sl",
-    Serbian = "sr",
-    Swedish = "sv",
-    Swahili = "sw",
-    Tamil = "ta",
-    Telugu = "te",
-    Thai = "th",
-    Turkish = "tr",
-    Ukrainian = "uk",
-    Vietnamese = "vi",
-    ChineseChina = "zh_CN",
-    ChineseTaiwan = "zh_TW",
-}
+import {Language} from "@typing/language";
 
-export enum LocaleDir {
-    RightToLeft = "rtl",
-    LeftToRight = "ltr",
-}
+export {Language};
 
 export const RtlLanguages: ReadonlySet<Language> = new Set([Language.Arabic, Language.Persian, Language.Hebrew]);
 
@@ -136,6 +77,11 @@ export const LanguageNames: Readonly<Record<Language, string>> = Object.freeze({
 
 export const LocaleFileExtensions: ReadonlySet<string> = new Set(["yaml", "yml", "json"]);
 
+export enum LocaleDir {
+    RightToLeft = "rtl",
+    LeftToRight = "ltr",
+}
+
 export type LocaleValue = string | number | Array<string | number>;
 
 export type LocaleData = {
@@ -196,7 +142,10 @@ export interface LocaleStructure {
     [key: string]: LocaleFutures;
 }
 
-/** Augmented through adnbn/locale by the generated .adnbn/locale.d.ts for the current app. */
+/**
+ * Empty because translation keys and their plural/substitution contracts belong to the consuming application.
+ * Generated `.adnbn/locale.d.ts` declarations populate it by augmenting `adnbn/locale`.
+ */
 export interface LocaleRegistry {}
 
 export type LocaleNonPluralKeys<T> = {

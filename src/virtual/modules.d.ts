@@ -13,3 +13,23 @@ declare module "#adnbn/page" {
 declare module "#adnbn/relay" {
     export const options: typeof import("./relay").options;
 }
+
+declare module "#adnbn/popup" {
+    export const aliases: typeof import("./popup").aliases;
+}
+
+declare module "#adnbn/sidebar" {
+    export const aliases: typeof import("./sidebar").aliases;
+}
+
+declare module "#adnbn/offscreen" {
+    export const parameters: typeof import("./offscreen").parameters;
+}
+
+declare module "#adnbn/sandbox" {
+    export const parameters: typeof import("./sandbox").parameters;
+}
+
+declare module "#adnbn/icon" {
+    export const groups: typeof import("./icon").groups;
+}

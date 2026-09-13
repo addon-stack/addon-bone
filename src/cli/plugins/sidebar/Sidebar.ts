@@ -8,7 +8,7 @@ import {ReadonlyConfig} from "@typing/config";
 import {SidebarEntrypointOptions} from "@typing/sidebar";
 import {ManifestSidebar} from "@typing/manifest";
 
-export type SidebarNameToManifest = Map<string, ManifestSidebar>;
+export type SidebarNameToManifest = Record<string, ManifestSidebar>;
 
 export default class extends SidebarFinder {
     protected _view?: View<SidebarEntrypointOptions>;
@@ -50,7 +50,7 @@ export default class extends SidebarFinder {
                     icon,
                 },
             };
-        }, new Map() as SidebarNameToManifest);
+        }, {} as SidebarNameToManifest);
     }
 
     public clear(): this {

@@ -1,7 +1,10 @@
 import {ViewDefinition, ViewOptions} from "@typing/view";
 import {CspOptions} from "@typing/csp";
 
-/** Augmented by the generated page declarations of the consuming application. */
+/**
+ * Empty because page aliases depend on the consuming application's entrypoints.
+ * Generated `.adnbn/page.d.ts` declarations augment `adnbn`, adding discovered aliases as keys with value `true`.
+ */
 export interface PageAliasRegistry {}
 
 export type PageAlias = keyof PageAliasRegistry extends never ? string : Extract<keyof PageAliasRegistry, string>;

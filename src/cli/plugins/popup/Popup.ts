@@ -8,7 +8,7 @@ import {ReadonlyConfig} from "@typing/config";
 import {PopupEntrypointOptions} from "@typing/popup";
 import {ManifestPopup} from "@typing/manifest";
 
-export type PopupNameToManifest = Map<string, ManifestPopup>;
+export type PopupNameToManifest = Record<string, ManifestPopup>;
 
 export default class extends PopupFinder {
     protected _view?: View<PopupEntrypointOptions>;
@@ -50,7 +50,7 @@ export default class extends PopupFinder {
                     icon,
                 },
             };
-        }, new Map() as PopupNameToManifest);
+        }, {} as PopupNameToManifest);
     }
 
     public clear(): this {

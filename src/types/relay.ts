@@ -17,11 +17,6 @@ import type {MessageError} from "@typing/message";
 
 export const RelayGlobalKey = "adnbnRelay";
 
-/** Augmented through adnbn/relay by the generated Relay declarations of the consuming application. */
-export interface RelayRegistry {}
-
-export type RelayName = Extract<keyof RelayRegistry, string>;
-
 export enum RelayMethod {
     Scripting = "scripting",
     Messaging = "messaging",
@@ -48,6 +43,14 @@ export enum RelayFrameErrorKind {
     TargetGone = "target-gone",
     Unobservable = "unobservable",
 }
+
+/**
+ * Empty because relay names and contracts belong to the consuming application.
+ * Generated `.adnbn/relay.d.ts` declarations populate it by augmenting `adnbn/relay`.
+ */
+export interface RelayRegistry {}
+
+export type RelayName = Extract<keyof RelayRegistry, string>;
 
 export type RelayNonEmptyReadonlyArray<T> = readonly [T, ...T[]];
 
