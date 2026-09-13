@@ -64,12 +64,9 @@ const run = async (compiler: Compiler): Promise<number> => {
 test("bundles imports and arbitrary JavaScript exports without executing unused modules", async () => {
     const compiler = createCompiler(new GenerateModulePlugin(modules));
     expect(await run(compiler)).toBe(6);
-    const file = readModule(compiler, "virtual/value");
-    await close(compiler);
-    await expect(fs.access(file)).rejects.toMatchObject({code: "ENOENT"});
 });
 
-test("updates before compilation, skips unchanged sources and reports recoverable callback errors", async () => {
+test("updates generated sources and recovers from callback errors", async () => {
     let value = 3;
     let fail = false;
     const compiler = createCompiler(
@@ -79,23 +76,14 @@ test("updates before compilation, skips unchanged sources and reports recoverabl
         })
     );
     expect(await run(compiler)).toBe(6);
-    const file = readModule(compiler, "virtual/value");
-    const tools = readModule(compiler, "virtual/tools");
-    const timestamp = new Date("2000-01-01T00:00:00Z");
-    await fs.utimes(file, timestamp, timestamp);
-    await fs.utimes(tools, timestamp, timestamp);
-    await compiler.hooks.watchRun.promise(compiler);
-    expect((await fs.stat(file)).mtimeMs).toBe(timestamp.getTime());
 
     value = 7;
     await compiler.hooks.watchRun.promise(compiler);
-    expect((await fs.stat(tools)).mtimeMs).toBe(timestamp.getTime());
     expect(await run(compiler)).toBe(14);
 
     fail = true;
     await compiler.hooks.watchRun.promise(compiler);
     await expect(run(compiler)).rejects.toThrow("Cannot generate module");
-    expect(await fs.readFile(file, "utf8")).toBe("export default 7;");
     fail = false;
     value = 9;
     await compiler.hooks.watchRun.promise(compiler);
@@ -136,18 +124,69 @@ test("recomputes file and directory dependencies after each refresh, including i
     expect(dependencies().has(second)).toBe(true);
 });
 
-test("isolates compilers with identical initial sources, updates and cleanup", async () => {
+test("keeps compiler updates and shutdown isolated", async () => {
     const first = createCompiler(
         new GenerateModulePlugin(modules).watch(async () => ({"virtual/value": "export default 5;"})),
         "first"
     );
     const second = createCompiler(new GenerateModulePlugin(modules), "second");
-    expect(readModule(first, "virtual/value")).not.toBe(readModule(second, "virtual/value"));
+    expect(readModule(first, "virtual/value")).toBe(readModule(second, "virtual/value"));
     await first.hooks.watchRun.promise(first);
     expect(await run(first)).toBe(10);
     expect(await run(second)).toBe(6);
     await close(first);
     expect(await run(second)).toBe(6);
+});
+
+test("updates generated sources in the same cached watch compilation as their dependency", async () => {
+    const dependency = path.join(directory, "value.json");
+    await fs.writeFile(dependency, "4");
+    const plugin = new GenerateModulePlugin(modules).watch(
+        async () => ({"virtual/value": `export default ${await fs.readFile(dependency, "utf8")};`}),
+        async () => ({files: [dependency]})
+    );
+    const compiler = rspack({
+        mode: "development",
+        context: fixtures,
+        target: "node",
+        devtool: false,
+        entry: "./entry.js",
+        output: {path: path.join(directory, "watch"), filename: "index.js"},
+        plugins: [plugin],
+    });
+    compilers.add(compiler);
+    const observations: number[] = [];
+    let resolve: () => void;
+    let reject: (error: unknown) => void;
+    const complete = new Promise<void>((done, fail) => {
+        resolve = done;
+        reject = fail;
+    });
+    const timer = setTimeout(
+        () => reject(new Error(`Generated module watch did not finish: ${JSON.stringify(observations)}`)),
+        10_000
+    );
+    const watcher = compiler.watch({poll: 50, aggregateTimeout: 20}, (error, stats) => {
+        try {
+            if (error || !stats || stats.hasErrors())
+                throw error ?? new Error(stats?.toString({all: false, errors: true}));
+            const sandbox = {result: 0};
+            vm.runInNewContext(stats.compilation.getAsset("index.js")!.source.source().toString(), sandbox);
+            observations.push(sandbox.result);
+            expect(sandbox.result).toBe([8, 14, 18][observations.length - 1]);
+            if (observations.length === 3) resolve();
+            else void fs.writeFile(dependency, observations.length === 1 ? "7" : "9").catch(reject);
+        } catch (error) {
+            reject(error);
+        }
+    });
+    try {
+        await complete;
+        expect(observations).toEqual([8, 14, 18]);
+    } finally {
+        clearTimeout(timer);
+        await new Promise<void>(done => watcher.close(done));
+    }
 });
 
 test.each([

@@ -1,8 +1,6 @@
-import {randomUUID} from "crypto";
 import {existsSync} from "fs";
 import path from "path";
-import type {Compiler, RuleSetCondition} from "@rspack/core";
-import {RspackVirtualModulePlugin} from "rspack-plugin-virtual-module";
+import {experiments, type Compiler, type RuleSetCondition} from "@rspack/core";
 import {watchCompilation} from "../utils";
 
 /** JavaScript source keyed by the module's import specifier. */
@@ -44,20 +42,41 @@ export default class GenerateModulePlugin {
         const modules = {...this.modules};
         let dependencies: GenerateModulePluginDependencies = {};
 
-        // The underlying plugin removes its entire directory on shutdown.
-        const plugin = new RspackVirtualModulePlugin(modules, `generate-module-${randomUUID()}`);
+        // Stable paths keep module IDs and hashes reproducible. The native store belongs
+        // to this compiler, so concurrent builds never share files or cleanup ownership.
+        const resources = Object.fromEntries(
+            Object.keys(modules).map(name => [
+                name,
+                path.resolve(
+                    compiler.context,
+                    "node_modules",
+                    ".adnbn-virtual",
+                    path.extname(name) ? name : `${name}.js`
+                ),
+            ])
+        );
+        const plugin = new experiments.VirtualModulesPlugin(
+            Object.fromEntries(Object.entries(modules).map(([name, source]) => [resources[name], source]))
+        );
         plugin.apply(compiler);
+        compiler.options.resolve.alias = {...compiler.options.resolve.alias, ...resources};
+        const pending = new Map<string, string>();
+        let initialized = false;
 
         if (this.moduleLayer !== undefined) {
-            const resources = Object.keys(modules).map(name => compiler.options.resolve.alias![name] as string);
             compiler.options.module.rules.push({
-                include: resources,
+                include: Object.values(resources),
                 layer: this.moduleLayer,
                 issuerLayer: this.issuerLayer,
             });
         }
 
         compiler.hooks.compilation.tap(this.pluginName, compilation => {
+            // Native virtual files can be updated only after the Rust compiler exists.
+            for (const [name, source] of pending) plugin.writeModule(resources[name], source);
+            pending.clear();
+            initialized = true;
+
             for (const file of dependencies.files ?? []) {
                 compilation.fileDependencies.add(path.resolve(compiler.context, file));
             }
@@ -75,7 +94,14 @@ export default class GenerateModulePlugin {
 
             for (const [name, source] of Object.entries(await this.update())) {
                 if (modules[name] !== source) {
-                    plugin.writeModule(name, source);
+                    if (initialized) {
+                        plugin.writeModule(resources[name], source);
+                        // watchRun precedes native cache invalidation. Include generated changes
+                        // in this rebuild rather than waiting for a second filesystem event.
+                        compiler.modifiedFiles = new Set([...(compiler.modifiedFiles ?? []), resources[name]]);
+                    } else {
+                        pending.set(name, source);
+                    }
                     modules[name] = source;
                 }
             }
