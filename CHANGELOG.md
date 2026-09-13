@@ -1,5 +1,256 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.11.0 (2026-09-13)
+
+### 💥 Breaking Changes
+
+* Runtime view titles, command descriptions, and titles
+applied by changePopup/changeSidebar are now passed through unchanged.
+Call resolve explicitly when translating locale markers is required.
+Build-time localization of manifest fields is unchanged.
+
+* Remove React LocaleProvider, LocaleProviderProps and
+LocaleContract. Use useLocale or useNativeLocale, and apply DOM attributes
+explicitly with useLocaleAttributes.
+
+Rename provider languages()/languageNames() to langs()/langNames().
+React langs now contains language codes; display names are in langNames.
+useLocale().change() now returns Promise<Language>.
+
+React adapters require React 18 or 19. React peers are now optional.
+
+
+### ✨ Features
+
+* **content:** add shadow DOM support ([1721c92](https://github.com/addon-stack/addon-bone/commit/1721c92f252347ad94bbc69e0d25adbd44e91919))
+
+
+* **content:** consolidate isolation options and support closed roots ([68972af](https://github.com/addon-stack/addon-bone/commit/68972af26618e94452194322f0a9b5cca4158e56))
+
+  Normalize shorthand and object isolation options for content scripts and Relay.
+  Keep Shadow mode, iframe navigation, and dimensions under the isolation contract.
+
+  Move static value resolution and default-export analysis into file readers.
+  Validate normalized options with explicit Zod schemas while preserving enum
+  injection and runtime boundaries.
+
+  Update lifecycle, browser, watch, and parser tests alongside isolation documentation
+  and repository conventions.
+
+* **content:** unify shadow and iframe isolation ([e40b617](https://github.com/addon-stack/addon-bone/commit/e40b617219f18f91ef65e89113932a967b1f276a))
+
+  Support isolation modes and frame page/src navigation for content scripts
+  and Relay. Route opt-in isolation CSS separately from document styles,
+  retain lazy loading, and expose resources without background dependencies.
+
+  Render into ShadowRoot or iframe targets, recover blank iframe documents
+  after host moves, and release stale CSS waits before teardown. Register
+  fonts through CSS and remove the branch's experimental shadow/fonts API.
+
+  Separate shared validation, feature policy, bundler integration and runtime
+  nodes. Cover parser contracts, access rules, watch transitions, asset names,
+  CSS errors/retries and browser behavior with unit and integration fixtures.
+
+* **entrypoint:** expose asset maps and support content chunk loading ([d4730b2](https://github.com/addon-stack/addon-bone/commit/d4730b2f5e7f031ab0fc9602619a3bd3aef76e4a))
+
+  Add per-entry asset metadata and a background-only full asset map.
+  Respect output filename templates and isolate content chunk graphs by world.
+  Normalize MV2 content scripts to ISOLATED with a build warning.
+
+  Add Chrome and Firefox integration coverage and reorganize fixtures.
+  Document project naming conventions, including class test filenames.
+
+* **locale:** generate a shared virtual catalogue ([74b5c26](https://github.com/addon-stack/addon-bone/commit/74b5c2645b3de0a9aad7bfd8e96d5890b0881b30))
+
+  Generate native locale JSON and virtual/locale from cached, validated
+  messages. Add a reusable module generation plugin with watch updates and
+  share the catalogue when used twice or when it reaches 100 KB, while
+  keeping background self-contained.
+
+  Cover catalogue equivalence, module isolation, watch updates, chunk
+  boundaries and browser delivery with integration fixtures.
+
+  Known limitation: Chrome deduplicates a shared content script path across
+  MAIN and ISOLATED worlds. The mixed-world browser test still fails; this
+  commit records the agreed first stage without changing script delivery.
+
+* **locale:** replace the React provider with locale hooks ([f9d4436](https://github.com/addon-stack/addon-bone/commit/f9d4436391b4928ed0f5e51f9e5310a3115baa4d))
+
+  Share dynamic state through ObservableLocale and expose native and dynamic
+  React adapters with typed JSX substitutions and explicit DOM attributes.
+
+* **locale:** support custom storage drivers ([b711e70](https://github.com/addon-stack/addon-bone/commit/b711e70c81d9feeb6b9a40c2aefed9ef878727f9))
+
+
+* **locale:** use bundled translations in DynamicLocale ([17e2ef4](https://github.com/addon-stack/addon-bone/commit/17e2ef47c5344883ed594d912a7ee52b97d54a35))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **build:** correct watch updates and virtual module imports ([f5701c6](https://github.com/addon-stack/addon-bone/commit/f5701c614deb98a4b3dd27ab07c932d58d8c4a02))
+
+  Normalize watched entry paths, retain runtime-only JavaScript chunks in
+  asset validation, and share chunk filename resolution below plugin owners.
+  Resolve the virtual entrypoint source alias to its emitted ESM path during
+  bundling instead of encoding output extensions in TypeScript imports.
+
+* **build:** exclude tests from distribution ([04cbd6f](https://github.com/addon-stack/addon-bone/commit/04cbd6f918bc302ad51084a98db3c7cf7a00c5e3))
+
+
+* **bundler:** embed entrypoint asset maps only for consumers ([5185bbb](https://github.com/addon-stack/addon-bone/commit/5185bbb7cc6538fd3200ee3ca5309649d730ec27))
+
+
+* **bundler:** stabilize generated modules and watch updates ([921466f](https://github.com/addon-stack/addon-bone/commit/921466fd2dead6e2b860a3ef9f53909025b90373))
+
+
+* **locale:** refresh generated translations reliably in watch mode ([5160519](https://github.com/addon-stack/addon-bone/commit/5160519f37ffe02e48ef7a7bf8da4ef69b10f744))
+
+
+* **locale:** use build language when browser i18n is unavailable ([a1479ca](https://github.com/addon-stack/addon-bone/commit/a1479cac991ea6533a137938c9931098cb6fb23e))
+
+
+* **types:** include tests in the editor project ([3b60f5e](https://github.com/addon-stack/addon-bone/commit/3b60f5eb5333476c79ebc338d029cb727ffa633d))
+
+
+
+
+### 📝 Documentation
+
+* document isolation behavior and architecture conventions ([f4fe39e](https://github.com/addon-stack/addon-bone/commit/f4fe39e69ce7e1ab5edd7c17ea317e5cebdc49ad))
+
+  Document isolation modes, CSS routing, font delivery, iframe recovery and
+  browser validation fixtures. Record responsibility boundaries, shared
+  contract ownership and source import conventions in AGENTS.md.
+
+  Leave CHANGELOG.md generation to the publication workflow.
+
+* improve formatting and clarity in contribution and policy documents ([77f8b2b](https://github.com/addon-stack/addon-bone/commit/77f8b2bd99804641165b72b126dac4883eacdb69))
+
+
+
+
+### 🤖 CI
+
+* **release:** prepare protected main automation ([c839497](https://github.com/addon-stack/addon-bone/commit/c839497569d62fffe38cd2f553be049313c13194))
+
+
+
+
+### 🧩 Other
+
+* Improve code readability and consistency: ([9473e5e](https://github.com/addon-stack/addon-bone/commit/9473e5e765829d64cc748dbaee3f6edc239af497))
+
+  - Add `holds` method to `entrypoint.ts` interface for file existence checks.
+  - Update `.toSorted` usage in `AbstractFinder` for array sorting.
+  - Apply consistent formatting with `prettier-ignore` in various files.
+  - Minor refactor of `AbstractEntrypointFinder` regex patterns for clarity.
+
+* organize package fields and frame type imports ([166b48d](https://github.com/addon-stack/addon-bone/commit/166b48df84bfa535f72318155d3b8ac6e2503f08))
+
+
+
+
+### 🧪 Tests
+
+* **browser:** allow stable browser versions ([3231ece](https://github.com/addon-stack/addon-bone/commit/3231ece02d0674457f241b619dc39af65b7b7e09))
+
+
+* **browser:** close speculative connections during teardown ([e63c60b](https://github.com/addon-stack/addon-bone/commit/e63c60bf073e4f76363fc499bd4c8e0445285156))
+
+
+* **entrypoint:** make virtual path assertion cross-platform ([f2af015](https://github.com/addon-stack/addon-bone/commit/f2af015e43eeab25acb0dda9638ef46aae09241a))
+
+
+* fix Windows watch fixture updates ([e1ad886](https://github.com/addon-stack/addon-bone/commit/e1ad88641343340806a29538547b269520ec8e76))
+
+
+* **locale:** fix Windows CI fixtures and output paths ([478e3cd](https://github.com/addon-stack/addon-bone/commit/478e3cd7c25dcf825d704eb7232c86f191839dc5))
+
+
+* remove obsolete assertions and normalize fixture names ([d8d8202](https://github.com/addon-stack/addon-bone/commit/d8d82026514d971ad2f070756a1d9e48851202ec))
+
+  Remove guards for discarded owner runtime implementations and replace
+  Plan A fixture filenames and suite labels with neutral entrypoint names.
+  Keep assertions for current placeholders and background independence.
+
+
+
+### 🧹 Chores
+
+* **test:** remove duplicate type checking ([d613c0f](https://github.com/addon-stack/addon-bone/commit/d613c0f1e427c32702a28bbe1cf8d96ab5aa3436))
+
+
+
+
+### 🛠️ Refactoring
+
+* **bundler:** organize plugins by directory ([6bdd6d2](https://github.com/addon-stack/addon-bone/commit/6bdd6d2f083b895e0bc00788420bc185e47a0591))
+
+
+* **bundler:** remove unused runtime data plugin ([12719cf](https://github.com/addon-stack/addon-bone/commit/12719cf6eecf92f935aa410bd1f456fd4f99a0e9))
+
+
+* **cli:** improve EntrypointMetaPlugin for better asset handling and modularity ([d4886cb](https://github.com/addon-stack/addon-bone/commit/d4886cb2569207cdb842639c21ac9b4111c2d1f4))
+
+
+* deliver page and relay data through virtual modules ([36eb139](https://github.com/addon-stack/addon-bone/commit/36eb13914e0eb61ed9f8e87ac1a4b33c6b671f21))
+
+
+* **locale:** centralize shared translation helpers ([20016ca](https://github.com/addon-stack/addon-bone/commit/20016ca72d6f41c24fabdc46f832a196f1ce941c))
+
+
+* **locale:** make runtime translation explicit ([36032ff](https://github.com/addon-stack/addon-bone/commit/36032ff82915ff4382e1a544146888d4f71ad15d))
+
+  Remove implicit locale resolution from view and command entrypoint
+  wrappers and from changePopup/changeSidebar. Keep resolve available
+  through the public locale entrypoint for explicit use.
+
+* **locale:** move generated types to LocaleRegistry ([e7b49ad](https://github.com/addon-stack/addon-bone/commit/e7b49ad20e47fb9c8e049ac626cc80216478e2fb))
+
+
+* **manifest:** normalize resource handling and validation ([5319ef7](https://github.com/addon-stack/addon-bone/commit/5319ef7cab04c5563a289b7eb75985d39ccd8302))
+
+  Separate manifest utilities by responsibility and normalize merged WAR and
+  host permission rules. Add compilation-scoped preparation and validation
+  hooks with a generic resource access validator, and rebuild manifest state
+  for each watch compilation.
+
+* **relay:** enhance permission handling and improve type definitions ([4dd021a](https://github.com/addon-stack/addon-bone/commit/4dd021ac44d2dd288a66545ba6c4feaeff597e55))
+
+  - Refactored permission handling logic for `RelayPermission` to improve clarity and maintainability.
+  - Updated type definitions for `declarative` field to support `ContentScriptDeclarative` enum.
+  - Improved code formatting and consistent conditional handling across relay components.
+  - Added return types to private methods for better type inference.
+
+* **runtime:** centralize page and relay metadata ([e3777f2](https://github.com/addon-stack/addon-bone/commit/e3777f23a1b9b5f66c87266ebb4c7e9a870dee71))
+
+  Embed serialized metadata with RuntimeDataPlugin and keep property contracts
+  and augmentable Page/Relay registries in the shared type layer. Preserve
+  public exports and generated declarations, refresh Relay data in watch,
+  and substitute runtime template values once without reinterpreting data.
+
+* unify entrypoint virtual data and shared contracts ([af251c5](https://github.com/addon-stack/addon-bone/commit/af251c5fbc1ac6c3c32f2741d10a16d2734dadbd))
+
+  Deliver popup, sidebar, offscreen, sandbox and icon data through
+  generated virtual modules with package fallbacks.
+
+  Move augmentable registries and related contracts into src/types.
+  Preserve public augmentation and generate popup/sidebar/icon registries.
+  Order shared declarations and document empty contracts.
+
+  Add build coverage for data delivery and tree shaking, plus source
+  and package contract checks in tests/integration/types.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 38
+- [Addon Stack](mailto:addonbonedev@gmail.com) — commits: 5
+
 ## 🚀 Release Addon Bone v0.10.0 (2026-08-28)
 
 
