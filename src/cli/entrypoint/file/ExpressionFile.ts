@@ -3,6 +3,7 @@ import ts from "typescript";
 import SourceFile from "./SourceFile";
 import {
     ClassParser,
+    ExportParser,
     FunctionParser,
     JSDocParser,
     NodeFinder,
@@ -10,7 +11,7 @@ import {
     SignatureBuilder,
     TypeResolver,
 } from "./parsers";
-import {MemberSignature} from "./parsers/types";
+import type {ExportValue, MemberSignature} from "./parsers/types";
 
 import {PackageName} from "@typing/app";
 
@@ -32,6 +33,7 @@ export default class ExpressionFile extends SourceFile {
     private readonly objectParser: ObjectParser;
     private readonly classParser: ClassParser;
     private readonly jsDocParser: JSDocParser;
+    private readonly exportParser: ExportParser;
 
     constructor(filePath: string) {
         super(filePath);
@@ -43,6 +45,16 @@ export default class ExpressionFile extends SourceFile {
         this.classParser = new ClassParser(this, this.typeResolver, this.signatureBuilder, this.nodeFinder);
         this.functionParser = new FunctionParser(this, this.nodeFinder, this.objectParser, this.classParser);
         this.jsDocParser = new JSDocParser();
+        this.exportParser = new ExportParser(
+            this,
+            this.nodeFinder,
+            () => this.getInputResolver().getTs().getConfig().options
+        );
+    }
+
+    /** Returns export metadata; consumers decide what that export means for their entrypoint. */
+    public getDefaultExport(): ExportValue | undefined {
+        return this.exportParser.parseDefault();
     }
 
     public getType(): string | undefined {

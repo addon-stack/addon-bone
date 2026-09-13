@@ -1,13 +1,15 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import {definePlugin} from "@main/plugin";
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 
-import Sandbox, {SandboxParametersMap} from "./Sandbox";
+import Sandbox from "./Sandbox";
 import SandboxDeclaration from "./SandboxDeclaration";
+import {createSandboxModule, SandboxModuleName} from "./sandbox-module";
 
 import {Command} from "@typing/app";
+import type {SandboxParametersMap} from "@typing/sandbox";
 
 export default definePlugin(() => {
     let sandbox: Sandbox;
@@ -59,8 +61,8 @@ export default definePlugin(() => {
 
             return {
                 plugins: [
-                    new DefinePlugin({
-                        __ADNBN_SANDBOX_PARAMETERS__: JSON.stringify(parameters),
+                    new GenerateModulePlugin({
+                        [SandboxModuleName]: createSandboxModule(parameters),
                     }),
                     ...plugins,
                 ],

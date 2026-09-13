@@ -4,6 +4,7 @@ import {ContentProvider} from "./types";
 
 import {ContentFinder} from "@cli/entrypoint";
 import {virtualContentScriptModule} from "@cli/virtual";
+import {isContentScriptFrameNavigation} from "@shared/content";
 
 import {ReadonlyConfig} from "@typing/config";
 import {ContentScriptEntrypointOptions} from "@typing/content";
@@ -20,12 +21,12 @@ export default class extends ContentFinder implements ContentProvider<ContentScr
         return (this._driver ??= new ContentDriver(this));
     }
 
-    public virtual(file: EntrypointFile): string {
+    public virtual(file: EntrypointFile, options?: ContentScriptEntrypointOptions): string {
         if (!this.holds(file)) {
             throw new Error(`File ${file} not found for content script`);
         }
 
-        return virtualContentScriptModule(file);
+        return virtualContentScriptModule(file, isContentScriptFrameNavigation(options?.isolation));
     }
 
     public clear(): this {

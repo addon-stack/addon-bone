@@ -1,3 +1,5 @@
+import {resolveContentScriptIsolation} from "@shared/content";
+
 import TransportBuilder from "./TransportBuilder";
 
 import Builder from "../core/Builder";
@@ -35,7 +37,10 @@ export default class<T extends TransportType> extends Builder {
                 throw new Error("Content script builder not set");
             }
 
-            await main(this._transport.get(), this._content.getContext(), this.definition);
+            await main(this._transport.get(), this._content.getContext(), {
+                ...this.definition,
+                isolation: resolveContentScriptIsolation(this.definition.isolation, "render" in this.definition),
+            });
         }
     }
 

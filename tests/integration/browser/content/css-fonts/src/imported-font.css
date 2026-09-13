@@ -1,0 +1,7 @@
+@font-face {
+    font-family: "AdnbnImportedFont";
+    src: url("../../isolation-shadow/src/probe.content/probe.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}

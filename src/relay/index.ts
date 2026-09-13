@@ -1,12 +1,8 @@
 import Relay from "./providers/Relay";
 
-import type {TransportTarget} from "@typing/transport";
+import type {RelayName, RelayTarget} from "@typing/relay";
 
-export interface RelayRegistry {}
-
-export type RelayName = Extract<keyof RelayRegistry, string>;
-
-export type RelayTarget<N extends keyof RelayRegistry> = TransportTarget<RelayRegistry, N>;
+export type {RelayRegistry, RelayName, RelayTarget} from "@typing/relay";
 
 export const getRelay = <N extends RelayName>(name: N): RelayTarget<N> => {
     return new Relay<N>(name).get();

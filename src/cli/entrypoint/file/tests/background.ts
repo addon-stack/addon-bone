@@ -1,8 +1,6 @@
 import path from "path";
 import OptionFile from "../OptionFile";
 
-jest.mock("../resolvers", () => jest.requireActual("../resolvers/tests/resolvers.mock"));
-
 const fixtures = path.resolve(__dirname, "fixtures");
 
 describe("background", () => {

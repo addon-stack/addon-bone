@@ -1,0 +1,13 @@
+.root {
+    color: rgb(17, 85, 153);
+}
+
+.font {
+    display: inline-block;
+    font-family: "AdnbnShadowProbe", monospace;
+    font-size: 40px;
+    font-kerning: none;
+    font-variant-ligatures: none;
+    letter-spacing: 0;
+    white-space: pre;
+}

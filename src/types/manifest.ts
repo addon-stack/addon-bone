@@ -6,11 +6,6 @@ import {BrowserSpecific, DataCollectionPermission} from "@typing/browser";
 import {CspConfig} from "@typing/csp";
 import {SandboxCspConfig} from "@typing/sandbox";
 
-type ManifestCommon = chrome.runtime.Manifest;
-type ManifestBase = chrome.runtime.ManifestBase;
-type ManifestPermission = chrome.runtime.ManifestPermission;
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
-
 export const ManifestMatchSchemes: ReadonlySet<string> = new Set<string>(["http", "https", "file", "ftp", "ws", "wss"]);
 
 export const ManifestSpecialSchemes: ReadonlySet<string> = new Set<string>([
@@ -24,6 +19,20 @@ export const ManifestSpecialSchemes: ReadonlySet<string> = new Set<string>([
     "resource",
 ]);
 
+export enum ManifestIncognito {
+    Spanning = "spanning",
+    Split = "split",
+    NotAllowed = "not_allowed",
+}
+
+type ManifestCommon = chrome.runtime.Manifest;
+
+type ManifestBase = chrome.runtime.ManifestBase;
+
+type ManifestPermission = chrome.runtime.ManifestPermission;
+
+type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
+
 type ManifestFixed<T extends ManifestBase> = Omit<T, "manifest_version"> & {
     manifest_version: ManifestVersion;
 };
@@ -34,12 +43,6 @@ interface ManifestUnstable {
 }
 
 export type ManifestVersion = 2 | 3;
-
-export enum ManifestIncognito {
-    Spanning = "spanning",
-    Split = "split",
-    NotAllowed = "not_allowed",
-}
 
 export type ManifestIncognitoValue = ManifestIncognito | `${ManifestIncognito}`;
 
@@ -199,9 +202,11 @@ export interface ManifestEntry {
 export type ManifestBackground = ManifestEntry & BackgroundConfig;
 
 export type ManifestContentScript = ManifestEntry & ContentScriptConfig;
+
 export type ManifestContentScripts = Set<ManifestContentScript>;
 
 export type ManifestCommand = CommandConfig;
+
 export type ManifestCommands = Set<ManifestCommand>;
 
 export interface ManifestPopup {
@@ -266,8 +271,11 @@ export type ManifestSandbox = string;
 export type ManifestSandboxes = Set<ManifestSandbox>;
 
 export interface ManifestDependency {
+    /** Initial scripts, in execution order. */
     js: Set<string>;
+    /** Initial styles delivered by the manifest. */
     css: Set<string>;
+    /** Runtime resources, including lazy JS/CSS and other emitted files. */
     assets: Set<string>;
 }
 

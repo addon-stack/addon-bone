@@ -1,7 +1,7 @@
 import {isValidElement} from "react";
 
 import MountBuilder from "../../core/MountBuilder";
-import EventNode from "../../core/EventNode";
+import EventNode from "../../core/nodes/EventNode";
 import ReactNode from "./Node";
 
 import {contentScriptReactRenderResolver} from "./resolvers";

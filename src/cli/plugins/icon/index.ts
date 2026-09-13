@@ -1,8 +1,10 @@
-import {Configuration as RspackConfig, CopyRspackPlugin, DefinePlugin} from "@rspack/core";
+import {Configuration as RspackConfig, CopyRspackPlugin} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
+import {GenerateModulePlugin} from "@cli/bundler";
 
 import Icon, {CopyPatterns, IconDefinition} from "./Icon";
+import {createIconModule, IconModuleName} from "./icon-module";
 
 import {IconDeclaration} from "./declaration";
 
@@ -25,8 +27,8 @@ export default definePlugin(() => {
                     new CopyRspackPlugin({
                         patterns: await icon.copy(),
                     }),
-                    new DefinePlugin({
-                        __ADNBN_ICONS__: JSON.stringify(await icon.define()),
+                    new GenerateModulePlugin({
+                        [IconModuleName]: createIconModule(await icon.define()),
                     }),
                 ],
             } satisfies RspackConfig;

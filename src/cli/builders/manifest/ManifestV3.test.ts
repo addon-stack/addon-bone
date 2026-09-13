@@ -1,10 +1,11 @@
 import ManifestV3 from "./ManifestV3";
 import {Browser} from "@typing/browser";
 import {CommandExecuteActionName} from "@typing/command";
+import type {ManifestDependency} from "@typing/manifest";
 
 const unique = (arr: string[]) => Array.from(new Set(arr)).length === arr.length;
 
-const dependency = (js: string[] = [], css: string[] = [], assets: string[] = []) => ({
+const dependency = (js: string[] = [], css: string[] = [], assets: string[] = []): ManifestDependency => ({
     js: new Set(js),
     css: new Set(css),
     assets: new Set(assets),
@@ -100,6 +101,33 @@ describe("ManifestV3", () => {
         });
     });
 
+    it("uses prepared CSS lists and exposes runtime resources without interpreting their delivery policy", () => {
+        const manifest: any = new ManifestV3(Browser.Chrome)
+            .setDependencies(
+                new Map([
+                    ["shadow", dependency(["shadow.js"], ["page.css"], ["lazy.css", "shared.css", "shadow.css"])],
+                    ["normal", dependency(["normal.js"], ["shared.css"], ["normal-lazy.css"])],
+                ])
+            )
+            .setContentScripts(
+                new Set([
+                    {entry: "shadow", matches: ["https://example.com/*"]},
+                    {entry: "normal", matches: ["https://example.com/*"]},
+                ])
+            )
+            .build();
+
+        expect(manifest.content_scripts).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({js: ["shadow.js"], css: ["page.css"]}),
+                expect.objectContaining({js: ["normal.js"], css: ["shared.css"]}),
+            ])
+        );
+        expect(manifest.web_accessible_resources[0].resources).toEqual(
+            expect.arrayContaining(["lazy.css", "normal-lazy.css", "shared.css", "shadow.css"])
+        );
+    });
+
     it("builds permissions separately from host permissions", () => {
         const manifest: any = new ManifestV3(Browser.Chrome)
             .setPermissions(new Set(["storage"]))
@@ -157,6 +185,132 @@ describe("ManifestV3", () => {
         );
     });
 
+    it("removes specific URLs covered by a domain wildcard from combined sources", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .addHostPermission("https://sub.example.com/file.json")
+            .raw({host_permissions: ["https://*.example.com/*"]})
+            .build();
+
+        expect(manifest.host_permissions).toEqual(["https://*.example.com/*"]);
+    });
+
+    it("removes optional URLs already covered by required host permissions", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .addHostPermission("https://*.example.com/*")
+            .addOptionalHostPermission("https://sub.example.com/file.json")
+            .build();
+
+        expect(manifest.host_permissions).toEqual(["https://*.example.com/*"]);
+        expect(manifest.optional_host_permissions).toBeUndefined();
+    });
+
+    it("simplifies optional hosts while retaining unrelated hosts and schemes", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .addOptionalHostPermission("https://sub.example.com/file.json")
+            .raw({optional_host_permissions: ["https://*.example.com/*"]})
+            .addOptionalHostPermission("http://sub.example.com/file.json")
+            .addOptionalHostPermission("https://example.org/*")
+            .build();
+
+        expect(new Set(manifest.optional_host_permissions)).toEqual(
+            new Set(["https://*.example.com/*", "http://sub.example.com/file.json", "https://example.org/*"])
+        );
+    });
+
+    it("keeps required access when a broader host permission is optional", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .addHostPermission("https://sub.example.com/file.json")
+            .addOptionalHostPermission("https://*.example.com/*")
+            .build();
+
+        expect(manifest.host_permissions).toEqual(["https://sub.example.com/file.json"]);
+        expect(manifest.optional_host_permissions).toEqual(["https://*.example.com/*"]);
+    });
+
+    it.each([Browser.Chrome, Browser.Firefox])(
+        "normalizes WAR origins without changing content script paths in %s",
+        browser => {
+            const matches = ["https://example.com/path/*", "https://sub.example.com/nested/*"];
+            const manifest = new ManifestV3(browser)
+                .setDependencies(new Map([["entry", dependency(["entry.js"], [], ["file.json"])]]))
+                .setContentScripts(new Set([{entry: "entry", matches}]))
+                .addAccessibleResource({resources: ["file.json"], matches: ["https://*.example.com/other/*"]})
+                .build();
+
+            expect(manifest.content_scripts?.[0].matches).toEqual(matches);
+            expect(manifest.web_accessible_resources).toEqual([
+                {resources: ["file.json"], matches: ["https://*.example.com/*"]},
+            ]);
+        }
+    );
+
+    it.each([Browser.Chrome, Browser.Firefox])(
+        "merges typed and raw WAR fields using native manifest keys in %s",
+        browser => {
+            const manifest = new ManifestV3(browser)
+                .addAccessibleResource({
+                    resources: ["a.js"],
+                    matches: ["https://example.com/path/*"],
+                    extensionIds: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+                    useDynamicUrl: true,
+                })
+                .raw({
+                    web_accessible_resources: [
+                        {
+                            resources: ["b.js"],
+                            matches: ["https://example.com/nested/*"],
+                            extension_ids: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+                            use_dynamic_url: true,
+                        },
+                        {resources: ["c.js"], matches: ["https://example.org/*"], use_dynamic_url: false},
+                    ],
+                })
+                .build();
+
+            expect(manifest.web_accessible_resources).toEqual([
+                {
+                    resources: ["a.js", "b.js"],
+                    matches: ["https://example.com/*"],
+                    extension_ids: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+                    use_dynamic_url: true,
+                },
+                {resources: ["c.js"], matches: ["https://example.org/*"], use_dynamic_url: false},
+            ]);
+        }
+    );
+
+    it("preserves extension-only access and normalizes wildcard extension IDs", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .addAccessibleResource({resources: ["a.js"], extensionIds: ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]})
+            .raw({web_accessible_resources: [{resources: ["a.js"], extension_ids: ["*"]}]})
+            .build();
+
+        expect(manifest.web_accessible_resources).toEqual([{resources: ["a.js"], extension_ids: ["*"]}]);
+    });
+
+    it("converts legacy resource lists to global access when building MV3", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .raw({web_accessible_resources: ["a.js", "a.js", "nested/*"]})
+            .build();
+
+        expect(manifest.web_accessible_resources).toEqual([
+            {resources: ["a.js", "nested/*"], matches: ["<all_urls>"], extension_ids: ["*"]},
+        ]);
+    });
+
+    it("preserves every origin when raw and generated resources only partially overlap", () => {
+        const manifest = new ManifestV3(Browser.Chrome)
+            .setDependencies(new Map([["entry", dependency(["entry.js"], [], ["a.js", "b.js"])]]))
+            .setContentScripts(new Set([{entry: "entry", matches: ["https://example.com/*", "http://example.org/*"]}]))
+            .raw({web_accessible_resources: [{resources: ["a.js"], matches: ["https://*/*"]}]})
+            .build();
+
+        expect(manifest.web_accessible_resources).toEqual([
+            {resources: ["a.js", "b.js"], matches: ["http://example.org/*", "https://example.com/*"]},
+            {resources: ["a.js"], matches: ["https://*/*"]},
+        ]);
+    });
+
     it("groups web accessible resources by match patterns", () => {
         const manifest: any = new ManifestV3(Browser.Chrome)
             .setDependencies(
@@ -167,23 +321,23 @@ describe("ManifestV3", () => {
             )
             .setContentScripts(
                 new Set([
-                    {matches: ["https://site.com/*"], entry: "entry"},
-                    {matches: ["https://other.com/*"], entry: "entry2"},
+                    {matches: ["https://example.com/*"], entry: "entry"},
+                    {matches: ["https://example.org/*"], entry: "entry2"},
                 ])
             )
-            .addAccessibleResource({resources: ["img/common.png"], matches: ["https://site.com/*"]})
+            .addAccessibleResource({resources: ["img/common.png"], matches: ["https://example.com/*"]})
             .raw({
                 web_accessible_resources: [
-                    {resources: ["img/raw.png", "img/a.png"], matches: ["https://site.com/*"]},
-                    {resources: ["img/onlyraw.png"], matches: ["https://other.com/*"]},
+                    {resources: ["img/raw.png", "img/a.png"], matches: ["https://example.com/*"]},
+                    {resources: ["img/onlyraw.png"], matches: ["https://example.org/*"]},
                 ],
             })
             .build();
 
         const resources: any[] = manifest.web_accessible_resources;
         const byMatches = (pattern: string) => resources.find(r => (r.matches || []).includes(pattern));
-        const site = byMatches("https://site.com/*");
-        const other = byMatches("https://other.com/*");
+        const site = byMatches("https://example.com/*");
+        const other = byMatches("https://example.org/*");
 
         expect(site.resources).toEqual(
             expect.arrayContaining(["img/a.png", "img/b.png", "img/common.png", "img/raw.png"])

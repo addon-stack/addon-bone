@@ -5,6 +5,7 @@ export * from "./command";
 export * from "./config";
 export * from "./content";
 export * from "./csp";
+export * from "./entrypoint";
 export * from "./env";
 export * from "./icon";
 export * from "./manifest";

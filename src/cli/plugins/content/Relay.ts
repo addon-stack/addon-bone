@@ -4,6 +4,7 @@ import {ContentProvider} from "./types";
 
 import {RelayFinder} from "@cli/entrypoint";
 import {virtualRelayModule} from "@cli/virtual";
+import {isContentScriptFrameNavigation} from "@shared/content";
 
 import {RelayMethod, RelayOptions} from "@typing/relay";
 import {ContentScriptEntrypointOptions} from "@typing/content";
@@ -20,14 +21,14 @@ export default class extends RelayFinder implements ContentProvider<ContentScrip
      * Before creating the virtual module, it is necessary to run a command `await this.transport()` that caches the Relays.
      * This command is executed during the type declaration generation stage for the Relays.
      */
-    public virtual(file: EntrypointFile): string {
+    public virtual(file: EntrypointFile, contentOptions?: ContentScriptEntrypointOptions): string {
         const options = this._transport?.get(file)?.options;
 
         if (!options) {
             throw new Error(`Relay options not found for "${file}"`);
         }
 
-        return virtualRelayModule(file, options.name);
+        return virtualRelayModule(file, options.name, isContentScriptFrameNavigation(contentOptions?.isolation));
     }
 
     public async getOptionsMap(): Promise<Record<string, RelayOptions>> {

@@ -1,119 +1,198 @@
-import {Configuration as RspackConfig, DefinePlugin, NormalModule} from "@rspack/core";
-import {merge as mergeConfig} from "webpack-merge";
+import type {Chunk, Configuration as RspackConfig, NormalModule, Plugins} from "@rspack/core";
 
 import ContentManager from "./ContentManager";
 import Content from "./Content";
 import Relay from "./Relay";
 import RelayDeclaration from "./RelayDeclaration";
+import {hasIsolatedTarget} from "./utils";
+import {createPageAccessRequirements, getContentChunkName, validateContentStyles} from "./bundler";
+import {createRelayModule, RelayModuleName} from "./relay-module";
 
 import {definePlugin} from "@main/plugin";
+import {PageFinder} from "@cli/entrypoint";
+import {getContentLayer} from "@cli/bundler/utils/layers";
 
-import {EntrypointPlugin, onlyViaTopLevelEntry} from "@cli/bundler";
-import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
+import {
+    appFilenameResolver,
+    ChunkLoaderPlugin,
+    EntrypointPlugin,
+    onlyViaTopLevelEntry,
+    IsolatedStylesPlugin,
+    ResourceAccessPlugin,
+    GenerateModulePlugin,
+} from "@cli/bundler";
 
 import {Command} from "@typing/app";
-import {RelayOptions} from "@typing/relay";
+import {ContentScriptStylesRuntimeProperty, ContentScriptWorld} from "@typing/content";
 
 export default definePlugin(() => {
-    let content: Content;
-    let relay: Relay;
-    let manager: ContentManager;
+    let contentProvider: Content;
+    let relayProvider: Relay;
+    let contentManager: ContentManager;
     let relayDeclaration: RelayDeclaration;
 
     return {
         name: "adnbn:content",
-        startup: async ({config}) => {
-            content = new Content(config);
-            relay = new Relay(config);
+        startup: ({config}) => {
+            contentProvider = new Content(config);
+            relayProvider = new Relay(config);
 
             // prettier-ignore
-            manager = new ContentManager(config)
-                .provider(content)
-                .provider(relay);
+            contentManager = new ContentManager(config)
+                .provider(contentProvider)
+                .provider(relayProvider);
 
             relayDeclaration = new RelayDeclaration(config);
         },
-        content: () => content.files(),
-        relay: () => relay.files(),
+        content: () => contentProvider.files(),
+        relay: () => relayProvider.files(),
         bundler: async ({config}) => {
-            relayDeclaration.dictionary(await relay.dictionary()).build();
+            relayDeclaration.dictionary(await relayProvider.dictionary()).build();
 
-            let rspack: RspackConfig = {};
-            let options: Record<string, RelayOptions> = {};
+            let entryOptionsByName = await contentManager.entryOptions();
 
-            if (await manager.empty()) {
+            const getModules = async () => ({
+                [RelayModuleName]: createRelayModule(await relayProvider.getOptionsMap()),
+            });
+            const modulePlugin = new GenerateModulePlugin(await getModules());
+
+            if (config.command === Command.Watch) {
+                modulePlugin.watch(getModules);
+            }
+
+            const basePlugins: Plugins = [
+                modulePlugin,
+                new ResourceAccessPlugin({
+                    requirements: async () => {
+                        if (
+                            !Array.from(entryOptionsByName.values()).some(
+                                options => options.isolation?.page !== undefined
+                            )
+                        ) {
+                            return [];
+                        }
+
+                        const views = await new PageFinder(config).views();
+                        const pages = new Map(Array.from(views.values(), view => [view.alias, view.filename]));
+                        return createPageAccessRequirements(entryOptionsByName, pages);
+                    },
+                }),
+            ];
+
+            if (await contentManager.empty()) {
                 if (config.debug) {
                     console.warn("Content script or relay entries not found");
                 }
-            } else {
-                options = await relay.getOptionsMap();
 
-                // prettier-ignore
-                const plugin = EntrypointPlugin.from(await manager.entries())
-                    .virtual(file => manager.virtual(file));
-
-                if (config.command === Command.Watch) {
-                    plugin.watch(async () => {
-                        manager.clear();
-
-                        relayDeclaration.dictionary(await relay.dictionary()).build();
-
-                        return manager.entries();
-                    });
-                }
-
-                const entryTypeFilter = onlyViaTopLevelEntry(["content", "relay"]);
-
-                rspack = {
-                    plugins: [plugin],
-                    optimization: {
-                        splitChunks: {
-                            cacheGroups: {
-                                adnbnContent: {
-                                    minChunks: 2,
-                                    name: manager.chunkName(),
-                                    test: (module, context) => {
-                                        const nm = module as NormalModule;
-
-                                        if (!nm.resource) {
-                                            return false;
-                                        }
-
-                                        if (nm.resource.startsWith(getResolvePath(getSourcePath(config)))) {
-                                            return false;
-                                        }
-
-                                        return entryTypeFilter(module, context);
-                                    },
-                                    chunks: (chunk): boolean => {
-                                        return manager.likely(chunk.name);
-                                    },
-                                    enforce: false,
-                                    reuseExistingChunk: true,
-                                    priority: 20,
-                                },
-                            },
-                        },
-                    },
-                };
+                return {plugins: basePlugins};
             }
 
-            return mergeConfig(rspack, {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_RELAY_OPTIONS__: JSON.stringify(options),
-                    }),
-                ],
+            const entries = await contentManager.entries();
+            const getEntryWorld = (name: string): ContentScriptWorld => {
+                const options = entryOptionsByName.get(name);
+
+                if (!options) {
+                    throw new Error(`Execution world for content entrypoint "${name}" is unavailable`);
+                }
+
+                return options.world === ContentScriptWorld.Main
+                    ? ContentScriptWorld.Main
+                    : ContentScriptWorld.Isolated;
+            };
+
+            // prettier-ignore
+            const entrypointPlugin = EntrypointPlugin.from(entries)
+                .virtual(file => contentManager.virtual(file))
+                .entryOptions(name => {
+                    const world = getEntryWorld(name);
+
+                    return {
+                        // MAIN cannot resolve an installed extension URL without crossing contexts.
+                        // ISOLATED keeps physical async chunks and resolves them through the extension API.
+                        asyncChunks: world === ContentScriptWorld.Isolated,
+                        layer: getContentLayer(world),
+                        publicPath: "",
+                    };
+                });
+
+            if (config.command === Command.Watch) {
+                entrypointPlugin.watch(async () => {
+                    contentManager.clear();
+
+                    relayDeclaration.dictionary(await relayProvider.dictionary()).build();
+
+                    const entries = await contentManager.entries();
+                    entryOptionsByName = await contentManager.entryOptions();
+
+                    return entries;
+                });
+            }
+
+            const isContentModule = onlyViaTopLevelEntry(["content", "relay"]);
+
+            const createCacheGroup = (world: ContentScriptWorld) => ({
+                minChunks: 2,
+                name: getContentChunkName(world),
+                test: (
+                    module: Parameters<typeof isContentModule>[0],
+                    context: Parameters<typeof isContentModule>[1]
+                ) => {
+                    const normalModule = module as NormalModule;
+
+                    if (!normalModule.resource) {
+                        return false;
+                    }
+
+                    return isContentModule(module, context);
+                },
+                chunks: (chunk: Chunk): boolean =>
+                    chunk.name !== undefined &&
+                    entryOptionsByName.has(chunk.name) &&
+                    getEntryWorld(chunk.name) === world,
+                enforce: false,
+                reuseExistingChunk: false,
+                priority: 20,
             });
+
+            return {
+                plugins: [
+                    entrypointPlugin,
+                    new ChunkLoaderPlugin({
+                        test: entry =>
+                            entryOptionsByName.has(entry) && getEntryWorld(entry) === ContentScriptWorld.Isolated,
+                    }),
+                    new IsolatedStylesPlugin({
+                        cssFilename: appFilenameResolver(config.app, config.cssFilename, config.cssDir),
+                        cssChunkFilename: appFilenameResolver(config.app, config.cssFilename, config.cssDir),
+                        property: ContentScriptStylesRuntimeProperty,
+                        test: entry => {
+                            const options = entryOptionsByName.get(entry);
+                            return options !== undefined && hasIsolatedTarget(options);
+                        },
+                        validate: (entry, files) => validateContentStyles(entry, entryOptionsByName.get(entry), files),
+                    }),
+                    ...basePlugins,
+                ],
+                optimization: config.commonChunks
+                    ? {
+                          splitChunks: {
+                              cacheGroups: {
+                                  adnbnContentIsolated: createCacheGroup(ContentScriptWorld.Isolated),
+                                  adnbnContentMain: createCacheGroup(ContentScriptWorld.Main),
+                              },
+                          },
+                      }
+                    : undefined,
+            } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {
             // prettier-ignore
             manifest
-                .setContentScripts(await manager.manifest())
-                .appendHostPermissions(await manager.hostPermissions())
-                .appendOptionalHostPermissions(await manager.optionalHostPermissions())
-                .appendPermissions(await manager.permissions())
-                .appendOptionalPermissions(await manager.optionalPermissions());
+                .setContentScripts(await contentManager.manifest())
+                .appendHostPermissions(await contentManager.hostPermissions())
+                .appendOptionalHostPermissions(await contentManager.optionalHostPermissions())
+                .appendPermissions(await contentManager.permissions())
+                .appendOptionalPermissions(await contentManager.optionalPermissions());
         },
     };
 });

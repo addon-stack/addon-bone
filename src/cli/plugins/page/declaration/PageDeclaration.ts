@@ -20,11 +20,10 @@ export default class extends FileBuilder {
     protected template(): string {
         let content = this.readFile();
 
-        if (this.alias.size > 0) {
-            const type = '"' + Array.from(this.alias).join('" | "') + '"';
-
-            content = content.replace("type PageAlias = string", `type PageAlias = ${type}`);
-        }
+        content = content.replace(
+            "// :page-aliases",
+            Array.from(this.alias, alias => `${JSON.stringify(alias)}: true;`).join("\n        ")
+        );
 
         return content;
     }

@@ -1,15 +1,16 @@
 import Builder from "./Builder";
-import Node from "./Node";
-import MountNode from "./MountNode";
-import MarkerNode from "./MarkerNode";
 
-import {ContentScriptNode, ContentScriptProps, ContentScriptRenderValue} from "@typing/content";
+import {FrameNode, MountNode, MarkerNode, ShadowNode, Node} from "./nodes";
+
+import {isContentScriptFrameNavigation} from "@shared/content";
+
+import {ContentScriptIsolation, ContentScriptNode, ContentScriptProps, ContentScriptRenderValue} from "@typing/content";
 
 export default abstract class extends Builder {
     private values = new Map<Element, null | ContentScriptRenderValue>();
 
     protected getProps(anchor: Element): ContentScriptProps {
-        const {anchor: _, mount, watch, render, container, main, ...options} = this.definition;
+        const {anchor: _, mount, watch, render, container, main, isolation, ...options} = this.definition;
 
         return {...options, anchor};
     }
@@ -39,11 +40,23 @@ export default abstract class extends Builder {
 
         const value = await this.getValue(anchor);
 
-        if (typeof value !== "boolean" && value !== undefined) {
+        if (
+            isContentScriptFrameNavigation(this.definition.isolation) ||
+            (typeof value !== "boolean" && value !== undefined)
+        ) {
             container = (await this.definition.container(this.getProps(anchor))) as Element | undefined;
         }
 
-        return new MountNode(new MarkerNode(new Node(anchor, container), this.marker), this.definition.mount);
+        const node = new MountNode(new MarkerNode(new Node(anchor, container), this.marker), this.definition.mount);
+
+        switch (this.definition.isolation.type) {
+            case ContentScriptIsolation.Shadow:
+                return new ShadowNode(node, this.definition.isolation);
+            case ContentScriptIsolation.Iframe:
+                return new FrameNode(node, this.definition.isolation, () => this.context.mount());
+            default:
+                return node;
+        }
     }
 
     protected cleanupNode(anchor: Element): void {

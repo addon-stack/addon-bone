@@ -144,6 +144,63 @@ describe("ManifestV2", () => {
         expect(manifest.optional_permissions).not.toEqual(expect.arrayContaining(["https://required.example.com/*"]));
     });
 
+    it("removes specific URLs covered by a domain wildcard from combined sources", () => {
+        const manifest = new ManifestV2(Browser.Chrome)
+            .addHostPermission("https://sub.example.com/file.json")
+            .raw({host_permissions: ["https://*.example.com/*"]})
+            .build();
+
+        expect(manifest.permissions).toEqual(["https://*.example.com/*"]);
+    });
+
+    it("removes optional URLs already covered by required host permissions", () => {
+        const manifest = new ManifestV2(Browser.Chrome)
+            .addHostPermission("https://*.example.com/*")
+            .addOptionalHostPermission("https://sub.example.com/file.json")
+            .build();
+
+        expect(manifest.permissions).toEqual(["https://*.example.com/*"]);
+        expect(manifest.optional_permissions).toBeUndefined();
+    });
+
+    it("simplifies optional hosts while retaining unrelated hosts and schemes", () => {
+        const manifest = new ManifestV2(Browser.Chrome)
+            .addOptionalHostPermission("https://sub.example.com/file.json")
+            .raw({optional_host_permissions: ["https://*.example.com/*"]})
+            .addOptionalHostPermission("http://sub.example.com/file.json")
+            .addOptionalHostPermission("https://example.org/*")
+            .build();
+
+        expect(new Set(manifest.optional_permissions)).toEqual(
+            new Set(["https://*.example.com/*", "http://sub.example.com/file.json", "https://example.org/*"])
+        );
+    });
+
+    it("keeps required access when a broader host permission is optional", () => {
+        const manifest = new ManifestV2(Browser.Chrome)
+            .addHostPermission("https://sub.example.com/file.json")
+            .addOptionalHostPermission("https://*.example.com/*")
+            .build();
+
+        expect(manifest.permissions).toEqual(["https://sub.example.com/file.json"]);
+        expect(manifest.optional_permissions).toEqual(["https://*.example.com/*"]);
+    });
+
+    it.each([Browser.Chrome, Browser.Firefox])(
+        "preserves raw MV2 resource lists alongside generated resources in %s",
+        browser => {
+            const manifest = new ManifestV2(browser)
+                .setDependencies(new Map([["entry", dependency(["entry.js"], [], ["a.js"])]]))
+                .setContentScripts(new Set([{entry: "entry", matches: ["https://example.com/path/*"]}]))
+                .addAccessibleResource({resources: ["b.js"], matches: ["https://example.org/*"]})
+                .raw({web_accessible_resources: ["a.js", "c.js", "nested/*", "c.js"]})
+                .raw({web_accessible_resources: [{resources: ["d.js"], extension_ids: ["*"], use_dynamic_url: true}]})
+                .build();
+
+            expect(manifest.web_accessible_resources?.sort()).toEqual(["a.js", "b.js", "c.js", "d.js", "nested/*"]);
+        }
+    );
+
     it("flattens web accessible resources", () => {
         const manifest: any = new ManifestV2(Browser.Chrome)
             .setDependencies(
@@ -154,15 +211,15 @@ describe("ManifestV2", () => {
             )
             .setContentScripts(
                 new Set([
-                    {matches: ["https://site.com/*"], entry: "entry"},
-                    {matches: ["https://other.com/*"], entry: "entry2"},
+                    {matches: ["https://example.com/*"], entry: "entry"},
+                    {matches: ["https://example.org/*"], entry: "entry2"},
                 ])
             )
-            .addAccessibleResource({resources: ["img/common.png"], matches: ["https://site.com/*"]})
+            .addAccessibleResource({resources: ["img/common.png"], matches: ["https://example.com/*"]})
             .raw({
                 web_accessible_resources: [
-                    {resources: ["img/raw.png", "img/a.png"], matches: ["https://site.com/*"]},
-                    {resources: ["img/onlyraw.png"], matches: ["https://other.com/*"]},
+                    {resources: ["img/raw.png", "img/a.png"], matches: ["https://example.com/*"]},
+                    {resources: ["img/onlyraw.png"], matches: ["https://example.org/*"]},
                 ],
             })
             .build();

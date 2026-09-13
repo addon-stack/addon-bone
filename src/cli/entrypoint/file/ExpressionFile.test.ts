@@ -1,10 +1,53 @@
 import path from "path";
-jest.mock("./resolvers", () => jest.requireActual("./resolvers/tests/resolvers.mock"));
 import ExpressionFile from "./ExpressionFile";
+import {ImportResolver, TsResolver} from "./resolvers";
 
 const fixtures = path.resolve(__dirname, "tests", "fixtures", "expression");
 
 describe("ExpressionFile", () => {
+    describe("Default export descriptions", () => {
+        const describeExport = (name: string) =>
+            ExpressionFile.make(path.join(fixtures, "default-exports", name)).getDefaultExport();
+
+        test.each([
+            ["function.ts", "function"],
+            ["arrow.ts", "function"],
+            ["Handler.ts", "class"],
+            ["jsx.tsx", "jsx"],
+            ["local-function.ts", "function"],
+            ["imported-function.ts", "function"],
+            ["reexported-function.ts", "function"],
+        ])("describes %s without entrypoint-specific semantics", (name, kind) => {
+            expect(describeExport(name)?.kind).toBe(kind);
+        });
+
+        test.each(["object.ts", "imported-object.ts"])("describes the properties of %s", name => {
+            expect(describeExport(name)).toEqual({kind: "object", properties: ["enabled", "handler"]});
+        });
+
+        test("does not include named exports in the default object's properties", () => {
+            expect(describeExport("unrelated-property.ts")).toEqual({kind: "object", properties: ["enabled"]});
+        });
+
+        test.each([
+            ["string.ts", "string", "panel"],
+            ["empty-string.ts", "string", ""],
+            ["number.ts", "number", 0],
+        ])("retains primitive values from %s", (name, kind, value) => {
+            expect(describeExport(name)).toEqual({kind, properties: [], value});
+        });
+
+        test.each(["named-only.ts", "type-only.ts"])("does not invent a runtime default export in %s", name => {
+            expect(describeExport(name)).toBeUndefined();
+        });
+
+        test("resolves export aliases using the configured project's TypeScript options", () => {
+            const root = path.join(fixtures, "default-exports");
+            const file = ExpressionFile.make(path.join(root, "aliased-function.ts"));
+            file.setImportResolver(new ImportResolver(TsResolver.make(path.join(root, "tsconfig.json"))));
+            expect(file.getDefaultExport()?.kind).toBe("function");
+        });
+    });
     describe("Class Exports", () => {
         describe("Basic Class Factories", () => {
             test("class factory function returning class instance", () => {

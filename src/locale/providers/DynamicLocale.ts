@@ -1,72 +1,94 @@
-import {flattenLocaleMessages, getLocaleFilename} from "../utils";
+import {getI18nMessage} from "@addon-core/browser";
 
-import {Storage, type StorageProvider} from "@addon-core/storage";
+import catalogue, {keys, lang as defaultLanguage, languages} from "#adnbn/locale";
 
-import NativeLocale, {LocaleNativeStructure} from "./NativeLocale";
-import CustomLocale, {CustomLocaleData} from "./CustomLocale";
+import AbstractLocale from "./AbstractLocale";
+import {LocaleStorage} from "../storage";
 
-import {Language, LanguageCodes, LocaleDynamicProvider, LocaleMessages} from "@typing/locale";
+import {convertLocaleKey, resolveLanguage} from "@shared/locale";
+import {
+    Language,
+    LocaleCustomKeyForLanguage,
+    type LocaleDynamicProvider,
+    type LocaleRegistry,
+    type LocaleStorageDriver,
+} from "@typing/locale";
 
-export default class<T extends object = LocaleNativeStructure>
-    extends NativeLocale<T>
+export default class DynamicLocale<T extends object = LocaleRegistry>
+    extends AbstractLocale<T>
     implements LocaleDynamicProvider<T>
 {
-    protected cache = new Map<Language, CustomLocaleData>();
+    private language!: Language;
+    private data!: Readonly<Record<string, string>>;
 
-    protected locale?: CustomLocale<T>;
-
-    protected storage?: StorageProvider<Record<string, Language>>;
-    protected storageKey?: string;
-
+    protected storage?: LocaleStorageDriver;
     protected unsubscribe?: () => void;
 
-    constructor(storage: string | false = "lang") {
+    constructor(storage?: LocaleStorageDriver | false) {
         super();
 
-        if (storage) {
-            this.storageKey = storage;
-            this.storage = Storage.Local();
+        let marker: string | undefined;
+
+        try {
+            marker = getI18nMessage(LocaleCustomKeyForLanguage);
+        } catch {
+            // MAIN has no extension i18n; use the configured language from the bundled catalogue.
         }
+
+        this.select(resolveLanguage(marker) ?? defaultLanguage);
+
+        this.storage = storage === false ? undefined : (storage ?? new LocaleStorage());
     }
 
-    public async change(lang: Language): Promise<Language> {
-        if (lang === this.lang()) {
-            return lang;
+    /**
+     * Selects a language synchronously without saving it.
+     * With storage enabled, a later sync() or watched storage update can replace this local selection.
+     * @throws If the language is absent from the catalogue.
+     */
+    public select(lang: Language): Language {
+        if (!Object.hasOwn(catalogue, lang)) {
+            throw new Error(`[DynamicLocale] Language "${lang}" is not available in the catalogue.`);
         }
 
-        const messages = await this.fetch(lang);
+        this.language = lang;
+        this.data = catalogue[lang]!;
 
-        (this.locale ??= new CustomLocale()).setLang(lang).setData(messages);
+        return lang;
+    }
 
-        if (this.storage && this.storageKey) {
-            await this.storage.set(this.storageKey, lang);
+    /** Selects a language immediately and saves it when storage is enabled. */
+    public async change(lang: Language): Promise<Language> {
+        this.select(lang);
+
+        if (this.storage) {
+            await this.storage.set(lang);
         }
 
         return lang;
     }
 
     public async sync(): Promise<Language> {
-        if (!this.storage || !this.storageKey) {
+        if (!this.storage) {
             throw new Error("Language is not saving in storage");
         }
 
-        const lang = await this.storage.get(this.storageKey);
+        const lang = await this.storage.get();
 
         if (!lang) {
             return this.lang();
         }
 
-        if (!LanguageCodes.has(lang)) {
+        if (!Object.hasOwn(catalogue, lang)) {
             console.warn(`Incorrect language code in storage - "${lang}"`);
 
             return this.lang();
         }
 
-        return this.change(lang);
+        return this.select(lang);
     }
 
     public watch(handler?: (lang: Language) => void): () => void {
-        if (!this.storage || !this.storageKey) {
+        if (!this.storage) {
             throw new Error("Language is not saved in storage");
         }
 
@@ -74,14 +96,13 @@ export default class<T extends object = LocaleNativeStructure>
             throw new Error("Already subscribed to language changes in storage");
         }
 
-        this.unsubscribe = this.storage.watch({
-            [this.storageKey]: newValue => {
-                if (newValue) {
-                    this.change(newValue)
-                        .then(() => handler && handler(newValue))
-                        .catch(err => console.error("Error while changing language:", err));
-                }
-            },
+        this.unsubscribe = this.storage.watch(lang => {
+            try {
+                this.select(lang);
+                handler?.(lang);
+            } catch (error) {
+                console.error("Error while changing language:", error);
+            }
         });
 
         return this.unwatch.bind(this);
@@ -93,28 +114,25 @@ export default class<T extends object = LocaleNativeStructure>
     }
 
     public lang(): Language {
-        return this.locale?.lang() || super.lang();
+        return this.language;
+    }
+
+    /** Completed messages for the current language, with underscore keys and no substitutions applied. */
+    public messages(): Readonly<Record<string, string>> {
+        return this.data;
+    }
+
+    public keys(): Set<keyof T> {
+        return new Set(keys) as Set<keyof T>;
+    }
+
+    public langs(): ReadonlySet<Language> {
+        return new Set(languages);
     }
 
     protected value(key: Extract<keyof T, string>): string | undefined {
-        return this.locale?.get(key) ?? super.value(key);
-    }
+        const name = convertLocaleKey(key);
 
-    protected async fetch(lang: Language): Promise<CustomLocaleData> {
-        let messages = this.cache.get(lang);
-
-        if (!messages) {
-            const response: LocaleMessages = await (await fetch(getLocaleFilename(lang))).json();
-
-            if (!response || typeof response !== "object") {
-                throw new Error(`Invalid or empty locale data for "${lang}"`);
-            }
-
-            messages = flattenLocaleMessages(response);
-
-            this.cache.set(lang, messages);
-        }
-
-        return messages;
+        return Object.hasOwn(this.data, name) ? this.data[name] : undefined;
     }
 }

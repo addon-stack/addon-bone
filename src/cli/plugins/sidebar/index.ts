@@ -1,12 +1,13 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
 import Sidebar, {SidebarNameToManifest} from "./Sidebar";
+import {createSidebarModule, SidebarModuleName} from "./sidebar-module";
 
 import {SidebarDeclaration} from "./declaration";
 
@@ -49,7 +50,7 @@ export default definePlugin(() => {
 
             const plugins: Plugins = [];
 
-            let alias: SidebarNameToManifest = new Map();
+            let alias: SidebarNameToManifest = {};
 
             if (build) {
                 alias = await sidebar.manifestByAlias();
@@ -74,8 +75,8 @@ export default definePlugin(() => {
 
             return {
                 plugins: [
-                    new DefinePlugin({
-                        __ADNBN_SIDEBAR_MAP__: JSON.stringify(alias),
+                    new GenerateModulePlugin({
+                        [SidebarModuleName]: createSidebarModule(alias),
                     }),
                     ...plugins,
                 ],

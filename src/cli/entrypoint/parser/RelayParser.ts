@@ -15,7 +15,12 @@ export default class extends ContentParser<RelayEntrypointOptions> {
         return "init";
     }
 
-    protected schema(): typeof this.CommonPropertiesSchema {
+    /** A Relay's default function initializes its transport; it is never an implicit content renderer. */
+    protected hasDefaultRender(): boolean {
+        return false;
+    }
+
+    protected schema() {
         return super.schema().extend({
             allFrames: z.union([z.boolean(), z.nativeEnum(RelayAllFrames)]).optional(),
             name: z

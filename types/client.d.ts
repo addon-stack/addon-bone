@@ -309,3 +309,18 @@ declare module "*?asis" {
     const src: string;
     export default src;
 }
+
+declare module "*?isolation" {
+    const classes: Readonly<Record<string, string>>;
+    export default classes;
+}
+
+declare module "*?isolation&asis" {
+    const src: string;
+    export default src;
+}
+
+declare module "*?asis&isolation" {
+    const src: string;
+    export default src;
+}

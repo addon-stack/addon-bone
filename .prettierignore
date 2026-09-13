@@ -1,7 +1,7 @@
 node_modules/
 .github/workflows/
 dist/
-build/
+/build/
 addon/
 src/cli/entrypoint/file/tests/fixtures/
 CHANGELOG.md

@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-import {convertLocaleKey} from "@locale/utils";
+import {convertLocaleKey, parsePlaceholders} from "@shared/locale";
 
 import {LocaleError} from "./LocaleValidator";
 
@@ -74,19 +74,6 @@ export default class LocaleBuilder implements LocaleBuilderContract {
     }
 
     public structure(): LocaleStructure {
-        const substitutions = (value: string): string[] => {
-            const pattern = /{{([^{}]+)}}/g;
-            const substitutions: string[] = [];
-
-            let match: RegExpExecArray | null;
-
-            while ((match = pattern.exec(value)) !== null) {
-                substitutions.push(match[1].trim());
-            }
-
-            return _.uniq(substitutions.filter(Boolean)).sort();
-        };
-
         return this.get()
             .entries()
             .reduce(
@@ -94,7 +81,7 @@ export default class LocaleBuilder implements LocaleBuilderContract {
                     ...structure,
                     [key]: {
                         plural: value.includes(LocaleValuesSeparator),
-                        substitutions: substitutions(value),
+                        substitutions: _.uniq(parsePlaceholders(value).map(placeholder => placeholder.name)).sort(),
                     },
                 }),
                 {} as LocaleStructure

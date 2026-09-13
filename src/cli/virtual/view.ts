@@ -1,5 +1,4 @@
 import type {ViewDefinition, ViewOptions} from "adnbn";
-import {resolve} from "adnbn/locale";
 import {isViewDefinition, isValidViewDefinitionRenderValue} from "adnbn/entry/view";
 
 import view from "virtual:view-framework";
@@ -17,9 +16,7 @@ try {
         definition = {...definition, render: defaultDefinition};
     }
 
-    const {title, ...options} = definition;
-
-    view({title: title ? resolve(title) : undefined, ...options});
+    view(definition);
 } catch (e) {
     console.error("The view crashed on startup:", e);
 }

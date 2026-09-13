@@ -1,0 +1,14 @@
+{
+  "en": {
+    "greeting": "Hello {{ name }}",
+    "items": "{{count}} item|{{count}} items"
+  },
+  "fr": {
+    "greeting": "Bonjour {{ name }}",
+    "items": "{{count}} article|{{count}} articles"
+  },
+  "ar": {
+    "greeting": "مرحبًا {{ name }}",
+    "items": "{{count}} صفر|{{count}} واحد|{{count}} اثنان|{{count}} قليل|{{count}} كثير|{{count}} آخر"
+  }
+}

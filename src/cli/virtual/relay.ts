@@ -1,8 +1,9 @@
+import type {ContentScriptDefinition} from "adnbn";
 import type {TransportType} from "adnbn/transport";
 import {isValidTransportDefinition, isValidTransportInitFunction} from "adnbn/entry/transport";
 import {Builder as RelayBuilder, type RelayUnresolvedDefinition} from "adnbn/entry/relay";
 
-import {Builder as ContentScriptBuilder} from "virtual:content-framework";
+import {Builder as ContentScriptBuilder} from "virtual:content-builder";
 
 import * as module from "virtual:relay-entrypoint";
 
@@ -32,7 +33,7 @@ try {
             new ContentScriptBuilder({
                 ...contentOptions,
                 ...(allFrames === undefined ? {} : {allFrames: allFrames !== false}),
-            })
+            } as ContentScriptDefinition)
         )
         .build()
         .catch(e => {

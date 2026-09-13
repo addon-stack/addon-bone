@@ -5,8 +5,8 @@ import {merge as mergeConfig} from "webpack-merge";
 import manifestFactory from "../builders/manifest";
 import {processPluginHandler} from "./plugin";
 
-import ManifestPlugin from "@cli/bundler/plugins/ManifestPlugin";
-import WatchPlugin from "@cli/bundler/plugins/WatchPlugin";
+import ManifestPlugin from "@cli/bundler/plugins/manifest";
+import WatchPlugin from "@cli/bundler/plugins/watch";
 
 import {ReadonlyConfig} from "@typing/config";
 import {Command} from "@typing/app";
@@ -25,12 +25,14 @@ const getConfigFromPlugins = async (rspack: RspackConfig, config: ReadonlyConfig
 };
 
 const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfig> => {
-    const manifest = manifestFactory(config);
+    let manifest = manifestFactory(config);
 
-    // prettier-ignore
-    const update = () => Array.fromAsync(
-        processPluginHandler(config.plugins, "manifest", {manifest, config})
-    );
+    const update = async () => {
+        // Each compilation describes current entries; removed WAR/CSP rules must not accumulate.
+        const next = manifestFactory(config);
+        await Array.fromAsync(processPluginHandler(config.plugins, "manifest", {manifest: next, config}));
+        manifest = next;
+    };
 
     await update();
 
@@ -44,7 +46,7 @@ const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfi
         );
     }
 
-    plugins.push(new ManifestPlugin(manifest));
+    plugins.push(new ManifestPlugin(() => manifest));
 
     return {plugins};
 };

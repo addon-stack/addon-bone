@@ -1,0 +1,1 @@
+export default () => ({ping: () => "pong"});

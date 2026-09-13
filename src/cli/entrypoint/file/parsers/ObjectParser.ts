@@ -101,7 +101,12 @@ export default class ObjectParser extends AbstractParser {
      * @returns The inferred type as a string
      */
     public inferTypeFromExpression(expr: ts.Expression): string {
-        const val = this.sourceFile.parseNode(expr);
+        // Shape inference does not require every member to be a statically known value.
+        if (ts.isObjectLiteralExpression(expr)) return "object";
+        if (ts.isArrayLiteralExpression(expr)) return "array";
+        const result = this.sourceFile.parseNode(expr);
+        if (!result.resolved) return "any";
+        const val = result.value;
 
         switch (typeof val) {
             case "string":

@@ -1,9 +1,19 @@
 import {EntrypointOptions} from "@typing/entrypoint";
-import {ContentScriptConfig, ContentScriptContext, ContentScriptDefinition} from "@typing/content";
-import {TransportConfig, TransportDefinition, TransportType, type TransportProxyTarget} from "@typing/transport";
+import {
+    ContentScriptConfig,
+    ContentScriptContext,
+    ContentScriptDefinition,
+    ContentScriptEntrypointOptions,
+} from "@typing/content";
+import {
+    TransportConfig,
+    TransportDefinition,
+    TransportType,
+    type TransportProxyTarget,
+    type TransportTarget,
+} from "@typing/transport";
 import {Awaiter} from "@typing/helpers";
 import type {MessageError} from "@typing/message";
-import type {RelayRegistry} from "@relay/index";
 
 export const RelayGlobalKey = "adnbnRelay";
 
@@ -33,6 +43,14 @@ export enum RelayFrameErrorKind {
     TargetGone = "target-gone",
     Unobservable = "unobservable",
 }
+
+/**
+ * Empty because relay names and contracts belong to the consuming application.
+ * Generated `.adnbn/relay.d.ts` declarations populate it by augmenting `adnbn/relay`.
+ */
+export interface RelayRegistry {}
+
+export type RelayName = Extract<keyof RelayRegistry, string>;
 
 export type RelayNonEmptyReadonlyArray<T> = readonly [T, ...T[]];
 
@@ -166,6 +184,8 @@ export type RelayBatchRpcProxy<T> = {
 
 export type RelayBatchRpcProxyObject<T> = (() => Promise<RelayFramesResult<Awaited<T>>>) & RelayBatchRpcProxy<T>;
 
+export type RelayTarget<N extends keyof RelayRegistry> = TransportTarget<RelayRegistry, N>;
+
 export type RelayProxyTarget<N extends keyof RelayRegistry> = TransportProxyTarget<RelayRegistry, N>;
 
 export type RelayBatchProxyTarget<N extends keyof RelayRegistry> = RelayBatchRpcProxy<RelayRegistry[N]>;
@@ -179,7 +199,7 @@ export type RelayOptions = RelayConfig & EntrypointOptions;
 
 export type RelayOptionsMap = Map<string, RelayOptions>;
 
-export type RelayEntrypointOptions = Partial<RelayOptions>;
+export type RelayEntrypointOptions = Partial<RelayOptions> & Pick<ContentScriptEntrypointOptions, "isolation">;
 
 export type RelayMainHandler<T extends TransportType> = (
     relay: T,
@@ -187,12 +207,13 @@ export type RelayMainHandler<T extends TransportType> = (
     options: RelayEntrypointOptions
 ) => Awaiter<void>;
 
-export interface RelayDefinition<T extends TransportType>
-    extends
-        Omit<TransportDefinition<RelayOptions, T>, "main">,
-        Omit<ContentScriptDefinition, "main" | "allFrames">,
-        RelayEntrypointOptions {
-    main?: RelayMainHandler<T>;
-}
+type RelayContentDefinition<T = ContentScriptDefinition> = T extends unknown ? Omit<T, "main" | "allFrames"> : never;
 
-export type RelayUnresolvedDefinition<T extends TransportType> = Partial<RelayDefinition<T>>;
+export type RelayDefinition<T extends TransportType> = Omit<TransportDefinition<RelayOptions, T>, "main"> &
+    RelayContentDefinition &
+    Partial<RelayOptions> & {
+        main?: RelayMainHandler<T>;
+    };
+
+/** Internal, merged runtime input. The public definition retains its discriminated union. */
+export type RelayUnresolvedDefinition<T extends TransportType> = Partial<Omit<RelayDefinition<T>, never>>;

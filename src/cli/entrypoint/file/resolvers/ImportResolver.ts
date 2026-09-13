@@ -20,6 +20,10 @@ export default class {
         return this;
     }
 
+    public getTs(): TsResolver {
+        return this.ts;
+    }
+
     public setBaseDir(baseDir: string): this {
         this.baseDir = baseDir;
 

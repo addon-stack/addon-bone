@@ -24,7 +24,7 @@ export interface ContentDriver<O extends ContentScriptEntrypointOptions> {
 }
 
 export interface ContentProvider<O extends ContentScriptEntrypointOptions> {
-    virtual(file: EntrypointFile): string;
+    virtual(file: EntrypointFile, options?: ContentScriptEntrypointOptions): string;
 
     driver(): ContentDriver<O>;
 

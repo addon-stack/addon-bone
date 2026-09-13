@@ -2,7 +2,7 @@ import {FileBuilder} from "@cli/plugins/typescript";
 
 import {ReadonlyConfig} from "@typing/config";
 
-export default class extends FileBuilder {
+export default class IconDeclaration extends FileBuilder {
     protected names = new Set<string>();
 
     constructor(config: ReadonlyConfig) {
@@ -20,11 +20,10 @@ export default class extends FileBuilder {
     protected template(): string {
         let content = this.readFile();
 
-        if (this.names.size > 0) {
-            const type = '"' + Array.from(this.names).join('" | "') + '"';
-
-            content = content.replace("type IconName = string", `type IconName = ${type}`);
-        }
+        content = content.replace(
+            "// :icon-names",
+            Array.from(this.names, name => `${JSON.stringify(name)}: true;`).join("\n        ")
+        );
 
         return content;
     }

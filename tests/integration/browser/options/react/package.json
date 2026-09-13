@@ -1,5 +1,12 @@
 {
-  "name": "addon-bone-options-react-fixture",
+  "name": "adnbn-test-options-react",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "adnbn": "file:../../../../..",
+    "react": "*",
+    "react-dom": "*",
+    "scheduler": "*"
+  }
 }

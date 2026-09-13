@@ -4,6 +4,7 @@ import {UnsupportedMessageTargetError} from "@message/error";
 import {
     MessageData,
     MessageDictionary,
+    MessageRegistry,
     MessageGeneralHandler,
     MessageMapHandler,
     MessageResponse,
@@ -15,6 +16,7 @@ import {
 } from "@typing/message";
 
 export type {
+    MessageRegistry,
     MessageData,
     MessageDictionary,
     MessageGeneralHandler,
@@ -28,8 +30,6 @@ export type {
 };
 
 export {Message, UnsupportedMessageTargetError};
-
-export interface MessageRegistry extends MessageDictionary {}
 
 export function sendMessage<K extends MessageType<MessageRegistry>>(
     type: K,

@@ -1,14 +1,14 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import Page from "./Page";
 
 import {PageDeclaration} from "./declaration";
+import {createPageModule, PageModuleName} from "./page-module";
 
 import {definePlugin} from "@main/plugin";
 import {virtualViewModule} from "@cli/virtual";
-import {EntrypointPlugin} from "@cli/bundler";
-import {ViewAliasToFilename} from "@cli/entrypoint";
+import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 
 import {Command} from "@typing/app";
 
@@ -26,17 +26,24 @@ export default definePlugin(() => {
         bundler: async ({config}) => {
             declaration.setAlias(await page.getAlias()).build();
 
-            const plugins: Plugins = [];
+            const getModules = async () => ({
+                [PageModuleName]: createPageModule(
+                    Object.fromEntries(Array.from((await page.views()).values(), item => [item.alias, item.filename]))
+                ),
+            });
+            const modulePlugin = new GenerateModulePlugin(await getModules());
 
-            let alias: ViewAliasToFilename = new Map();
+            if (config.command === Command.Watch) {
+                modulePlugin.watch(getModules);
+            }
+
+            const plugins: Plugins = [];
 
             if (await page.empty()) {
                 if (config.debug) {
                     console.info("Page entries not found");
                 }
             } else {
-                alias = await page.getAliasToFilename();
-
                 // prettier-ignore
                 const plugin = EntrypointPlugin.from(await page.view().entries())
                     .virtual(file => virtualViewModule(file));
@@ -56,12 +63,8 @@ export default definePlugin(() => {
             }
 
             return {
-                plugins: [
-                    new DefinePlugin({
-                        __ADNBN_PAGE_ALIAS__: JSON.stringify(alias),
-                    }),
-                    ...plugins,
-                ],
+                // Entrypoint watch refreshes the finder and declarations before generating the module.
+                plugins: [...plugins, modulePlugin],
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {

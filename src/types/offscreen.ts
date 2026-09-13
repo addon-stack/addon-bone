@@ -1,10 +1,18 @@
-import {TransportConfig, TransportDefinition, TransportType} from "@typing/transport";
+import {
+    TransportConfig,
+    TransportDefinition,
+    TransportProxyTarget,
+    TransportTarget,
+    TransportType,
+} from "@typing/transport";
 import {ViewOptions} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
 import {CspOptions} from "@typing/csp";
 
 export const OffscreenGlobalKey = "adnbnOffscreen";
+
 export const OffscreenGlobalAccess = "adnbnOffscreenAccess";
+
 export const OffscreenBridgeReadyMessageType = "adnbn:offscreen:ready";
 
 export enum OffscreenReason {
@@ -39,6 +47,26 @@ export enum OffscreenReason {
     /** Specifies that the offscreen document needs to use navigator.geolocation. */
     Geolocation = "GEOLOCATION",
 }
+
+/**
+ * Empty because offscreen names and contracts belong to the consuming application.
+ * Generated `.adnbn/offscreen.d.ts` declarations populate it by augmenting `adnbn/offscreen`.
+ */
+export interface OffscreenRegistry {}
+
+export type OffscreenName = Extract<keyof OffscreenRegistry, string>;
+
+export type OffscreenTarget<N extends keyof OffscreenRegistry> = TransportTarget<OffscreenRegistry, N>;
+
+export type OffscreenProxyTarget<N extends keyof OffscreenRegistry> = TransportProxyTarget<OffscreenRegistry, N>;
+
+export type OffscreenAlias = string;
+
+export type OffscreenMap = Map<OffscreenAlias, OffscreenParameters>;
+
+export type OffscreenParameters = chrome.offscreen.CreateParameters;
+
+export type OffscreenParametersMap = Record<string, OffscreenParameters>;
 
 export interface OffscreenConfig extends TransportConfig {
     reasons?: `${OffscreenReason}` | `${OffscreenReason}`[] | OffscreenReason | OffscreenReason[];

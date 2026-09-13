@@ -1,0 +1,11 @@
+{
+  "app": {
+    "title": "Updated catalogue",
+    "greeting": "Welcome {{name}}"
+  },
+  "items": [
+    "{{count}} item",
+    "{{count}} items"
+  ],
+  "newKey": "Added during watch"
+}

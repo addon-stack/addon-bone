@@ -8,7 +8,7 @@ import relay from "./relay.ts?raw";
 import sandbox from "./sandbox.ts?raw";
 import view from "./view.ts?raw";
 
-import {inferEntrypointFramework} from "../entrypoint/index.js";
+import {inferEntrypointFramework} from "@cli/entrypoint";
 
 import {PackageName} from "@typing/app";
 import {EntrypointFile} from "@typing/entrypoint";
@@ -41,10 +41,10 @@ export const virtualCommandModule = (file: EntrypointFile, name: string): string
     return getVirtualModule(file, "command").replace("virtual:command-name", name);
 };
 
-export const virtualContentScriptModule = (file: EntrypointFile): string => {
+export const virtualContentScriptModule = (file: EntrypointFile, navigation = false): string => {
     // prettier-ignore
     return getVirtualModule(file, "content")
-        .replace(`virtual:content-framework`, getEntryFramework(file, "content"));
+        .replace(`virtual:content-builder`, navigation ? `${PackageName}/entry/content/frame` : getEntryFramework(file, "content"));
 };
 
 export const virtualOffscreenModule = (file: EntrypointFile, name: string): string => {
@@ -57,10 +57,13 @@ export const virtualOffscreenBackgroundModule = (): string => {
     return offscreenBackground;
 };
 
-export const virtualRelayModule = (file: EntrypointFile, name: string): string => {
+export const virtualRelayModule = (file: EntrypointFile, name: string, navigation = false): string => {
     return getVirtualModule(file, "relay")
         .replace("virtual:relay-name", name)
-        .replace(`virtual:content-framework`, getEntryFramework(file, "content"));
+        .replace(
+            `virtual:content-builder`,
+            navigation ? `${PackageName}/entry/content/frame` : getEntryFramework(file, "content")
+        );
 };
 
 export const virtualSandboxModule = (file: EntrypointFile, name: string): string => {

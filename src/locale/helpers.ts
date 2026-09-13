@@ -1,6 +1,6 @@
-import {LocaleNativeStructure, NativeLocale} from "@locale/providers";
-import {convertLocaleMessageKey, extractLocaleKey} from "@locale/utils";
-import {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionArgs} from "@typing/locale";
+import {NativeLocale} from "@locale/providers";
+import {convertLocaleMessageKey, extractLocaleKey} from "@shared/locale";
+import type {LocaleNonPluralKeys, LocalePluralKeys, LocaleRegistry, LocaleSubstitutionArgs} from "@typing/locale";
 
 /**
  * Translates a non-plural locale key.
@@ -19,9 +19,9 @@ import {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionArgs} from "@ty
  * @param args
  * @returns The translated string.
  */
-export const t = <K extends LocaleNonPluralKeys<LocaleNativeStructure>>(
+export const t = <K extends LocaleNonPluralKeys<LocaleRegistry>>(
     key: K,
-    ...args: LocaleSubstitutionArgs<LocaleNativeStructure, K>
+    ...args: LocaleSubstitutionArgs<LocaleRegistry, K>
 ): string => {
     return NativeLocale.getInstance().trans(key, ...args);
 };
@@ -43,10 +43,10 @@ export const t = <K extends LocaleNonPluralKeys<LocaleNativeStructure>>(
  * @param args
  * @returns The translated string.
  */
-export const choice = <K extends LocalePluralKeys<LocaleNativeStructure>>(
+export const choice = <K extends LocalePluralKeys<LocaleRegistry>>(
     key: K,
     count: number,
-    ...args: LocaleSubstitutionArgs<LocaleNativeStructure, K>
+    ...args: LocaleSubstitutionArgs<LocaleRegistry, K>
 ): string => {
     return NativeLocale.getInstance().choice(key, count, ...args);
 };
@@ -67,7 +67,7 @@ export const choice = <K extends LocalePluralKeys<LocaleNativeStructure>>(
  * @param value - The locale key to convert.
  * @returns The browser message reference.
  */
-export const key = (value: keyof LocaleNativeStructure & string): string => {
+export const key = (value: keyof LocaleRegistry & string): string => {
     const locale = NativeLocale.getInstance();
 
     if (!locale.keys().has(value)) {

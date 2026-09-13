@@ -1,5 +1,9 @@
 {
-  "name": "addon-bone-options-vanilla-fixture",
+  "name": "adnbn-test-options-vanilla",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "adnbn": "file:../../../../.."
+  }
 }

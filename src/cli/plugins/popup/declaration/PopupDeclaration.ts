@@ -2,7 +2,7 @@ import {FileBuilder} from "@cli/plugins/typescript";
 
 import {ReadonlyConfig} from "@typing/config";
 
-export default class extends FileBuilder {
+export default class PopupDeclaration extends FileBuilder {
     protected alias = new Set<string>();
 
     constructor(config: ReadonlyConfig) {
@@ -20,11 +20,10 @@ export default class extends FileBuilder {
     protected template(): string {
         let content = this.readFile();
 
-        if (this.alias.size > 0) {
-            const type = '"' + Array.from(this.alias).join('" | "') + '"';
-
-            content = content.replace("type PopupAlias = string", `type PopupAlias = ${type}`);
-        }
+        content = content.replace(
+            "// :popup-aliases",
+            Array.from(this.alias, alias => `${JSON.stringify(alias)}: true;`).join("\n        ")
+        );
 
         return content;
     }

@@ -1,12 +1,13 @@
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
 import Popup, {PopupNameToManifest} from "./Popup";
+import {createPopupModule, PopupModuleName} from "./popup-module";
 
 import {PopupDeclaration} from "./declaration";
 
@@ -28,7 +29,7 @@ export default definePlugin(() => {
 
             const plugins: Plugins = [];
 
-            let alias: PopupNameToManifest = new Map();
+            let alias: PopupNameToManifest = {};
 
             if (await popup.empty()) {
                 if (config.debug) {
@@ -57,8 +58,8 @@ export default definePlugin(() => {
 
             return {
                 plugins: [
-                    new DefinePlugin({
-                        __ADNBN_POPUP_MAP__: JSON.stringify(alias),
+                    new GenerateModulePlugin({
+                        [PopupModuleName]: createPopupModule(alias),
                     }),
                     ...plugins,
                 ],

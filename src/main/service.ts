@@ -1,8 +1,7 @@
 import {ProxyService} from "@service/providers";
 
-import type {ServiceName, ServiceProxyTarget} from "@service/index";
+import type {ServiceDefinition, ServiceName, ServiceProxyTarget} from "@typing/service";
 import type {TransportType} from "@typing/transport";
-import {ServiceDefinition} from "@typing/service";
 
 export type {ServiceDefinition};
 

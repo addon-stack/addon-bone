@@ -14,6 +14,13 @@ export interface MessageDictionary {
     [key: string]: (data: any) => any;
 }
 
+/**
+ * Declares no application-specific message signatures by default.
+ * Applications add their signatures by augmenting `adnbn/message`.
+ * Undeclared names retain the MessageDictionary fallback.
+ */
+export interface MessageRegistry extends MessageDictionary {}
+
 export interface MessageSenderAware {
     readonly [MessageSenderProperty]?: MessageSender;
 }

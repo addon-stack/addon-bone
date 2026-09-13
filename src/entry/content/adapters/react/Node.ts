@@ -6,6 +6,8 @@ import {ContentScriptNode} from "@typing/content";
 export default class implements ContentScriptNode {
     protected root?: Root;
 
+    private renderedTarget?: Element;
+
     constructor(
         protected readonly node: ContentScriptNode,
         protected readonly component?: ReactComponent
@@ -19,10 +21,14 @@ export default class implements ContentScriptNode {
         return this.node.container;
     }
 
+    public get target(): Element | undefined {
+        return this.node.target;
+    }
+
     public mount(): boolean {
         this.node.mount();
 
-        if (!this.container || this.root) {
+        if (!this.target || (this.root && this.renderedTarget === this.target)) {
             return false;
         }
 
@@ -32,7 +38,9 @@ export default class implements ContentScriptNode {
             return false;
         }
 
-        this.root = createRoot(this.container);
+        this.root?.unmount();
+        this.renderedTarget = this.target;
+        this.root = createRoot(this.target);
 
         this.root.render(this.component);
 
@@ -42,6 +50,7 @@ export default class implements ContentScriptNode {
     public unmount(): boolean {
         this.root?.unmount();
         this.root = undefined;
+        this.renderedTarget = undefined;
 
         return !!this.node.unmount();
     }

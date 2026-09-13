@@ -1,3 +1,4 @@
+import {isContentScriptFrameNavigation, resolveContentScriptIsolation} from "@shared/content";
 import AwaitLock from "await-lock";
 
 import Builder from "@entry/core/Builder";
@@ -12,10 +13,8 @@ import {
     contentScriptRenderResolver,
 } from "./resolvers";
 
-import ManagedContext from "./ManagedContext";
-import EventEmitter from "./EventEmitter";
-import AttributeMarker from "./AttributeMarker";
-import WeakMarker from "./WeakMarker";
+import {ManagedContext, EventEmitter} from "./context";
+import {AttributeMarker, WeakMarker} from "./markers";
 
 import {
     ContentScriptAnchor,
@@ -63,6 +62,8 @@ export default abstract class extends Builder implements ContentScriptBuilder {
     protected constructor(definition: ContentScriptDefinition) {
         super();
 
+        const isolation = resolveContentScriptIsolation(definition.isolation, "render" in definition);
+
         this.definition = {
             ...definition,
             marker: this.resolveMarker(definition.marker),
@@ -70,6 +71,7 @@ export default abstract class extends Builder implements ContentScriptBuilder {
             mount: this.resolveMount(definition.mount),
             container: this.resolveContainer(definition.container),
             render: this.resolveRender(definition.render),
+            isolation,
             watch: this.resolveWatch(definition.watch),
         };
     }
@@ -146,10 +148,12 @@ export default abstract class extends Builder implements ContentScriptBuilder {
 
         await main?.(this.context, options);
 
-        if (render !== undefined) {
+        if (render !== undefined || isContentScriptFrameNavigation(this.definition.isolation)) {
             await this.processing();
 
             this.unwatch = watch(() => {
+                this.context.mount();
+
                 this.processing().catch(e => {
                     console.error("Content script processing on watch error", e);
                 });
@@ -161,6 +165,8 @@ export default abstract class extends Builder implements ContentScriptBuilder {
         this.unwatch?.();
         this.unwatch = undefined;
 
+        this.context.clear();
+        this.context.unwatch();
         this.marker.reset();
     }
 

@@ -1,11 +1,18 @@
 import ContentName from "./ContentName";
 
 import {ContentGroupItems, ContentProvider} from "./types";
-import {getContentScriptConfigFromOptions} from "./utils";
+import {getContentScriptConfigFromOptions, hasIsolatedTarget} from "./utils";
+import {getContentChunkName} from "./bundler";
 
 import {ReadonlyConfig} from "@typing/config";
-import {ContentScriptDeclarative, ContentScriptEntrypointOptions} from "@typing/content";
-import {EntrypointEntries, EntrypointFile, EntrypointType} from "@typing/entrypoint";
+import {
+    ContentScriptDeclarative,
+    ContentScriptIsolation,
+    ContentScriptEntrypointOptions,
+    ContentScriptWorld,
+    type ContentScriptWorldValue,
+} from "@typing/content";
+import {EntrypointEntries, EntrypointFile} from "@typing/entrypoint";
 import {
     ManifestContentScripts,
     ManifestHostPermissions,
@@ -13,7 +20,7 @@ import {
     ManifestPermissions,
 } from "@typing/manifest";
 
-export default class {
+export default class ContentManager {
     protected readonly providers = new Set<ContentProvider<ContentScriptEntrypointOptions>>();
 
     protected readonly names: ContentName;
@@ -24,8 +31,10 @@ export default class {
 
     protected _permissions?: Promise<[ManifestPermissions, ManifestOptionalPermissions]>;
 
-    constructor(config: ReadonlyConfig) {
+    constructor(protected readonly config: ReadonlyConfig) {
         this.names = new ContentName(config);
+
+        Object.values(ContentScriptWorld).forEach(world => this.names.reserve(getContentChunkName(world)));
     }
 
     public provider(provider: ContentProvider<ContentScriptEntrypointOptions>): this {
@@ -35,19 +44,53 @@ export default class {
     }
 
     protected async getGroup(): Promise<ContentGroupItems<ContentScriptEntrypointOptions>> {
-        const content = await Promise.all(Array.from(this.providers, provider => provider.driver().items()));
+        // prettier-ignore
+        const content = await Promise.all(
+            Array.from(this.providers, provider => provider.driver().items())
+        );
 
         const group: ContentGroupItems<ContentScriptEntrypointOptions> = new Map();
 
         for (const items of content) {
             for (const [name, item] of items) {
-                const entry = this.names.create(name, item.options);
+                const options = this.normalizeOptions(item.file, item.options);
+                const entry = this.names.create(name, options);
 
-                group.set(entry, new Set([...(group.get(entry) || []), item]));
+                group.set(entry, new Set([...(group.get(entry) || []), {...item, options}]));
             }
         }
 
         return group;
+    }
+
+    protected normalizeOptions(
+        file: EntrypointFile,
+        options: ContentScriptEntrypointOptions
+    ): ContentScriptEntrypointOptions {
+        const world = this.resolveWorld(options.world);
+
+        if (this.config.manifestVersion !== 2) {
+            if (
+                world === ContentScriptWorld.Main &&
+                (options.isolation?.type === ContentScriptIsolation.Shadow ||
+                    (options.isolation?.type === ContentScriptIsolation.Iframe &&
+                        !(options.isolation?.src && /^https?:\/\//.test(options.isolation.src))))
+            ) {
+                throw new Error(
+                    `Content script "${file.file}" cannot use this isolation in the MAIN execution world; only external HTTP(S) isolation.src is supported`
+                );
+            }
+
+            return options;
+        }
+
+        if (world === ContentScriptWorld.Main) {
+            console.warn(
+                `Content script "${file.file}" requests world "MAIN", but Addon Bone does not support MAIN content scripts in Manifest V2. It will be built and run in ISOLATED.`
+            );
+        }
+
+        return {...options, world: ContentScriptWorld.Isolated};
     }
 
     public async group(): Promise<ContentGroupItems<ContentScriptEntrypointOptions>> {
@@ -64,18 +107,34 @@ export default class {
         return entries;
     }
 
-    public async manifest(): Promise<ManifestContentScripts> {
-        const manifest: ManifestContentScripts = new Set();
+    /** Settings are keyed by the final grouped entrypoint name, not the original source files. */
+    public async entryOptions(): Promise<ReadonlyMap<string, ContentScriptEntrypointOptions>> {
+        const entries = new Map<string, ContentScriptEntrypointOptions>();
 
         for (const [entry, items] of await this.group()) {
-            const options = Array.from(items, ({options}) => options).reduce((acc, opt) => {
-                return {...acc, ...opt};
-            }, {} as ContentScriptEntrypointOptions);
+            const options = Array.from(items, item => item.options);
+            const worlds = new Set(options.map(option => this.resolveWorld(option.world)));
+            if (worlds.size !== 1) {
+                throw new Error(`Content entrypoint "${entry}" cannot mix execution worlds`);
+            }
 
-            manifest.add({entry, ...getContentScriptConfigFromOptions(options)});
+            if (new Set(options.map(hasIsolatedTarget)).size !== 1) {
+                throw new Error(`Content entrypoint "${entry}" cannot mix isolation style delivery modes`);
+            }
+
+            entries.set(entry, Object.assign({}, ...options));
         }
 
-        return manifest;
+        return entries;
+    }
+
+    public async manifest(): Promise<ManifestContentScripts> {
+        return new Set(
+            Array.from(await this.entryOptions(), ([entry, options]) => ({
+                entry,
+                ...getContentScriptConfigFromOptions(options),
+            }))
+        );
     }
 
     public async hostPermissions(): Promise<ManifestHostPermissions> {
@@ -167,9 +226,23 @@ export default class {
     }
 
     public virtual(file: EntrypointFile): string {
+        if (!this._group) {
+            throw new Error(
+                `Cannot create virtual file "${file.file}": content group is not prepared. Await entries() or entryOptions() before virtual().`
+            );
+        }
+
+        const item = Array.from(this._group.values())
+            .flatMap(items => Array.from(items))
+            .find(item => item.file.file === file.file);
+
+        if (!item) {
+            throw new Error(`Virtual file "${file.file}" is not in the prepared content group.`);
+        }
+
         for (const provider of this.providers) {
             try {
-                return provider.virtual(file);
+                return provider.virtual(file, item.options);
             } catch {}
         }
 
@@ -180,18 +253,16 @@ export default class {
         return (await this.group()).size === 0;
     }
 
-    public chunkName(): string {
-        return this.names.getChunkName();
-    }
-
-    public likely(name?: string): boolean {
-        if (!name) {
-            return false;
+    protected resolveWorld(world?: ContentScriptWorldValue): ContentScriptWorld {
+        switch (world) {
+            case undefined:
+            case ContentScriptWorld.Isolated:
+                return ContentScriptWorld.Isolated;
+            case ContentScriptWorld.Main:
+                return ContentScriptWorld.Main;
+            default:
+                throw new Error(`Unsupported content script execution world "${String(world)}"`);
         }
-
-        return [EntrypointType.Relay, EntrypointType.ContentScript].some(
-            type => name === type || name.endsWith(`.${type}`)
-        );
     }
 
     public clear(): this {

@@ -1,7 +1,14 @@
 import {Command, Mode, PackageName} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {RelayAllFrames, RelayMethod} from "@typing/relay";
-import {ContentScriptAppend, ContentScriptDeclarative, ContentScriptMarker} from "@typing/content";
+import {
+    ContentScriptIsolation,
+    ContentScriptShadowMode,
+    ContentScriptAppend,
+    ContentScriptDeclarative,
+    ContentScriptMarker,
+    ContentScriptWorld,
+} from "@typing/content";
 import {OffscreenReason} from "@typing/offscreen";
 import {SandboxAllow, SandboxSource} from "@typing/sandbox";
 import {CspSource} from "@typing/csp";
@@ -60,6 +67,23 @@ export default (): Injector[] => {
         resolvers.push({
             from: PackageName,
             target: "ContentScriptMarker",
+            name: key,
+            value,
+        });
+    });
+
+    Object.entries(ContentScriptIsolation).forEach(([key, value]) => {
+        resolvers.push({from: PackageName, target: "ContentScriptIsolation", name: key, value});
+    });
+
+    Object.entries(ContentScriptShadowMode).forEach(([key, value]) => {
+        resolvers.push({from: PackageName, target: "ContentScriptShadowMode", name: key, value});
+    });
+
+    Object.entries(ContentScriptWorld).forEach(([key, value]) => {
+        resolvers.push({
+            from: PackageName,
+            target: "ContentScriptWorld",
             name: key,
             value,
         });

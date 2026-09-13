@@ -428,7 +428,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     }
 
     public build(): T {
-        return this.merge<Manifest>(
+        const manifest = this.merge<Manifest>(
             this.buildName(),
             this.buildShortName(),
             this.buildDescription(),
@@ -456,6 +456,8 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.buildBrowserSpecificSettings(),
             this.buildRaw()
         ) as T;
+
+        return manifest;
     }
 
     public get(): T {
@@ -814,7 +816,8 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         const resources: ManifestAccessibleResource[] = [...this.accessibleResources];
 
         for (const contentScript of this.contentScripts.values()) {
-            const assets = this.dependencies.get(contentScript.entry)?.assets;
+            const dependencies = this.dependencies.get(contentScript.entry);
+            const assets = dependencies?.assets;
 
             if (assets && assets.size > 0) {
                 resources.push({
@@ -824,8 +827,18 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             }
         }
 
-        if (this.combinedRaws.web_accessible_resources) {
-            resources.push(...this.combinedRaws.web_accessible_resources);
+        for (const resource of this.combinedRaws.web_accessible_resources || []) {
+            if (typeof resource === "string") {
+                // MV2 resource lists grant access to all sites and extensions.
+                resources.push({resources: [resource], matches: ["<all_urls>"], extensionIds: ["*"]});
+            } else {
+                resources.push({
+                    resources: resource.resources,
+                    matches: resource.matches,
+                    extensionIds: resource.extension_ids,
+                    useDynamicUrl: resource.use_dynamic_url,
+                });
+            }
         }
 
         return mergeWebAccessibleResources(resources);

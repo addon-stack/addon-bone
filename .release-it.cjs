@@ -180,7 +180,7 @@ const createReleaseConfig = () => {
         git: {
             requireCleanWorkingDir: true,
             requireUpstream: false,
-            requireBranch: false,
+            requireBranch: "main",
             commit: true,
             commitMessage: "chore(release): v${version}",
             tag: true,

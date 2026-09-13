@@ -1,5 +1,7 @@
 import {execFileSync} from "child_process";
+import {existsSync, readFileSync} from "fs";
 import path from "path";
+import {fileURLToPath} from "url";
 import ts from "typescript";
 
 type Generator = keyof typeof import("./index");
@@ -13,7 +15,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualCommandModule",
-            imports: ["adnbn", "adnbn/locale", "adnbn/entry/command", "{entry}"],
+            imports: ["adnbn", "adnbn/entry/command", "{entry}"],
         },
         {
             generator: "virtualContentScriptModule",
@@ -41,6 +43,7 @@ describe("Built virtual modules", () => {
         {
             generator: "virtualRelayModule",
             imports: [
+                "adnbn",
                 "adnbn/transport",
                 "adnbn/entry/transport",
                 "adnbn/entry/relay",
@@ -61,14 +64,16 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualViewModule",
-            imports: ["adnbn", "adnbn/locale", "adnbn/entry/view", "adnbn/entry/view/{framework}", "{entry}"],
+            imports: ["adnbn", "adnbn/entry/view", "adnbn/entry/view/{framework}", "{entry}"],
         },
     ];
     let generated: Record<"ts" | "tsx", Record<Generator, string>>;
+    let navigation: Record<"ts" | "tsx", Record<"virtualContentScriptModule" | "virtualRelayModule", string>>;
+    let frameModule: string;
 
     beforeAll(() => {
         // Run the final JS artifact in Node, without Jest transforms, source aliases, or module mocks.
-        generated = JSON.parse(
+        const artifacts = JSON.parse(
             execFileSync(
                 process.execPath,
                 [
@@ -79,23 +84,56 @@ describe("Built virtual modules", () => {
 
                         const generated = Object.fromEntries(["ts", "tsx"].map(extension => {
                             const file = {file: "entry." + extension, import: "./entry." + extension};
-                            const modules = Object.fromEntries(Object.entries(generators).map(([name, generate]) =>
-                                [name, generate(file, "example")]
-                            ));
+                            const modules = Object.fromEntries(Object.entries(generators).map(([name, generate]) => {
+                                // Content's second argument is navigation, not an entrypoint name.
+                                const source = name === "virtualContentScriptModule"
+                                    ? generate(file)
+                                    : generate(file, "example");
+                                return [name, source];
+                            }));
 
                             return [extension, modules];
                         }));
 
-                        process.stdout.write(JSON.stringify(generated));
+                        const navigation = Object.fromEntries(["ts", "tsx"].map(extension => {
+                            const file = {file: "entry." + extension, import: "./entry." + extension};
+                            return [extension, {
+                                virtualContentScriptModule: generators.virtualContentScriptModule(file, true),
+                                virtualRelayModule: generators.virtualRelayModule(file, "example", true),
+                            }];
+                        }));
+
+                        process.stdout.write(JSON.stringify({
+                            generated,
+                            navigation,
+                            frameModule: import.meta.resolve("adnbn/entry/content/frame"),
+                        }));
                     `,
                 ],
                 {cwd: projectDir, encoding: "utf8", timeout: 10_000}
             )
         );
+        generated = artifacts.generated;
+        navigation = artifacts.navigation;
+        frameModule = artifacts.frameModule;
     });
 
     test("covers every built generator", () => {
         expect(Object.keys(generated.ts).sort()).toEqual(cases.map(({generator}) => generator).sort());
+    });
+
+    test("keeps the entrypoint dependency external with a relative ESM path", () => {
+        const source = readFileSync(path.join(projectDir, "dist/cli/virtual/index.js"), "utf8");
+        const importedFiles = ts.preProcessFile(source).importedFiles.map(file => file.fileName);
+
+        expect(importedFiles).toContain("../entrypoint/index.js");
+    });
+
+    test("resolves the public frame entrypoint outside renderer adapters", () => {
+        const filename = fileURLToPath(frameModule);
+        expect(filename).toBe(path.join(projectDir, "dist/entry/content/frame/index.js"));
+        expect(existsSync(filename)).toBe(true);
+        expect(existsSync(filename.replace(/\.js$/, ".d.ts"))).toBe(true);
     });
 
     describe.each([
@@ -114,5 +152,21 @@ describe("Built virtual modules", () => {
             expect(source).not.toContain("virtual:");
             expect(source).not.toContain(":entry");
         });
+
+        test.each(["virtualContentScriptModule", "virtualRelayModule"] as const)(
+            "%s selects the frame builder for document navigation",
+            generator => {
+                const source = navigation[extension][generator];
+                const importedFiles = ts.preProcessFile(source).importedFiles.map(file => file.fileName);
+                const {imports} = cases.find(testCase => testCase.generator === generator)!;
+
+                expect(importedFiles).toEqual(
+                    imports.map(specifier =>
+                        specifier.replace("{framework}", "frame").replace("{entry}", `./entry.${extension}`)
+                    )
+                );
+                expect(source).not.toContain("virtual:");
+            }
+        );
     });
 });

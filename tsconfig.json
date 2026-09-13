@@ -23,6 +23,9 @@
     "baseUrl": "./src",
     "paths": {
       "adnbn": ["index.ts"],
+      "adnbn/entry/content/frame": [
+        "entry/content/frame/index.ts"
+      ],
       "adnbn/entry/content/*": [
         "entry/content/adapters/*/index.ts"
       ],
@@ -67,6 +70,7 @@
       "@relay/*": ["relay/*"],
       "@sandbox/*": ["sandbox/*"],
       "@service/*": ["service/*"],
+      "@shared/*": ["shared/*"],
       "@storage/*": ["storage/*"],
       "@transport/*": ["transport/*"],
       "@typing/*": ["types/*"]
@@ -81,11 +85,14 @@
     "./src/**/*",
     "./src/**/*.d.ts",
     "./src/cli/virtual/virtual.d.ts",
-    "node_modules/@types/node/*.d.ts"
+    "node_modules/@types/node/*.d.ts",
+    "tests/**/*.test.ts",
+    "tests/integration/*.ts",
+    "tests/jest*.ts"
   ],
   "exclude": [
-    "**/*.test.ts",
-    "**/tests/**/*.ts",
-    "dist"
+    "**/tests/fixtures/**",
+    "dist",
+    "node_modules"
   ]
 }

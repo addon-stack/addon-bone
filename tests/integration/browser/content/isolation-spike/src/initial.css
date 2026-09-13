@@ -1,0 +1,15 @@
+@font-face {
+    font-family: "IframeCssProbe";
+    src: url("probe.woff2") format("woff2");
+}
+.probe {
+    color: rgb(17, 85, 153);
+}
+.font {
+    font-family: "IframeCssProbe", monospace;
+    font-size: 40px;
+    font-kerning: none;
+    font-variant-ligatures: none;
+    letter-spacing: 0;
+    white-space: pre;
+}

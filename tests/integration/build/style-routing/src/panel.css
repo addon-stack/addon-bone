@@ -1,0 +1,4 @@
+@import "./nested.css";
+.panel {
+    color: blue;
+}

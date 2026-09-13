@@ -1,6 +1,12 @@
 import _ from "lodash";
+import {isContentScriptFrameNavigation} from "@shared/content";
 
-import {ContentScriptConfig, ContentScriptEntrypointOptions} from "@typing/content";
+import {ContentScriptConfig, ContentScriptEntrypointOptions, ContentScriptIsolation} from "@typing/content";
+
+/** ShadowRoot or a blank iframe provides a local target for isolated styles and UI. */
+export const hasIsolatedTarget = (options: ContentScriptEntrypointOptions): boolean =>
+    options.isolation?.type === ContentScriptIsolation.Shadow ||
+    (options.isolation?.type === ContentScriptIsolation.Iframe && !isContentScriptFrameNavigation(options.isolation));
 
 export const getContentScriptConfigFromOptions = (options: ContentScriptEntrypointOptions): ContentScriptConfig => {
     const config = _.pick(options, [

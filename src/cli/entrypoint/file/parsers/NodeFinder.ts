@@ -12,6 +12,23 @@ export default class NodeFinder {
      */
     constructor(private sourceFile: SourceFile) {}
 
+    /** Finds default-export syntax without traversing nested scopes; skips explicitly type-only re-exports. */
+    public findDefaultExport(): ts.Statement | undefined {
+        return this.sourceFile
+            .getSourceFile()
+            .statements.find(
+                statement =>
+                    (ts.isExportAssignment(statement) && !statement.isExportEquals) ||
+                    (ts.canHaveModifiers(statement) &&
+                        ts.getModifiers(statement)?.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword)) ||
+                    (ts.isExportDeclaration(statement) &&
+                        !statement.isTypeOnly &&
+                        statement.exportClause &&
+                        ts.isNamedExports(statement.exportClause) &&
+                        statement.exportClause.elements.some(item => !item.isTypeOnly && item.name.text === "default"))
+            );
+    }
+
     /**
      * Generic method to find a node of a specific type by name in the AST.
      *

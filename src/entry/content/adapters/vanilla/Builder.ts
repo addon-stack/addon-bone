@@ -1,7 +1,7 @@
 import {isValidContentScriptRenderValue} from "../../core/resolvers";
 
 import MountBuilder from "../../core/MountBuilder";
-import EventNode from "../../core/EventNode";
+import EventNode from "../../core/nodes/EventNode";
 import VanillaNode from "./Node";
 
 import {ContentScriptDefinition, ContentScriptNode} from "@typing/content";

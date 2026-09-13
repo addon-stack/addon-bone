@@ -1,7 +1,7 @@
 import {ContentScriptNode} from "@typing/content";
 
 export default class implements ContentScriptNode {
-    private mounted: boolean = false;
+    private renderedTarget?: Element;
 
     constructor(
         protected readonly node: ContentScriptNode,
@@ -16,19 +16,23 @@ export default class implements ContentScriptNode {
         return this.node.container;
     }
 
+    public get target(): Element | undefined {
+        return this.node.target;
+    }
+
     public mount(): boolean {
         this.node.mount();
 
-        if (!this.container || this.mounted) {
+        if (!this.target || this.renderedTarget === this.target) {
             return false;
         }
 
         let result: boolean = true;
 
-        if (this.value instanceof Element) {
-            this.container.appendChild(this.value);
+        if (this.value && typeof this.value === "object" && this.value.nodeType === 1) {
+            this.target.appendChild(this.value);
         } else if (typeof this.value === "string" || typeof this.value === "number") {
-            this.container.textContent = String(this.value);
+            this.target.textContent = String(this.value);
         } else if (this.value === null || this.value === undefined || this.value === false) {
             result = false;
 
@@ -37,13 +41,13 @@ export default class implements ContentScriptNode {
             result = false;
         }
 
-        this.mounted = true;
+        this.renderedTarget = this.target;
 
         return result;
     }
 
     public unmount(): boolean {
-        this.mounted = false;
+        this.renderedTarget = undefined;
 
         return !!this.node.unmount();
     }

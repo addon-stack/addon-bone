@@ -11,25 +11,16 @@ jest.mock("@addon-core/browser", () => ({
 }));
 
 import {getI18nMessage} from "@addon-core/browser";
-import {resolve} from "./helpers";
+import {resolve} from "./index";
+
+jest.mock("#adnbn/locale", () => ({keys: ["locale", "app.title", "app.greeting"], languages: ["en"]}));
 
 describe("locale resolve", () => {
-    const keysDescriptor = Object.getOwnPropertyDescriptor(globalThis, "__ADNBN_LOCALE_KEYS__");
-
     beforeEach(() => {
         jest.clearAllMocks();
-        Object.defineProperty(globalThis, "__ADNBN_LOCALE_KEYS__", {
-            configurable: true,
-            value: ["locale", "app.title", "app.greeting"],
-        });
     });
 
     afterEach(() => {
-        if (keysDescriptor) {
-            Object.defineProperty(globalThis, "__ADNBN_LOCALE_KEYS__", keysDescriptor);
-        } else {
-            Reflect.deleteProperty(globalThis, "__ADNBN_LOCALE_KEYS__");
-        }
         jest.restoreAllMocks();
     });
 

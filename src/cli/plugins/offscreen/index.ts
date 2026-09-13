@@ -1,19 +1,21 @@
 import path from "path";
-import {Configuration as RspackConfig, DefinePlugin, HtmlRspackPlugin, Plugins} from "@rspack/core";
+import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import {RspackVirtualModulePlugin} from "rspack-plugin-virtual-module";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin} from "@cli/bundler";
+import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {virtualOffscreenBackgroundModule} from "@cli/virtual";
 
-import Offscreen, {OffscreenParameters} from "./Offscreen";
+import Offscreen from "./Offscreen";
 import OffscreenDeclaration from "./OffscreenDeclaration";
+import {createOffscreenModule, OffscreenModuleName} from "./offscreen-module";
 
 import {Command} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {BackgroundEntryName} from "@typing/background";
+import type {OffscreenParametersMap} from "@typing/offscreen";
 
 const OffscreenTempDir = "virtual";
 const OffscreenBackgroundModule = "offscreen.background.ts";
@@ -45,7 +47,7 @@ export default definePlugin(() => {
 
             const plugins: Plugins = [];
 
-            let parameters: OffscreenParameters = {};
+            let parameters: OffscreenParametersMap = {};
 
             if (build) {
                 parameters = await offscreen.parameters();
@@ -90,8 +92,8 @@ export default definePlugin(() => {
             return {
                 ...rspack,
                 plugins: [
-                    new DefinePlugin({
-                        __ADNBN_OFFSCREEN_PARAMETERS__: JSON.stringify(parameters),
+                    new GenerateModulePlugin({
+                        [OffscreenModuleName]: createOffscreenModule(parameters),
                     }),
                     ...plugins,
                 ],

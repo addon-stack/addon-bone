@@ -1,0 +1,13 @@
+@font-face {
+    font-family: ResourceProbe;
+    src: url("./css-font.woff2?browser");
+}
+.image {
+    background-image: url("./image.svg?chrome#icon");
+}
+.media {
+    --movie: url("./movie.mp4?browser");
+}
+.inline {
+    --font: url("./inline.woff2?base64");
+}

@@ -1,9 +1,3 @@
-// Only placeholders belong here; real adnbn imports resolve to their source modules via tsconfig.json.
-declare module "*?raw" {
-    const content: string;
-    export default content;
-}
-
 declare module "virtual:background-entrypoint" {
     type BackgroundDefinition = import("@typing/background").BackgroundDefinition;
 
@@ -29,7 +23,8 @@ declare module "virtual:command-entrypoint" {
 declare module "virtual:content-entrypoint" {
     type ContentScriptDefinition = import("@typing/content").ContentScriptDefinition;
 
-    interface ModuleType extends ContentScriptDefinition {
+    interface ModuleType {
+        [name: string]: unknown;
         default: ContentScriptDefinition | ContentScriptDefinition["render"] | undefined;
     }
 
@@ -37,14 +32,16 @@ declare module "virtual:content-entrypoint" {
     export = module;
 }
 
-declare module "virtual:content-framework" {
+declare module "virtual:content-builder" {
     export const Builder:
         | typeof import("@entry/content/adapters/vanilla").Builder
-        | typeof import("@entry/content/adapters/react").Builder;
+        | typeof import("@entry/content/adapters/react").Builder
+        | typeof import("@entry/content/frame").Builder;
 
     const content:
         | typeof import("@entry/content/adapters/vanilla").default
-        | typeof import("@entry/content/adapters/react").default;
+        | typeof import("@entry/content/adapters/react").default
+        | typeof import("@entry/content/frame").default;
     export default content;
 }
 
@@ -69,6 +66,7 @@ declare module "virtual:relay-entrypoint" {
         main,
         name,
         method,
+        isolation,
         allFrames,
         matches,
         excludeMatches,

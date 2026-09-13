@@ -1,4 +1,4 @@
-import {getContentScriptConfigFromOptions} from "./utils";
+import {getContentScriptConfigFromOptions, hasIsolatedTarget} from "./utils";
 import type {ContentScriptEntrypointOptions} from "@typing/content";
 
 describe("content utils - getContentScriptConfigFromOptions", () => {
@@ -83,4 +83,28 @@ describe("content utils - getContentScriptConfigFromOptions", () => {
         expect(cfgUndefined.includeGlobs).toBeUndefined();
         expect(cfgUndefined.excludeGlobs).toBeUndefined();
     });
+});
+
+describe("content render targets", () => {
+    test.each<ContentScriptEntrypointOptions>([
+        {isolation: {type: "shadow"}},
+        {isolation: {type: "iframe"}},
+        {isolation: {type: "iframe", height: 300}},
+    ])("provides an isolated local target for %j", options => {
+        expect(hasIsolatedTarget(options)).toBe(true);
+    });
+
+    test.each<ContentScriptEntrypointOptions>([
+        {isolation: {type: "iframe", page: "panel"}},
+        {isolation: {type: "iframe", src: "https://example.com/panel"}},
+    ])("leaves document ownership to the frame for %j", options => {
+        expect(hasIsolatedTarget(options)).toBe(false);
+    });
+
+    test.each<ContentScriptEntrypointOptions>([{}, {isolation: {type: "none"}}])(
+        "has no isolated target for %j",
+        options => {
+            expect(hasIsolatedTarget(options)).toBe(false);
+        }
+    );
 });

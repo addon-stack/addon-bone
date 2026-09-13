@@ -21,7 +21,7 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
         manifestVersion: z.union([z.literal(2), z.literal(3)]).optional(),
     });
 
-    protected abstract schema(): typeof this.CommonPropertiesSchema;
+    protected abstract schema(): z.AnyZodObject;
 
     protected abstract definition(): string | string[];
 
@@ -41,6 +41,14 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
         const instance = this.optionFile(file);
 
         return instance.getOptions();
+    }
+
+    protected expressionFile(file: EntrypointFile): ExpressionFile {
+        const instance = ExpressionFile.make(file.file);
+
+        instance.setImportResolver(this.ir);
+
+        return instance.setDefinition(this.definition());
     }
 
     protected agreement(): string | undefined {
@@ -70,10 +78,6 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
             return;
         }
 
-        const instance = ExpressionFile.make(file.file);
-
-        instance.setImportResolver(this.ir);
-
-        return instance.setDefinition(this.definition()).setProperty(agreement).getType();
+        return this.expressionFile(file).setProperty(agreement).getType();
     }
 }
