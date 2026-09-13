@@ -42,7 +42,7 @@
 - Separate a shared protocol from its implementation. A runtime property name used by both CLI and extension runtime belongs in a side-effect-free shared contract; each side imports it independently. The generic Rspack plugin receives the property through its options, using the shared `property` contract.
 - Do not move build-only details into public domain types merely because a feature uses them. For example, `IsolatedStylesLayer` is a bundler classification detail; a property used to communicate with the extension's styles runtime is a shared contract.
 - Keep each Rspack plugin encapsulated in its own directory with its class, tests, helpers, templates, and an `index.ts` exporting the necessary surface. Runtime JavaScript templates belong beside their owning plugin and use the existing raw-template pipeline; do not mix unrelated plugin runtimes in a common directory or embed large JavaScript strings in plugin classes.
-- `RuntimeDataPlugin` embeds data known before filename hashing. It is not a universal replacement for `DefinePlugin`, which remains appropriate for compile-time constants and substitutions. Data depending on final asset names needs the bundler's filename and hashing lifecycle, not an early snapshot or an ad hoc post-build rewrite.
+- `DefinePlugin` is appropriate for compile-time constants and substitutions. Data depending on final asset names needs the bundler's filename and hashing lifecycle, not an early snapshot or an ad hoc post-build rewrite.
 - Refactoring must not introduce background dependencies into other entrypoints, hidden global registries, message-based metadata delivery, or extra carrier files. Such behavior requires a separate, explicit design decision.
 
 ### Asset inventory, delivery, and access

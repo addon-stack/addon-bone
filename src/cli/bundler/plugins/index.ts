@@ -45,6 +45,4 @@ export {default as ReplacePlugin} from "./replace";
 
 export {default as WatchPlugin} from "./watch";
 
-export {default as RuntimeDataPlugin, type RuntimeDataPluginData, type RuntimeDataPluginOptions} from "./runtime-data";
-
 export type {RuntimePropertyOptions} from "./types";
