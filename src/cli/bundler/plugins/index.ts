@@ -17,7 +17,14 @@ export {
     type IsolatedStylesPluginFiles,
 } from "./isolated-styles";
 
-export {default as BuildAssetsMapPlugin, type BuildAssetsMapPluginOptions} from "./build-assets-map";
+export {
+    default as BuildAssetsMapPlugin,
+    type BuildAssetsMapPluginOptions,
+    type BuildAssetsMapPluginModuleOptions,
+    type BuildAssetsMapPluginExportOptions,
+    createEntrypointModule,
+    EntrypointAssetsModule,
+} from "./build-assets-map";
 
 export {
     default as GenerateJsonPlugin,

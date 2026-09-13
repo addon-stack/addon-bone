@@ -8,7 +8,11 @@ import assetPlugin from "@cli/plugins/asset";
 import optimizationPlugin from "@cli/plugins/optimization";
 import {merge} from "webpack-merge";
 import IsolatedStylesPlugin from "@cli/bundler/plugins/isolated-styles";
-import BuildAssetsMapPlugin from "@cli/bundler/plugins/build-assets-map";
+import BuildAssetsMapPlugin, {
+    createEntrypointModule,
+    EntrypointAssetsModule,
+} from "@cli/bundler/plugins/build-assets-map";
+import {GenerateModulePlugin} from "@cli/bundler/plugins/generate-module";
 import {getCompilationBuildAssets} from "@cli/bundler/utils/output";
 import {getContentLayer, isContentLayer} from "@cli/bundler/utils/layers";
 import ManifestPlugin from "@cli/bundler/plugins/manifest";
@@ -23,9 +27,10 @@ test.each<{
     routing: string;
     layer: string;
     isolationIssuerLayer?: RuleSetCondition;
+    withoutMap?: boolean;
 }>([
     ...[
-        {browser: Browser.Chrome, commonChunks: true},
+        {browser: Browser.Chrome, commonChunks: true, withoutMap: true},
         {browser: Browser.Chrome, commonChunks: false},
         {browser: Browser.Chromium, commonChunks: true},
         {browser: Browser.Edge, commonChunks: true},
@@ -60,7 +65,7 @@ test.each<{
     },
 ])(
     "production CSS routing preserves entry assets and CSS/WAR ($browser, commonChunks=$commonChunks, routing=$routing)",
-    async ({browser, commonChunks, layer, isolationIssuerLayer}) => {
+    async ({browser, commonChunks, layer, isolationIssuerLayer, withoutMap}) => {
         const root = path.resolve(__dirname, "../../../..");
         const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-css-routing-"));
         const config = {
@@ -95,7 +100,7 @@ test.each<{
             mode: "production",
             devtool: false,
             entry: {
-                background: "./background.js",
+                background: withoutMap ? "./background-unused.js" : "./background.js",
                 popup: "./entry.js",
                 assets: "./assets.js",
                 other: "./other-assets.js",
@@ -104,6 +109,7 @@ test.each<{
             },
             output: {...assets.output, path: output, filename: "js/[name].[chunkhash:8].js", publicPath: ""},
             resolveLoader: {modules: [path.join(root, "node_modules")]},
+            resolve: {alias: {adnbn$: path.join(root, "dist/index.js")}},
             module: {rules: [...styles.module!.rules!, ...assets.module!.rules!]},
             optimization: {
                 ...merge(optimization, styles).optimization,
@@ -121,7 +127,9 @@ test.each<{
                     property: ContentScriptStylesRuntimeProperty,
                     test: entry => entry === "content",
                 }),
+                new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
                 new BuildAssetsMapPlugin({
+                    module: EntrypointAssetsModule,
                     fullMapEntrypoint: "background",
                     cssFilename: "css/[name].[contenthash:8].css",
                     cssChunkFilename: "css/[name].[contenthash:8].css",
@@ -145,6 +153,17 @@ test.each<{
                 })
             );
             const map = getCompilationBuildAssets(stats.compilation)!;
+            for (const asset of stats.compilation.getAssets().filter(asset => asset.name.endsWith(".js"))) {
+                const source = asset.source.source().toString();
+                expect(source).not.toContain("__adnbnBuildAssetsCurrentMap__");
+                if (withoutMap) expect(source).not.toContain("__adnbnBuildAssetsFullMap__");
+            }
+            if (isolatedStyles) {
+                const source = map.content.initial.js
+                    .map(file => stats.compilation.getAsset(file)!.source.source().toString())
+                    .join("\n");
+                expect(source).toContain(ContentScriptStylesRuntimeProperty);
+            }
             expect(map.assets.assets).toEqual(
                 expect.arrayContaining([
                     expect.stringMatching(/assets\/css-font\.[a-f0-9]+\.woff2$/),

@@ -1,12 +1,6 @@
+import {readAssets, readAssetsMap} from "#adnbn/entrypoint";
+
 import type {EntrypointAssets, EntrypointAssetsMap} from "@typing/entrypoint";
-
-interface BuildAssetsRuntime {
-    (moduleId: string | number): unknown;
-    __adnbnBuildAssets?: EntrypointAssetsMap;
-    __adnbnCurrentEntrypointAssets?: EntrypointAssets;
-}
-
-declare const __webpack_require__: BuildAssetsRuntime;
 
 export type {
     EntrypointAssets,
@@ -16,7 +10,7 @@ export type {
 } from "@typing/entrypoint";
 
 export const getEntrypointAssetsMap = (): EntrypointAssetsMap => {
-    const assets = typeof __webpack_require__ === "function" ? __webpack_require__.__adnbnBuildAssets : undefined;
+    const assets = readAssetsMap();
 
     if (!assets) {
         throw new Error("getEntrypointAssetsMap() is available only in the background entrypoint");
@@ -26,8 +20,7 @@ export const getEntrypointAssetsMap = (): EntrypointAssetsMap => {
 };
 
 export const getEntrypointAssets = (): EntrypointAssets => {
-    const assets =
-        typeof __webpack_require__ === "function" ? __webpack_require__.__adnbnCurrentEntrypointAssets : undefined;
+    const assets = readAssets();
 
     if (!assets) {
         throw new Error("Current entrypoint assets are unavailable in this runtime");

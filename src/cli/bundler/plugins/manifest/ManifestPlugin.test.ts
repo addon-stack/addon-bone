@@ -5,7 +5,11 @@ import path from "path";
 import {rspack, type Compiler, type RspackPluginInstance, type Stats} from "@rspack/core";
 
 import ManifestV3 from "@cli/builders/manifest/ManifestV3";
-import BuildAssetsMapPlugin from "@cli/bundler/plugins/build-assets-map";
+import BuildAssetsMapPlugin, {
+    createEntrypointModule,
+    EntrypointAssetsModule,
+} from "@cli/bundler/plugins/build-assets-map";
+import {GenerateModulePlugin} from "../generate-module";
 import {getCompilationBuildAssets} from "@cli/bundler/utils/output";
 import {Browser} from "@typing/browser";
 import type {EntrypointAssetsMap} from "@typing/entrypoint";
@@ -124,7 +128,9 @@ describe("ManifestPlugin compilation hooks", () => {
             devtool: false,
             output: {path: directory, filename: "[name].[contenthash:8].js"},
             plugins: [
+                new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
                 new BuildAssetsMapPlugin({
+                    module: EntrypointAssetsModule,
                     fullMapEntrypoint: "background",
                     cssFilename: "[name].css",
                     cssChunkFilename: "[name].css",

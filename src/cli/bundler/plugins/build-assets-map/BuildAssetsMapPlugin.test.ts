@@ -2,6 +2,7 @@
 
 import crypto from "crypto";
 import fs from "fs";
+import {readFile, writeFile} from "fs/promises";
 import os from "os";
 import path from "path";
 import vm from "vm";
@@ -24,6 +25,8 @@ import {appFilenameResolver, getCompilationBuildAssets} from "@cli/bundler/utils
 import type {EntrypointAssetsMap, EntrypointAssetsMapEntry, EntrypointAssets} from "@typing/entrypoint";
 
 import BuildAssetsMapPlugin from "./BuildAssetsMapPlugin";
+import {GenerateModulePlugin} from "../generate-module";
+import {createEntrypointModule, EntrypointAssetsModule} from "./entrypoint-module";
 
 const AppName = "Build Assets Fixture";
 const AppToken = "build-assets-fixture";
@@ -215,7 +218,10 @@ const compile = async (
     options: {
         assetInfoFilename?: boolean;
         assertEmptyOutputOnFailure?: boolean;
-        background?: "async" | "shared";
+        background?: "async" | "shared" | "unused";
+        noConsumers?: boolean;
+        usage?: boolean;
+        mode?: "production" | "development";
         betaDirectory?: string;
         betaRuntimeMarker?: string;
         betaCssChange?: boolean;
@@ -268,16 +274,30 @@ const compile = async (
             ? "./background-async.entry.js"
             : options.background === "shared"
               ? "./background-shared.entry.js"
-              : "./background.entry.js";
+              : options.background === "unused" || options.noConsumers
+                ? "./background-unused.entry.js"
+                : "./background.entry.js";
     const compiler = rspack({
         context: fixtures,
-        mode: "production",
+        mode: options.mode ?? "production",
         target: ["web", "es2020"],
         devtool: "source-map",
         entry: {
             ...(options.includeBackground === false ? {} : {background}),
-            alpha: "./alpha.entry.js",
-            beta: "./beta.entry.js",
+            alpha: options.noConsumers ? "./alpha-unused.entry.js" : "./alpha.entry.js",
+            beta: options.noConsumers ? "./beta-unused.entry.js" : "./beta.entry.js",
+            ...(options.usage
+                ? {
+                      local: "./usage/local.entry.js",
+                      isolated: {import: "./usage/local.entry.js", layer: "fixture:isolated"},
+                      unused: "./usage/unused.entry.js",
+                      "unused-isolated": {import: "./usage/unused.entry.js", layer: "fixture:isolated"},
+                      namespace: "./usage/namespace.entry.js",
+                      lazy: "./usage/lazy.entry.js",
+                      "shared-a": "./usage/shared.entry.js",
+                      "shared-b": "./usage/shared.entry.js",
+                  }
+                : {}),
         },
         output: {
             path: outputPath,
@@ -324,6 +344,7 @@ const compile = async (
             ],
         },
         optimization: {
+            usedExports: true,
             chunkIds: "deterministic",
             moduleIds: "deterministic",
             minimize: true,
@@ -343,6 +364,17 @@ const compile = async (
                               enforce: true,
                               reuseExistingChunk: true,
                           },
+                          ...(options.usage
+                              ? {
+                                    fixtureReader: {
+                                        test: /[\\/]shared-reader\.js$/,
+                                        name: "shared-reader",
+                                        chunks: "all",
+                                        minChunks: 2,
+                                        enforce: true,
+                                    },
+                                }
+                              : {}),
                           ...(options.sharedCssChunk
                               ? {
                                     fixtureSharedStyles: {
@@ -388,7 +420,9 @@ const compile = async (
             ...(options.renameBetaCss ? [new RenameBetaCssPlugin()] : []),
             ...(options.removeBetaCss ? [new RemoveBetaCssPlugin()] : []),
             ...(options.betaRuntimeMarker ? [new AddBetaRuntimeModulePlugin(options.betaRuntimeMarker)] : []),
+            new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
             new BuildAssetsMapPlugin({
+                module: EntrypointAssetsModule,
                 buildHashSalt: options.buildHashSalt,
                 cssChunkFilename: cssFilename,
                 cssFilename,
@@ -655,6 +689,58 @@ const expectNoChangedBytesUnderStableNames = (before: BuildResult, after: BuildR
 jest.setTimeout(120_000);
 
 describe("BuildAssetsMapPlugin", () => {
+    test.each(["production", "development"] as const)(
+        "collects the build inventory without embedding unused maps in %s",
+        async mode => {
+            const build = await compile(true, {noConsumers: true, mode});
+            for (const source of Object.values(build.sources)) {
+                expect(source).not.toContain("__adnbnBuildAssetsFullMap__");
+                expect(source).not.toContain("__adnbnBuildAssetsCurrentMap__");
+            }
+            expect(build.assets.alpha.initial.css).toHaveLength(1);
+            expect(build.assets.beta.initial.css).toHaveLength(1);
+            expect(build.assets.alpha.assets.length).toBeGreaterThan(0);
+            expect(executeEntrypoint(build, "background").sandbox.__backgroundValue).toBe("unused");
+        }
+    );
+
+    test.each([false, true])(
+        "selects consumers across layers, reexports and lazy/shared modules (shared=%s)",
+        async common => {
+            const build = await compile(common, {background: "unused", usage: true});
+            for (const entry of ["background", "unused", "unused-isolated"]) {
+                const source = build.assets[entry].initial.js.map(file => build.sources[file]).join("\n");
+                expect(source).not.toContain("__adnbnBuildAssetsFullMap__");
+                expect(source).not.toContain("__adnbnBuildAssetsCurrentMap__");
+            }
+            for (const entry of ["local", "isolated", "namespace", "lazy", "shared-a", "shared-b"]) {
+                const {sandbox} = executeEntrypoint(build, entry);
+                expect(await (sandbox.readCurrent as () => unknown)()).toEqual(runtimeAssets(build.assets[entry]));
+            }
+            if (common) {
+                const shared = build.assets["shared-a"].initial.js.filter(file =>
+                    build.assets["shared-b"].initial.js.includes(file)
+                );
+                expect(shared.length).toBeGreaterThan(0);
+                for (const file of shared) expect(build.sources[file]).not.toContain("__adnbnBuildAssetsCurrentMap__");
+            }
+        }
+    );
+
+    test.each(["chunkhash", "contenthash"] as const)(
+        "keeps an unused background's %s stable when another entry changes",
+        async jsHash => {
+            const [before, after] = await Promise.all([
+                compile(false, {background: "unused", jsHash}),
+                compile(false, {background: "unused", betaCssChange: true, jsHash}),
+            ]);
+            expect(after.assets.background.initial.js).toEqual(before.assets.background.initial.js);
+            const background = before.assets.background.initial.js[0];
+            expect(after.hashes[background]).toBe(before.hashes[background]);
+            expect(after.assets.beta.initial.css).not.toEqual(before.assets.beta.initial.css);
+        }
+    );
+
     test.each(["chunkhash", "contenthash", "fullhash"] as const)(
         "exposes isolated runtime maps with %s filenames",
         async jsHash => {
@@ -877,5 +963,135 @@ describe("BuildAssetsMapPlugin", () => {
                 renameBetaCssAfterProcessAssets: true,
             })
         ).rejects.toThrow('Build assets changed after the runtime map for entrypoint "beta" was embedded');
+    });
+
+    test("refreshes selected runtimes, final CSS filenames and removals in watch", async () => {
+        const directory = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-assets-watch-"));
+        const context = path.join(directory, "src");
+        const states = path.join(fixtures, "watch");
+        fs.cpSync(states, context, {recursive: true});
+        const update = async (file: string, state: string) =>
+            writeFile(path.join(context, file), await readFile(path.join(states, state)));
+        await update("background.js", "background-unused.js");
+        await update("local.js", "local-unused.js");
+        const compiler = rspack({
+            context,
+            mode: "production",
+            devtool: false,
+            entry: {background: "./background.js", local: "./local.js"},
+            output: {
+                path: path.join(directory, "dist"),
+                filename: "[name].[chunkhash:8].js",
+                publicPath: "",
+                uniqueName: AppToken,
+                chunkLoadingGlobal: ChunkLoadingGlobal,
+            },
+            resolve: {alias: {adnbn$: path.join(projectRoot, "dist/index.js")}},
+            resolveLoader: {modules: [path.join(projectRoot, "node_modules")]},
+            module: {rules: [{test: /\.css$/, use: [CssExtractRspackPlugin.loader, "css-loader"]}]},
+            plugins: [
+                new CssExtractRspackPlugin({filename: "[name].[contenthash:8].css"}),
+                new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
+                new BuildAssetsMapPlugin({
+                    module: EntrypointAssetsModule,
+                    fullMapEntrypoint: "background",
+                    cssFilename: "[name].[contenthash:8].css",
+                    cssChunkFilename: "[name].[contenthash:8].css",
+                }),
+            ],
+        });
+        const builds: BuildResult[] = [];
+        let failure: Error | undefined;
+        let notify: (() => void) | undefined;
+        const watcher = compiler.watch({poll: 50, aggregateTimeout: 20}, (error, stats) => {
+            if (error || !stats || stats.hasErrors()) {
+                failure =
+                    error ?? new Error(stats?.toString({all: false, errors: true}) ?? "Missing watch compilation");
+            } else {
+                builds.push({
+                    assets: getCompilationBuildAssets(stats.compilation)!,
+                    sources: Object.fromEntries(
+                        stats.compilation.getAssets().map(asset => [asset.name, asset.source.source().toString()])
+                    ),
+                    hashes: {},
+                });
+            }
+            notify?.();
+        });
+        const waitForBuild = (description: string, matches: (build: BuildResult) => boolean): Promise<BuildResult> =>
+            new Promise((resolve, reject) => {
+                const timer = setTimeout(() => {
+                    notify = undefined;
+                    reject(new Error(`Timed out waiting for ${description}`));
+                }, 15_000);
+                notify = () => {
+                    if (failure) {
+                        clearTimeout(timer);
+                        notify = undefined;
+                        reject(failure);
+                        return;
+                    }
+                    const build = builds.find(matches);
+                    if (build) {
+                        clearTimeout(timer);
+                        notify = undefined;
+                        resolve(build);
+                    }
+                };
+                notify();
+            });
+        const hasMap = (build: BuildResult, entry: string, key: string) =>
+            build.assets[entry].initial.js.some(file => build.sources[file].includes(key));
+        const currentKey = "__adnbnBuildAssetsCurrentMap__";
+        const fullKey = "__adnbnBuildAssetsFullMap__";
+        try {
+            const initial = await waitForBuild("initial build without maps", () => true);
+            expect(hasMap(initial, "background", fullKey)).toBe(false);
+            expect(hasMap(initial, "local", currentKey)).toBe(false);
+
+            builds.length = 0;
+            await update("local.js", "local.js");
+            const local = await waitForBuild("local map consumer", build => hasMap(build, "local", currentKey));
+            expect(hasMap(local, "background", fullKey)).toBe(false);
+            expect((executeEntrypoint(local, "local").sandbox.readCurrent as () => unknown)()).toEqual(
+                runtimeAssets(local.assets.local)
+            );
+
+            builds.length = 0;
+            await update("background.js", "background.js");
+            const full = await waitForBuild("background map consumer", build => hasMap(build, "background", fullKey));
+            expect((executeEntrypoint(full, "background").sandbox.readFull as () => unknown)()).toEqual(full.assets);
+
+            builds.length = 0;
+            await update("style.css", "style-changed.css");
+            const changed = await waitForBuild(
+                "changed CSS filename",
+                build => build.assets.local.initial.css[0] !== full.assets.local.initial.css[0]
+            );
+            expect((executeEntrypoint(changed, "background").sandbox.readFull as () => unknown)()).toEqual(
+                changed.assets
+            );
+            expect((executeEntrypoint(changed, "local").sandbox.readCurrent as () => unknown)()).toEqual(
+                runtimeAssets(changed.assets.local)
+            );
+            expect(changed.assets.background.initial.js).not.toEqual(full.assets.background.initial.js);
+
+            builds.length = 0;
+            await update("local.js", "local-unused.js");
+            const removedLocal = await waitForBuild("local map removal", build => !hasMap(build, "local", currentKey));
+            expect((executeEntrypoint(removedLocal, "background").sandbox.readFull as () => unknown)()).toEqual(
+                removedLocal.assets
+            );
+
+            builds.length = 0;
+            await update("background.js", "background-unused.js");
+            const removed = await waitForBuild("full map removal", build => !hasMap(build, "background", fullKey));
+            expect(hasMap(removed, "local", currentKey)).toBe(false);
+            expect(removed.assets.local.initial.css).toEqual(changed.assets.local.initial.css);
+        } finally {
+            await new Promise<void>(resolve => watcher.close(resolve));
+            await new Promise<void>((resolve, reject) => compiler.close(error => (error ? reject(error) : resolve())));
+            fs.rmSync(directory, {recursive: true, force: true});
+        }
     });
 });

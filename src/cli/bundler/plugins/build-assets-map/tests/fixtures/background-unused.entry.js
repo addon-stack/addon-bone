@@ -1,3 +1,3 @@
 import {getEntrypointAssetsMap} from "adnbn";
 
-globalThis.assets = getEntrypointAssetsMap();
+globalThis.__backgroundValue = "unused";

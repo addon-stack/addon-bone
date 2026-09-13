@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import {
     getIcons,
+    getEntrypointAssets,
+    getEntrypointAssetsMap,
     getOffscreen,
     getOffscreens,
     getPages,
@@ -16,6 +18,10 @@ assert.equal(typeof globalThis.chrome, "undefined");
 assert.equal(Object.getPrototypeOf(DynamicLocale.prototype), AbstractLocale.prototype);
 assert.equal(typeof NativeLocale, "function");
 assert.equal(getPages().size, 0);
+assert.throws(() => getEntrypointAssets(), {message: "Current entrypoint assets are unavailable in this runtime"});
+assert.throws(() => getEntrypointAssetsMap(), {
+    message: "getEntrypointAssetsMap() is available only in the background entrypoint",
+});
 assert.throws(() => getRelay("missing", 1), {message: 'Failed to get relay "missing"'});
 
 const errors = [];

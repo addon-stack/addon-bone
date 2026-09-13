@@ -10,6 +10,11 @@ declare module "#adnbn/page" {
     export const aliases: typeof import("./page").aliases;
 }
 
+declare module "#adnbn/entrypoint" {
+    export const readAssets: typeof import("./entrypoint").readAssets;
+    export const readAssetsMap: typeof import("./entrypoint").readAssetsMap;
+}
+
 declare module "#adnbn/relay" {
     export const options: typeof import("./relay").options;
 }

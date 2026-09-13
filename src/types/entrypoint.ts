@@ -4,6 +4,9 @@ import {ManifestVersion} from "@typing/manifest";
 
 export const EntrypointFileExtensions: ReadonlySet<string> = new Set(["ts", "tsx", "js", "jsx", "vue", "svelte"]);
 
+export const EntrypointAssetsRuntimeProperty = "__adnbnCurrentEntrypointAssets";
+export const EntrypointAssetsMapRuntimeProperty = "__adnbnBuildAssets";
+
 export enum EntrypointType {
     Background = "background",
     Command = "command",
