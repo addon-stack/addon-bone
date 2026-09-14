@@ -1,6 +1,7 @@
 import * as api from "adnbn";
 import * as local from "adnbn/relay";
 import * as entry from "adnbn/entry/relay";
+import {Builder as ContentBuilder} from "adnbn/entry/content/vanilla";
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type Expect<T extends true> = T;
@@ -12,9 +13,10 @@ const definition = api.defineRelay({
     init: () => ({scan: (text: string) => text.length}),
 });
 
-new entry.Builder(definition);
+new entry.Builder(definition, ContentBuilder);
 const unresolved: entry.RelayUnresolvedDefinition<ReturnType<typeof definition.init>> = {};
-new entry.Builder(unresolved);
+new entry.Builder(unresolved, ContentBuilder);
+entry.default(entry.resolveDefinition({default: definition}, "scanner"), ContentBuilder);
 
 const original = local.getRelay("scanner");
 const scalar = api.getRelay("scanner", 1);

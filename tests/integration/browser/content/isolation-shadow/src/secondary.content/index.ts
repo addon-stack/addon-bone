@@ -1,4 +1,5 @@
 import {ContentScriptIsolation, ContentScriptShadowMode, ContentScriptAppend, defineContentScriptAppend} from "adnbn";
+import {createMutationObserverStrategy} from "adnbn/content";
 
 import sharedStyles from "../shared/styles.module.css?isolation";
 import styles from "./styles.module.css?isolation";
@@ -11,7 +12,7 @@ export default defineContentScriptAppend({
     anchor: "[data-shadow-secondary]",
     append: ContentScriptAppend.Last,
     isolation: {type: ContentScriptIsolation.Shadow, mode: ContentScriptShadowMode.Closed},
-    watch: true,
+    watch: createMutationObserverStrategy(),
     container: () => {
         const host = document.createElement("section");
         host.dataset.shadowProbe = "secondary";

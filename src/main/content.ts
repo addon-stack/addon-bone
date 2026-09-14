@@ -1,22 +1,6 @@
-import {
-    contentScriptMountAppendResolver,
-    contentScriptAnchorResolver,
-    contentScriptAwaitFirstResolver,
-    contentScriptMutationObserverResolver,
-    contentScriptRenderResolver,
-    contentScriptContainerResolver,
-} from "@entry/content/core/resolvers";
+import {createAppendMountHandler} from "@entry/content/resolvers/mount";
 
 import {ContentScriptAppendDefinition, ContentScriptDefinition} from "@typing/content";
-
-export {
-    contentScriptMountAppendResolver,
-    contentScriptAnchorResolver,
-    contentScriptAwaitFirstResolver,
-    contentScriptMutationObserverResolver,
-    contentScriptRenderResolver,
-    contentScriptContainerResolver,
-};
 
 export * from "@typing/content";
 
@@ -29,6 +13,6 @@ export const defineContentScriptAppend = (options: ContentScriptAppendDefinition
 
     return {
         ...definition,
-        mount: contentScriptMountAppendResolver(append),
+        mount: createAppendMountHandler(append),
     };
 };

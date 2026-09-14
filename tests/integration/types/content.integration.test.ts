@@ -4,9 +4,10 @@ import ts from "typescript";
 describe("content contracts", () => {
     const projectDir = path.resolve(__dirname, "../../..");
     const fixture = path.join(__dirname, "fixtures/content/definition.tsx");
+    const watchFixture = path.join(__dirname, "fixtures/content/watch.ts");
 
     test.each(["source", "package"])(
-        "checks shared and adapter render types through the %s API",
+        "checks content definitions and watch strategies through the %s API",
         mode => {
             const config = ts.readConfigFile(path.join(projectDir, "tsconfig.json"), ts.sys.readFile);
             const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, projectDir);
@@ -25,7 +26,7 @@ describe("content contracts", () => {
                 types: ["node", "chrome"],
             };
             const host = ts.createCompilerHost(options);
-            const program = ts.createProgram([fixture], options, host);
+            const program = ts.createProgram([fixture, watchFixture], options, host);
             const diagnostics = ts.getPreEmitDiagnostics(program).map(diagnostic => {
                 const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
                 const position = diagnostic.file?.getLineAndCharacterOfPosition(diagnostic.start ?? 0);
@@ -36,6 +37,13 @@ describe("content contracts", () => {
             const apiFile = ts.resolveModuleName("adnbn", fixture, options, host).resolvedModule?.resolvedFileName;
             expect(apiFile).toBe(
                 path.join(projectDir, mode === "source" ? "src/index.ts" : "dist/index.d.ts").replace(/\\/g, "/")
+            );
+            const contentFile = ts.resolveModuleName("adnbn/content", watchFixture, options, host).resolvedModule
+                ?.resolvedFileName;
+            expect(contentFile).toBe(
+                path
+                    .join(projectDir, mode === "source" ? "src/content/index.ts" : "dist/content/index.d.ts")
+                    .replace(/\\/g, "/")
             );
         },
         30_000

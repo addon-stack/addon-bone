@@ -33,15 +33,17 @@ declare module "virtual:content-entrypoint" {
 }
 
 declare module "virtual:content-builder" {
+    export const resolveDefinition: (module: object) => import("@typing/content").ContentScriptDefinition;
+
     export const Builder:
         | typeof import("@entry/content/adapters/vanilla").Builder
         | typeof import("@entry/content/adapters/react").Builder
-        | typeof import("@entry/content/frame").Builder;
+        | typeof import("@entry/content").Builder;
 
     const content:
         | typeof import("@entry/content/adapters/vanilla").default
         | typeof import("@entry/content/adapters/react").default
-        | typeof import("@entry/content/frame").default;
+        | typeof import("@entry/content").default;
     export default content;
 }
 

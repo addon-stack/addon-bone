@@ -1,23 +1,92 @@
 # Content entrypoints
 
+## Public API
+
+Import `defineContentScript`, `defineContentScriptAppend`, and content definition types from `adnbn`.
+Import watch-strategy factories and lifecycle subscription contracts from `adnbn/content`:
+
+```ts title="src/panel.content.ts"
+import {defineContentScript} from "adnbn";
+import {createMutationObserverStrategy} from "adnbn/content";
+
+export default defineContentScript({
+    anchor: "article",
+    watch: createMutationObserverStrategy({
+        attributes: false,
+        characterData: false,
+    }),
+    render: () => "Hello",
+});
+```
+
+`createMutationObserverStrategy(options?)` creates a debounced DOM-mutation strategy with configurable
+`MutationObserverInit` options. `createAwaitFirstStrategy(options?)` provides the strategy used while
+waiting for the first content nodes. Creating a strategy does not start observing; the lifecycle
+starts it when processing content and invokes its returned unsubscribe function during cleanup.
+
+`adnbn/content` also exports `ContentScriptEvent` and the `ContentScriptWatchStrategy`,
+`ContentScriptContext`, `ContentScriptEventCallback`, and `ContentScriptNode` types. A custom strategy
+receives `(update, context)` and returns an unsubscribe function. Use `context.watch(callback)` for
+lifecycle events; its returned function removes that subscription, and `context.unwatch()` removes all
+context subscriptions. Without a local renderer, anchor processing and watching run only for page/src navigation.
+
+The public `src/content/index.ts` entrypoint explicitly exports these tools from their runtime owners.
+Definition helpers remain in `src/main/content.ts`; normalization and mounting helpers remain internal.
+Runtime code imports implementations directly, without depending on the public `adnbn/content` facade.
+The separate `adnbn/entry/content` entrypoint supplies the builder, startup function, and definition
+resolver required by generated modules.
+
 ## Internal organization
 
-`core/Builder.ts` and `core/MountBuilder.ts` coordinate the content lifecycle. Related implementations
-and their tests live together:
+`lifecycle/Builder.ts` coordinates main execution, watching, context cleanup, and node events.
+`lifecycle/MountBuilder.ts` is a concrete builder that composes mounting and isolation without a UI
+renderer. React and Vanilla extend it with rendering. Related implementations and their tests live together:
 
-- `core/nodes`: host mounting, node decorators, ShadowRoot/iframe targets, and the styles-runtime helper.
-- `core/markers`: anchor marking and lookup strategies.
-- `core/context`: the node collection, lifecycle operations, and event subscriptions.
-- `core/resolvers`: normalization of content definitions and option handlers.
-- `adapters/react` and `adapters/vanilla`: UI rendering implementations.
-- `frame`: document navigation for `isolation.page` and `isolation.src`, without a UI renderer.
+- `lifecycle/nodes`: host mounting, node decorators, ShadowRoot/iframe targets, and the styles-runtime helper.
+- `lifecycle/markers`: anchor marking and lookup strategies.
+- `lifecycle/context`: the node collection, lifecycle operations, and event subscriptions.
+- `resolvers`: shared option handlers and definition merging, without framework detection or rendering.
+- `adapters/react` and `adapters/vanilla`: default-export interpretation, render normalization, and UI rendering.
+- `index.ts`: the common runtime entrypoint, exporting `MountBuilder` as `Builder` and its startup resolver.
 
 Pure structural validation and the frame-navigation predicate live in `src/shared/content/isolation.ts`.
 CLI and runtime import this shared module independently; the parser does not import runtime resolvers.
 
-A blank iframe still uses its React/Vanilla adapter with the shared `FrameNode`. The public
-`adnbn/entry/content/frame` import resolves to the separate frame builder. Internally,
-`virtual:content-builder` selects either that builder or a renderer adapter.
+A blank iframe still uses its React/Vanilla adapter with the shared `FrameNode`. The runtime
+`adnbn/entry/content` import resolves to the common builder without importing renderer adapters. Internally,
+`virtual:content-builder` selects either that builder or a renderer adapter. The selected entrypoint
+exports both its builder and `resolveDefinition`; the generated content module imports
+them together. `.tsx`/`.jsx` selects React, while the other currently supported script extensions select
+Vanilla. `isolation.page`/`isolation.src` selects the common builder regardless of the filename, for both
+Content and Relay. Scripts with only `main` retain the filename-based selection.
+
+Each adapter interprets its own default export before shared code merges options. Default options
+override named options; a recognized default render value overrides a named `render`. React uses
+`isValidElement` to recognize elements without exposing that dependency to Vanilla or the common runtime. This
+refactor preserves the existing render forms; it does not expand rendering to every value in `ReactNode`.
+`mergeDefinition` combines exports using the selected resolver's interpretation of default
+values. The common `resolveDefinition` accepts configuration without recognizing framework
+components; adapters provide their own definition resolvers. The common builder accepts an absent render
+handler and reports an error if rendering is requested without an adapter. Vanilla keeps its value check and
+async handler normalization together in `adapters/vanilla/resolvers/render.ts`, used internally by the
+Vanilla builder.
+
+The CLI `ContentParser.ts` and its test live beside the other parsers in `src/cli/entrypoint/parser`.
+Content fixtures live in `parser/tests/fixtures/content`. The helper in
+`parser/utils/content/default-render.ts` interprets source metadata from `entrypoint/file` without loading UI runtimes. In particular, it
+rejects known default render exports with frame navigation, including explicit element objects.
+The common runtime receives this build-validated configuration and retains the runtime rejection of an explicit
+`render` property. Relay keeps its separate default-export interpretation as transport initialization.
+
+The common lifecycle wraps each complete node in `EventNode`, including any adapter renderer, before
+adding it to the context. Mount/unmount events follow the underlying node operations. Without render,
+`main` still runs and context cleanup remains available; anchor processing and watching start only for
+page/src navigation. `FrameNode` continues to own iframe creation, navigation, and child-document recovery.
+
+When adding a runtime adapter, implement its definition and render resolvers and expose the definition
+resolver from that adapter's `index.ts`. Extend filename/build support and parser metadata interpretation
+as required by the framework. Runtime adapters are selected individually; do not aggregate their
+implementations through a common barrel. The content define helpers stay at the root `adnbn` import.
 
 Content contracts live in `src/types/content`:
 

@@ -1,5 +1,5 @@
 import {RelayAllFrames, type ContentScriptDefinition, type RelayDefinition} from "adnbn";
-import {Builder as RelayBuilder, type RelayUnresolvedDefinition} from "adnbn/entry/relay";
+import relay, {Builder as RelayBuilder, resolveDefinition, type RelayUnresolvedDefinition} from "adnbn/entry/relay";
 import type {TransportType} from "adnbn/transport";
 import {Builder as ContentScriptBuilder} from "virtual:content-builder";
 import * as definition from "virtual:relay-entrypoint";
@@ -21,10 +21,11 @@ type DefaultExport = Expect<
     >
 >;
 
-new RelayBuilder({allFrames: RelayAllFrames.All});
+new RelayBuilder({allFrames: RelayAllFrames.All}, ContentScriptBuilder);
 new ContentScriptBuilder({allFrames: true});
+relay(resolveDefinition(definition, "scanner"), ContentScriptBuilder);
 
 // @ts-expect-error: The real content constructor requires a boolean, not Relay's response mode.
 new ContentScriptBuilder({allFrames: RelayAllFrames.All});
 // @ts-expect-error: The real Relay constructor does not accept arbitrary modes.
-new RelayBuilder({allFrames: "invalid"});
+new RelayBuilder({allFrames: "invalid"}, ContentScriptBuilder);

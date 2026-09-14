@@ -1,10 +1,9 @@
 import {isValidElement} from "react";
 
-import MountBuilder from "../../core/MountBuilder";
-import EventNode from "../../core/nodes/EventNode";
+import MountBuilder from "../../lifecycle/MountBuilder";
 import ReactNode from "./Node";
 
-import {contentScriptReactRenderResolver} from "./resolvers";
+import {createRenderResolver} from "./resolvers/render";
 
 import {
     ContentScriptDefinition,
@@ -13,7 +12,7 @@ import {
     ContentScriptRenderValue,
 } from "@typing/content";
 
-export default class extends MountBuilder {
+export default class Builder extends MountBuilder {
     constructor(definition: ContentScriptDefinition) {
         super(definition);
     }
@@ -23,7 +22,7 @@ export default class extends MountBuilder {
             return;
         }
 
-        return contentScriptReactRenderResolver(render);
+        return createRenderResolver(render);
     }
 
     protected async createNode(anchor: Element): Promise<ContentScriptNode> {
@@ -35,6 +34,6 @@ export default class extends MountBuilder {
             console.warn("Content script react value is not a valid React element");
         }
 
-        return new EventNode(new ReactNode(await super.createNode(anchor), value), this.emitter);
+        return new ReactNode(await super.createNode(anchor), value);
     }
 }

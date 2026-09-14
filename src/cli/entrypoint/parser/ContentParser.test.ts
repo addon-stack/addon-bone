@@ -63,6 +63,8 @@ describe("ContentParser", () => {
         "jsx.content.tsx",
         "Panel.content.tsx",
         "element-object.content.ts",
+        "create-element.content.tsx",
+        "local-element.content.tsx",
     ])("rejects frame navigation with default render: %s", name => {
         const target = file("invalid", "default-render", name);
         expectParseError(target, /isolation.page\/isolation.src cannot be combined with render/);

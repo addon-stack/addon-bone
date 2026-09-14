@@ -55,10 +55,6 @@
       "types": "./dist/entry/*/index.d.ts",
       "default": "./dist/entry/*/index.js"
     },
-    "./entry/content/frame": {
-      "types": "./dist/entry/content/frame/index.d.ts",
-      "default": "./dist/entry/content/frame/index.js"
-    },
     "./entry/content/*": {
       "types": "./dist/entry/content/adapters/*/index.d.ts",
       "default": "./dist/entry/content/adapters/*/index.js"
@@ -66,6 +62,10 @@
     "./entry/view/*": {
       "types": "./dist/entry/view/adapters/*/index.d.ts",
       "default": "./dist/entry/view/adapters/*/index.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "default": "./dist/content/index.js"
     },
     "./locale": {
       "types": "./dist/locale/index.d.ts",

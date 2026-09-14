@@ -1,25 +1,35 @@
-import {isValidContentScriptRenderValue} from "../../core/resolvers";
+import {createRenderResolver, isValidRenderValue} from "./resolvers/render";
 
-import MountBuilder from "../../core/MountBuilder";
-import EventNode from "../../core/nodes/EventNode";
+import MountBuilder from "../../lifecycle/MountBuilder";
 import VanillaNode from "./Node";
 
-import {ContentScriptDefinition, ContentScriptNode} from "@typing/content";
+import type {
+    ContentScriptDefinition,
+    ContentScriptNode,
+    ContentScriptRenderHandler,
+    ContentScriptRenderValue,
+} from "@typing/content";
 
-export default class extends MountBuilder {
+export default class Builder extends MountBuilder {
     public constructor(definition: ContentScriptDefinition) {
         super(definition);
+    }
+
+    protected resolveRender(
+        render?: ContentScriptRenderValue | ContentScriptRenderHandler
+    ): ContentScriptRenderHandler | undefined {
+        return render === undefined ? undefined : createRenderResolver(render);
     }
 
     protected async createNode(anchor: Element): Promise<ContentScriptNode> {
         let value = await this.getValue(anchor);
 
-        if (value !== true && !isValidContentScriptRenderValue(value)) {
+        if (value !== true && !isValidRenderValue(value)) {
             value = undefined;
 
             console.warn("Content script vanilla value is not a valid render value");
         }
 
-        return new EventNode(new VanillaNode(await super.createNode(anchor), value), this.emitter);
+        return new VanillaNode(await super.createNode(anchor), value);
     }
 }
