@@ -1,10 +1,12 @@
 import {EntrypointOptions} from "@typing/entrypoint";
+
 import {
     ContentScriptConfig,
     ContentScriptContext,
     ContentScriptDefinition,
     ContentScriptEntrypointOptions,
 } from "@typing/content";
+
 import {
     TransportConfig,
     TransportDefinition,
@@ -12,6 +14,7 @@ import {
     type TransportProxyTarget,
     type TransportTarget,
 } from "@typing/transport";
+
 import {Awaiter} from "@typing/helpers";
 import type {MessageError} from "@typing/message";
 
@@ -209,11 +212,16 @@ export type RelayMainHandler<T extends TransportType> = (
 
 type RelayContentDefinition<T = ContentScriptDefinition> = T extends unknown ? Omit<T, "main" | "allFrames"> : never;
 
-export type RelayDefinition<T extends TransportType> = Omit<TransportDefinition<RelayOptions, T>, "main"> &
-    RelayContentDefinition &
+export type RelayDefinition<T extends TransportType, Data = unknown> = Omit<
+    TransportDefinition<RelayOptions, T>,
+    "main"
+> &
+    RelayContentDefinition<ContentScriptDefinition<Data>> &
     Partial<RelayOptions> & {
         main?: RelayMainHandler<T>;
     };
 
 /** Internal, merged runtime input. The public definition retains its discriminated union. */
-export type RelayUnresolvedDefinition<T extends TransportType> = Partial<Omit<RelayDefinition<T>, never>>;
+export type RelayUnresolvedDefinition<T extends TransportType, Data = unknown> = Partial<
+    Omit<RelayDefinition<T, Data>, never>
+>;

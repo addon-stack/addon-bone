@@ -8,13 +8,15 @@ import {RelayUnresolvedDefinition} from "@typing/relay";
 import {ContentScriptBuilder, ContentScriptDefinition} from "@typing/content";
 import {TransportType} from "@typing/transport";
 
-export default class Builder<T extends TransportType> extends EntrypointBuilder {
-    protected readonly _transport: TransportBuilder<T>;
+export default class Builder<T extends TransportType, Data = unknown> extends EntrypointBuilder {
+    private generation = 0;
+
+    protected readonly _transport: TransportBuilder<T, Data>;
     protected readonly _content: ContentScriptBuilder;
 
     constructor(
-        protected readonly definition: RelayUnresolvedDefinition<T>,
-        contentBuilder: new (definition: ContentScriptDefinition) => ContentScriptBuilder
+        protected readonly definition: RelayUnresolvedDefinition<T, Data>,
+        contentBuilder: new (definition: ContentScriptDefinition<Data>) => ContentScriptBuilder
     ) {
         super();
 
@@ -25,27 +27,44 @@ export default class Builder<T extends TransportType> extends EntrypointBuilder 
         this._content = new contentBuilder({
             ...contentOptions,
             ...(allFrames === undefined ? {} : {allFrames: allFrames !== false}),
-        } as ContentScriptDefinition);
+        } as ContentScriptDefinition<Data>);
     }
 
     public async build(): Promise<void> {
-        await this.destroy();
+        const destroying = this.destroy();
+        const generation = this.generation;
+        await destroying;
+
+        if (generation !== this.generation) {
+            return;
+        }
 
         await this._transport.build();
+
+        if (generation !== this.generation) {
+            return;
+        }
+
         await this._content.build();
 
-        const {main} = this.definition;
+        if (generation !== this.generation) {
+            return;
+        }
+
+        const {prepare, ...options} = this.definition;
+        const {main} = options;
 
         if (main) {
             await main(this._transport.get(), this._content.getContext(), {
-                ...this.definition,
+                ...options,
                 isolation: resolveContentScriptIsolation(this.definition.isolation, "render" in this.definition),
             });
         }
     }
 
     public async destroy(): Promise<void> {
-        await this._transport.destroy();
-        await this._content.destroy();
+        this.generation++;
+        // Invalidate pending content work immediately; transport cleanup starts first.
+        await Promise.all([this._transport.destroy(), this._content.destroy()]);
     }
 }

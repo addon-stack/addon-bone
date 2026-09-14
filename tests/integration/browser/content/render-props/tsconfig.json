@@ -1,0 +1,11 @@
+{
+  "extends": "./.adnbn/tsconfig.json",
+  "include": [
+    "src",
+    ".adnbn/**/*.d.ts",
+    "adnbn.config.ts"
+  ],
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
+}

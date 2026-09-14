@@ -1,6 +1,8 @@
 import {ContentScriptEventEmitter, ContentScriptNode} from "@typing/content";
 
 export default class EventNode implements ContentScriptNode {
+    private generation = 0;
+
     constructor(
         protected readonly node: ContentScriptNode,
         protected readonly emitter: ContentScriptEventEmitter
@@ -19,7 +21,12 @@ export default class EventNode implements ContentScriptNode {
     }
 
     public mount(): boolean {
+        const generation = this.generation;
         const result = this.node.mount();
+
+        if (generation !== this.generation) {
+            return false;
+        }
 
         if (result === true) {
             this.emitter.emitMount(this.node);
@@ -29,6 +36,8 @@ export default class EventNode implements ContentScriptNode {
     }
 
     public unmount(): boolean {
+        this.generation++;
+
         const result = this.node.unmount();
 
         if (result === true) {

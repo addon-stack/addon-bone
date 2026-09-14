@@ -17,6 +17,9 @@ the browser-specific build and manifest.
 npm i -D adnbn
 ```
 
+TypeScript projects require TypeScript **5.6.3 or newer** to check the published declarations and
+their dependencies. Addon Bone's own TypeScript dependency does not replace your project's compiler.
+
 ## Get started
 
 Create a project, then build it for production:

@@ -22,24 +22,36 @@ describe("content contracts", () => {
                 jsx: ts.JsxEmit.ReactJSX,
                 strict: true,
                 noEmit: true,
-                skipLibCheck: true,
+                skipLibCheck: mode === "source",
                 types: ["node", "chrome"],
             };
+
             const host = ts.createCompilerHost(options);
-            const program = ts.createProgram([fixture, watchFixture], options, host);
+
+            const program = ts.createProgram(
+                [fixture, watchFixture, path.join(__dirname, "fixtures/content/prepare.tsx")],
+                options,
+                host
+            );
+
             const diagnostics = ts.getPreEmitDiagnostics(program).map(diagnostic => {
                 const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
                 const position = diagnostic.file?.getLineAndCharacterOfPosition(diagnostic.start ?? 0);
+
                 return `${diagnostic.file?.fileName ?? "compiler"}:${(position?.line ?? 0) + 1}: ${message}`;
             });
+
             expect(diagnostics).toEqual([]);
 
             const apiFile = ts.resolveModuleName("adnbn", fixture, options, host).resolvedModule?.resolvedFileName;
+
             expect(apiFile).toBe(
                 path.join(projectDir, mode === "source" ? "src/index.ts" : "dist/index.d.ts").replace(/\\/g, "/")
             );
+
             const contentFile = ts.resolveModuleName("adnbn/content", watchFixture, options, host).resolvedModule
                 ?.resolvedFileName;
+
             expect(contentFile).toBe(
                 path
                     .join(projectDir, mode === "source" ? "src/content/index.ts" : "dist/content/index.d.ts")

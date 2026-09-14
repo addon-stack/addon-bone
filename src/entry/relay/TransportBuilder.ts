@@ -5,11 +5,11 @@ import {RegisterRelay} from "@relay/providers";
 import {RelayOptions, RelayUnresolvedDefinition, RelayMethod} from "@typing/relay";
 import {TransportName, TransportType} from "@typing/transport";
 
-export default class<T extends TransportType = TransportType> extends AbstractBuilder<RelayOptions, T> {
+export default class<T extends TransportType = TransportType, Data = unknown> extends AbstractBuilder<RelayOptions, T> {
     protected readonly method: RelayMethod;
 
-    constructor(definition: RelayUnresolvedDefinition<T>) {
-        const {main, method, ...options} = definition;
+    constructor(definition: RelayUnresolvedDefinition<T, Data>) {
+        const {main, method, prepare, ...options} = definition;
 
         super(options);
 

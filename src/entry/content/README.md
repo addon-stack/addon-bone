@@ -28,7 +28,9 @@ starts it when processing content and invokes its returned unsubscribe function 
 `ContentScriptContext`, `ContentScriptEventCallback`, and `ContentScriptNode` types. A custom strategy
 receives `(update, context)` and returns an unsubscribe function. Use `context.watch(callback)` for
 lifecycle events; its returned function removes that subscription, and `context.unwatch()` removes all
-context subscriptions. Without a local renderer, anchor processing and watching run only for page/src navigation.
+context subscriptions. `context.mount()` and `context.unmount()` run synchronously, including their
+lifecycle events. Await asynchronous discovery and preparation through `builder.build()` or the
+watch strategy's `update()` callback.
 
 The public `src/content/index.ts` entrypoint explicitly exports these tools from their runtime owners.
 Definition helpers remain in `src/main/content.ts`; normalization and mounting helpers remain internal.
@@ -66,9 +68,8 @@ override named options; a recognized default render value overrides a named `ren
 refactor preserves the existing render forms; it does not expand rendering to every value in `ReactNode`.
 `mergeDefinition` combines exports using the selected resolver's interpretation of default
 values. The common `resolveDefinition` accepts configuration without recognizing framework
-components; adapters provide their own definition resolvers. The common builder accepts an absent render
-handler and reports an error if rendering is requested without an adapter. Vanilla keeps its value check and
-async handler normalization together in `adapters/vanilla/resolvers/render.ts`, used internally by the
+components; adapters provide their own definition resolvers. The common builder accepts absent rendering and literal `render: true`; UI rendering requires an adapter. Vanilla keeps its value check and
+synchronous handler normalization together in `adapters/vanilla/resolvers/render.ts`, used internally by the
 Vanilla builder.
 
 The CLI `ContentParser.ts` and its test live beside the other parsers in `src/cli/entrypoint/parser`.
@@ -80,8 +81,7 @@ The common runtime receives this build-validated configuration and retains the r
 
 The common lifecycle wraps each complete node in `EventNode`, including any adapter renderer, before
 adding it to the context. Mount/unmount events follow the underlying node operations. Without render,
-`main` still runs and context cleanup remains available; anchor processing and watching start only for
-page/src navigation. `FrameNode` continues to own iframe creation, navigation, and child-document recovery.
+`main` still runs and context cleanup remains available. Anchor processing starts for rendering, `prepare`, headless tracking, or page/src navigation. `FrameNode` continues to own iframe creation, navigation, and child-document recovery.
 
 When adding a runtime adapter, implement its definition and render resolvers and expose the definition
 resolver from that adapter's `index.ts`. Extend filename/build support and parser metadata interpretation
@@ -91,6 +91,7 @@ implementations through a common barrel. The content define helpers stay at the 
 Content contracts live in `src/types/content`:
 
 - `common.ts` owns shared options, isolation, props, containers, markers, nodes, and lifecycle contracts.
+- `prepare.ts` owns per-anchor preparation inputs, results, and handlers.
 - `definition.ts` composes entrypoint definitions and preserves the frame-navigation restrictions.
 - `adapters/vanilla.ts` and `adapters/react.ts` describe each adapter's render values.
 - `adapters/index.ts` exports the types of all adapters for the shared render contract and public exports.
@@ -102,6 +103,66 @@ render values under `adapters`, export them from `adapters/index.ts`, and includ
 `defineContentScript` and `defineContentScriptAppend` continue to accept the combined contract from
 `adnbn`; runtime adapter selection remains based on the entrypoint filename. Adding types does not
 implement the adapter or its build support.
+
+## Preparation and render props
+
+`prepare` runs once for each discovered anchor, before creating its UI. It receives the anchor and
+entrypoint options and may return a Promise. Returning `false` keeps a tracked node in the context
+without invoking the container factory or renderer. Other results become `props.data`; without
+`prepare`, `data` is `undefined`. DOM mutations and ordinary remounts do not repeat preparation for
+a tracked anchor.
+
+For newly discovered anchors, failures in preparation, container creation, or synchronous
+mounting/rendering are collected and logged as an `AggregateError` after each processing pass. Successful anchors
+remain available, and a failure on the first pass does not prevent the watcher from starting. The same
+policy applies to later passes. Use `watch: true` to keep processing new anchors; the default strategy
+stops watching once it has tracked nodes. A failed anchor is not added as a headless result.
+Initialization errors, such as a rejected marker factory or `main`, still reject the build. React
+component errors during React's scheduled rendering follow React's error handling.
+
+```tsx title="src/product.content.tsx"
+import {defineContentScript} from "adnbn";
+import {getProduct} from "./product-service";
+import {ProductCard} from "./ProductCard";
+
+export default defineContentScript({
+    anchor: ".product",
+    isolation: {type: "shadow", mode: "closed"},
+
+    prepare: async ({anchor}) => {
+        const product = await getProduct(anchor.getAttribute("data-id"));
+
+        return product.available ? {product} : false;
+    },
+
+    render: ({data, container, target}) => (
+        <ProductCard product={data.product} host={container} portalTarget={target} />
+    ),
+});
+```
+
+`ContentScriptProps<Data>` contains `anchor`, `data`, `container`, `target`, and entrypoint options.
+`container` is the outer mounted element; `target` is the actual UI destination. They are equal
+without isolation. Shadow rendering uses an inner element inside its root; iframe rendering uses
+an element inside the child document. Use `target.getRootNode()` and `target.ownerDocument` when
+working with portals, including closed Shadow DOM. A custom detached mount can return an element
+as the root, so do not assume `getRootNode()` always returns a Document or ShadowRoot.
+
+Container factories receive `ContentScriptContainerProps<Data>`: anchor, options, and prepared data,
+without a container or target. React components are invoked by React with the completed render props.
+Render handlers are synchronous; asynchronous requests and decisions belong in `prepare`. An empty Vanilla
+result releases that UI and leaves the anchor tracked; use `prepare` for decisions that must precede DOM creation.
+
+Literal `render: true` tracks anchors without creating containers, Shadow roots, iframes, or renderer
+instances. It works with both adapters and Relay. Use it for parsing existing nodes through the context.
+
+Destroying the builder or removing the anchor invalidates pending results. A new target on remount
+or iframe document recovery receives fresh props and reruns rendering with the same prepared data.
+Mounting an unchanged target preserves its UI and React state. `RenderNode` mounts DOM and invokes the
+renderer synchronously; adapter nodes own UI insertion and disposal. `EventNode` emits Mount before
+`mount()` returns, after the adapter accepts the render value. React schedules its component rendering
+and effects independently; Mount does not wait for a React commit. A render callback that unmounts or
+replaces its own target cannot subsequently insert UI into the discarded target or emit a stale Mount.
 
 ## Isolation
 
@@ -176,6 +237,10 @@ export default defineContentScriptAppend({
     isolation: {type: "iframe", page: "panel", height: 320},
 });
 ```
+
+`prepare` can also control document embedding. Returning `false` for an anchor skips the container
+factory and iframe creation for both `isolation.page` and `isolation.src`. The anchor stays tracked
+without UI; remounting it does not rerun preparation or create the iframe.
 
 `page` is a generated, typed page alias. Its HTML must already be accessible through the final
 manifest's web accessible resources. In MV3 those rules must cover every content-script match origin;

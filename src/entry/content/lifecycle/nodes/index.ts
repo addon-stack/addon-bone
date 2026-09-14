@@ -1,4 +1,5 @@
 export {default as Node} from "./Node";
+export {default as RenderNode} from "./RenderNode";
 export {default as MountNode} from "./MountNode";
 export {default as MarkerNode} from "./MarkerNode";
 export {default as EventNode} from "./EventNode";

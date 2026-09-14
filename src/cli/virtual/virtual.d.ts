@@ -82,6 +82,7 @@ declare module "virtual:relay-entrypoint" {
         marker,
         anchor,
         mount,
+        prepare,
         render,
         container,
         watch,

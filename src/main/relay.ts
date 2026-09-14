@@ -3,6 +3,7 @@ import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 import {options as relayOptions} from "#adnbn/relay";
 
 import type {TransportType} from "@typing/transport";
+
 import {
     RelayDefinition,
     RelayAllFrames,
@@ -18,6 +19,7 @@ import {
 
 export {RelayAllFrames, RelayFrameErrorKind, RelayMethod};
 export {RelayDiscoveryError} from "@relay/discovery/RelayDiscovery";
+
 export type {
     RelayAllFramesOptions,
     RelayAnyFramesOptions,
@@ -42,7 +44,9 @@ export type {
     RelayDefinition,
 } from "@typing/relay";
 
-export const defineRelay = <T extends TransportType>(options: RelayDefinition<T>): RelayDefinition<T> => {
+export const defineRelay = <T extends TransportType, Data = undefined>(
+    options: RelayDefinition<T, Data>
+): RelayDefinition<T, Data> => {
     return options;
 };
 

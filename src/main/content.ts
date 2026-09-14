@@ -4,11 +4,15 @@ import {ContentScriptAppendDefinition, ContentScriptDefinition} from "@typing/co
 
 export * from "@typing/content";
 
-export const defineContentScript = (options: ContentScriptDefinition): ContentScriptDefinition => {
+export const defineContentScript = <Data = undefined>(
+    options: ContentScriptDefinition<Data>
+): ContentScriptDefinition<Data> => {
     return options;
 };
 
-export const defineContentScriptAppend = (options: ContentScriptAppendDefinition): ContentScriptDefinition => {
+export const defineContentScriptAppend = <Data = undefined>(
+    options: ContentScriptAppendDefinition<Data>
+): ContentScriptDefinition<Data> => {
     const {append, ...definition} = options;
 
     return {

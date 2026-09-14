@@ -1,57 +1,26 @@
-import {ReactNode as ReactComponent} from "react";
-import {createRoot, Root} from "react-dom/client";
+import {isValidElement} from "react";
+import {createRoot, type Root} from "react-dom/client";
 
-import {ContentScriptNode} from "@typing/content";
+import {RenderNode} from "../../lifecycle/nodes";
 
-export default class implements ContentScriptNode {
-    protected root?: Root;
+import type {ContentScriptRenderValue} from "@typing/content";
 
-    private renderedTarget?: Element;
+export default class Node<Data = unknown> extends RenderNode<Data> {
+    private root?: Root;
 
-    constructor(
-        protected readonly node: ContentScriptNode,
-        protected readonly component?: ReactComponent
-    ) {}
-
-    public get anchor(): Element {
-        return this.node.anchor;
-    }
-
-    public get container(): Element | undefined {
-        return this.node.container;
-    }
-
-    public get target(): Element | undefined {
-        return this.node.target;
-    }
-
-    public mount(): boolean {
-        this.node.mount();
-
-        if (!this.target || (this.root && this.renderedTarget === this.target)) {
+    protected render(value: ContentScriptRenderValue<Data> | undefined, target: Element): boolean {
+        if (!isValidElement(value)) {
             return false;
         }
 
-        if (!this.component) {
-            console.warn("Content script react component is empty");
-
-            return false;
-        }
-
-        this.root?.unmount();
-        this.renderedTarget = this.target;
-        this.root = createRoot(this.target);
-
-        this.root.render(this.component);
+        this.root = createRoot(target);
+        this.root.render(value);
 
         return true;
     }
 
-    public unmount(): boolean {
+    protected clear(): void {
         this.root?.unmount();
         this.root = undefined;
-        this.renderedTarget = undefined;
-
-        return !!this.node.unmount();
     }
 }

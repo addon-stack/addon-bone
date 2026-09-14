@@ -1,7 +1,5 @@
 import Builder from "./Builder";
-
 import {FrameNode, MountNode, MarkerNode, ShadowNode, Node} from "./nodes";
-
 import {isContentScriptFrameNavigation} from "@shared/content";
 
 import {
@@ -9,67 +7,57 @@ import {
     ContentScriptIsolation,
     ContentScriptNode,
     ContentScriptProps,
-    ContentScriptRenderValue,
+    ContentScriptRenderHandler,
 } from "@typing/content";
 
-export default class MountBuilder extends Builder {
-    private values = new Map<Element, null | ContentScriptRenderValue>();
-
-    public constructor(definition: ContentScriptDefinition) {
+export default class MountBuilder<Data = unknown> extends Builder<Data> {
+    public constructor(definition: ContentScriptDefinition<Data>) {
         super(definition);
     }
 
-    protected getProps(anchor: Element): ContentScriptProps {
-        const {anchor: _, mount, watch, render, container, main, isolation, ...options} = this.definition;
-
-        return {...options, anchor};
-    }
-
-    protected async getValue(anchor: Element): Promise<undefined | ContentScriptRenderValue> {
-        if (!this.values.has(anchor)) {
-            const value = await this.renderValue(anchor);
-
-            this.values.set(anchor, value === undefined ? undefined : value);
+    protected getProps(node: ContentScriptNode, data: Data): ContentScriptProps<Data> {
+        if (!node.container || !node.target) {
+            throw new Error("Content script render requires a container and target");
         }
 
-        return this.values.get(anchor);
+        return {...this.getPrepareProps(node.anchor), data, container: node.container, target: node.target};
     }
 
-    protected async renderValue(anchor: Element): Promise<undefined | ContentScriptRenderValue> {
-        const {render} = this.definition;
+    protected async createNode(anchor: Element, data: Data, enabled: boolean): Promise<ContentScriptNode> {
+        const navigation = isContentScriptFrameNavigation(this.definition.isolation);
+        const render = this.definition.render;
 
-        if (render === undefined) {
-            return;
+        if (!enabled || (!navigation && (render === undefined || render === true))) {
+            return new MarkerNode(new Node(anchor), this.marker);
         }
 
-        return render(this.getProps(anchor));
-    }
+        const marker = this.marker;
+        const container = await this.definition.container({...this.getPrepareProps(anchor), data});
 
-    protected async createNode(anchor: Element): Promise<ContentScriptNode> {
-        let container: Element | undefined;
-
-        const value = await this.getValue(anchor);
-
-        if (
-            isContentScriptFrameNavigation(this.definition.isolation) ||
-            (typeof value !== "boolean" && value !== undefined)
-        ) {
-            container = (await this.definition.container(this.getProps(anchor))) as Element | undefined;
-        }
-
-        const node = new MountNode(new MarkerNode(new Node(anchor, container), this.marker), this.definition.mount);
+        let node: ContentScriptNode = new MountNode(
+            new MarkerNode(new Node(anchor, container), marker),
+            this.definition.mount
+        );
 
         switch (this.definition.isolation.type) {
             case ContentScriptIsolation.Shadow:
-                return new ShadowNode(node, this.definition.isolation);
+                node = new ShadowNode(node, this.definition.isolation);
+                break;
             case ContentScriptIsolation.Iframe:
-                return new FrameNode(node, this.definition.isolation, () => this.context.mount());
-            default:
-                return node;
+                node = new FrameNode(node, this.definition.isolation, () => this.context.mount());
+                break;
         }
+
+        return navigation || typeof render !== "function"
+            ? node
+            : this.createRenderer(node, render, () => this.getProps(node, data));
     }
 
-    protected cleanupNode(anchor: Element): void {
-        this.values.delete(anchor);
+    protected createRenderer(
+        node: ContentScriptNode,
+        render: ContentScriptRenderHandler<Data>,
+        props: () => ContentScriptProps<Data>
+    ): ContentScriptNode {
+        throw new Error("Content script rendering requires a renderer adapter");
     }
 }

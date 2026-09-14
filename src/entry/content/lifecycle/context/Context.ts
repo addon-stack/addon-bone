@@ -43,6 +43,15 @@ export default class Context implements ContentScriptContext {
         }
     }
 
+    public remove(node: ContentScriptNode): void {
+        if (!this.collection.delete(node)) {
+            return;
+        }
+
+        node.unmount();
+        this.emitter.emitRemove(node);
+    }
+
     public clear(): void {
         for (const node of this.collection) {
             node.unmount();

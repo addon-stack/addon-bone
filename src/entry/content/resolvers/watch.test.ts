@@ -35,6 +35,7 @@ describe("content watch strategies", () => {
         document.body.append(element);
         const update = jest.fn();
         const context = new ManagedContext(new EventEmitter());
+
         const unwatch = createMutationObserverStrategy({
             childList: false,
             characterData: false,
@@ -68,13 +69,18 @@ describe("content watch strategies", () => {
     test("await-first stops observing once an update adds content nodes", async () => {
         jest.useFakeTimers();
         const context = new ManagedContext(new EventEmitter());
-        const update = jest.fn(() => context.add(new Node(document.body)));
+
+        const update = jest.fn(async () => {
+            await Promise.resolve();
+            context.add(new Node(document.body));
+        });
+
         const unwatch = createAwaitFirstStrategy()(update, context);
 
         try {
             document.body.append(document.createElement("article"));
             await Promise.resolve();
-            jest.advanceTimersByTime(201);
+            await jest.advanceTimersByTimeAsync(201);
             expect(update).toHaveBeenCalledTimes(1);
             expect(context.nodes.size).toBe(1);
 

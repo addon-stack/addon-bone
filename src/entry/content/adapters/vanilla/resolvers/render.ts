@@ -6,15 +6,11 @@ export const isValidRenderValue = (value: unknown): value is string | number | E
 
 // prettier-ignore
 export const createRenderResolver =
-    (render?: ContentScriptRenderValue | ContentScriptRenderHandler): ContentScriptRenderHandler =>
-        async (props): Promise<undefined | ContentScriptRenderValue> => {
-            let resolvedRender = typeof render === "function" ? render(props) : render;
+    <Data = unknown>(render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>): ContentScriptRenderHandler<Data> =>
+        props => {
+            const resolvedRender = typeof render === "function" ? render(props) : render;
 
-            if (resolvedRender instanceof Promise) {
-                resolvedRender = await resolvedRender;
-            }
-
-            if (resolvedRender !== true && !isValidRenderValue(resolvedRender)) {
+            if (!isValidRenderValue(resolvedRender)) {
                 return;
             }
 

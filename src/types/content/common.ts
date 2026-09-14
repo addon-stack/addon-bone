@@ -1,3 +1,5 @@
+import type {ContentScriptPrepareProps} from "./prepare";
+
 import type {PageAlias} from "@typing/page";
 import type {Optional} from "utility-types";
 
@@ -221,8 +223,15 @@ export interface ContentScriptMount {
 }
 
 // Props
-export interface ContentScriptProps extends ContentScriptEntrypointOptions {
-    anchor: Element;
+export interface ContentScriptContainerProps<Data = unknown> extends ContentScriptPrepareProps {
+    data: Data;
+}
+
+export interface ContentScriptProps<Data = unknown> extends ContentScriptContainerProps<Data> {
+    /** Outer mounted element; the Shadow host or iframe wrapper when isolated. */
+    container: Element;
+    /** Actual render destination. Use its root/document for portals and DOM operations. */
+    target: Element;
 }
 
 // Anchor
@@ -275,14 +284,16 @@ export type ContentScriptContainerOptions = {
     } & Exclude<Optional<PickNonFunctionProperties<HTMLElementTagNameMap[Tag]>>, "id">;
 }[ContentScriptContainerTag];
 
-export type ContentScriptContainerFactory = (
-    props: ContentScriptProps
+export type ContentScriptContainerFactory<Data = unknown> = (
+    props: ContentScriptContainerProps<Data>
 ) => Awaiter<Element | ContentScriptContainerTag | ContentScriptContainerOptions>;
 
-export type ContentScriptContainerCreator = (props: ContentScriptProps) => Awaiter<Element>;
+export type ContentScriptContainerCreator<Data = unknown> = (
+    props: ContentScriptContainerProps<Data>
+) => Awaiter<Element>;
 
 // Watch
-export type ContentScriptWatchStrategy = (update: () => void, context: ContentScriptContext) => () => void;
+export type ContentScriptWatchStrategy = (update: () => Awaiter<void>, context: ContentScriptContext) => () => void;
 
 export type ContentScriptEventCallback = (event: ContentScriptEvent, node: ContentScriptNode) => void;
 

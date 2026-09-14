@@ -48,8 +48,8 @@ export const createAwaitFirstStrategy =
             };
 
             if (context.nodes.size === 0) {
-                unwatch = resolver(() => {
-                    update();
+                unwatch = resolver(async () => {
+                    await update();
 
                     if (context.nodes.size > 0) {
                         clear();
@@ -72,7 +72,11 @@ export const withLocationTracking =
                 if (currentUrl !== location.href) {
                     currentUrl = location.href;
 
-                    context.mount();
+                    try {
+                        context.mount();
+                    } catch (error) {
+                        console.error("Content script mount on location change failed", error);
+                    }
                 }
             }, 300);
 

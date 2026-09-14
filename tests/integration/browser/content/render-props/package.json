@@ -1,0 +1,12 @@
+{
+  "name": "adnbn-test-render-props",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "adnbn": "file:../../../../..",
+    "react": "*",
+    "react-dom": "*",
+    "scheduler": "*"
+  }
+}

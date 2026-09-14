@@ -220,12 +220,21 @@ The runtime [`definition resolver`](../entry/relay/resolvers/definition.ts) merg
 
 1. Destroys the previous transport/content state.
 2. Creates the instance through `init(options)` and registers it through [`TransportBuilder`](../entry/relay/TransportBuilder.ts).
-3. Builds the content context.
+3. Builds the content context, awaiting per-anchor `prepare` before synchronously mounting UI.
 4. Calls optional `main(instance, context, options)`.
 
 The startup function reports rejected builds as `Failed to build relay: `. Synchronous construction or normalization errors reach the virtual module's `The relay crashed on startup:` handler. The same builder can be rebuilt or destroyed through its lifecycle methods.
 
 Virtual templates are checked against the actual package source exports. The [`virtual module declarations`](../cli/virtual/virtual.d.ts) describe placeholders and derive framework constructors from the real adapters; do not add handwritten ambient declarations that shadow `adnbn` or its real subpaths.
+
+`prepare` follows the shared Content contract, including typed `data`, `container`/`target` props, and `false` for tracked anchors without UI. Literal `render: true` collects anchors without invoking a renderer. Preparation is a content hook and is excluded from transport initialization and Relay main options. Destroying a pending build prevents its `main` from running.
+
+When processing newly discovered anchors, failures in preparation, container creation, or synchronous
+mounting/rendering are logged as an `AggregateError` after each pass. These failures do not prevent content watching or
+Relay `main` from starting; the registered transport remains available. Use `watch: true` for continued
+observation of new anchors. Initialization failures still reject startup. Returning `false` from
+`prepare` also skips iframe embedding for `isolation.page` and `isolation.src`, leaving a tracked
+anchor without UI.
 
 Registration precedes `main`; do not assume an asynchronous `main` finishes before the first remote call. Keep synchronously required state in `init` or explicitly coordinate readiness in the exposed API.
 

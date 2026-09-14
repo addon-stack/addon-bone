@@ -33,6 +33,7 @@ import {
     ContentScriptMarkerType,
     ContentScriptMountFunction,
     ContentScriptNode,
+    ContentScriptPrepareProps,
     ContentScriptOptions,
     ContentScriptRenderHandler,
     ContentScriptRenderValue,
@@ -40,12 +41,12 @@ import {
     ContentScriptWatchStrategy,
 } from "@typing/content";
 
-import {Awaiter} from "@typing/helpers";
+export default abstract class Builder<Data = unknown> extends EntrypointBuilder implements ContentScriptBuilder {
+    private lock = new AwaitLock();
 
-export default abstract class Builder extends EntrypointBuilder implements ContentScriptBuilder {
-    private readonly lock: AwaitLock = new AwaitLock();
+    protected generation = 0;
 
-    protected readonly definition: ContentScriptResolvedDefinition;
+    protected readonly definition: ContentScriptResolvedDefinition<Data>;
 
     protected readonly emitter = new EventEmitter();
 
@@ -55,11 +56,9 @@ export default abstract class Builder extends EntrypointBuilder implements Conte
 
     protected unwatch?: () => void;
 
-    protected abstract createNode(anchor: Element): Promise<ContentScriptNode>;
+    protected abstract createNode(anchor: Element, data: Data, enabled: boolean): Promise<ContentScriptNode>;
 
-    protected abstract cleanupNode(anchor: Element): Awaiter<void>;
-
-    protected constructor(definition: ContentScriptDefinition) {
+    protected constructor(definition: ContentScriptDefinition<Data>) {
         super();
 
         const isolation = resolveContentScriptIsolation(definition.isolation, "render" in definition);
@@ -70,7 +69,7 @@ export default abstract class Builder extends EntrypointBuilder implements Conte
             anchor: this.resolveAnchor(definition.anchor),
             mount: this.resolveMount(definition.mount),
             container: this.resolveContainer(definition.container),
-            render: this.resolveRender(definition.render),
+            render: definition.render === true ? true : this.resolveRender(definition.render),
             isolation,
             watch: this.resolveWatch(definition.watch),
         };
@@ -110,14 +109,14 @@ export default abstract class Builder extends EntrypointBuilder implements Conte
     }
 
     protected resolveContainer(
-        container?: ContentScriptContainerTag | ContentScriptContainerOptions | ContentScriptContainerFactory
-    ): ContentScriptContainerCreator {
+        container?: ContentScriptContainerTag | ContentScriptContainerOptions | ContentScriptContainerFactory<Data>
+    ): ContentScriptContainerCreator<Data> {
         return createContainerResolver(container);
     }
 
     protected resolveRender(
-        render?: ContentScriptRenderValue | ContentScriptRenderHandler
-    ): ContentScriptRenderHandler | undefined {
+        render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
+    ): ContentScriptRenderHandler<Data> | undefined {
         if (render !== undefined) {
             throw new Error("Content script rendering requires a renderer adapter");
         }
@@ -140,28 +139,60 @@ export default abstract class Builder extends EntrypointBuilder implements Conte
     }
 
     public async build(): Promise<void> {
-        await this.destroy();
+        const destroying = this.destroy();
+        const generation = this.generation;
+        await destroying;
 
-        const {render, main, anchor, marker, container, watch, mount, ...options} = this.definition;
+        if (generation !== this.generation) {
+            return;
+        }
 
-        this.marker = await marker(options);
+        const {render, prepare, main, anchor, marker, container, watch, mount, ...options} = this.definition;
+
+        const resolvedMarker = await marker(options);
+
+        if (generation !== this.generation) {
+            return;
+        }
+
+        this.marker = resolvedMarker;
 
         await main?.(this.context, options);
 
-        if (render !== undefined || isContentScriptFrameNavigation(this.definition.isolation)) {
-            await this.processing();
+        if (generation !== this.generation) {
+            return;
+        }
 
-            this.unwatch = watch(() => {
-                this.context.mount();
+        if (
+            render !== undefined ||
+            prepare !== undefined ||
+            isContentScriptFrameNavigation(this.definition.isolation)
+        ) {
+            await this.processing(generation);
 
-                this.processing().catch(e => {
-                    console.error("Content script processing on watch error", e);
-                });
+            if (generation !== this.generation) {
+                return;
+            }
+
+            this.unwatch = watch(async () => {
+                if (generation !== this.generation) {
+                    return;
+                }
+
+                try {
+                    this.context.mount();
+                    await this.processing(generation);
+                } catch (error) {
+                    console.error("Content script processing on watch error", error);
+                }
             }, this.context);
         }
     }
 
     public async destroy(): Promise<void> {
+        this.generation++;
+        this.lock = new AwaitLock();
+
         this.unwatch?.();
         this.unwatch = undefined;
 
@@ -170,27 +201,74 @@ export default abstract class Builder extends EntrypointBuilder implements Conte
         this.marker.reset();
     }
 
-    protected async processing(): Promise<void> {
-        await this.lock.acquireAsync();
+    protected getPrepareProps(anchor: Element): ContentScriptPrepareProps {
+        const {anchor: _, marker, mount, watch, prepare, render, container, main, ...options} = this.definition;
+
+        return {...options, anchor};
+    }
+
+    protected async processing(generation: number): Promise<void> {
+        const lock = this.lock;
+        await lock.acquireAsync();
 
         try {
+            if (generation !== this.generation) {
+                return;
+            }
+
             const anchor = await this.definition.anchor();
 
-            const anchors = this.marker.for(anchor).unmarked();
+            if (generation !== this.generation) {
+                return;
+            }
 
-            await Promise.allSettled(anchors.map(this.processAnchor.bind(this)));
+            const anchors = this.marker
+                .for(anchor)
+                .unmarked()
+                .filter(anchor => anchor.isConnected);
+
+            const results = await Promise.allSettled(anchors.map(anchor => this.processAnchor(anchor, generation)));
+            const errors = results.flatMap(result => (result.status === "rejected" ? [result.reason] : []));
+
+            if (errors.length && generation === this.generation) {
+                console.error(new AggregateError(errors, "Content script anchor processing failed"));
+            }
         } finally {
-            this.lock.release();
+            lock.release();
         }
     }
 
-    protected async processAnchor(anchor: Element): Promise<void> {
-        const node = new EventNode(await this.createNode(anchor), this.emitter);
+    protected async processAnchor(anchor: Element, generation: number): Promise<void> {
+        const current = () => generation === this.generation && anchor.isConnected;
+        const data = await this.definition.prepare?.(this.getPrepareProps(anchor));
+
+        if (!current()) {
+            return;
+        }
+
+        const node = new EventNode(await this.createNode(anchor, data as Data, data !== false), this.emitter);
+
+        if (!current()) {
+            node.unmount();
+
+            return;
+        }
 
         this.context.add(node);
 
-        await this.cleanupNode(anchor);
+        if (generation !== this.generation) {
+            return;
+        }
 
-        node.mount();
+        try {
+            node.mount();
+
+            if (!current() && !node.container?.isConnected) {
+                this.context.remove(node);
+            }
+        } catch (error) {
+            this.context.remove(node);
+            throw error;
+        }
     }
 }

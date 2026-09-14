@@ -3,17 +3,17 @@ import {
     ContentScriptContainerFactory,
     ContentScriptContainerOptions,
     ContentScriptContainerTag,
-    ContentScriptProps,
+    ContentScriptContainerProps,
 } from "@typing/content";
 
 // prettier-ignore
-export const createContainerResolver = (
+export const createContainerResolver = <Data = unknown>(
     container?:
         ContentScriptContainerTag |
         ContentScriptContainerOptions |
-        ContentScriptContainerFactory
-): ContentScriptContainerCreator =>
-    async (props: ContentScriptProps): Promise<Element> => {
+        ContentScriptContainerFactory<Data>
+): ContentScriptContainerCreator<Data> =>
+    async (props: ContentScriptContainerProps<Data>): Promise<Element> => {
         let resolvedContainer = typeof container === "function" ? container(props) : container;
 
         if (resolvedContainer instanceof Promise) {

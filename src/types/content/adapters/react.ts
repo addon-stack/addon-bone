@@ -1,7 +1,11 @@
-import type {FC, ReactNode} from "react";
+import type {ReactNode} from "react";
 
 import type {ContentScriptProps} from "../common";
 
-export type ContentScriptRenderReactComponent = FC<ContentScriptProps>;
+export type ContentScriptRenderReactComponent<Data = unknown> = (
+    props: ContentScriptProps<Data>
+) => Exclude<ReactNode, Promise<unknown>>;
 
-export type ContentScriptReactRenderValue = ReactNode | ContentScriptRenderReactComponent;
+export type ContentScriptReactRenderValue<Data = unknown> =
+    | Exclude<ReactNode, Promise<unknown>>
+    | ContentScriptRenderReactComponent<Data>;

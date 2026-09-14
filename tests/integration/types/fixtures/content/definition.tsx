@@ -1,4 +1,5 @@
 import {ContentScriptAppend, ContentScriptIsolation, defineContentScript, defineContentScriptAppend} from "adnbn";
+
 import type {
     ContentScriptDefinition,
     ContentScriptProps,
@@ -10,6 +11,7 @@ import type {
 } from "adnbn";
 
 const Panel: ContentScriptRenderReactComponent = props => <span>{props.anchor.tagName}</span>;
+
 const vanillaValues: ContentScriptVanillaRenderValue[] = [
     document.createElement("div"),
     "text",
@@ -19,7 +21,13 @@ const vanillaValues: ContentScriptVanillaRenderValue[] = [
     null,
     undefined,
 ];
-const reactValues: ContentScriptReactRenderValue[] = [Panel, <Panel anchor={document.body} />, [<span />, "text"]];
+
+const reactValues: ContentScriptReactRenderValue[] = [
+    Panel,
+    <Panel anchor={document.body} container={document.body} target={document.body} data={undefined} />,
+    [<span />, "text"],
+];
+
 const values: ContentScriptRenderValue[] = [...vanillaValues, ...reactValues];
 
 for (const render of values) {
@@ -30,18 +38,22 @@ for (const render of values) {
 defineContentScript({
     anchor: ".product",
     isolation: ContentScriptIsolation.Shadow,
+
     container: props => {
         const anchor: Element = props.anchor;
         // @ts-expect-error: Container factories receive the shared Content props.
         props.missing;
+
         return {tagName: "section", title: anchor.tagName};
     },
-    render: async props => {
+
+    render: props => {
         const anchor: Element = props.anchor;
-        // @ts-expect-error: Async Vanilla handlers retain contextual props.
+        // @ts-expect-error: Vanilla handlers retain contextual props.
         props.missing;
         const element = document.createElement("div");
         element.textContent = anchor.tagName;
+
         return element;
     },
 });
@@ -50,15 +62,17 @@ defineContentScriptAppend({
     anchor: ".product",
     append: ContentScriptAppend.After,
     isolation: {type: ContentScriptIsolation.Iframe, height: 320},
+
     render: props => {
         const sharedProps: ContentScriptProps = props;
         // @ts-expect-error: React handlers receive the same typed anchor.
         const anchor: number = props.anchor;
+
         return <Panel {...sharedProps} />;
     },
 });
 
-const render: ContentScriptRenderHandler = async props => <Panel {...props} />;
+const render: ContentScriptRenderHandler = props => <Panel {...props} />;
 defineContentScript({render});
 defineContentScriptAppend({render, container: "article"});
 
