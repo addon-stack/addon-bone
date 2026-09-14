@@ -19,6 +19,21 @@ A blank iframe still uses its React/Vanilla adapter with the shared `FrameNode`.
 `adnbn/entry/content/frame` import resolves to the separate frame builder. Internally,
 `virtual:content-builder` selects either that builder or a renderer adapter.
 
+Content contracts live in `src/types/content`:
+
+- `common.ts` owns shared options, isolation, props, containers, markers, nodes, and lifecycle contracts.
+- `definition.ts` composes entrypoint definitions and preserves the frame-navigation restrictions.
+- `adapters/vanilla.ts` and `adapters/react.ts` describe each adapter's render values.
+- `adapters/index.ts` exports the types of all adapters for the shared render contract and public exports.
+- `render.ts` combines those values into the shared render contract and handler.
+- `index.ts` exports the contracts through `@typing/content` and the public `adnbn` entrypoint.
+
+Keep adapter-internal imports pointed at the owning file. To add an adapter's types, define its
+render values under `adapters`, export them from `adapters/index.ts`, and include them in `render.ts`.
+`defineContentScript` and `defineContentScriptAppend` continue to accept the combined contract from
+`adnbn`; runtime adapter selection remains based on the entrypoint filename. Adding types does not
+implement the adapter or its build support.
+
 ## Isolation
 
 `isolation` accepts `ContentScriptIsolation.None`, `Shadow`, or `Iframe`, or their string values

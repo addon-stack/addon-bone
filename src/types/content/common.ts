@@ -1,9 +1,8 @@
 import type {PageAlias} from "@typing/page";
-import type {FC, ReactNode} from "react";
-import {Optional} from "utility-types";
+import type {Optional} from "utility-types";
 
-import {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";
-import {Awaiter, PickNonFunctionProperties} from "@typing/helpers";
+import type {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";
+import type {Awaiter, PickNonFunctionProperties} from "@typing/helpers";
 
 export const ContentScriptMatches = ["http://*/*", "https://*/*"];
 
@@ -267,13 +266,6 @@ export type ContentScriptMarkerGetter = (options: ContentScriptOptions) => Await
 
 export type ContentScriptMarkerResolver = (options: ContentScriptOptions) => Awaiter<ContentScriptMarkerContract>;
 
-// Render
-export type ContentScriptRenderReactComponent = FC<ContentScriptProps>;
-
-export type ContentScriptRenderValue = Element | ReactNode | ContentScriptRenderReactComponent;
-
-export type ContentScriptRenderHandler = (props: ContentScriptProps) => Awaiter<undefined | ContentScriptRenderValue>;
-
 // Container
 export type ContentScriptContainerTag = Exclude<keyof HTMLElementTagNameMap, "html" | "body">;
 
@@ -350,51 +342,6 @@ export interface ContentScriptNode extends ContentScriptMount {
 }
 
 export type ContentScriptNodeSet = Set<ContentScriptNode>;
-
-// Definition
-export interface ContentScriptDefinitionBase extends Partial<ContentScriptOptions> {
-    marker?: ContentScriptMarkerType | ContentScriptMarkerGetter;
-    anchor?: ContentScriptAnchor | ContentScriptAnchorGetter;
-    mount?: ContentScriptMountFunction;
-    container?: ContentScriptContainerTag | ContentScriptContainerOptions | ContentScriptContainerFactory;
-    watch?: true | ContentScriptWatchStrategy;
-    main?: ContentScriptMainFunction;
-}
-
-export type ContentScriptDefinition = ContentScriptDefinitionBase &
-    (
-        | {
-              isolation?:
-                  | ContentScriptIsolation
-                  | `${ContentScriptIsolation}`
-                  | ContentScriptIsolationNoneOptions
-                  | ContentScriptIsolationShadowOptions
-                  | (ContentScriptIsolationFrameOptions & ContentScriptFrameRenderOptions);
-              render?: ContentScriptRenderValue | ContentScriptRenderHandler;
-          }
-        | {
-              isolation: ContentScriptIsolationFrameOptions &
-                  (ContentScriptFramePageOptions | ContentScriptFrameSourceOptions);
-              render?: never;
-          }
-    );
-
-export interface ContentScriptResolvedDefinition extends Omit<
-    ContentScriptDefinitionBase,
-    "anchor" | "marker" | "mount" | "container" | "watch"
-> {
-    isolation: ContentScriptIsolationOptions;
-    marker: ContentScriptMarkerResolver;
-    anchor: ContentScriptAnchorGetter;
-    mount: ContentScriptMountFunction;
-    render?: ContentScriptRenderHandler;
-    container: ContentScriptContainerCreator;
-    watch: ContentScriptWatchStrategy;
-}
-
-type ContentScriptAppendVariant<T> = T extends unknown ? Omit<T, "mount"> & {append?: ContentScriptAppend} : never;
-
-export type ContentScriptAppendDefinition = ContentScriptAppendVariant<ContentScriptDefinition>;
 
 // Builder
 export interface ContentScriptBuilder extends EntrypointBuilder {

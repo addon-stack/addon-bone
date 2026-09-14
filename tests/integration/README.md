@@ -53,8 +53,11 @@ tests/integration/
 │       ├── firefox.ts
 │       └── …
 ├── types/
+│   ├── content.integration.test.ts
 │   ├── registries.integration.test.ts
-│   └── fixtures/registries/
+│   └── fixtures/
+│       ├── content/
+│       └── registries/
 ├── utils/
 │   ├── fixture.ts
 │   ├── process.ts
@@ -112,6 +115,7 @@ Tests copy application inputs to unique directories under `.cache/integration`. 
 
 ## Coverage
 
+- `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
 - `types/registries`: generated registry augmentation, empty fallbacks, public and internal type agreement, and message contracts against source and built package APIs. Compiler-host path checks cover both slash styles.
 - `build/options/embedded`: ten manifest checks covering explicit `openInTab: false` across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. No browser is launched.
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
