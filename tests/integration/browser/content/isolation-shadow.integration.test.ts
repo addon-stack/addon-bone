@@ -1,5 +1,3 @@
-/** @jest-environment node */
-
 import {runIsolatedStylesIntegration} from "./isolated-styles-utils";
 
 jest.setTimeout(90_000);

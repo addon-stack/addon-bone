@@ -1,8 +1,9 @@
 import type {Config} from "jest";
+import {availableParallelism} from "node:os";
 
-const config: Config = {
-    verbose: true,
-    testEnvironment: "jsdom",
+const shared: Config = {
+    rootDir: import.meta.dirname,
+    testEnvironment: "node",
     globals: {ADNBN_TEST_ROOT: import.meta.dirname},
     setupFiles: ["<rootDir>/tests/jest.setup.ts"],
     modulePathIgnorePatterns: ["<rootDir>/.cache/"],
@@ -40,7 +41,64 @@ const config: Config = {
             },
         ],
     },
-    testMatch: ["**/*.test.ts"],
+};
+
+const buildTests = [
+    "<rootDir>/src/cli/bundler/plugins/**/*.test.ts",
+    "<rootDir>/src/cli/index.test.ts",
+    "<rootDir>/src/cli/virtual/virtual.test.ts",
+    "<rootDir>/src/cli/plugins/content/RelayDeclaration.test.ts",
+    "<rootDir>/src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+    "<rootDir>/tests/build-output.test.ts",
+    "<rootDir>/tests/integration/build/**/*.test.ts",
+];
+const domTests = [
+    "<rootDir>/src/entry/**/*.test.ts",
+    "<rootDir>/src/frame/**/*.test.ts",
+    "<rootDir>/src/sandbox/providers/**/*.test.ts",
+    "<rootDir>/src/offscreen/OffscreenBridge.test.ts",
+    "<rootDir>/src/locale/adapters/**/*.test.ts",
+    "<rootDir>/src/message/adapters/**/*.test.ts",
+];
+const exclude = (patterns: string[]) =>
+    patterns.map(pattern => `!${pattern.replace("<rootDir>", import.meta.dirname.replaceAll("\\", "/"))}`);
+
+const config: Config = {
+    verbose: false,
+    maxWorkers: Math.max(1, Math.min(8, availableParallelism() - 1)),
+    coverageProvider: "babel",
+    projects: [
+        {
+            ...shared,
+            displayName: "unit-node",
+            testMatch: [
+                "<rootDir>/src/**/*.test.ts",
+                "<rootDir>/tests/*.test.ts",
+                "<rootDir>/tests/integration/utils/**/*.test.ts",
+                "<rootDir>/tests/integration/browser/utils/**/*.test.ts",
+                ...exclude(buildTests),
+                ...exclude(domTests),
+            ],
+        },
+        {...shared, displayName: "unit-dom", testEnvironment: "jsdom", testMatch: domTests},
+        {...shared, displayName: "build", testMatch: buildTests},
+        {...shared, displayName: "types", testMatch: ["<rootDir>/tests/integration/types/**/*.test.ts"]},
+        {
+            ...shared,
+            displayName: "chrome",
+            setupFiles: [],
+            testMatch: [
+                "<rootDir>/tests/integration/browser/**/*.integration.test.ts",
+                ...exclude(["<rootDir>/tests/integration/browser/**/*.firefox.integration.test.ts"]),
+            ],
+        },
+        {
+            ...shared,
+            displayName: "firefox",
+            setupFiles: [],
+            testMatch: ["<rootDir>/tests/integration/browser/**/*.firefox.integration.test.ts"],
+        },
+    ],
 };
 
 export default config;

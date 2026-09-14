@@ -87,6 +87,7 @@
     "./src/cli/virtual/virtual.d.ts",
     "node_modules/@types/node/*.d.ts",
     "tests/**/*.test.ts",
+    "tests/pre-push.ts",
     "tests/integration/*.ts",
     "tests/jest*.ts"
   ],

@@ -14,7 +14,7 @@ export interface IntegrationFixture {
     dispose(): Promise<void>;
 }
 
-const GeneratedDirectories = new Set(["node_modules", ".adnbn", "dist"]);
+const generatedDirectories = new Set(["node_modules", ".adnbn", "dist"]);
 
 const linkDependency = async (source: string, destination: string): Promise<void> => {
     const target = await realpath(source);
@@ -41,7 +41,8 @@ const linkDependency = async (source: string, destination: string): Promise<void
 export const prepareIntegrationFixture = async (
     projectRoot: string,
     directory: string,
-    {browser = "chrome", manifestVersion = 3}: IntegrationFixtureBuildOptions = {}
+    {browser = "chrome", manifestVersion = 3}: IntegrationFixtureBuildOptions = {},
+    timeout?: number
 ): Promise<string> => {
     const manifest = JSON.parse(await readFile(path.join(directory, "package.json"), "utf8")) as {
         dependencies?: Record<string, string>;
@@ -64,7 +65,8 @@ export const prepareIntegrationFixture = async (
             browser,
             ...(manifestVersion === 2 ? ["--mv2"] : []),
         ],
-        directory
+        directory,
+        timeout
     );
 
     return path.join(directory, "dist", `myapp-${browser}-mv${manifestVersion}`);
@@ -84,7 +86,7 @@ export const createIntegrationFixture = async (
     try {
         await cp(sourceDirectory, directory, {
             recursive: true,
-            filter: source => !GeneratedDirectories.has(path.basename(source)),
+            filter: source => !generatedDirectories.has(path.basename(source)),
         });
     } catch (error) {
         await dispose();
@@ -108,7 +110,7 @@ export const findIntegrationFixtures = async (directory: string): Promise<string
     const fixtures: string[] = [];
 
     for (const entry of entries) {
-        if (entry.isDirectory() && !GeneratedDirectories.has(entry.name)) {
+        if (entry.isDirectory() && !generatedDirectories.has(entry.name)) {
             fixtures.push(...(await findIntegrationFixtures(path.join(directory, entry.name))));
         }
     }

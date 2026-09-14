@@ -1,13 +1,13 @@
 import path from "path";
 
-export const LocaleFixtureDirectory = path.join(ADNBN_TEST_ROOT, "tests/integration/build/locale/chunks-fixture");
+export const localeFixtureDirectory = path.join(ADNBN_TEST_ROOT, "tests/integration/build/locale/chunks-fixture");
 
-export const ReadPanels = `Array.from(document.querySelectorAll('[data-locale-context]'), panel => ({
+export const readPanels = `Array.from(document.querySelectorAll('[data-locale-context]'), panel => ({
     context: panel.dataset.localeContext,
     message: panel.querySelector('p').textContent,
 })).sort((a, b) => a.context.localeCompare(b.context))`;
 
-export const ChangeLanguage = `(() => {
+export const changeLanguage = `(() => {
     for (const select of document.querySelectorAll('[data-locale-context] select')) {
         select.value = 'fr';
         select.dispatchEvent(new Event('change', {bubbles: true}));

@@ -3,9 +3,9 @@ import sharedStyles from "../shared/styles.module.css?isolation";
 import styles from "./styles.module.css?isolation";
 
 // Also proves that importing before the first iframe exists remembers its async stylesheet.
-const Lazy = import("./lazy");
+const lazyModule = import("./lazy");
 
-export default function Panel({anchor}: {anchor: Element}) {
+export function Panel({anchor}: {anchor: Element}) {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const root = ref.current!;
@@ -14,7 +14,7 @@ export default function Panel({anchor}: {anchor: Element}) {
         root.dataset.frame = window === window.top ? "top" : "child";
         root.dataset.anchor = anchor.getAttribute("data-shadow-primary") ?? "unknown";
         void (async () => {
-            const lazy = await Lazy;
+            const lazy = await lazyModule;
             if (!active) return;
             lazy.applyLazyStyle(root);
             const doc = root.ownerDocument;

@@ -26,7 +26,7 @@ export interface DocumentState {
     mainSecondaryRuns?: string;
 }
 
-export const DocumentStateExpression = `
+export const documentStateExpression = `
     (doc => {
         const probe = world => {
             const selector = '[data-testid="content-' + world.toLowerCase() + '"]';

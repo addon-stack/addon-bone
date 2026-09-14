@@ -1,11 +1,10 @@
-/** @jest-environment node */
-
 import {mkdtemp, readFile, rm} from "fs/promises";
 import os from "os";
 import path from "path";
 import {spawn, type ChildProcess} from "child_process";
 
-import {browserVersion, CdpClient, findChromeBinary, targets} from "../utils/chrome";
+import {browserVersion, findChromeBinary, targets} from "../utils/chrome";
+import CdpClient from "../utils/CdpClient";
 import {getFreePort, stop, waitFor} from "../utils/browser";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 

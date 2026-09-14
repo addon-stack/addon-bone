@@ -1,5 +1,3 @@
-/** @jest-environment node */
-
 import {mkdtemp, readFile, rm, stat} from "fs/promises";
 import os from "os";
 import path from "path";
@@ -10,7 +8,7 @@ import {findFirefoxBinary} from "../utils/firefox";
 import {getFreePort, stop, waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
-import {DocumentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
+import {documentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
 
 const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
 const fixtureDir = path.join(__dirname, "entrypoint-assets");
@@ -125,7 +123,7 @@ test.each([2, 3] as const)(
 
             await browser.send("browsingContext.navigate", {context, url: `${site.origin}/top.html`, wait: "complete"});
             const top = await waitFor(async () => {
-                const state = await browser!.evaluate<DocumentState>(context, `${DocumentStateExpression}(document)`);
+                const state = await browser!.evaluate<DocumentState>(context, `${documentStateExpression}(document)`);
                 lastState = state;
                 const statuses = [state?.isolated?.async, state?.main?.async];
                 return statuses.every(status => status !== undefined && status !== "pending") ? state : undefined;
@@ -143,7 +141,7 @@ test.each([2, 3] as const)(
                     `(() => {
                 const child = document.querySelector('[data-testid="child-frame"]')?.contentDocument;
                 if (!child || child.readyState !== 'complete') return undefined;
-                return {top: ${DocumentStateExpression}(document), child: ${DocumentStateExpression}(child)};
+                return {top: ${documentStateExpression}(document), child: ${documentStateExpression}(child)};
             })()`
                 );
                 lastState = state;

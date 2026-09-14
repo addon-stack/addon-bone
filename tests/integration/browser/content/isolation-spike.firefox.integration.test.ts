@@ -1,4 +1,3 @@
-/** @jest-environment node */
 import {runIsolationSpike} from "./isolation-spike-utils";
 
 jest.setTimeout(90_000);

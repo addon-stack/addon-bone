@@ -4,7 +4,8 @@ import os from "os";
 import path from "path";
 
 import {getFreePort, stop, waitFor} from "../utils/browser";
-import {browserVersion, CdpClient, findChromeBinary} from "../utils/chrome";
+import {browserVersion, findChromeBinary} from "../utils/chrome";
+import CdpClient from "../utils/CdpClient";
 import BidiClient from "../utils/BidiClient";
 import {findFirefoxBinary} from "../utils/firefox";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
@@ -41,7 +42,7 @@ interface FrameState {
     readonly top: ShadowDocumentState;
 }
 
-const DocumentStateExpression = `(document => {
+const documentStateExpression = `(document => {
     const view = document.defaultView;
     const hosts = Array.from(document.querySelectorAll("[data-shadow-probe]"));
     const probes = hosts.map(host => {
@@ -88,7 +89,7 @@ const DocumentStateExpression = `(document => {
     };
 })`;
 
-const StrictCsp =
+const strictCsp =
     "default-src 'none'; style-src 'none'; style-src-elem 'none'; font-src 'none'; frame-src 'self'; img-src 'self'";
 
 const isReady = (state: ShadowDocumentState | undefined, expected: number): state is ShadowDocumentState => {
@@ -235,7 +236,7 @@ export const runIsolatedStylesIntegration = async (
         }
 
         const measurements: Array<{policy: string; top: ShadowDocumentState; frames: FrameState}> = [];
-        for (const policy of [null, StrictCsp]) {
+        for (const policy of [null, strictCsp]) {
             site = await startIntegrationSite(path.join(fixture.directory, "site"), policy);
             const topUrl = site.origin + "/top.html";
             const response = await fetch(topUrl);
@@ -243,7 +244,7 @@ export const runIsolatedStylesIntegration = async (
             await response.arrayBuffer();
             await navigate(topUrl);
             const top = await waitFor(async () => {
-                const state = await evaluate(`${DocumentStateExpression}(document)`);
+                const state = await evaluate(`${documentStateExpression}(document)`);
                 lastState = state;
                 return state?.pageUrl === topUrl && isReady(state, 3) ? state : undefined;
             }, 30_000);
@@ -265,7 +266,7 @@ export const runIsolatedStylesIntegration = async (
                     document.body.appendChild(anchor);
                 })()`);
                 const replaced = await waitFor(async () => {
-                    const state = await evaluate(`${DocumentStateExpression}(document)`);
+                    const state = await evaluate(`${documentStateExpression}(document)`);
                     lastState = state;
                     return isReady(state, 3) &&
                         Number(state.probes.find(probe => probe.kind === "secondary")?.instance) > instance
@@ -292,7 +293,7 @@ export const runIsolatedStylesIntegration = async (
                         }
                     })()`);
                     const recovered = await waitFor(async () => {
-                        const state = await evaluate(`${DocumentStateExpression}(document)`);
+                        const state = await evaluate(`${documentStateExpression}(document)`);
                         lastState = state;
                         return isReady(state, 3) && state.probes.every(probe => probe.mounts! > Math.max(...mounts))
                             ? state
@@ -312,7 +313,7 @@ export const runIsolatedStylesIntegration = async (
                 document.body.append(replacement);
             })()`);
             const remounted = await waitFor(async () => {
-                const state = await evaluate(`${DocumentStateExpression}(document)`);
+                const state = await evaluate(`${documentStateExpression}(document)`);
                 lastState = state;
                 const instance = Number(state?.probes.find(probe => probe.anchor === "first")?.instance);
                 return isReady(state, 3) && instance > oldInstance ? state : undefined;
@@ -325,7 +326,7 @@ export const runIsolatedStylesIntegration = async (
                 const state = await evaluate(`(() => {
                     const child = document.querySelector('[data-testid="child-frame"]')?.contentDocument;
                     if (!child || child.readyState !== "complete") return undefined;
-                    return {top: ${DocumentStateExpression}(document), child: ${DocumentStateExpression}(child)};
+                    return {top: ${documentStateExpression}(document), child: ${documentStateExpression}(child)};
                 })()`);
                 lastState = state;
                 return isReady(state?.top, 2) && isReady(state?.child, 2) ? state : undefined;

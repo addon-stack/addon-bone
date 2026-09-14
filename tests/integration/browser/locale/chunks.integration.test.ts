@@ -1,22 +1,21 @@
-/** @jest-environment node */
-
 import {spawn, type ChildProcess} from "child_process";
 import {mkdtemp, readFile, rm} from "fs/promises";
 import os from "os";
 import path from "path";
 
 import {createIntegrationFixture} from "../../utils/fixture";
-import {browserVersion, CdpClient, findChromeBinary} from "../utils/chrome";
+import {browserVersion, findChromeBinary} from "../utils/chrome";
+import CdpClient from "../utils/CdpClient";
 import {getFreePort, stop, waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
-import {ChangeLanguage, expectPanels, LocaleFixtureDirectory, ReadPanels} from "./utils";
+import {changeLanguage, expectPanels, localeFixtureDirectory, readPanels} from "./utils";
 
 jest.setTimeout(90_000);
 
 test("Chrome shares locale with views and ISOLATED, and loads the MAIN catalogue through common content", async () => {
     const binary = findChromeBinary(ADNBN_TEST_ROOT);
     if (!binary) throw new Error("Install Chrome for Testing or set ADNBN_CHROME_BIN");
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, LocaleFixtureDirectory);
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, localeFixtureDirectory);
     const profile = await mkdtemp(path.join(os.tmpdir(), "adnbn-locale-chrome-"));
     let process: ChildProcess | undefined;
     let client: CdpClient | undefined;
@@ -76,14 +75,14 @@ test("Chrome shares locale with views and ISOLATED, and loads the MAIN catalogue
             const session = await attach(targetId);
             await client.send("Page.navigate", {url: page.url}, session);
             await waitFor(async () => {
-                expectPanels(await evaluate(session, ReadPanels), page.contexts);
+                expectPanels(await evaluate(session, readPanels), page.contexts);
                 return true;
             });
             if (page.url === site.origin) {
                 expect(await evaluate(session, "typeof globalThis.chrome?.i18n")).toBe("undefined");
             }
-            await evaluate(session, ChangeLanguage);
-            expectPanels(await evaluate(session, ReadPanels), page.contexts, "fr");
+            await evaluate(session, changeLanguage);
+            expectPanels(await evaluate(session, readPanels), page.contexts, "fr");
         }
         expect(client.runtimeErrors).toEqual([]);
     } finally {

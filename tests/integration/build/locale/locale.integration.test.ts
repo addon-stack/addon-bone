@@ -1,5 +1,3 @@
-/** @jest-environment node */
-
 import {spawn, type ChildProcess} from "child_process";
 import {copyFile, readFile, readdir, rm, writeFile} from "fs/promises";
 import path from "path";
@@ -95,11 +93,23 @@ test("exports the configured default language even when it is not the first cata
 
 test("CLI watch discovers, edits and removes locales and recovers from invalid translations", async () => {
     const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    let compilations = 0;
+    const update = async (change: () => Promise<unknown>) => {
+        const previous = compilations;
+        await change();
+        await waitFor(
+            async () => (compilations > previous ? true : undefined),
+            15000,
+            "locale watch compilation and watcher reconnection after an edit"
+        );
+    };
     // Save like an editor: Windows copyFile can preserve the fixture's old mtime and hide an edit from watch.
     const updateLocale = async (language: string, state: string) =>
-        writeFile(
-            path.join(fixture.directory, "src/locales", `${language}.json`),
-            await readFile(path.join(__dirname, "states", state))
+        update(async () =>
+            writeFile(
+                path.join(fixture.directory, "src/locales", `${language}.json`),
+                await readFile(path.join(__dirname, "states", state))
+            )
         );
     let watcher: ChildProcess | undefined;
     let output = "";
@@ -108,12 +118,15 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
         await rm(path.join(directory, "manifest.json"));
         watcher = spawn(process.execPath, [path.join(ADNBN_TEST_ROOT, "bin/adnbn.js"), "watch", ".", "-b", "chrome"], {
             cwd: fixture.directory,
-            stdio: ["ignore", "pipe", "pipe"],
+            stdio: ["ignore", "pipe", "pipe", "ipc"],
         });
         watcher.stdout?.on("data", chunk => (output += chunk));
         watcher.stderr?.on("data", chunk => (output += chunk));
-        // Assets exist before Rspack finishes the compilation and reconnects its watcher.
-        await waitFor(async () => output.includes("compiled") || undefined, 15000, "initial locale watch compilation");
+        watcher.on("message", message => {
+            if (message === "locale-watch-ready") compilations++;
+        });
+        // CLI output and emitted files precede watcher reconnection in the child process.
+        await waitFor(async () => compilations || undefined, 15000, "initial locale watcher readiness");
         await waitFor(() => inspect(directory), 15000, "initial locale watch build");
         await updateLocale("de", "de.json");
         await waitFor(
@@ -156,7 +169,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
             "updated locale catalogue, languages and JSON"
         );
 
-        await rm(path.join(fixture.directory, "src/locales/de.json"));
+        await update(() => rm(path.join(fixture.directory, "src/locales/de.json")));
         await waitFor(
             async () => {
                 expect((await inspect(directory)).languages).toEqual(["en", "fr"]);

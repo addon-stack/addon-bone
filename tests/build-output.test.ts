@@ -1,7 +1,7 @@
 import {readdir} from "fs/promises";
 import path from "path";
 
-const TestPathSegments = new Set(["tests", "__tests__", "__mocks__"]);
+const testPathSegments = new Set(["tests", "__tests__", "__mocks__"]);
 
 const collectPaths = async (directory: string): Promise<string[]> => {
     const entries = await readdir(directory, {withFileTypes: true});
@@ -28,7 +28,7 @@ describe("build output", () => {
             const segments = relativePath.split(path.sep);
 
             return (
-                segments.some(segment => TestPathSegments.has(segment)) || /\.(?:test|spec)\.[^.]+$/.test(relativePath)
+                segments.some(segment => testPathSegments.has(segment)) || /\.(?:test|spec)\.[^.]+$/.test(relativePath)
             );
         });
 

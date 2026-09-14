@@ -5,7 +5,7 @@ import styles from "./styles.module.css";
 
 export type ProbeWorld = "ISOLATED" | "MAIN";
 
-const FullGetterError = "getEntrypointAssetsMap() is available only in the background entrypoint";
+const fullGetterError = "getEntrypointAssetsMap() is available only in the background entrypoint";
 
 export const createProbe = (world: ProbeWorld): HTMLElement => {
     const root = document.createElement("section");
@@ -39,13 +39,13 @@ export const createProbe = (world: ProbeWorld): HTMLElement => {
         root.dataset.fullGetter = "unexpected";
     } catch (cause) {
         const message = cause instanceof Error ? cause.message : String(cause);
-        root.dataset.fullGetter = message === FullGetterError ? "blocked" : message;
+        root.dataset.fullGetter = message === fullGetterError ? "blocked" : message;
     }
 
     void import("./async")
         .then(module => {
             module.applyAsyncProbe(root);
-            root.dataset.async = module.AsyncProbeValue;
+            root.dataset.async = module.asyncProbeValue;
         })
         .catch(cause => {
             root.dataset.async = `failed: ${cause instanceof Error ? cause.message : String(cause)}`;

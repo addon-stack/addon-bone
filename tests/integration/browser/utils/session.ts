@@ -4,7 +4,8 @@ import os from "os";
 import path from "path";
 
 import {getFreePort, stop, waitFor} from "./browser";
-import {browserVersion, CdpClient, findChromeBinary} from "./chrome";
+import {browserVersion, findChromeBinary} from "./chrome";
+import CdpClient from "./CdpClient";
 import BidiClient from "./BidiClient";
 import {findFirefoxBinary} from "./firefox";
 

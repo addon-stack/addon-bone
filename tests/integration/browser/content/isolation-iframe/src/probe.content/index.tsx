@@ -1,6 +1,6 @@
 import {observeMounts} from "../shared/events";
 import React from "react";
-import Panel from "./Panel";
+import {Panel} from "./Panel";
 import {ContentScriptIsolation, ContentScriptAppend, ContentScriptWorld, defineContentScriptAppend} from "adnbn";
 
 import "./fonts.css?isolation&asis";

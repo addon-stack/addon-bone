@@ -16,6 +16,18 @@ const file = (...parts: string[]) => {
     return {file: filename, import: filename};
 };
 
+const expectParseError = (target: ReturnType<typeof file>, message: RegExp): void => {
+    try {
+        parser.options(target);
+    } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toMatch(message);
+        expect((error as Error).message).toContain(target.file);
+        return;
+    }
+    throw new Error(`Expected parsing ${target.file} to fail`);
+};
+
 describe("ContentParser", () => {
     test.each([
         ["enum", {mode: ContentScriptShadowMode.Closed}],
@@ -39,8 +51,7 @@ describe("ContentParser", () => {
         ["unknown", /isolation.delegatesFocus is not supported/],
     ])("rejects invalid Shadow options from %s", (name, error) => {
         const target = file("invalid", "shadow", name + ".content.ts");
-        expect(() => parser.options(target)).toThrow(error);
-        expect(() => parser.options(target)).toThrow(target.file);
+        expectParseError(target, error);
     });
     test.each([
         "named-function.content.tsx",
@@ -54,8 +65,7 @@ describe("ContentParser", () => {
         "element-object.content.ts",
     ])("rejects frame navigation with default render: %s", name => {
         const target = file("invalid", "default-render", name);
-        expect(() => parser.options(target)).toThrow(/isolation.page\/isolation.src cannot be combined with render/);
-        expect(() => parser.options(target)).toThrow(target.file);
+        expectParseError(target, /isolation.page\/isolation.src cannot be combined with render/);
     });
     test.each([
         "function.content.tsx",
