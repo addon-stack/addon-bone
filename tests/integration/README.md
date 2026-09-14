@@ -4,43 +4,63 @@ These tests cover application builds, browser execution, and generated TypeScrip
 
 ## Layout
 
+Selected scenario files and shared infrastructure:
+
 ```text
 tests/integration/
-├── build/options/
-│   ├── options.integration.test.ts
-│   └── embedded/
+├── build/
+│   ├── locale/
+│   │   ├── locale.integration.test.ts
+│   │   ├── dynamic.integration.test.ts
+│   │   ├── chunks.integration.test.ts
+│   │   ├── chunks-threshold.integration.test.ts
+│   │   ├── chunks-disabled.integration.test.ts
+│   │   ├── chunks-utils.ts
+│   │   ├── fixture/
+│   │   ├── dynamic-fixture/
+│   │   └── chunks-fixture/
+│   ├── options/
+│   │   ├── options.integration.test.ts
+│   │   └── embedded/
+│   └── …
 ├── browser/
 │   ├── content/
 │   │   ├── entrypoint-assets.integration.test.ts
 │   │   ├── entrypoint-assets.firefox.integration.test.ts
-│   │   ├── utils.ts
 │   │   ├── entrypoint-assets/
 │   │   ├── isolated-styles-utils.ts
 │   │   ├── isolation-shadow.integration.test.ts
-│   │   ├── isolation-shadow.firefox.integration.test.ts
+│   │   ├── isolation-shadow-mv2.firefox.integration.test.ts
+│   │   ├── isolation-shadow-mv3.firefox.integration.test.ts
 │   │   ├── isolation-shadow/
 │   │   ├── isolation-iframe.integration.test.ts
 │   │   ├── isolation-iframe.firefox.integration.test.ts
-│   │   └── isolation-iframe/
+│   │   ├── isolation-iframe/
+│   │   ├── relay-styles.integration.test.ts
+│   │   ├── relay-styles.firefox.integration.test.ts
+│   │   ├── relay-styles-utils.ts
+│   │   ├── relay-styles/
+│   │   └── …
+│   ├── locale/
 │   ├── offscreen/
-│   │   ├── service.integration.test.ts
-│   │   └── service/
 │   ├── options/
-│   │   ├── options.integration.test.ts
-│   │   ├── react/
-│   │   └── vanilla/
 │   └── utils/
 │       ├── BidiClient.ts
+│       ├── CdpClient.ts
 │       ├── browser.ts
+│       ├── browser.test.ts
 │       ├── chrome.ts
 │       ├── firefox.ts
-│       └── site.ts
+│       └── …
 ├── types/
 │   ├── registries.integration.test.ts
 │   └── fixtures/registries/
 ├── utils/
 │   ├── fixture.ts
-│   └── process.ts
+│   ├── process.ts
+│   ├── process.test.ts
+│   ├── queue.ts
+│   └── queue.test.ts
 ├── prepare.ts
 └── typecheck.ts
 ```
@@ -85,6 +105,8 @@ npm run test:firefox
 ```
 
 They run all integration tests, only build checks, only Chrome checks, or only Firefox checks respectively. Each command builds the framework first. Browser tests require Chrome with `Extensions.loadUnpacked` support and Firefox with WebDriver BiDi `webExtension.install` support. Set `ADNBN_CHROME_BIN` or `ADNBN_FIREFOX_BIN` to the browser's absolute executable path if automatic discovery selects the wrong browser. Node must provide the built-in `WebSocket` API. CI installs both browsers on Linux; Windows runs the non-browser suite.
+
+These groups run test files in parallel, with up to eight workers by default (one fewer than the available CPUs on smaller machines). Pass `-- --maxWorkers=N` to tune the pool. Preparation and fixture typechecks run up to four independent applications concurrently; `ADNBN_TEST_WORKERS` overrides that limit. See [the test guide](../README.md) for project selection, hooks, coverage and the complete validation commands.
 
 Tests copy application inputs to unique directories under `.cache/integration`. Prepared dependencies and generated files are excluded from the copy and recreated there. Cleanup removes only the run's copy and temporary Chrome profile; it does not remove the editor environment in the source fixture or change the `addon` playground.
 

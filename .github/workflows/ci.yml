@@ -36,8 +36,8 @@ jobs:
             echo 'name_suffix=' >> "$GITHUB_OUTPUT"
           fi
 
-  build-and-test:
-    name: Test and Build (${{ matrix.os }}, Node ${{ matrix.node }}) ${{ needs.compute-matrix.outputs.name_suffix }}
+  unit:
+    name: Units (${{ matrix.os }}, Node ${{ matrix.node }})
     needs: compute-matrix
     runs-on: ${{ matrix.os }}
     permissions:
@@ -48,55 +48,175 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Verify test groups
+        run: npm run test:inventory
+      - name: Units with coverage (no package build)
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        run: npm run test:run -- --selectProjects unit-node unit-dom --ci --coverage --coverageDirectory=coverage/unit
+      - name: Units (no package build)
+        if: matrix.os != 'ubuntu-latest' || matrix.node != 22
+        run: npm run test:run -- --selectProjects unit-node unit-dom --ci
+      - name: Upload unit coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit-${{ matrix.os }}-node${{ matrix.node }}
+          path: coverage/unit/coverage-final.json
 
+  build:
+    name: Build integrations (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: compute-matrix
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build package
+        run: npm run build
+      - name: Compiler, CLI and declaration integrations with coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        run: npm run test:run -- --selectProjects build types --ci --maxWorkers=2 --coverage --coverageDirectory=coverage/build
+      - name: Compiler, CLI and declaration integrations
+        if: matrix.os != 'ubuntu-latest' || matrix.node != 22
+        run: npm run test:run -- --selectProjects build types --ci --maxWorkers=2
+      - name: Upload build coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-build-${{ matrix.os }}-node${{ matrix.node }}
+          path: coverage/build/coverage-final.json
+
+  fixtures:
+    name: Fixture types (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: compute-matrix
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build package, prepare and typecheck every application
+        run: npm run typecheck:integration
+
+  browser:
+    name: Browser (${{ matrix.browser }}, Node ${{ matrix.node }})
+    needs: compute-matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.compute-matrix.outputs.matrix).node }}
+        browser: [chrome, firefox]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Set up Chrome
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.browser == 'chrome'
         id: chrome
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Set up Firefox
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.browser == 'firefox'
         id: firefox
         uses: browser-actions/setup-firefox@v1
         with:
           firefox-version: latest
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Typecheck integration fixtures
-        run: npm run typecheck:integration
-
-      - name: Test
-        if: matrix.os == 'ubuntu-latest'
-        run: npm run test:ci
+      - name: Build package
+        run: npm run build
+      - name: Browser integrations
+        run: npm run test:run -- --selectProjects ${{ matrix.browser }} --ci --maxWorkers=2
         env:
           ADNBN_CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
           ADNBN_FIREFOX_BIN: ${{ steps.firefox.outputs.firefox-path }}
 
-      # Chrome CDP and Firefox BiDi extension scenarios run on the Linux runner.
-      # The rest of the test suite remains part of the full OS x Node matrix.
-      - name: Test (non-browser)
-        if: matrix.os != 'ubuntu-latest'
-        run: npm run test:ci:non-browser
-
-      - name: Build
-        run: npm run build
-
-      - name: Upload coverage artifact
-        if: always()
+  coverage:
+    name: Coverage (ubuntu-latest, Node 22)
+    needs: [compute-matrix, unit, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Download unit coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit-ubuntu-latest-node22
+          path: coverage/unit
+      - name: Download build coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-build-ubuntu-latest-node22
+          path: coverage/build
+      - name: Merge source coverage from both groups
+        run: node scripts/merge-coverage.mjs coverage/unit/coverage-final.json coverage/build/coverage-final.json
+      - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.os }}-node${{ matrix.node }}
-          path: coverage
+          name: coverage-ubuntu-latest-node22
+          path: coverage/merged
+
+  # Keep the existing required check names while the work runs in independent jobs.
+  build-and-test:
+    name: Test and Build (${{ matrix.os }}, Node ${{ matrix.node }}) ${{ needs.compute-matrix.outputs.name_suffix }}
+    if: ${{ always() && needs.compute-matrix.result == 'success' }}
+    needs: [compute-matrix, unit, build, fixtures, browser, coverage]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+    steps:
+      - name: Require all test groups
+        env:
+          RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |
+          if [[ "$RESULTS" == *failure* || "$RESULTS" == *cancelled* || "$RESULTS" == *skipped* ]]; then
+            exit 1
+          fi
