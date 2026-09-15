@@ -1,5 +1,4 @@
-import type {AssetInfo, Chunk, Compilation, Filename, Module} from "@rspack/core";
-import _ from "lodash";
+import type {AssetInfo, Chunk, Compilation, Module} from "@rspack/core";
 import path from "path";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
@@ -9,28 +8,6 @@ import {toPosix} from "@cli/utils/path";
 import type {EntrypointAssetsMap, EntrypointAssetsMapEntry, EntrypointAssetsFiles} from "@typing/entrypoint";
 
 type AssetKind = "asset" | "css" | "js";
-
-const compilationBuildAssets = new WeakMap<Compilation, EntrypointAssetsMap>();
-
-// prettier-ignore
-export const appFilenameResolver =
-    (app: string, filename: Filename, dirname?: string): Filename => {
-        app = _.kebabCase(app);
-
-        const resolve = (name: string): string => {
-            name = name.replaceAll("[app]", app);
-
-            return dirname ? path.posix.join(dirname, name) : name;
-        };
-
-        if (!_.isFunction(filename)) {
-            return resolve(filename);
-        }
-
-        return (pathData, assetInfo): string => {
-            return resolve(filename(pathData, assetInfo));
-        };
-    };
 
 const addRelatedSourceMaps = (sourceMaps: Set<string>, related: AssetInfo["related"]): void => {
     const sourceMap = related?.sourceMap;
@@ -113,16 +90,21 @@ const collectResources = (
             const normalized = toPosix(file);
 
             candidates.set(normalized, candidates.get(normalized) ?? false);
-            if (getAssetKind(compilation, normalized, sourceMaps) === "css") cssFiles.add(normalized);
+
+            if (getAssetKind(compilation, normalized, sourceMaps) === "css") {
+                cssFiles.add(normalized);
+            }
         }
 
         for (const module of compilation.chunkGraph.getChunkModulesIterable(chunk)) {
             for (const file of getModuleAssetNames(module)) {
                 candidates.set(toPosix(file), true);
             }
+
             if (module.type === "css/mini-extract") {
-                for (const dependency of module.buildInfo?.fileDependencies ?? [])
+                for (const dependency of module.buildInfo?.fileDependencies ?? []) {
                     sourceFiles.add(path.resolve(dependency));
+                }
             }
         }
     }
@@ -142,27 +124,47 @@ const collectResources = (
         )
         .map(asset => asset.name)
         .sort((left, right) => right.length - left.length);
+
     for (const file of cssFiles) {
         const css = compilation.getAsset(file)?.source.source().toString();
-        if (!css) continue;
+
+        if (!css) {
+            continue;
+        }
+
         postcss.parse(css, {from: file}).walkDecls(declaration => {
             valueParser(declaration.value).walk(node => {
-                if (node.type !== "function" || node.value.toLowerCase() !== "url") return;
+                if (node.type !== "function" || node.value.toLowerCase() !== "url") {
+                    return;
+                }
+
                 const argument = node.nodes[0];
-                if (!argument || (argument.type !== "string" && argument.type !== "word")) return false;
+
+                if (!argument || (argument.type !== "string" && argument.type !== "word")) {
+                    return false;
+                }
+
                 const url = argument.value.replace(/\\([\da-f]{1,6}\s?|.)/gi, (_match, escape: string) =>
                     /^[\da-f]{1,6}\s?$/i.test(escape)
                         ? String.fromCodePoint(parseInt(escape.trim(), 16) || 0xfffd)
                         : escape
                 );
-                if (/^(?:data|blob):/i.test(url)) return false;
+
+                if (/^(?:data|blob):/i.test(url)) {
+                    return false;
+                }
+
                 try {
                     const pathname = decodeURIComponent(new URL(url, `https://adnbn.invalid/${file}`).pathname);
                     const resource = resources.find(candidate => pathname.endsWith(`/${candidate}`));
-                    if (resource) candidates.set(resource, true);
+
+                    if (resource) {
+                        candidates.set(resource, true);
+                    }
                 } catch {
                     // External or malformed URLs do not name an emitted build resource.
                 }
+
                 return false;
             });
         });
@@ -238,12 +240,4 @@ export const collectBuildAssets = (compilation: Compilation): EntrypointAssetsMa
     }
 
     return assets;
-};
-
-export const setCompilationBuildAssets = (compilation: Compilation, assets: EntrypointAssetsMap): void => {
-    compilationBuildAssets.set(compilation, assets);
-};
-
-export const getCompilationBuildAssets = (compilation: Compilation): EntrypointAssetsMap | undefined => {
-    return compilationBuildAssets.get(compilation);
 };

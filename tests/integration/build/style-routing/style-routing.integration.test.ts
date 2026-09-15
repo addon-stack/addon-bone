@@ -7,13 +7,11 @@ import assetPlugin from "@cli/plugins/asset";
 import optimizationPlugin from "@cli/plugins/optimization";
 import {merge} from "webpack-merge";
 import IsolatedStylesPlugin from "@cli/bundler/plugins/isolated-styles";
-import BuildAssetsMapPlugin, {
-    createEntrypointModule,
-    EntrypointAssetsModule,
-} from "@cli/bundler/plugins/build-assets-map";
+import BuildAssetsMapPlugin from "@cli/bundler/plugins/build-assets-map";
+import {createRuntimeModule, getCompilationBuildAssets} from "@cli/bundler/plugins/utils";
+import {RuntimeModuleRequest, RuntimeModuleReaders, EntrypointAssetsModule} from "@cli/plugins/output/runtime";
 import {GenerateModulePlugin} from "@cli/bundler/plugins/generate-module";
-import {getCompilationBuildAssets} from "@cli/bundler/utils/output";
-import {getContentLayer, isContentLayer} from "@cli/bundler/utils/layers";
+import {getContentLayer, isContentLayer} from "@cli/bundler/layers";
 import ManifestPlugin from "@cli/bundler/plugins/manifest";
 import ManifestV3 from "@cli/builders/manifest/ManifestV3";
 import type {ReadonlyConfig} from "@typing/config";
@@ -100,11 +98,11 @@ test.each<{
             devtool: false,
             entry: {
                 background: withoutMap ? "./background-unused.js" : "./background.js",
-                popup: "./entry.js",
+                popup: "./runtime.entry.js",
                 assets: "./assets.js",
                 other: "./other-assets.js",
-                content: {import: "./entry.js", layer},
-                relay: {import: "./entry.js", layer},
+                content: {import: "./runtime.entry.js", layer},
+                relay: {import: "./runtime.entry.js", layer},
             },
             output: {...assets.output, path: output, filename: "js/[name].[chunkhash:8].js", publicPath: ""},
             resolveLoader: {modules: [path.join(root, "node_modules")]},
@@ -126,7 +124,9 @@ test.each<{
                     property: ContentScriptStylesRuntimeProperty,
                     test: entry => entry === "content",
                 }),
-                new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
+                new GenerateModulePlugin({
+                    [RuntimeModuleRequest]: createRuntimeModule(Object.values(RuntimeModuleReaders)),
+                }),
                 new BuildAssetsMapPlugin({
                     module: EntrypointAssetsModule,
                     fullMapEntrypoint: "background",

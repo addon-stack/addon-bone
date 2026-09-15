@@ -7,7 +7,7 @@ import vm from "vm";
 
 import {type Compiler, CssExtractRspackPlugin, type Filename, rspack, type Stats} from "@rspack/core";
 
-import {IsolatedStylesLayer} from "@cli/bundler/utils/styles";
+import {IsolatedStylesLayer} from "@cli/bundler/layers";
 
 import IsolatedStylesPlugin, {
     type IsolatedStylesPluginOptions,

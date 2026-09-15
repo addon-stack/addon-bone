@@ -3,14 +3,11 @@ import {Configuration as RspackConfig} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
 
-import {
-    appFilenameResolver,
-    BuildAssetsMapPlugin,
-    GenerateModulePlugin,
-    createEntrypointModule,
-    EntrypointAssetsModule,
-} from "@cli/bundler";
+import {appFilenameResolver, BuildAssetsMapPlugin, GenerateModulePlugin} from "@cli/bundler";
+import {createRuntimeModule} from "@cli/bundler/plugins/utils";
 import {getOutputPath, getResolvePath} from "@cli/resolvers/path";
+
+import {RuntimeModuleRequest, RuntimeModuleReaders, EntrypointAssetsModule} from "./runtime";
 
 import {Command} from "@typing/app";
 import {BackgroundEntryName} from "@typing/background";
@@ -52,7 +49,9 @@ export default definePlugin(() => {
                     clean: config.command === Command.Build,
                 },
                 plugins: [
-                    new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
+                    new GenerateModulePlugin({
+                        [RuntimeModuleRequest]: createRuntimeModule(Object.values(RuntimeModuleReaders)),
+                    }),
                     new BuildAssetsMapPlugin({
                         module: EntrypointAssetsModule,
                         buildHashSalt,

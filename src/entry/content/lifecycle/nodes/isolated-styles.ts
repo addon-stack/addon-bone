@@ -1,17 +1,10 @@
 import {getUrl} from "@addon-core/browser";
+import {readContentStyles} from "#adnbn/runtime";
 
-import {ContentScriptStylesRuntimeProperty, type ContentScriptStylesRuntime} from "@typing/content";
-
-interface WebpackRuntime {
-    (moduleId: string | number): unknown;
-    [ContentScriptStylesRuntimeProperty]?: ContentScriptStylesRuntime;
-}
-
-declare const __webpack_require__: WebpackRuntime;
+import type {ContentScriptStylesRuntime} from "@typing/content";
 
 export const getContentScriptStylesRuntime = (): ContentScriptStylesRuntime => {
-    const runtime =
-        typeof __webpack_require__ === "function" ? __webpack_require__[ContentScriptStylesRuntimeProperty] : undefined;
+    const runtime = readContentStyles();
 
     if (!runtime) {
         throw new Error("Isolated styles runtime is unavailable in this content entrypoint");

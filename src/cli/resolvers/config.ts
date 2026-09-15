@@ -31,7 +31,7 @@ import {
 } from "../plugins";
 
 import {fromRootPath, getAppPath, getAppSourcePath, getConfigFile} from "../resolvers/path";
-import {isContentLayer} from "@cli/bundler/utils/layers";
+import {isContentLayer} from "@cli/bundler/layers";
 
 import type {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
 import {Command, Mode, Workspace} from "@typing/app";

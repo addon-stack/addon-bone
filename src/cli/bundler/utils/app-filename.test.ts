@@ -1,6 +1,6 @@
 import type {AssetInfo, PathData} from "@rspack/core";
 
-import {appFilenameResolver} from "./output";
+import {appFilenameResolver} from "./app-filename";
 
 describe("appFilenameResolver", () => {
     test("preserves string templates while resolving the app and directory", () => {

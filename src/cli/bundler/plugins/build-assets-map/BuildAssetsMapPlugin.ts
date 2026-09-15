@@ -2,7 +2,8 @@ import {Chunk, Compilation, Compiler, Filename, RuntimeGlobals, RuntimeModule, s
 import stringify from "json-stringify-deterministic";
 import ts from "typescript";
 
-import {collectBuildAssets, setCompilationBuildAssets} from "@cli/bundler/utils/output";
+import {collectBuildAssets} from "@cli/bundler/utils/assets";
+import {setCompilationBuildAssets} from "../utils";
 import {
     CssContentHashType,
     JavaScriptContentHashType,

@@ -21,9 +21,6 @@ export {
     default as BuildAssetsMapPlugin,
     type BuildAssetsMapPluginOptions,
     type BuildAssetsMapPluginModuleOptions,
-    type BuildAssetsMapPluginExportOptions,
-    createEntrypointModule,
-    EntrypointAssetsModule,
 } from "./build-assets-map";
 
 export {
@@ -52,4 +49,4 @@ export {default as ReplacePlugin} from "./replace";
 
 export {default as WatchPlugin} from "./watch";
 
-export type {RuntimePropertyOptions} from "./types";
+export type {RuntimePropertyOptions, RuntimeModuleReaderOptions} from "./types";

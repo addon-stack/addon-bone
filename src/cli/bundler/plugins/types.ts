@@ -2,3 +2,8 @@
 export interface RuntimePropertyOptions {
     readonly property: string;
 }
+
+/** Names a module export that reads one property of the calling bundler runtime. */
+export interface RuntimeModuleReaderOptions extends RuntimePropertyOptions {
+    readonly export: string;
+}

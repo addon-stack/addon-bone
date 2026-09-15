@@ -10,7 +10,7 @@ import {createRelayModule, RelayModuleName} from "./relay-module";
 
 import {definePlugin} from "@main/plugin";
 import {PageFinder} from "@cli/entrypoint";
-import {getContentLayer} from "@cli/bundler/utils/layers";
+import {getContentLayer} from "@cli/bundler/layers";
 
 import {
     appFilenameResolver,

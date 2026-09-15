@@ -1,4 +1,4 @@
-import {readAssets, readAssetsMap} from "#adnbn/entrypoint";
+import {readAssets, readAssetsMap} from "#adnbn/runtime";
 
 import type {EntrypointAssets, EntrypointAssetsMap} from "@typing/entrypoint";
 

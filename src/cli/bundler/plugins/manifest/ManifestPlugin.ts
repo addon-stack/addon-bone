@@ -1,7 +1,6 @@
 import rspack, {Compilation, Compiler} from "@rspack/core";
 
-import {getCompilationBuildAssets} from "@cli/bundler/utils/output";
-import {getManifestHooks} from "../utils/manifest-hooks";
+import {getCompilationBuildAssets, getManifestHooks} from "../utils";
 
 import {ManifestBuilder, ManifestDependencies, ManifestDependency} from "@typing/manifest";
 import {EntrypointAssetsMap} from "@typing/entrypoint";

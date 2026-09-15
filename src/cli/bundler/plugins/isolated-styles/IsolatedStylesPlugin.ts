@@ -1,11 +1,11 @@
 import {type Chunk, type Compilation, type Compiler, type Filename, RuntimeGlobals, RuntimeModule} from "@rspack/core";
 
-import {getIsolatedStylesFiles, isIsolatedStylesChunk} from "@cli/bundler/utils/styles";
 import {CssContentHashType, filenameRequiresFullHash, resolveChunkFilename} from "@cli/bundler/utils/chunk-filename";
 import type {RuntimePropertyOptions} from "../types";
 import {getManifestHooks} from "../utils/manifest-hooks";
 
 import {renderIsolatedStylesCssLoader, renderIsolatedStylesRuntime} from "./templates";
+import {getIsolatedStylesFiles, isIsolatedStylesChunk} from "./chunks";
 
 const PluginName = "IsolatedStylesPlugin";
 const CssLoadingRuntimeIdentifier = "webpack/runtime/css loading";
