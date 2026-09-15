@@ -1,5 +1,107 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.12.0 (2026-09-15)
+
+### 💥 Breaking Changes
+
+* Remove ContentScriptFrameOptions and isolation.width /
+isolation.height. Set iframe dimensions and styles through boundary;
+iframes receive no framework width, height, border or display defaults.
+ContentScriptProps now includes a required boundary property, and content
+and Relay definitions carry an isolation type parameter. When specifying
+data generics explicitly for an isolated entrypoint, specify its mode too.
+
+* Render handlers are synchronous; asynchronous work and render
+decisions belong in prepare. React render functions are components invoked by React.
+ContentScriptProps now includes data, container, and target; container factories
+receive ContentScriptContainerProps before those DOM elements exist.
+ContentScriptWatchStrategy update callbacks may be asynchronous. Literal render:
+true tracks anchors without UI, while prepare returning false skips UI creation.
+Consumers checking published declarations require TypeScript 5.6.3 or newer.
+
+* separate content adapters and simplify relay startup
+
+
+### ✨ Features
+
+* configure content isolation boundaries and render targets ([822cca3](https://github.com/addon-stack/addon-bone/commit/822cca363bb787dceee052a91955ba564f8a421c))
+
+  Expose typed boundaries in content and Relay render props. Accept a tag,
+  DOM properties or a synchronous factory for isolated render targets, and
+  run boundary setup with an optional cleanup function for subscriptions.
+
+  Share setup policy through IsolationSetup while the nodes retain DOM,
+  style and cleanup ownership. Preserve synchronous mounting and protect
+  cleanup, remounts and iframe document recovery from reentrant callbacks.
+
+  Cover the contract with unit, declaration and browser integration tests,
+  and document the current API and lifecycle.
+
+* prepare content data before synchronous rendering ([57f3018](https://github.com/addon-stack/addon-bone/commit/57f3018219eb343c0a9bf050f1f9efad4767c849))
+
+  Prepare data per anchor before creating UI and pass the prepared data, container,
+  and render target to Content and Relay renderers. Keep mount and unmount
+  synchronous, invalidate stale preparation, and retain watching after anchor errors.
+
+  Cover lifecycle behavior, React portals, headless Relay, and published declarations.
+
+
+
+### 📝 Documentation
+
+* define code layout conventions ([55c6518](https://github.com/addon-stack/addon-bone/commit/55c65184a055dfbe0f68f21d601bdf67680e4dd0))
+
+
+
+
+### 🤖 CI
+
+* split test jobs and streamline git hooks ([d837609](https://github.com/addon-stack/addon-bone/commit/d837609b28cd6bcaf25047249cf6c02bc40a5497))
+
+
+
+
+### 🧪 Tests
+
+* parallelize suites and harden test infrastructure ([5076ccc](https://github.com/addon-stack/addon-bone/commit/5076ccc23da714842d098ee7e372b2e8d6ec1c47))
+
+
+* wait for locale service worker initialization ([dcc5741](https://github.com/addon-stack/addon-bone/commit/dcc57418356ce3e1cc6c535b2ceef4d2ad2e4663))
+
+
+
+
+### 🛠️ Refactoring
+
+* centralize runtime access and organize bundler modules ([0e6698c](https://github.com/addon-stack/addon-bone/commit/0e6698cf72e114d983462e95b7cc245e28eaba39))
+
+  Read entrypoint assets and isolated styles through the generated
+  #adnbn/runtime facade. Keep Rspack runtime access in build code and preserve
+  per-entrypoint asset-map selection and isolated CSS delivery.
+
+  Separate asset collection, filename handling, compilation state and layer
+  classification. Keep isolated-style helpers inside their owning plugin.
+
+* organize content types by adapter ([a4396a0](https://github.com/addon-stack/addon-bone/commit/a4396a0d3dce1661e0cd9d86c22cdad3b1ff1d64))
+
+
+* separate content adapters and simplify relay startup ([4a2a8a5](https://github.com/addon-stack/addon-bone/commit/4a2a8a5986d8dea0e5b044706925fc3f9d2d9c7e))
+
+  Move shared content lifecycle and resolvers to their owners.
+  Expose watch strategies through adnbn/content and keep framework
+  normalization in the selected adapter.
+
+  Move Relay normalization and content construction into runtime.
+  Replace the old builder contract and update virtual modules,
+  declarations, tests, and documentation.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 10
+
 ## 🚀 Release Addon Bone v0.11.0 (2026-09-13)
 
 ### 💥 Breaking Changes
