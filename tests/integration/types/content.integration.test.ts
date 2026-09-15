@@ -29,7 +29,13 @@ describe("content contracts", () => {
             const host = ts.createCompilerHost(options);
 
             const program = ts.createProgram(
-                [fixture, watchFixture, path.join(__dirname, "fixtures/content/prepare.tsx")],
+                [
+                    fixture,
+                    watchFixture,
+                    path.join(__dirname, "fixtures/content/prepare.tsx"),
+                    path.join(__dirname, "fixtures/content/target.tsx"),
+                    path.join(__dirname, "fixtures/content/boundary.tsx"),
+                ],
                 options,
                 host
             );

@@ -4,12 +4,16 @@ import {createRenderResolver} from "./resolvers/render";
 
 import type {
     ContentScriptNode,
+    ContentScriptIsolation,
     ContentScriptProps,
     ContentScriptRenderHandler,
     ContentScriptRenderValue,
 } from "@typing/content";
 
-export default class Builder<Data = unknown> extends MountBuilder<Data> {
+export default class Builder<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> extends MountBuilder<Data, Isolation> {
     protected resolveRender(
         render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
     ): ContentScriptRenderHandler<Data> | undefined {

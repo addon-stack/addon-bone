@@ -7,6 +7,7 @@ import {
     createAnchorResolver,
     createAwaitFirstStrategy,
     createContainerResolver,
+    createTargetResolver,
     withLocationTracking,
     createAppendMountHandler,
     createMutationObserverStrategy,
@@ -14,7 +15,7 @@ import {
 
 import {ManagedContext, EventEmitter} from "./context";
 import {AttributeMarker, WeakMarker} from "./markers";
-import EventNode from "./nodes/EventNode";
+import {EventNode} from "./nodes";
 
 import {
     ContentScriptAnchor,
@@ -26,6 +27,7 @@ import {
     ContentScriptContainerTag,
     ContentScriptContext,
     ContentScriptDefinition,
+    ContentScriptIsolation,
     ContentScriptMarker,
     ContentScriptMarkerContract,
     ContentScriptMarkerGetter,
@@ -41,7 +43,13 @@ import {
     ContentScriptWatchStrategy,
 } from "@typing/content";
 
-export default abstract class Builder<Data = unknown> extends EntrypointBuilder implements ContentScriptBuilder {
+export default abstract class Builder<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+>
+    extends EntrypointBuilder
+    implements ContentScriptBuilder
+{
     private lock = new AwaitLock();
 
     protected generation = 0;
@@ -58,10 +66,29 @@ export default abstract class Builder<Data = unknown> extends EntrypointBuilder 
 
     protected abstract createNode(anchor: Element, data: Data, enabled: boolean): Promise<ContentScriptNode>;
 
-    protected constructor(definition: ContentScriptDefinition<Data>) {
+    protected constructor(input: ContentScriptDefinition<Data, Isolation>) {
         super();
 
+        // Normalization selects the isolation at runtime; its node supplies the matching callback props.
+        const definition = input as ContentScriptDefinition<Data>;
         const isolation = resolveContentScriptIsolation(definition.isolation, "render" in definition);
+
+        if (definition.boundary !== undefined) {
+            if (typeof definition.boundary !== "function") {
+                throw new Error("Content script boundary must be a synchronous setup handler");
+            }
+
+            if (isolation.type === "none") {
+                throw new Error("Content script boundary requires Shadow DOM or an iframe");
+            }
+        }
+
+        if (
+            definition.target !== undefined &&
+            (isolation.type === "none" || isContentScriptFrameNavigation(isolation))
+        ) {
+            throw new Error("Content script target requires Shadow DOM or an iframe with local rendering");
+        }
 
         this.definition = {
             ...definition,
@@ -69,6 +96,7 @@ export default abstract class Builder<Data = unknown> extends EntrypointBuilder 
             anchor: this.resolveAnchor(definition.anchor),
             mount: this.resolveMount(definition.mount),
             container: this.resolveContainer(definition.container),
+            target: createTargetResolver(definition.target),
             render: definition.render === true ? true : this.resolveRender(definition.render),
             isolation,
             watch: this.resolveWatch(definition.watch),
@@ -147,7 +175,8 @@ export default abstract class Builder<Data = unknown> extends EntrypointBuilder 
             return;
         }
 
-        const {render, prepare, main, anchor, marker, container, watch, mount, ...options} = this.definition;
+        const {render, prepare, main, anchor, marker, container, boundary, target, watch, mount, ...options} =
+            this.definition;
 
         const resolvedMarker = await marker(options);
 
@@ -202,7 +231,19 @@ export default abstract class Builder<Data = unknown> extends EntrypointBuilder 
     }
 
     protected getPrepareProps(anchor: Element): ContentScriptPrepareProps {
-        const {anchor: _, marker, mount, watch, prepare, render, container, main, ...options} = this.definition;
+        const {
+            anchor: _,
+            marker,
+            mount,
+            watch,
+            prepare,
+            render,
+            container,
+            boundary,
+            target,
+            main,
+            ...options
+        } = this.definition;
 
         return {...options, anchor};
     }

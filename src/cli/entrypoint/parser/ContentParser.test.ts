@@ -44,7 +44,6 @@ describe("ContentParser", () => {
     });
     test.each([
         ["iframe", /isolation.mode is not supported/],
-        ["frame", /isolation.height is not supported/],
         ["mode", /isolation.mode must be "open" or "closed"/],
         ["dynamic", /isolation.mode must be statically known/],
         ["identifier", /isolation.mode must be statically known/],
@@ -82,12 +81,12 @@ describe("ContentParser", () => {
     });
     test("resolves a local frame object without treating identifiers as aliases", () => {
         expect(parser.options(file("options", "isolation", "frame-constant.content.ts"))).toMatchObject({
-            isolation: {type: "iframe", page: "panel", height: 320},
+            isolation: {type: "iframe", page: "panel"},
         });
     });
-    test("parses the isolation enum and frame dimensions", () => {
+    test("parses the isolation enum without executing boundary setup", () => {
         expect(parser.options(file("options", "isolation", "iframe.content.ts"))).toMatchObject({
-            isolation: {type: "iframe", height: 320},
+            isolation: {type: "iframe"},
         });
     });
     test("projects the Shadow isolation mode without runtime properties", () => {
@@ -99,23 +98,21 @@ describe("ContentParser", () => {
     });
     test("resolves a local page alias", () => {
         expect(parser.options(file("options", "isolation", "page.content.ts"))).toMatchObject({
-            isolation: {type: "iframe", page: "panel", width: "80%"},
+            isolation: {type: "iframe", page: "panel"},
         });
     });
-    test("preserves frame source and numeric/CSS dimensions in the normalized options", () => {
+    test("preserves the frame source in normalized options", () => {
         expect(parser.options(file("options", "isolation", "source.content.ts"))).toEqual({
             matches: ["http://*/*", "https://*/*"],
             runAt: "document_idle",
             isolation: {
                 type: "iframe",
                 src: "https://example.com/panel",
-                width: 0,
-                height: "calc(100vh - 24px)",
             },
         });
     });
     test.each([
-        ["iframe-short", {type: "iframe", width: "100%", height: 150}],
+        ["iframe-short", {type: "iframe"}],
         ["none-object", {type: "none"}],
     ])("normalizes shorthand and explicit options from %s", (name, isolation) => {
         expect(parser.options(file("options", "isolation", name + ".content.ts"))).toMatchObject({isolation});
@@ -128,7 +125,6 @@ describe("ContentParser", () => {
         ["frame-identifier-page", /statically known/],
         ["frame-conflict", /mutually exclusive/],
         ["frame-render", /cannot be combined/],
-        ["frame-auto", /not supported yet/],
         ["frame-spread", /statically known/],
         ["isolation-dynamic", /statically known/],
         ["frame-dynamic-page", /statically known/],

@@ -39,7 +39,7 @@ export const expectRelayStyles = async (browser: "chrome" | "firefox", manifestV
                 background: "rgb(34, 102, 68)",
                 host: "3px",
                 isolated: true,
-                isolation: {type: "iframe", width: "100%", height: 150},
+                isolation: {type: "iframe"},
             },
             page: "rgb(17, 85, 153)",
         });

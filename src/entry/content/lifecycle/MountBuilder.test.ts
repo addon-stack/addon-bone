@@ -72,7 +72,7 @@ describe("MountBuilder", () => {
                         events.push({
                             event,
                             connected: !!node.container?.isConnected,
-                            src: node.container?.querySelector("iframe")?.src,
+                            src: node.boundary && "src" in node.boundary ? node.boundary.src : undefined,
                         });
                     });
                 },
@@ -127,6 +127,7 @@ describe("MountBuilder", () => {
             const prepare = jest.fn(async () => false as const);
             const container = jest.fn(() => document.createElement("section"));
             const mount = jest.fn();
+            const boundary = jest.fn();
 
             const builder = new MountBuilder(
                 defineContentScript({
@@ -135,6 +136,7 @@ describe("MountBuilder", () => {
                     prepare,
                     container,
                     mount,
+                    boundary,
                 })
             );
 
@@ -151,6 +153,7 @@ describe("MountBuilder", () => {
                 expect(prepare).toHaveBeenCalledTimes(1);
                 expect(container).not.toHaveBeenCalled();
                 expect(mount).not.toHaveBeenCalled();
+                expect(boundary).not.toHaveBeenCalled();
                 expect(anchor.childElementCount).toBe(0);
             } finally {
                 await builder.destroy();
@@ -173,8 +176,21 @@ describe("MountBuilder", () => {
         expect(render).not.toHaveBeenCalled();
     });
 
+    test.each([undefined, "none", {type: "iframe", src: "https://example.com"}])(
+        "rejects JavaScript target configuration without local isolation: %p",
+        isolation => {
+            const target = jest.fn();
+            const definition = resolveDefinition({default: {isolation, target}});
+
+            expect(() => new MountBuilder(definition)).toThrow(
+                "target requires Shadow DOM or an iframe with local rendering"
+            );
+            expect(target).not.toHaveBeenCalled();
+        }
+    );
+
     test("Common runtime keeps the configuration accepted by the root define helper", () => {
-        const options: ContentScriptDefinition = defineContentScript({
+        const options: ContentScriptDefinition<undefined, "iframe"> = defineContentScript({
             isolation: {type: "iframe", src: "https://example.com"},
         });
 
@@ -203,3 +219,64 @@ test.each(["none", "shadow", "iframe"] as const)(
         }
     }
 );
+
+test.each([undefined, "none", {type: "none"}])("rejects boundary setup without isolation %p", isolation => {
+    const boundary = jest.fn();
+
+    expect(() => new MountBuilder(resolveDefinition({default: {isolation, boundary}}))).toThrow(
+        "boundary requires Shadow DOM or an iframe"
+    );
+    expect(boundary).not.toHaveBeenCalled();
+});
+
+test("rejects an invalid JavaScript boundary option without invoking it", () => {
+    expect(() => new MountBuilder(resolveDefinition({default: {isolation: "iframe", boundary: {height: 20}}}))).toThrow(
+        "boundary must be a synchronous setup handler"
+    );
+});
+
+test("rejects asynchronous boundary setup and removes a partially created iframe", async () => {
+    const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+    const builder = new MountBuilder(
+        resolveDefinition({
+            default: {
+                anchor: document.body,
+                isolation: {type: "iframe", src: "https://example.com"},
+                boundary: async () => {},
+            },
+        })
+    );
+
+    try {
+        await builder.build();
+        expect(document.querySelector("iframe")).toBeNull();
+        expect(builder.getContext().nodes.size).toBe(0);
+        const error = logged.mock.calls[0][0] as AggregateError;
+        expect(error.errors[0].message).toMatch(/boundary must return synchronously/);
+    } finally {
+        await builder.destroy();
+        logged.mockRestore();
+    }
+});
+
+test.each(["shadow", "iframe"] as const)("headless %s never invokes boundary setup", async isolation => {
+    const boundary = jest.fn();
+    const builder =
+        isolation === "shadow"
+            ? new MountBuilder(
+                  defineContentScript({anchor: document.body, isolation: "shadow", render: true, boundary})
+              )
+            : new MountBuilder(
+                  defineContentScript({anchor: document.body, isolation: "iframe", render: true, boundary})
+              );
+
+    try {
+        await builder.build();
+        builder.getContext().unmount();
+        builder.getContext().mount();
+        expect(boundary).not.toHaveBeenCalled();
+        expect([...builder.getContext().nodes][0].boundary).toBeUndefined();
+    } finally {
+        await builder.destroy();
+    }
+});

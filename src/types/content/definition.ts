@@ -1,4 +1,5 @@
 import type {ContentScriptPrepareHandler} from "./prepare";
+import type {ContentScriptBoundaryHandler} from "./boundary";
 
 import type {
     ContentScriptAnchor,
@@ -13,7 +14,6 @@ import type {
     ContentScriptFrameSourceOptions,
     ContentScriptIsolation,
     ContentScriptIsolationFrameOptions,
-    ContentScriptIsolationNoneOptions,
     ContentScriptIsolationOptions,
     ContentScriptIsolationShadowOptions,
     ContentScriptMainFunction,
@@ -26,6 +26,7 @@ import type {
 } from "./common";
 
 import type {ContentScriptRenderHandler, ContentScriptRenderValue} from "./render";
+import type {ContentScriptTarget, ContentScriptTargetCreator} from "./target";
 
 export interface ContentScriptDefinitionBase<Data = unknown> extends Partial<ContentScriptOptions> {
     marker?: ContentScriptMarkerType | ContentScriptMarkerGetter;
@@ -42,39 +43,71 @@ export interface ContentScriptDefinitionBase<Data = unknown> extends Partial<Con
     main?: ContentScriptMainFunction;
 }
 
-export type ContentScriptDefinition<Data = unknown> = ContentScriptDefinitionBase<Data> &
-    (
-        | {
-              isolation?:
-                  | ContentScriptIsolation
-                  | `${ContentScriptIsolation}`
-                  | ContentScriptIsolationNoneOptions
-                  | ContentScriptIsolationShadowOptions
-                  | (ContentScriptIsolationFrameOptions & ContentScriptFrameRenderOptions);
+export type ContentScriptRenderDefinition<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> = {
+    // Infer the mode only from configuration; callbacks consume that mode without widening it.
+    isolation?: Isolation | {type: Isolation};
+    boundary?: ContentScriptBoundaryHandler<NoInfer<Data>, NoInfer<Isolation>>;
+    target?: ContentScriptTarget<NoInfer<Data>, NoInfer<Isolation>>;
+    render?:
+        | ContentScriptRenderValue<NoInfer<Data>, NoInfer<Isolation>>
+        | ContentScriptRenderHandler<NoInfer<Data>, NoInfer<Isolation>>;
+} & (
+    | {
+          isolation?:
+              | NoInfer<Isolation>
+              | Extract<ContentScriptIsolationOptions, {type: `${NoInfer<Isolation>}`; page?: never; src?: never}>;
+          boundary?: never;
+          target?: never;
+      }
+    | {
+          isolation:
+              | Extract<NoInfer<Isolation>, "shadow">
+              | Extract<ContentScriptIsolationShadowOptions, {type: `${NoInfer<Isolation>}`}>;
+      }
+    | {
+          isolation:
+              | Extract<NoInfer<Isolation>, "iframe">
+              | Extract<
+                    ContentScriptIsolationFrameOptions & ContentScriptFrameRenderOptions,
+                    {type: `${NoInfer<Isolation>}`}
+                >;
+      }
+    | {
+          isolation: Extract<
+              ContentScriptIsolationFrameOptions & (ContentScriptFramePageOptions | ContentScriptFrameSourceOptions),
+              {type: `${NoInfer<Isolation>}`}
+          >;
+          render?: never;
+          target?: never;
+      }
+) &
+    ("none" extends `${NoInfer<Isolation>}` ? unknown : {isolation: unknown});
 
-              render?: ContentScriptRenderValue<NoInfer<Data>> | ContentScriptRenderHandler<NoInfer<Data>>;
-          }
-        | {
-              isolation: ContentScriptIsolationFrameOptions &
-                  (ContentScriptFramePageOptions | ContentScriptFrameSourceOptions);
-
-              render?: never;
-          }
-    );
+export type ContentScriptDefinition<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> = ContentScriptDefinitionBase<Data> & ContentScriptRenderDefinition<Data, Isolation>;
 
 export interface ContentScriptResolvedDefinition<Data = unknown> extends Omit<
     ContentScriptDefinitionBase<Data>,
     "anchor" | "marker" | "mount" | "container" | "watch"
 > {
     isolation: ContentScriptIsolationOptions;
+    boundary?: ContentScriptBoundaryHandler<Data>;
     marker: ContentScriptMarkerResolver;
     anchor: ContentScriptAnchorGetter;
     mount: ContentScriptMountFunction;
     render?: true | ContentScriptRenderHandler<Data>;
     container: ContentScriptContainerCreator<Data>;
+    target: ContentScriptTargetCreator<Data>;
     watch: ContentScriptWatchStrategy;
 }
 
-type ContentScriptAppendVariant<T> = T extends unknown ? Omit<T, "mount"> & {append?: ContentScriptAppend} : never;
-
-export type ContentScriptAppendDefinition<Data = unknown> = ContentScriptAppendVariant<ContentScriptDefinition<Data>>;
+export type ContentScriptAppendDefinition<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> = Omit<ContentScriptDefinitionBase<Data>, "mount"> &
+    ContentScriptRenderDefinition<Data, Isolation> & {append?: ContentScriptAppend};

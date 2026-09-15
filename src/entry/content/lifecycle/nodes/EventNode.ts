@@ -1,4 +1,4 @@
-import {ContentScriptEventEmitter, ContentScriptNode} from "@typing/content";
+import {ContentScriptBoundary, ContentScriptEventEmitter, ContentScriptNode} from "@typing/content";
 
 export default class EventNode implements ContentScriptNode {
     private generation = 0;
@@ -18,6 +18,10 @@ export default class EventNode implements ContentScriptNode {
 
     public get target(): Element | undefined {
         return this.node.target;
+    }
+
+    public get boundary(): ContentScriptBoundary {
+        return this.node.boundary;
     }
 
     public mount(): boolean {

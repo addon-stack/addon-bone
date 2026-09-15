@@ -1,4 +1,5 @@
 import Builder from "./Builder";
+import IsolationSetup from "./IsolationSetup";
 import {FrameNode, MountNode, MarkerNode, ShadowNode, Node} from "./nodes";
 import {isContentScriptFrameNavigation} from "@shared/content";
 
@@ -10,8 +11,11 @@ import {
     ContentScriptRenderHandler,
 } from "@typing/content";
 
-export default class MountBuilder<Data = unknown> extends Builder<Data> {
-    public constructor(definition: ContentScriptDefinition<Data>) {
+export default class MountBuilder<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> extends Builder<Data, Isolation> {
+    public constructor(definition: ContentScriptDefinition<Data, Isolation>) {
         super(definition);
     }
 
@@ -20,7 +24,13 @@ export default class MountBuilder<Data = unknown> extends Builder<Data> {
             throw new Error("Content script render requires a container and target");
         }
 
-        return {...this.getPrepareProps(node.anchor), data, container: node.container, target: node.target};
+        return {
+            ...this.getPrepareProps(node.anchor),
+            data,
+            container: node.container,
+            target: node.target,
+            boundary: node.boundary,
+        };
     }
 
     protected async createNode(anchor: Element, data: Data, enabled: boolean): Promise<ContentScriptNode> {
@@ -34,17 +44,23 @@ export default class MountBuilder<Data = unknown> extends Builder<Data> {
         const marker = this.marker;
         const container = await this.definition.container({...this.getPrepareProps(anchor), data});
 
-        let node: ContentScriptNode = new MountNode(
-            new MarkerNode(new Node(anchor, container), marker),
-            this.definition.mount
-        );
+        const mountedNode = new MountNode(new MarkerNode(new Node(anchor, container), marker), this.definition.mount);
+
+        const setup = new IsolationSetup({
+            props: () => ({...this.getPrepareProps(anchor), data}),
+            container: () => mountedNode.container,
+            boundary: this.definition.boundary,
+            target: this.definition.target,
+        });
+
+        let node: ContentScriptNode = mountedNode;
 
         switch (this.definition.isolation.type) {
             case ContentScriptIsolation.Shadow:
-                node = new ShadowNode(node, this.definition.isolation);
+                node = new ShadowNode(mountedNode, this.definition.isolation, setup);
                 break;
             case ContentScriptIsolation.Iframe:
-                node = new FrameNode(node, this.definition.isolation, () => this.context.mount());
+                node = new FrameNode(mountedNode, this.definition.isolation, () => this.context.mount(), setup);
                 break;
         }
 

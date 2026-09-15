@@ -7,3 +7,11 @@ must be no UI containers; Relay RPC must already be callable while Relay main is
 The fixture checks per-anchor data, denied and removed anchors, literal headless rendering, Vanilla
 DOM props, React portals in closed Shadow DOM and an iframe, preserved state on an unchanged target,
 and fresh props after remount or actual iframe document navigation.
+
+Custom targets exercise a tag string, a DOM-properties object, and a factory using prepared data.
+The iframe factory creates its element in the child document and configures the frame through
+`boundary`. Snapshots check the actual boundary, custom tag, and React portal destination. An intact
+mount preserves the target; iframe document recovery calls the factory again. Headless Relay rejects
+any attempt to call its target factory.
+
+Boundary checks cover typed setup before rendering, cleanup on remount/unmount, and iframe document recovery without repeating setup. Setup and cleanup counters are exposed on each anchor.

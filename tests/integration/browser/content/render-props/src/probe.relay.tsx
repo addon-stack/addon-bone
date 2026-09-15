@@ -1,3 +1,4 @@
+import {setupBoundary} from "./shared/boundary";
 import {defineRelay} from "adnbn";
 import {Panel} from "./shared/Panel";
 import {prepare} from "./shared/prepare";
@@ -9,6 +10,8 @@ export default defineRelay({
     anchor: "#relay",
     isolation: "shadow",
     prepare,
+    boundary: setupBoundary,
+    target: "aside",
     render: Panel,
 
     init: () => ({

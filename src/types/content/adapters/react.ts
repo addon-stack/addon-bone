@@ -1,11 +1,13 @@
 import type {ReactNode} from "react";
 
-import type {ContentScriptProps} from "../common";
+import type {ContentScriptIsolation, ContentScriptProps} from "../common";
 
-export type ContentScriptRenderReactComponent<Data = unknown> = (
-    props: ContentScriptProps<Data>
-) => Exclude<ReactNode, Promise<unknown>>;
+export type ContentScriptRenderReactComponent<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> = (props: ContentScriptProps<Data, Isolation>) => Exclude<ReactNode, Promise<unknown>>;
 
-export type ContentScriptReactRenderValue<Data = unknown> =
-    | Exclude<ReactNode, Promise<unknown>>
-    | ContentScriptRenderReactComponent<Data>;
+export type ContentScriptReactRenderValue<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> = Exclude<ReactNode, Promise<unknown>> | ContentScriptRenderReactComponent<Data, Isolation>;

@@ -27,8 +27,6 @@ export default class ContentParser<
         const frameSchema = z
             .object({
                 type: z.literal(ContentScriptIsolation.Iframe),
-                width: z.union([z.number(), z.string()]),
-                height: z.union([z.number(), z.string()]),
             })
             .strict();
 

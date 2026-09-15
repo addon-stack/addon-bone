@@ -1,4 +1,5 @@
 import type {ContentScriptPrepareProps} from "./prepare";
+import type {ContentScriptBoundary} from "./boundary";
 
 import type {PageAlias} from "@typing/page";
 import type {Optional} from "utility-types";
@@ -149,23 +150,17 @@ export interface ContentScriptShadowOptions {
     mode?: ContentScriptShadowMode | `${ContentScriptShadowMode}`;
 }
 
-export interface ContentScriptFrameOptions {
-    width?: number | string;
-    /** Defaults to 150px. Automatic height is not supported yet. */
-    height?: number | string;
-}
-
-export interface ContentScriptFrameRenderOptions extends ContentScriptFrameOptions {
+export interface ContentScriptFrameRenderOptions {
     page?: never;
     src?: never;
 }
 
-export interface ContentScriptFramePageOptions extends ContentScriptFrameOptions {
+export interface ContentScriptFramePageOptions {
     page: PageAlias;
     src?: never;
 }
 
-export interface ContentScriptFrameSourceOptions extends ContentScriptFrameOptions {
+export interface ContentScriptFrameSourceOptions {
     src: string;
     page?: never;
 }
@@ -180,16 +175,12 @@ export interface ContentScriptIsolationNoneOptions {
     mode?: never;
     page?: never;
     src?: never;
-    width?: never;
-    height?: never;
 }
 
 export interface ContentScriptIsolationShadowOptions extends ContentScriptShadowOptions {
     type: ContentScriptIsolation.Shadow | "shadow";
     page?: never;
     src?: never;
-    width?: never;
-    height?: never;
 }
 
 export type ContentScriptIsolationFrameOptions = ContentScriptFrame & {
@@ -227,11 +218,16 @@ export interface ContentScriptContainerProps<Data = unknown> extends ContentScri
     data: Data;
 }
 
-export interface ContentScriptProps<Data = unknown> extends ContentScriptContainerProps<Data> {
+export interface ContentScriptProps<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> extends ContentScriptContainerProps<Data> {
     /** Outer mounted element; the Shadow host or iframe wrapper when isolated. */
     container: Element;
     /** Actual render destination. Use its root/document for portals and DOM operations. */
     target: Element;
+    /** ShadowRoot or iframe for the active isolation; undefined without isolation. */
+    boundary: ContentScriptBoundary<Isolation>;
 }
 
 // Anchor
@@ -350,6 +346,9 @@ export interface ContentScriptNode extends ContentScriptMount {
 
     /** Element used by the active adapter as the destination for rendered UI. */
     target?: Element;
+
+    /** Present while isolation is mounted, including navigation-only iframes. */
+    boundary?: ContentScriptBoundary;
 }
 
 export type ContentScriptNodeSet = Set<ContentScriptNode>;

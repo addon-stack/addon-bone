@@ -1,3 +1,4 @@
+import {setupBoundary} from "./shared/boundary";
 import {defineContentScript} from "adnbn";
 import {Panel} from "./shared/Panel";
 import {prepare} from "./shared/prepare";
@@ -8,6 +9,8 @@ export default defineContentScript({
     anchor: ".react-anchor",
     isolation: {type: "shadow", mode: "closed"},
     prepare,
+    boundary: setupBoundary,
     main,
+    target: {tagName: "span", className: "custom-target"},
     render: Panel,
 });

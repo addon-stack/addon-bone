@@ -8,6 +8,7 @@ import {
 
 export default class Context implements ContentScriptContext {
     protected readonly collection: ContentScriptNodeSet = new Set();
+    private unmounting = false;
 
     constructor(protected readonly emitter: ContentScriptEventEmitter) {}
 
@@ -16,6 +17,10 @@ export default class Context implements ContentScriptContext {
     }
 
     public mount(): void {
+        if (this.unmounting) {
+            return;
+        }
+
         for (const node of this.collection) {
             if (!node.anchor.isConnected) {
                 node.unmount();
@@ -32,14 +37,21 @@ export default class Context implements ContentScriptContext {
     }
 
     public unmount(): void {
-        for (const node of this.collection) {
-            node.unmount();
+        const unmounting = this.unmounting;
+        this.unmounting = true;
 
-            if (!node.anchor.isConnected) {
-                this.collection.delete(node);
+        try {
+            for (const node of this.collection) {
+                node.unmount();
 
-                this.emitter.emitRemove(node);
+                if (!node.anchor.isConnected) {
+                    this.collection.delete(node);
+
+                    this.emitter.emitRemove(node);
+                }
             }
+        } finally {
+            this.unmounting = unmounting;
         }
     }
 
@@ -53,10 +65,17 @@ export default class Context implements ContentScriptContext {
     }
 
     public clear(): void {
-        for (const node of this.collection) {
-            node.unmount();
-            this.collection.delete(node);
-            this.emitter.emitRemove(node);
+        const unmounting = this.unmounting;
+        this.unmounting = true;
+
+        try {
+            for (const node of this.collection) {
+                node.unmount();
+                this.collection.delete(node);
+                this.emitter.emitRemove(node);
+            }
+        } finally {
+            this.unmounting = unmounting;
         }
     }
 

@@ -21,6 +21,10 @@ export function main(context: ContentScriptContext) {
                 mounted = node.mount();
             }
 
+            if (command === "unmount") {
+                node.unmount();
+            }
+
             if (command === "mount") {
                 mounted = node.mount();
             }
@@ -30,7 +34,11 @@ export function main(context: ContentScriptContext) {
             }
 
             if (command === "frame-reload") {
-                node.container!.querySelector("iframe")!.contentWindow!.location.reload();
+                const boundary = node.boundary;
+
+                if (boundary && "contentWindow" in boundary) {
+                    boundary.contentWindow!.location.reload();
+                }
             }
 
             node.anchor.setAttribute("data-tracked", String(context.nodes.size));

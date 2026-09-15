@@ -28,7 +28,7 @@ describe("VanillaNode", () => {
             const vanillaNode = new VanillaNode(
                 node,
                 () => value,
-                () => ({anchor, container, target, data: undefined})
+                () => ({anchor, container, target, data: undefined, boundary: undefined})
             );
 
             expect(vanillaNode.mount()).toBe(true);

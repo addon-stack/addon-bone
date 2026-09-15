@@ -5,7 +5,13 @@ import type {ContentScriptProps} from "adnbn";
 const targets = new WeakMap<Element, number>();
 let nextTarget = 0;
 
-export function Panel({anchor, container, target, data}: ContentScriptProps<{label: string; allowed: boolean}>) {
+export function Panel({
+    anchor,
+    container,
+    boundary,
+    target,
+    data,
+}: ContentScriptProps<{label: string; allowed: boolean}>) {
     const [count, setCount] = useState(0);
 
     useLayoutEffect(() => {
@@ -28,11 +34,18 @@ export function Panel({anchor, container, target, data}: ContentScriptProps<{lab
                 shadow,
                 closed: shadow && container.shadowRoot === null,
                 frame: target.ownerDocument !== anchor.ownerDocument,
+                boundaryMatches: shadow
+                    ? boundary === root
+                    : !!boundary && "contentDocument" in boundary && boundary.contentDocument === target.ownerDocument,
+                frameTitle: boundary && "title" in boundary ? boundary.title : undefined,
+                frameHeight: boundary && "style" in boundary ? boundary.style.height : undefined,
+                targetTag: target.tagName,
+                targetClass: target.className,
                 portal: target.querySelector("[data-portal]")?.textContent,
                 targetId: targets.get(target),
             })
         );
-    }, [anchor, container, target, data, count]);
+    }, [anchor, container, boundary, target, data, count]);
 
     return (
         <>

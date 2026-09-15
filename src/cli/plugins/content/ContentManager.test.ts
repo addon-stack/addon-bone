@@ -278,7 +278,7 @@ describe("ContentManager execution worlds", () => {
 
 describe("ContentManager Shadow DOM entries", () => {
     test("keeps every iframe variant separate even with concatenation enabled", async () => {
-        const frames = [undefined, {height: 200}, {page: "panel"}, {src: "https://example.com/panel"}];
+        const frames = [undefined, {}, {page: "panel"}, {src: "https://example.com/panel"}];
         const items: ContentItems<ContentScriptEntrypointOptions> = new Map(
             frames.map((frame, index) => [
                 `frame-${index}`,

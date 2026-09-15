@@ -5,18 +5,22 @@ import TransportBuilder from "./TransportBuilder";
 import EntrypointBuilder from "../core/Builder";
 
 import {RelayUnresolvedDefinition} from "@typing/relay";
-import {ContentScriptBuilder, ContentScriptDefinition} from "@typing/content";
+import {ContentScriptBuilder, ContentScriptDefinition, ContentScriptIsolation} from "@typing/content";
 import {TransportType} from "@typing/transport";
 
-export default class Builder<T extends TransportType, Data = unknown> extends EntrypointBuilder {
+export default class Builder<
+    T extends TransportType,
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> extends EntrypointBuilder {
     private generation = 0;
 
-    protected readonly _transport: TransportBuilder<T, Data>;
+    protected readonly _transport: TransportBuilder<T, Data, Isolation>;
     protected readonly _content: ContentScriptBuilder;
 
     constructor(
-        protected readonly definition: RelayUnresolvedDefinition<T, Data>,
-        contentBuilder: new (definition: ContentScriptDefinition<Data>) => ContentScriptBuilder
+        protected readonly definition: RelayUnresolvedDefinition<T, Data, Isolation>,
+        contentBuilder: new (definition: ContentScriptDefinition<Data, NoInfer<Isolation>>) => ContentScriptBuilder
     ) {
         super();
 
@@ -27,7 +31,7 @@ export default class Builder<T extends TransportType, Data = unknown> extends En
         this._content = new contentBuilder({
             ...contentOptions,
             ...(allFrames === undefined ? {} : {allFrames: allFrames !== false}),
-        } as ContentScriptDefinition<Data>);
+        } as ContentScriptDefinition<Data, Isolation>);
     }
 
     public async build(): Promise<void> {
@@ -51,7 +55,7 @@ export default class Builder<T extends TransportType, Data = unknown> extends En
             return;
         }
 
-        const {prepare, ...options} = this.definition;
+        const {prepare, boundary, target, ...options} = this.definition;
         const {main} = options;
 
         if (main) {

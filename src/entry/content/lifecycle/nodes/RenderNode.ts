@@ -1,4 +1,5 @@
 import type {
+    ContentScriptBoundary,
     ContentScriptNode,
     ContentScriptProps,
     ContentScriptRenderHandler,
@@ -27,6 +28,10 @@ export default abstract class RenderNode<Data = unknown> implements ContentScrip
 
     public get target(): Element | undefined {
         return this.node.target;
+    }
+
+    public get boundary(): ContentScriptBoundary {
+        return this.node.boundary;
     }
 
     protected abstract render(value: ContentScriptRenderValue<Data> | undefined, target: Element): boolean;

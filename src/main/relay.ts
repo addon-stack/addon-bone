@@ -3,6 +3,7 @@ import {ProxyRelay, type ProxyRelayParams} from "@relay/providers";
 import {options as relayOptions} from "#adnbn/relay";
 
 import type {TransportType} from "@typing/transport";
+import type {ContentScriptIsolation} from "@typing/content";
 
 import {
     RelayDefinition,
@@ -44,9 +45,13 @@ export type {
     RelayDefinition,
 } from "@typing/relay";
 
-export const defineRelay = <T extends TransportType, Data = undefined>(
-    options: RelayDefinition<T, Data>
-): RelayDefinition<T, Data> => {
+export const defineRelay = <
+    T extends TransportType,
+    Data = undefined,
+    const Isolation extends `${ContentScriptIsolation}` = "none",
+>(
+    options: RelayDefinition<T, Data, Isolation>
+): RelayDefinition<T, Data, Isolation> => {
     return options;
 };
 

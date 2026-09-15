@@ -11,10 +11,14 @@ export default defineRelay({
         throw new Error("Headless mode must not create a container");
     },
 
+    target: () => {
+        throw new Error("Headless mode must not create a target");
+    },
+
     init: () => ({}),
 
     main(_instance, context) {
         const [node] = context.nodes;
-        node.anchor.setAttribute("data-headless", String(!node.container && !node.target));
+        node.anchor.setAttribute("data-headless", String(!node.container && !node.boundary && !node.target));
     },
 });

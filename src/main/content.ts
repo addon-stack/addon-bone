@@ -1,22 +1,25 @@
 import {createAppendMountHandler} from "@entry/content/resolvers/mount";
 
-import {ContentScriptAppendDefinition, ContentScriptDefinition} from "@typing/content";
+import {ContentScriptAppendDefinition, ContentScriptDefinition, ContentScriptIsolation} from "@typing/content";
 
 export * from "@typing/content";
 
-export const defineContentScript = <Data = undefined>(
-    options: ContentScriptDefinition<Data>
-): ContentScriptDefinition<Data> => {
+export const defineContentScript = <Data = undefined, const Isolation extends `${ContentScriptIsolation}` = "none">(
+    options: ContentScriptDefinition<Data, Isolation>
+): ContentScriptDefinition<Data, Isolation> => {
     return options;
 };
 
-export const defineContentScriptAppend = <Data = undefined>(
-    options: ContentScriptAppendDefinition<Data>
-): ContentScriptDefinition<Data> => {
+export const defineContentScriptAppend = <
+    Data = undefined,
+    const Isolation extends `${ContentScriptIsolation}` = "none",
+>(
+    options: ContentScriptAppendDefinition<Data, Isolation>
+): ContentScriptDefinition<Data, Isolation> => {
     const {append, ...definition} = options;
 
     return {
         ...definition,
         mount: createAppendMountHandler(append),
-    };
+    } as ContentScriptDefinition<Data, Isolation>;
 };

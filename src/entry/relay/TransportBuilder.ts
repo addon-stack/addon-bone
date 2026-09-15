@@ -4,12 +4,17 @@ import {RegisterRelay} from "@relay/providers";
 
 import {RelayOptions, RelayUnresolvedDefinition, RelayMethod} from "@typing/relay";
 import {TransportName, TransportType} from "@typing/transport";
+import type {ContentScriptIsolation} from "@typing/content";
 
-export default class<T extends TransportType = TransportType, Data = unknown> extends AbstractBuilder<RelayOptions, T> {
+export default class TransportBuilder<
+    T extends TransportType = TransportType,
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> extends AbstractBuilder<RelayOptions, T> {
     protected readonly method: RelayMethod;
 
-    constructor(definition: RelayUnresolvedDefinition<T, Data>) {
-        const {main, method, prepare, ...options} = definition;
+    constructor(definition: RelayUnresolvedDefinition<T, Data, Isolation>) {
+        const {main, method, prepare, boundary, target, ...options} = definition;
 
         super(options);
 

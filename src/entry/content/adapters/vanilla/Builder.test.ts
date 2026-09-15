@@ -1,12 +1,23 @@
 import Builder from "./Builder";
 import {resolveDefinition} from "./resolvers/definition";
 import {defineContentScript, defineContentScriptAppend} from "@main/content";
-import {ContentScriptAppend, ContentScriptEvent, type ContentScriptProps} from "@typing/content";
+import {
+    ContentScriptAppend,
+    ContentScriptEvent,
+    type ContentScriptProps,
+    type ContentScriptBoundaryProps,
+    type ContentScriptTargetProps,
+    type ContentScriptMainFunction,
+} from "@typing/content";
 
 // Extend the shared random-ID mock for the builders' generated marker attribute.
 jest.mock("nanoid", () => ({
     nanoid: jest.fn(() => "mocked-id"),
     customAlphabet: () => () => "contentmarker",
+}));
+
+jest.mock("../../lifecycle/nodes/isolated-styles", () => ({
+    getContentScriptStylesRuntime: () => ({add: jest.fn(), delete: jest.fn()}),
 }));
 
 describe("Vanilla Builder", () => {
@@ -202,6 +213,102 @@ describe("Vanilla preparation and render props", () => {
         }
     });
 
+    test("creates a custom target with prepared data and exposes the same closed boundary throughout the lifecycle", async () => {
+        const anchor = createAnchor();
+        const data = {title: "Prepared"};
+        const prepare = jest.fn(() => data);
+        const calls: ContentScriptTargetProps<typeof data, "shadow">[] = [];
+        const rendered: ContentScriptProps<typeof data, "shadow">[] = [];
+        const boundaries: (ShadowRoot | HTMLIFrameElement | undefined)[] = [];
+
+        const main = jest.fn<ReturnType<ContentScriptMainFunction>, Parameters<ContentScriptMainFunction>>(context => {
+            context.watch((_event, node) => boundaries.push(node.boundary));
+        });
+
+        const builder = new Builder(
+            defineContentScript({
+                anchor,
+                isolation: {type: "shadow", mode: "closed"},
+                prepare,
+                main,
+
+                target: props => {
+                    calls.push(props);
+                    props.container.setAttribute("data-title", props.data.title);
+
+                    return {tagName: "span", className: "custom-target"};
+                },
+
+                render: props => {
+                    rendered.push(props);
+
+                    return props.data.title;
+                },
+            })
+        );
+
+        try {
+            await builder.build();
+            const context = builder.getContext();
+            const [node] = context.nodes;
+            const first = calls[0];
+
+            expect(first).toMatchObject({anchor, data, document, container: node.container, boundary: node.boundary});
+            expect(first.boundary.host).toBe(first.container);
+            expect(first.container.shadowRoot).toBeNull();
+            expect(first.container.getAttribute("data-title")).toBe("Prepared");
+            expect(first).not.toHaveProperty("target");
+            expect(first).not.toHaveProperty("prepare");
+            expect(main.mock.calls[0][1]).not.toHaveProperty("target");
+            expect(rendered[0]).toMatchObject({boundary: first.boundary, target: node.target});
+            expect(node.target?.outerHTML).toBe('<span class="custom-target">Prepared</span>');
+            expect(boundaries).toEqual([undefined, first.boundary]);
+            context.mount();
+            expect(calls).toHaveLength(1);
+            context.unmount();
+            expect(node.boundary).toBeUndefined();
+            expect(boundaries.at(-1)).toBeUndefined();
+            context.mount();
+            expect(calls).toHaveLength(2);
+            expect(calls[1].boundary).not.toBe(first.boundary);
+            expect(calls[1].container).not.toBe(first.container);
+            expect(calls[1].data).toBe(data);
+            expect(rendered[1].boundary).toBe(node.boundary);
+            expect(prepare).toHaveBeenCalledTimes(1);
+        } finally {
+            await builder.destroy();
+        }
+    });
+
+    test.each(["headless", "disabled"])("%s never calls the target factory", async mode => {
+        const anchor = createAnchor();
+        const target = jest.fn(() => "span" as const);
+        const builder = new Builder(
+            defineContentScript({
+                anchor,
+                isolation: "shadow",
+                target,
+                prepare: () => (mode === "disabled" ? false : undefined),
+                render: mode === "headless" ? true : () => "UI",
+            })
+        );
+
+        try {
+            await builder.build();
+            const context = builder.getContext();
+            const [node] = context.nodes;
+            context.unmount();
+            context.mount();
+            expect(target).not.toHaveBeenCalled();
+            expect(node.boundary).toBeUndefined();
+            expect(node.target).toBeUndefined();
+            expect(node.container).toBeUndefined();
+            expect(anchor.childElementCount).toBe(0);
+        } finally {
+            await builder.destroy();
+        }
+    });
+
     test("false tracks anchors without UI or retries while other anchors receive their own data", async () => {
         const allowed = createAnchor();
         const denied = createAnchor();
@@ -294,7 +401,7 @@ describe("Vanilla preparation and render props", () => {
         }
     });
 
-    test.each(["prepare", "container", "render"])(
+    test.each(["prepare", "container", "target", "render"])(
         "reports per-anchor %s errors and continues processing initial and watched anchors",
         async stage => {
             jest.useFakeTimers();
@@ -307,6 +414,7 @@ describe("Vanilla preparation and render props", () => {
             const builder = new Builder(
                 defineContentScript({
                     anchor: "article",
+                    isolation: "shadow",
                     watch: true,
 
                     prepare: async ({anchor}) => {
@@ -325,6 +433,14 @@ describe("Vanilla preparation and render props", () => {
                         return document.createElement("section");
                     },
 
+                    target: ({anchor, document}) => {
+                        if (stage === "target" && failures.has(anchor)) {
+                            throw error;
+                        }
+
+                        return document.createElement("span");
+                    },
+
                     render: ({anchor, data}) => {
                         if (stage === "render" && failures.has(anchor)) {
                             throw error;
@@ -341,7 +457,7 @@ describe("Vanilla preparation and render props", () => {
                 expect(report).toHaveBeenLastCalledWith(expect.any(AggregateError));
                 expect(report.mock.calls[0][0].errors).toEqual([error, error]);
                 expect(builder.getContext().nodes.size).toBe(1);
-                expect(initial.textContent).toBe("content");
+                expect(initial.firstElementChild?.shadowRoot?.textContent).toBe("content");
 
                 for (const anchor of failed) {
                     expect(anchor.childElementCount).toBe(0);
@@ -352,7 +468,7 @@ describe("Vanilla preparation and render props", () => {
                 failures.add(rejected);
                 const next = createAnchor();
                 await jest.advanceTimersByTimeAsync(201);
-                expect(next.textContent).toBe("content");
+                expect(next.firstElementChild?.shadowRoot?.textContent).toBe("content");
                 expect(rejected.childElementCount).toBe(0);
                 expect(builder.getContext().nodes.size).toBe(2);
                 expect(report).toHaveBeenCalledTimes(2);
@@ -362,7 +478,7 @@ describe("Vanilla preparation and render props", () => {
                 rejected.remove();
                 const last = createAnchor();
                 await jest.advanceTimersByTimeAsync(201);
-                expect(last.textContent).toBe("content");
+                expect(last.firstElementChild?.shadowRoot?.textContent).toBe("content");
                 expect(builder.getContext().nodes.size).toBe(3);
             } finally {
                 await builder.destroy();
@@ -536,5 +652,86 @@ test("simultaneous builds prepare each anchor only in the latest lifecycle", asy
     } finally {
         await builder.destroy();
         anchor.remove();
+    }
+});
+
+test.each(["shadow", "iframe"] as const)(
+    "boundary cleanup cannot remount an old %s renderer or stop other cleanups",
+    async isolation => {
+        const anchors = [document.createElement("article"), document.createElement("article")];
+        anchors.forEach(anchor => anchor.classList.add("boundary-test"));
+        document.body.append(...anchors);
+        const cleanup = jest.fn();
+        const render = jest.fn(() => "Panel");
+        const error = new Error("Cleanup failed");
+        const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+        const options = {
+            anchor: ".boundary-test",
+            prepare: (props: {anchor: Element}) => ({label: props.anchor.tagName}),
+            boundary: (props: ContentScriptBoundaryProps<{label: string}>) => {
+                expect(props.data.label).toBe("ARTICLE");
+                expect(props.container.isConnected).toBe(true);
+                expect(props).not.toHaveProperty("target");
+                expect(props).not.toHaveProperty("document");
+                expect(props).not.toHaveProperty("prepare");
+
+                return () => {
+                    cleanup();
+                    builder.getContext().mount();
+                    throw error;
+                };
+            },
+            render,
+        };
+
+        const builder =
+            isolation === "shadow"
+                ? new Builder(defineContentScript({...options, isolation: "shadow"}))
+                : new Builder(defineContentScript({...options, isolation: "iframe"}));
+
+        try {
+            await builder.build();
+            expect(render).toHaveBeenCalledTimes(2);
+            builder.getContext().unmount();
+            expect(cleanup).toHaveBeenCalledTimes(2);
+            expect(render).toHaveBeenCalledTimes(2);
+            expect(logged).toHaveBeenCalledWith("Content script boundary cleanup failed", error);
+            expect(anchors.every(anchor => anchor.childElementCount === 0)).toBe(true);
+        } finally {
+            await builder.destroy();
+            logged.mockRestore();
+            anchors.forEach(anchor => anchor.remove());
+        }
+
+        expect(cleanup).toHaveBeenCalledTimes(2);
+    }
+);
+
+test("boundary cleanup does not hide the original render failure", async () => {
+    const original = new Error("Render failed");
+    const cleanup = new Error("Cleanup failed");
+    const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+    const builder = new Builder(
+        defineContentScript({
+            anchor: document.body,
+            isolation: "shadow",
+            boundary: () => () => {
+                throw cleanup;
+            },
+            render: () => {
+                throw original;
+            },
+        })
+    );
+
+    try {
+        await builder.build();
+        expect(logged).toHaveBeenCalledWith("Content script boundary cleanup failed", cleanup);
+        const aggregate = logged.mock.calls.find(([error]) => error instanceof AggregateError)?.[0] as AggregateError;
+        expect(aggregate.errors).toEqual([original]);
+        expect(builder.getContext().nodes.size).toBe(0);
+    } finally {
+        await builder.destroy();
+        logged.mockRestore();
     }
 });

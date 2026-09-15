@@ -85,6 +85,8 @@ declare module "virtual:relay-entrypoint" {
         prepare,
         render,
         container,
+        boundary,
+        target,
         watch,
         includeBrowser,
         excludeBrowser,

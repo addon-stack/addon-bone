@@ -43,7 +43,7 @@ describe("ReactNode", () => {
             const reactNode = new ReactNode(
                 node,
                 () => component,
-                () => ({anchor, container, target, data: undefined})
+                () => ({anchor, container, target, data: undefined, boundary: undefined})
             );
 
             expect(reactNode.mount()).toBe(true);

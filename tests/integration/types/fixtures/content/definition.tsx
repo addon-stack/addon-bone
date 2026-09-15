@@ -24,7 +24,13 @@ const vanillaValues: ContentScriptVanillaRenderValue[] = [
 
 const reactValues: ContentScriptReactRenderValue[] = [
     Panel,
-    <Panel anchor={document.body} container={document.body} target={document.body} data={undefined} />,
+    <Panel
+        anchor={document.body}
+        container={document.body}
+        target={document.body}
+        data={undefined}
+        boundary={undefined}
+    />,
     [<span />, "text"],
 ];
 
@@ -61,7 +67,7 @@ defineContentScript({
 defineContentScriptAppend({
     anchor: ".product",
     append: ContentScriptAppend.After,
-    isolation: {type: ContentScriptIsolation.Iframe, height: 320},
+    isolation: {type: ContentScriptIsolation.Iframe},
 
     render: props => {
         const sharedProps: ContentScriptProps = props;

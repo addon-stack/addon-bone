@@ -1,24 +1,40 @@
-import type {ContentScriptIsolationFrameOptions, ContentScriptNode, ContentScriptStylesRuntime} from "@typing/content";
-import {ContentScriptIsolation} from "@typing/content";
 import {getPageUrl} from "@main/page";
+
+import type {
+    ContentScriptBoundaryCleanup,
+    ContentScriptIsolationFrameOptions,
+    ContentScriptNode,
+    ContentScriptStylesRuntime,
+} from "@typing/content";
+import {ContentScriptIsolation} from "@typing/content";
+
+import type IsolationSetup from "../IsolationSetup";
 
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
 import {isContentScriptFrameNavigation} from "@shared/content";
 
-/** Owns the child document, but never moves the content script's JavaScript into it. */
-export default class FrameNode implements ContentScriptNode {
+/** Owns the child document but never moves the content script's JavaScript into it. */
+export default class FrameNode<Data = unknown> implements ContentScriptNode {
     private frame?: HTMLIFrameElement;
     private head?: HTMLHeadElement;
     private _target?: Element;
+
     private runtime?: ContentScriptStylesRuntime;
+
     private generation = 0;
     private queued = false;
+
+    private cleanupBoundary?: ContentScriptBoundaryCleanup;
+
+    private mounting = false;
+    private unmounting = false;
 
     public constructor(
         private readonly node: ContentScriptNode,
         private readonly options: ContentScriptIsolationFrameOptions = {type: ContentScriptIsolation.Iframe},
-        private readonly recover: () => void
+        private readonly recover: () => void,
+        private readonly isolation: IsolationSetup<Data, "iframe">
     ) {}
 
     public get anchor(): Element {
@@ -31,6 +47,10 @@ export default class FrameNode implements ContentScriptNode {
 
     public get target(): Element | undefined {
         return this._target;
+    }
+
+    public get boundary(): HTMLIFrameElement | undefined {
+        return this.frame;
     }
 
     private readonly onLoad = (): void => {
@@ -66,6 +86,20 @@ export default class FrameNode implements ContentScriptNode {
     }
 
     public mount(): boolean {
+        if (this.mounting || this.unmounting) {
+            return false;
+        }
+
+        this.mounting = true;
+
+        try {
+            return this.mountNode();
+        } finally {
+            this.mounting = false;
+        }
+    }
+
+    private mountNode(): boolean {
         const mounted = !!this.node.mount();
 
         if (!this.container) {
@@ -83,22 +117,40 @@ export default class FrameNode implements ContentScriptNode {
         if (!this.frame) {
             const frame = this.container.ownerDocument.createElement("iframe");
 
-            frame.style.width = this.size(this.options.width ?? "100%");
-            frame.style.height = this.size(this.options.height ?? 150);
-            frame.style.border = "0";
-            frame.style.display = "block";
-
             this.frame = frame;
+            const generation = this.generation;
 
-            if (isContentScriptFrameNavigation(this.options)) {
-                frame.src = this.options.page !== undefined ? getPageUrl(this.options.page) : this.options.src!;
-            } else {
-                frame.addEventListener("load", this.onLoad);
+            try {
+                const cleanup = this.isolation.setup(frame);
+
+                if (generation !== this.generation || this.frame !== frame) {
+                    cleanup?.();
+
+                    return false;
+                }
+
+                this.cleanupBoundary = cleanup || undefined;
+
+                if (isContentScriptFrameNavigation(this.options)) {
+                    frame.src = this.options.page !== undefined ? getPageUrl(this.options.page) : this.options.src!;
+                } else {
+                    frame.addEventListener("load", this.onLoad);
+                }
+
+                this.container.append(frame);
+
+                if (generation !== this.generation || this.frame !== frame) {
+                    return false;
+                }
+
+                created = true;
+            } catch (error) {
+                if (generation === this.generation && this.frame === frame) {
+                    this.unmount();
+                }
+
+                throw error;
             }
-
-            this.container.append(frame);
-
-            created = true;
         }
 
         if (isContentScriptFrameNavigation(this.options) || this.intact()) {
@@ -117,41 +169,78 @@ export default class FrameNode implements ContentScriptNode {
 
         this.releaseStyles();
 
-        const target = doc.createElement("div");
+        const frame = this.frame;
+        const generation = this.generation;
 
-        doc.body.append(target);
+        try {
+            const target = this.isolation.createTarget(frame, doc);
 
-        this._target = target;
-        this.head = doc.head;
-        this.runtime = getContentScriptStylesRuntime();
-        this.runtime.add(doc.head, null, recovering);
+            if (generation !== this.generation || this.frame !== frame || frame.contentDocument !== doc) {
+                return false;
+            }
+
+            doc.body.append(target);
+
+            this._target = target;
+            this.head = doc.head;
+            this.runtime = getContentScriptStylesRuntime();
+            this.runtime.add(doc.head, null, recovering);
+        } catch (error) {
+            if (generation === this.generation && this.frame === frame) {
+                this.unmount();
+            }
+
+            throw error;
+        }
 
         return true;
     }
 
     public unmount(): boolean {
+        if (this.unmounting) {
+            return false;
+        }
+
+        this.unmounting = true;
         this.generation++;
         this.queued = false;
-        this.frame?.removeEventListener("load", this.onLoad);
+        this._target = undefined;
 
-        this.releaseStyles();
+        const cleanup = this.cleanupBoundary;
 
-        this.frame = undefined;
+        this.cleanupBoundary = undefined;
 
-        return !!this.node.unmount();
+        let removed = false;
+
+        try {
+            try {
+                cleanup?.();
+            } finally {
+                try {
+                    this.frame?.removeEventListener("load", this.onLoad);
+                    this.releaseStyles();
+                } finally {
+                    this.frame = undefined;
+                    removed = !!this.node.unmount();
+                }
+            }
+
+            return removed;
+        } finally {
+            this.unmounting = false;
+        }
     }
 
     private releaseStyles(): void {
-        if (this.head) {
-            this.runtime?.delete(this.head);
-        }
+        const head = this.head;
+        const runtime = this.runtime;
 
         this.head = undefined;
         this.runtime = undefined;
         this._target = undefined;
-    }
 
-    private size(value: number | string): string {
-        return typeof value === "number" ? `${value}px` : value;
+        if (head) {
+            runtime?.delete(head);
+        }
     }
 }

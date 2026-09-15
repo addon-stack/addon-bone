@@ -29,10 +29,10 @@ describe("Relay Builder", () => {
     test.each([undefined, false, true, RelayAllFrames.Any, RelayAllFrames.All])(
         "separates content options while keeping the Relay allFrames mode %p",
         async allFrames => {
-            const received: ContentScriptDefinition[] = [];
+            const received: ContentScriptDefinition<unknown, "shadow">[] = [];
 
-            class ContentBuilder extends VanillaBuilder {
-                constructor(definition: ContentScriptDefinition) {
+            class ContentBuilder extends VanillaBuilder<unknown, "shadow"> {
+                constructor(definition: ContentScriptDefinition<unknown, "shadow">) {
                     super(definition);
                     received.push(definition);
                 }
@@ -43,6 +43,8 @@ describe("Relay Builder", () => {
             const main = jest.fn();
             const render = true as const;
             const watch = () => () => {};
+            const target = jest.fn(() => "span" as const);
+            const boundary = jest.fn();
 
             const builder = new Builder(
                 {
@@ -54,7 +56,9 @@ describe("Relay Builder", () => {
                     anchor: document.body,
                     render,
                     watch,
-                    isolation: "none",
+                    isolation: "shadow",
+                    target,
+                    boundary,
                 },
                 ContentBuilder
             );
@@ -64,7 +68,9 @@ describe("Relay Builder", () => {
                     anchor: document.body,
                     render,
                     watch,
-                    isolation: "none",
+                    isolation: "shadow",
+                    target,
+                    boundary,
                     ...(allFrames === undefined ? {} : {allFrames: allFrames !== false}),
                 },
             ]);
@@ -81,10 +87,15 @@ describe("Relay Builder", () => {
                     anchor: document.body,
                     render,
                     watch,
-                    isolation: "none",
+                    isolation: "shadow",
                 });
 
                 expect(main).toHaveBeenCalledTimes(1);
+                expect(main.mock.calls[0][2]).not.toHaveProperty("target");
+                expect(main.mock.calls[0][2]).not.toHaveProperty("boundary");
+                expect(init.mock.calls[0][0]).not.toHaveProperty("boundary");
+                expect(boundary).not.toHaveBeenCalled();
+                expect(target).not.toHaveBeenCalled();
 
                 expect(main).toHaveBeenCalledWith(
                     instance,
@@ -95,7 +106,7 @@ describe("Relay Builder", () => {
                         main,
                         method: RelayMethod.Scripting,
                         allFrames,
-                        isolation: {type: "none"},
+                        isolation: {type: "shadow", mode: "open"},
                     })
                 );
             } finally {
@@ -330,8 +341,6 @@ describe("Relay Builder", () => {
             expect(main.mock.calls[0][2].isolation).toEqual({
                 type: "iframe",
                 src: "https://example.com/panel",
-                width: "100%",
-                height: 150,
             });
         } finally {
             await builder.destroy();

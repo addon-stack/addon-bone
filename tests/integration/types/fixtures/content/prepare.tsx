@@ -34,7 +34,13 @@ defineContentScript({
 
 defineContentScriptAppend({
     append: ContentScriptAppend.Last,
-    prepare: () => ({count: 2}),
+
+    prepare: ({anchor}) => {
+        // @ts-expect-error: append retains contextual prepare props.
+        const invalid: number = anchor;
+
+        return {count: anchor.childElementCount};
+    },
 
     render: ({data}) => {
         const count: number = data.count;
@@ -48,7 +54,18 @@ defineContentScriptAppend({
 defineRelay({
     name: "prepared",
     init: () => service,
-    prepare: async () => ({product: await service.get()}),
+
+    prepare: async ({anchor}) => {
+        const product = await service.get();
+        // @ts-expect-error: Relay retains contextual prepare props.
+        const invalid: number = anchor;
+
+        if (!anchor.isConnected) {
+            return false;
+        }
+
+        return {product};
+    },
 
     render: ({data}) => {
         const title: string = data.product.title;

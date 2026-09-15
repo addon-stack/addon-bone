@@ -78,12 +78,44 @@ export async function expectRenderProps(browser: "chrome" | "firefox") {
             closed: true,
             frame: false,
             portal: "shadow",
+            boundaryMatches: true,
+            targetTag: "SPAN",
+            targetClass: "custom-target",
         });
 
+        const boundaryState = (id: string) =>
+            session!.evaluate(`(() => {
+            const node = document.getElementById(${JSON.stringify(id)});
+            return {
+                calls: Number(node.dataset.boundaryCalls ?? 0),
+                cleanups: Number(node.dataset.boundaryCleanups ?? 0),
+                events: Number(node.dataset.boundaryEvents ?? 0),
+            };
+        })()`);
+
+        expect(await boundaryState("skip")).toEqual({calls: 0, cleanups: 0, events: 0});
+        expect(await boundaryState("frame")).toEqual({calls: 1, cleanups: 0, events: 0});
+        expect(await boundaryState("relay")).toEqual({calls: 1, cleanups: 0, events: 0});
         const frame = await snapshot("frame");
-        expect(frame).toMatchObject({label: "frame", frame: true, portal: "frame", same: false});
+        expect(frame).toMatchObject({
+            label: "frame",
+            frame: true,
+            portal: "frame",
+            same: false,
+            boundaryMatches: true,
+            targetTag: "SECTION",
+            frameTitle: "frame",
+            frameHeight: "260px",
+        });
+        expect(await session.evaluate("document.getElementById('frame').dataset.targetCalls")).toBe("1");
         expect(await snapshot("vanilla")).toEqual({label: "vanilla", same: true, connected: true});
-        expect(await snapshot("relay")).toMatchObject({label: "relay", shadow: true, portal: "relay"});
+        expect(await snapshot("relay")).toMatchObject({
+            label: "relay",
+            shadow: true,
+            portal: "relay",
+            boundaryMatches: true,
+            targetTag: "ASIDE",
+        });
         await command("vanilla", "remount");
 
         expect(await session.evaluate("JSON.parse(document.getElementById('vanilla').dataset.lifecycle)")).toEqual({
@@ -114,10 +146,33 @@ export async function expectRenderProps(browser: "chrome" | "firefox") {
         );
 
         await until(async () => (await snapshot("shadow")).targetId !== shadow.targetId, "new Shadow DOM target");
-        expect(await snapshot("shadow")).toMatchObject({count: 0, closed: true, portal: "shadow"});
+        expect(await snapshot("shadow")).toMatchObject({
+            count: 0,
+            closed: true,
+            portal: "shadow",
+            boundaryMatches: true,
+            targetTag: "SPAN",
+        });
+        expect(await boundaryState("shadow")).toEqual({calls: 2, cleanups: 1, events: 0});
         await command("frame", "frame-reload");
         await until(async () => (await snapshot("frame")).targetId !== frame.targetId, "iframe document recovery");
-        expect(await snapshot("frame")).toMatchObject({frame: true, portal: "frame", targetConnected: true});
+        expect(await snapshot("frame")).toMatchObject({
+            frame: true,
+            portal: "frame",
+            targetConnected: true,
+            boundaryMatches: true,
+            targetTag: "SECTION",
+            frameTitle: "frame",
+            frameHeight: "260px",
+        });
+        expect(await session.evaluate("document.getElementById('frame').dataset.targetCalls")).toBe("2");
+        expect(await boundaryState("frame")).toEqual({calls: 1, cleanups: 0, events: 0});
+        const recovered = await snapshot("frame");
+        await command("frame", "remount");
+        await until(async () => (await snapshot("frame")).targetId !== recovered.targetId, "fresh iframe boundary");
+        expect(await boundaryState("frame")).toEqual({calls: 2, cleanups: 1, events: 0});
+        await command("frame", "unmount");
+        expect(await boundaryState("frame")).toEqual({calls: 2, cleanups: 2, events: 0});
         expect(await session.evaluate("document.body.dataset.error ?? null")).toBeNull();
         expect(session.errors).toEqual([]);
     } catch (error) {

@@ -51,7 +51,7 @@ describe("RelayParser", () => {
     });
     test("preserves Relay isolation and frame build options", () => {
         const options = parser.options(file("options", "isolation", "relay.ts"));
-        expect(options.isolation).toEqual({type: "iframe", page: "panel", width: "100%", height: 150});
+        expect(options.isolation).toEqual({type: "iframe", page: "panel"});
     });
     test("parses the all-frame response capability from a real entrypoint file", () => {
         expect(parser.options(file("options", "all-frames", "relay.ts"))).toEqual(

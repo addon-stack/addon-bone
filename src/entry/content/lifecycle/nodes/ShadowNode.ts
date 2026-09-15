@@ -1,21 +1,30 @@
+import type IsolationSetup from "../IsolationSetup";
+
 import {getContentScriptStylesRuntime} from "./isolated-styles";
+
 import {
     ContentScriptShadowMode,
     type ContentScriptShadowOptions,
     type ContentScriptStylesRuntime,
     type ContentScriptNode,
+    type ContentScriptBoundaryCleanup,
 } from "@typing/content";
 
-export default class ShadowNode implements ContentScriptNode {
+export default class ShadowNode<Data = unknown> implements ContentScriptNode {
     private root?: ShadowRoot;
 
     private _target?: Element;
 
     private runtime?: ContentScriptStylesRuntime;
+    private cleanupBoundary?: ContentScriptBoundaryCleanup;
+
+    private mounting = false;
+    private unmounting = false;
 
     public constructor(
         protected readonly node: ContentScriptNode,
-        private readonly options: ContentScriptShadowOptions = {}
+        private readonly options: ContentScriptShadowOptions = {},
+        private readonly isolation: IsolationSetup<Data, "shadow">
     ) {}
 
     public get anchor(): Element {
@@ -30,7 +39,25 @@ export default class ShadowNode implements ContentScriptNode {
         return this._target;
     }
 
+    public get boundary(): ShadowRoot | undefined {
+        return this.root;
+    }
+
     public mount(): boolean {
+        if (this.mounting || this.unmounting) {
+            return false;
+        }
+
+        this.mounting = true;
+
+        try {
+            return this.mountNode();
+        } finally {
+            this.mounting = false;
+        }
+    }
+
+    private mountNode(): boolean {
         const mounted = !!this.node.mount();
 
         if (!this.container || this.root) {
@@ -46,6 +73,7 @@ export default class ShadowNode implements ContentScriptNode {
         }
 
         let root: ShadowRoot;
+
         try {
             root = this.container.attachShadow({mode: this.options.mode ?? ContentScriptShadowMode.Open});
         } catch (cause) {
@@ -55,28 +83,74 @@ export default class ShadowNode implements ContentScriptNode {
                 {cause}
             );
         }
-        const target = this.container.ownerDocument.createElement("div");
-        root.appendChild(target);
-
-        const runtime = getContentScriptStylesRuntime();
-        runtime.add(root, target);
 
         this.root = root;
-        this._target = target;
-        this.runtime = runtime;
+
+        try {
+            const cleanup = this.isolation.setup(root);
+
+            if (this.root !== root) {
+                cleanup?.();
+
+                return false;
+            }
+
+            this.cleanupBoundary = cleanup || undefined;
+            const target = this.isolation.createTarget(root, this.container.ownerDocument);
+
+            if (this.root !== root) {
+                return false;
+            }
+
+            root.appendChild(target);
+
+            this._target = target;
+            this.runtime = getContentScriptStylesRuntime();
+            this.runtime.add(root, target);
+        } catch (error) {
+            if (this.root === root) {
+                this.unmount();
+            }
+
+            throw error;
+        }
 
         return mounted;
     }
 
     public unmount(): boolean {
-        if (this.root) {
-            this.runtime?.delete(this.root);
+        if (this.unmounting) {
+            return false;
         }
 
-        this.root = undefined;
+        this.unmounting = true;
         this._target = undefined;
-        this.runtime = undefined;
 
-        return !!this.node.unmount();
+        const cleanup = this.cleanupBoundary;
+
+        this.cleanupBoundary = undefined;
+
+        let removed = false;
+
+        try {
+            try {
+                cleanup?.();
+            } finally {
+                try {
+                    if (this.root) {
+                        this.runtime?.delete(this.root);
+                    }
+                } finally {
+                    this.root = undefined;
+                    this._target = undefined;
+                    this.runtime = undefined;
+                    removed = !!this.node.unmount();
+                }
+            }
+
+            return removed;
+        } finally {
+            this.unmounting = false;
+        }
     }
 }
