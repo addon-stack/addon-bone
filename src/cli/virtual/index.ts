@@ -44,7 +44,7 @@ export const virtualCommandModule = (file: EntrypointFile, name: string): string
 export const virtualContentScriptModule = (file: EntrypointFile, navigation = false): string => {
     // prettier-ignore
     return getVirtualModule(file, "content")
-        .replace(`virtual:content-builder`, navigation ? `${PackageName}/entry/content/frame` : getEntryFramework(file, "content"));
+        .replace(`virtual:content-builder`, navigation ? `${PackageName}/entry/content` : getEntryFramework(file, "content"));
 };
 
 export const virtualOffscreenModule = (file: EntrypointFile, name: string): string => {
@@ -62,7 +62,7 @@ export const virtualRelayModule = (file: EntrypointFile, name: string, navigatio
         .replace("virtual:relay-name", name)
         .replace(
             `virtual:content-builder`,
-            navigation ? `${PackageName}/entry/content/frame` : getEntryFramework(file, "content")
+            navigation ? `${PackageName}/entry/content` : getEntryFramework(file, "content")
         );
 };
 

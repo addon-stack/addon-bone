@@ -3,7 +3,7 @@ import type {Configuration as RspackConfig, RspackPluginInstance} from "@rspack/
 
 import {definePlugin} from "@main/plugin";
 import {GenerateJsonPlugin, GenerateModulePlugin, WatchPlugin} from "@cli/bundler";
-import {getContentLayer} from "@cli/bundler/utils/layers";
+import {getContentLayer} from "@cli/bundler/layers";
 import {extractLocaleKey, modifyLocaleMessageKey} from "@shared/locale";
 
 import Locale from "./Locale";

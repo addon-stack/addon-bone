@@ -23,8 +23,8 @@
     "baseUrl": "./src",
     "paths": {
       "adnbn": ["index.ts"],
-      "adnbn/entry/content/frame": [
-        "entry/content/frame/index.ts"
+      "adnbn/content": [
+        "content/index.ts"
       ],
       "adnbn/entry/content/*": [
         "entry/content/adapters/*/index.ts"
@@ -87,6 +87,7 @@
     "./src/cli/virtual/virtual.d.ts",
     "node_modules/@types/node/*.d.ts",
     "tests/**/*.test.ts",
+    "tests/pre-push.ts",
     "tests/integration/*.ts",
     "tests/jest*.ts"
   ],

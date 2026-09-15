@@ -73,6 +73,31 @@
 - Imports of actual JavaScript files, package subpaths, and loader-specific resources such as `.ts?raw` keep the syntax required by their owner. This rule does not rewrite raw template contents or generated JavaScript imports.
 - Apply this convention to new and changed imports; do not mass-rewrite unrelated files.
 
+## Code layout
+
+- Always write `if` and `else` bodies as multiline blocks with braces, even for a single `return`, `throw`, or expression. Never use inline guards such as `if (!current()) return;`.
+- Put a blank line before `return` when another statement precedes it in the same block. A `return` that is the first or only statement in a block follows the opening brace directly, as in the example below.
+- Separate a multiline statement or code block from adjacent code with a blank line above and below. This includes multiline declarations, calls, callbacks, and control-flow blocks. Do not add empty padding immediately inside opening or closing braces, and keep `} else {`, `} catch (...) {`, and `} finally {` together.
+- Apply these rules to implementation code, tests, fixtures, and examples. Keep formatting changes within the files being worked on unless a broader cleanup is explicitly requested.
+
+```ts
+if (!current()) {
+    return;
+}
+
+const node = createNode(anchor);
+
+if (!node.target) {
+    node.unmount();
+
+    return;
+}
+
+register(node);
+
+return node;
+```
+
 ## Symbol naming
 
 - Apply these conventions throughout the project: shared types, runtime APIs, entrypoints, CLI, bundler plugins, and tests.

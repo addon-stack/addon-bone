@@ -51,7 +51,14 @@ export const getFreePort = (): Promise<number> => {
 };
 
 export const stop = async (process: ChildProcess): Promise<void> => {
-    if (process.exitCode !== null || process.killed) {
+    const exited = () => process.exitCode !== null || process.signalCode !== null;
+    const closeStreams = () => {
+        process.stdin?.destroy();
+        process.stdout?.destroy();
+        process.stderr?.destroy();
+    };
+    if (exited()) {
+        closeStreams();
         return;
     }
 
@@ -83,10 +90,11 @@ export const stop = async (process: ChildProcess): Promise<void> => {
 
     stopProcess("SIGTERM");
 
-    if (!(await stopped) && process.exitCode === null) {
+    if (!(await stopped) && !exited()) {
         const killed = waitForExit(5_000);
 
         stopProcess("SIGKILL");
-        await killed;
+        if (!(await killed) && !exited()) throw new Error(`Process ${process.pid} did not exit after SIGKILL`);
     }
+    closeStreams();
 };

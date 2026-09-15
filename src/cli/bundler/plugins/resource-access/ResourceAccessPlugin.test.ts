@@ -9,7 +9,9 @@ import ManifestV3 from "@cli/builders/manifest/ManifestV3";
 import {Browser} from "@typing/browser";
 import type {ManifestVersion} from "@typing/manifest";
 
-import BuildAssetsMapPlugin, {createEntrypointModule, EntrypointAssetsModule} from "../build-assets-map";
+import BuildAssetsMapPlugin from "../build-assets-map";
+import {createRuntimeModule} from "@cli/bundler/plugins/utils";
+import {RuntimeModuleRequest, RuntimeModuleReaders, EntrypointAssetsModule} from "@cli/plugins/output/runtime";
 import {GenerateModulePlugin} from "../generate-module";
 import ManifestPlugin from "../manifest";
 import ResourceAccessPlugin, {type ResourceAccessPluginOptions} from "./ResourceAccessPlugin";
@@ -43,7 +45,9 @@ describe("ResourceAccessPlugin", () => {
             devtool: false,
             output: {path: directory, filename: "[name].js"},
             plugins: [
-                new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
+                new GenerateModulePlugin({
+                    [RuntimeModuleRequest]: createRuntimeModule(Object.values(RuntimeModuleReaders)),
+                }),
                 new BuildAssetsMapPlugin({
                     module: EntrypointAssetsModule,
                     fullMapEntrypoint: "background",

@@ -86,13 +86,12 @@ describe("content utils - getContentScriptConfigFromOptions", () => {
 });
 
 describe("content render targets", () => {
-    test.each<ContentScriptEntrypointOptions>([
-        {isolation: {type: "shadow"}},
-        {isolation: {type: "iframe"}},
-        {isolation: {type: "iframe", height: 300}},
-    ])("provides an isolated local target for %j", options => {
-        expect(hasIsolatedTarget(options)).toBe(true);
-    });
+    test.each<ContentScriptEntrypointOptions>([{isolation: {type: "shadow"}}, {isolation: {type: "iframe"}}])(
+        "provides an isolated local target for %j",
+        options => {
+            expect(hasIsolatedTarget(options)).toBe(true);
+        }
+    );
 
     test.each<ContentScriptEntrypointOptions>([
         {isolation: {type: "iframe", page: "panel"}},

@@ -7,7 +7,7 @@ import vm from "vm";
 
 import {type Compiler, CssExtractRspackPlugin, type Filename, rspack, type Stats} from "@rspack/core";
 
-import {IsolatedStylesLayer} from "@cli/bundler/utils/styles";
+import {IsolatedStylesLayer} from "@cli/bundler/layers";
 
 import IsolatedStylesPlugin, {
     type IsolatedStylesPluginOptions,
@@ -846,53 +846,61 @@ test("switches the selected CSS runtime from shadow to normal and back during wa
         selected: entry => entry === "shadow" && shadow,
     });
     const observations: boolean[] = [];
-    const watchErrors: string[] = [];
-
-    const watcher = compiler.watch({poll: 50}, (error, stats) => {
-        if (error) {
-            watchErrors.push(error.message);
-            return;
-        }
-
-        if (!stats || stats.hasErrors()) {
-            watchErrors.push(stats?.toString({all: false, errors: true, errorDetails: true}) ?? "missing stats");
-            return;
-        }
-
-        observations.push(
-            source(stats, entryFile(stats, "shadow", ".js")).includes("var isolatedStyleRoots = new Map()")
-        );
-
-        if (observations.length === 1) {
-            shadow = false;
-            fs.writeFileSync(path.join(watchFixtures, "watch-state.js"), "globalThis.shadowWatchState = false;\n");
-            watcher.invalidate();
-        } else if (observations.length === 2) {
-            shadow = true;
-            fs.writeFileSync(path.join(watchFixtures, "watch-state.js"), "globalThis.shadowWatchState = true;\n");
-            watcher.invalidate();
-        }
-    });
-
-    try {
-        await new Promise<void>((resolve, reject) => {
-            const poll = setInterval(() => {
-                if (observations.length === 3) {
-                    clearInterval(poll);
-                    clearTimeout(timeout);
-                    resolve();
-                }
-            }, 10);
+    let completed: ((error: Error | null, stats?: Stats) => void) | undefined;
+    const nextCompilation = (update?: () => void): Promise<Stats> =>
+        new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                clearInterval(poll);
+                completed = undefined;
                 reject(
                     new Error(
-                        `Rspack watch did not finish three rebuilds: ${JSON.stringify({observations, watchErrors})}`
+                        `Rspack watch did not complete transition ${observations.length + 1}: ${JSON.stringify(observations)}`
                     )
                 );
             }, 5_000);
+            completed = (error, stats) => {
+                clearTimeout(timeout);
+                completed = undefined;
+                if (error) reject(error);
+                else if (!stats || stats.hasErrors()) {
+                    reject(
+                        new Error(
+                            stats?.toString({all: false, errors: true, errorDetails: true}) ?? "Missing watch stats"
+                        )
+                    );
+                } else resolve(stats);
+            };
+            try {
+                update?.();
+            } catch (error) {
+                clearTimeout(timeout);
+                completed = undefined;
+                reject(error);
+            }
         });
+    const initial = nextCompilation();
+    const watcher = compiler.watch({poll: 50}, (error, stats) => completed?.(error, stats));
 
+    try {
+        let stats = await initial;
+        observations.push(
+            source(stats, entryFile(stats, "shadow", ".js")).includes("var isolatedStyleRoots = new Map()")
+        );
+        for (const selected of [false, true]) {
+            // Rspack reconnects its watcher on nextTick after invoking the compilation callback.
+            // Starting another build inside that callback races with this reconnection.
+            await new Promise<void>(resolve => setImmediate(resolve));
+            stats = await nextCompilation(() => {
+                shadow = selected;
+                fs.writeFileSync(
+                    path.join(watchFixtures, "watch-state.js"),
+                    `globalThis.shadowWatchState = ${selected};\n`
+                );
+                watcher.invalidate();
+            });
+            observations.push(
+                source(stats, entryFile(stats, "shadow", ".js")).includes("var isolatedStyleRoots = new Map()")
+            );
+        }
         expect(observations).toEqual([true, false, true]);
     } finally {
         await new Promise<void>((resolve, reject) => {

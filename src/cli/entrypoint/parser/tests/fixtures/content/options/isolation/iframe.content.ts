@@ -1,5 +1,8 @@
 import {ContentScriptIsolation, defineContentScriptAppend} from "adnbn";
 
 export default defineContentScriptAppend({
-    isolation: {type: ContentScriptIsolation.Iframe, height: 320},
+    boundary: ({boundary}) => {
+        boundary.style.height = "320px";
+    },
+    isolation: {type: ContentScriptIsolation.Iframe},
 });

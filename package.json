@@ -55,10 +55,6 @@
       "types": "./dist/entry/*/index.d.ts",
       "default": "./dist/entry/*/index.js"
     },
-    "./entry/content/frame": {
-      "types": "./dist/entry/content/frame/index.d.ts",
-      "default": "./dist/entry/content/frame/index.js"
-    },
     "./entry/content/*": {
       "types": "./dist/entry/content/adapters/*/index.d.ts",
       "default": "./dist/entry/content/adapters/*/index.js"
@@ -66,6 +62,10 @@
     "./entry/view/*": {
       "types": "./dist/entry/view/adapters/*/index.d.ts",
       "default": "./dist/entry/view/adapters/*/index.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "default": "./dist/content/index.js"
     },
     "./locale": {
       "types": "./dist/locale/index.d.ts",
@@ -116,26 +116,32 @@
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepare:integration": "npm run build && tsx tests/integration/prepare.ts",
-    "typecheck:integration": "npm run prepare:integration && tsx tests/integration/typecheck.ts",
-    "test:integration": "npm run test -- --testPathPatterns=tests/integration --runInBand",
-    "test:integration:build": "npm run test -- --testPathPatterns=tests/integration/build --runInBand",
+    "typecheck:integration": "npm run build && tsx tests/integration/typecheck.ts --prepare",
+    "test:integration": "npm run build && node scripts/test-run.mjs --selectProjects build types chrome firefox",
+    "test:integration:build": "npm run test:build --",
     "check:node-version": "node ./scripts/check-node-version.js",
-    "test": "npm run build && jest",
-    "test:ci": "npm run test -- --ci --passWithNoTests --coverage",
-    "test:ci:non-browser": "npm run test -- --ci --passWithNoTests --coverage --testPathIgnorePatterns=tests/integration/browser",
-    "test:watch": "jest --watch --testPathIgnorePatterns=tests/integration/browser",
-    "test:offscreen": "jest --testPathPatterns=Offscreen",
-    "test:chrome": "npm run test -- --testPathPatterns=tests/integration/browser --testPathIgnorePatterns=firefox.integration.test --runInBand",
-    "test:firefox": "npm run test -- --testPathPatterns=firefox.integration.test --runInBand",
-    "test:message": "jest --testPathPatterns=src/message",
-    "test:service": "jest --testPathPatterns=Service",
-    "test:relay": "jest --testPathPatterns=Relay",
-    "test:locale": "jest --testPathPatterns=Locale",
-    "test:manifest": "jest --testPathPatterns=src/cli/builders/manifest",
-    "test:entrypoint": "jest --testPathPatterns=src/cli/entrypoint",
-    "test:plugins": "jest --testPathPatterns=src/cli/plugins",
+    "test": "npm run build && node scripts/test-run.mjs",
+    "test:ci": "npm run test -- --ci --coverage",
+    "test:ci:non-browser": "npm run test -- --ci --coverage --selectProjects unit-node unit-dom build types",
+    "test:watch": "node scripts/test-run.mjs --selectProjects unit-node unit-dom --watch",
+    "test:offscreen": "node scripts/test-run.mjs --testPathPatterns=Offscreen",
+    "test:chrome": "npm run build && node scripts/test-run.mjs --selectProjects chrome",
+    "test:firefox": "npm run build && node scripts/test-run.mjs --selectProjects firefox",
+    "test:message": "node scripts/test-run.mjs --testPathPatterns=src/message",
+    "test:service": "node scripts/test-run.mjs --testPathPatterns=Service",
+    "test:relay": "npm run test -- --testPathPatterns=Relay",
+    "test:locale": "npm run test -- --testPathPatterns=Locale",
+    "test:manifest": "node scripts/test-run.mjs --testPathPatterns=src/cli/builders/manifest",
+    "test:entrypoint": "node scripts/test-run.mjs --testPathPatterns=src/cli/entrypoint",
+    "test:plugins": "npm run test -- --testPathPatterns=src/cli/plugins",
     "release": "release-it",
-    "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
+    "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci",
+    "test:unit": "node scripts/test-run.mjs --selectProjects unit-node unit-dom --verbose=false",
+    "test:build": "npm run build && node scripts/test-run.mjs --selectProjects build",
+    "test:types": "npm run typecheck:integration && node scripts/test-run.mjs --selectProjects types",
+    "test:inventory": "node scripts/test-inventory.mjs",
+    "test:pre-push": "tsx tests/pre-push.ts",
+    "test:run": "node scripts/test-run.mjs"
   },
   "dependencies": {
     "@addon-core/browser": "^0.7.2",
@@ -203,6 +209,9 @@
     "glob": "^13.0.1",
     "globby": "^14.1.0",
     "husky": "^9.1.7",
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.0.0",
     "jest-webextension-mock": "^4.0.0",

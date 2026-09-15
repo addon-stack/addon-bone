@@ -10,9 +10,10 @@ declare module "#adnbn/page" {
     export const aliases: typeof import("./page").aliases;
 }
 
-declare module "#adnbn/entrypoint" {
-    export const readAssets: typeof import("./entrypoint").readAssets;
-    export const readAssetsMap: typeof import("./entrypoint").readAssetsMap;
+declare module "#adnbn/runtime" {
+    export const readAssets: typeof import("./runtime").readAssets;
+    export const readAssetsMap: typeof import("./runtime").readAssetsMap;
+    export const readContentStyles: typeof import("./runtime").readContentStyles;
 }
 
 declare module "#adnbn/relay" {

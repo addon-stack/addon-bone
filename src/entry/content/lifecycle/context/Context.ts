@@ -1,0 +1,93 @@
+import {
+    ContentScriptContext,
+    ContentScriptEventCallback,
+    ContentScriptEventEmitter,
+    ContentScriptNode,
+    ContentScriptNodeSet,
+} from "@typing/content";
+
+export default class Context implements ContentScriptContext {
+    protected readonly collection: ContentScriptNodeSet = new Set();
+    private unmounting = false;
+
+    constructor(protected readonly emitter: ContentScriptEventEmitter) {}
+
+    public get nodes(): ReadonlySet<ContentScriptNode> {
+        return this.collection;
+    }
+
+    public mount(): void {
+        if (this.unmounting) {
+            return;
+        }
+
+        for (const node of this.collection) {
+            if (!node.anchor.isConnected) {
+                node.unmount();
+
+                this.collection.delete(node);
+
+                this.emitter.emitRemove(node);
+
+                continue;
+            }
+
+            node.mount();
+        }
+    }
+
+    public unmount(): void {
+        const unmounting = this.unmounting;
+        this.unmounting = true;
+
+        try {
+            for (const node of this.collection) {
+                node.unmount();
+
+                if (!node.anchor.isConnected) {
+                    this.collection.delete(node);
+
+                    this.emitter.emitRemove(node);
+                }
+            }
+        } finally {
+            this.unmounting = unmounting;
+        }
+    }
+
+    public remove(node: ContentScriptNode): void {
+        if (!this.collection.delete(node)) {
+            return;
+        }
+
+        node.unmount();
+        this.emitter.emitRemove(node);
+    }
+
+    public clear(): void {
+        const unmounting = this.unmounting;
+        this.unmounting = true;
+
+        try {
+            for (const node of this.collection) {
+                node.unmount();
+                this.collection.delete(node);
+                this.emitter.emitRemove(node);
+            }
+        } finally {
+            this.unmounting = unmounting;
+        }
+    }
+
+    public watch(callback: ContentScriptEventCallback): () => void {
+        this.emitter.on(callback);
+
+        return () => {
+            this.emitter.off(callback);
+        };
+    }
+
+    public unwatch(): void {
+        this.emitter.removeAllListeners();
+    }
+}

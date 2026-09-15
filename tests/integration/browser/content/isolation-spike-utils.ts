@@ -6,7 +6,7 @@ import {waitFor} from "../utils/browser";
 import {startBrowserSession} from "../utils/session";
 import {startIntegrationSite} from "../utils/site";
 
-const State = `Array.from(document.querySelectorAll('[data-probe]'), host => ({...host.dataset,
+const stateExpression = `Array.from(document.querySelectorAll('[data-probe]'), host => ({...host.dataset,
     links: Array.from(host.querySelector('iframe').contentDocument.querySelectorAll('link'), link => link.href)}))`;
 
 export const runIsolationSpike = async (browser: "chrome" | "firefox", manifestVersion: 2 | 3) => {
@@ -83,7 +83,7 @@ export const runIsolationSpike = async (browser: "chrome" | "firefox", manifestV
                 await session.navigate(site.origin + "/top.html");
                 const ready = async (previous = 0) =>
                     waitFor(async () => {
-                        state = await session!.evaluate(State);
+                        state = await session!.evaluate(stateExpression);
                         if (state.some(probe => probe.ready === "error")) throw new Error(JSON.stringify(state));
                         return state.length === 2 &&
                             state.every(probe => probe.ready === "true" && Number(probe.generation) > previous)

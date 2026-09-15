@@ -1,16 +1,15 @@
-/** @jest-environment node */
-
 import {mkdtemp, readFile, rm, stat} from "fs/promises";
 import os from "os";
 import path from "path";
 import {spawn, type ChildProcess} from "child_process";
 
-import {browserVersion, CdpClient, findChromeBinary, targets} from "../utils/chrome";
+import {browserVersion, findChromeBinary, targets} from "../utils/chrome";
+import CdpClient from "../utils/CdpClient";
 import {getFreePort, stop, waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
-import {DocumentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
+import {documentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
 
 const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
 const fixtureDir = path.join(__dirname, "entrypoint-assets");
@@ -31,7 +30,7 @@ const evaluate = async (browser: CdpClient, sessionId: string, expression: strin
 };
 
 const readDocumentState = async (browser: CdpClient, sessionId: string): Promise<DocumentState> => {
-    return evaluate(browser, sessionId, `${DocumentStateExpression}(document)`);
+    return evaluate(browser, sessionId, `${documentStateExpression}(document)`);
 };
 
 const waitForLoadedDocument = async (browser: CdpClient, sessionId: string): Promise<DocumentState> => {
@@ -187,8 +186,8 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
                     if (!child || child.readyState !== 'complete') return undefined;
 
                     return {
-                        top: ${DocumentStateExpression}(document),
-                        child: ${DocumentStateExpression}(child),
+                        top: ${documentStateExpression}(document),
+                        child: ${documentStateExpression}(child),
                     };
                 })()`
             );

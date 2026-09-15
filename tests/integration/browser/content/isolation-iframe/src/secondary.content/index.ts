@@ -1,5 +1,6 @@
 import {observeMounts} from "../shared/events";
 import {ContentScriptIsolation, ContentScriptAppend, defineContentScriptAppend} from "adnbn";
+import {createAwaitFirstStrategy} from "adnbn/content";
 
 import sharedStyles from "../shared/styles.module.css?isolation";
 import styles from "./styles.module.css?isolation";
@@ -11,6 +12,7 @@ export default defineContentScriptAppend({
     anchor: "[data-shadow-secondary]",
     append: ContentScriptAppend.Last,
     isolation: ContentScriptIsolation.Iframe,
+    watch: createAwaitFirstStrategy(),
     container: () => {
         const host = document.createElement("section");
         host.dataset.shadowProbe = "secondary";

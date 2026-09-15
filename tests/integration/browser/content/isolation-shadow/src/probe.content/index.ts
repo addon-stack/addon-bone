@@ -4,8 +4,8 @@ import "./fonts.css?asis";
 import sharedStyles from "../shared/styles.module.css?isolation";
 import styles from "./styles.module.css?isolation";
 
-const AsyncModule = import("./lazy");
-const ExpectedWidth = 320;
+const asyncModule = import("./lazy");
+const expectedWidth = 320;
 let instance = 0;
 
 const width = (element: Element): number => {
@@ -59,9 +59,10 @@ export default defineContentScriptAppend({
         font.textContent = "AAAA";
         root.append(font);
 
-        void AsyncModule.then(module => {
-            module.applyLazyStyle(root);
-        })
+        void asyncModule
+            .then(module => {
+                module.applyLazyStyle(root);
+            })
             .then(() =>
                 waitForStyles(
                     root,
@@ -69,7 +70,7 @@ export default defineContentScriptAppend({
                         getComputedStyle(root).color === "rgb(17, 85, 153)" &&
                         getComputedStyle(root).backgroundColor === "rgb(34, 102, 68)" &&
                         getComputedStyle(root).borderTopWidth === "3px" &&
-                        Math.abs(width(font) - ExpectedWidth) < 0.1
+                        Math.abs(width(font) - expectedWidth) < 0.1
                 )
             )
             .then(() => {

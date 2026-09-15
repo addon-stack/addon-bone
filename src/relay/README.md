@@ -80,7 +80,7 @@ The local accessor is not a way to address another frame. The remote accessor re
 
 - [`adnbn`](../main/relay.ts) exports `defineRelay`, the remote `getRelay`, and the public definition, call-target, proxy, result, and error contracts. Import `RelayAllFrames`, `RelayMethod`, `RelayFrameErrorKind`, and `RelayDiscoveryError` here.
 - [`adnbn/relay`](./index.ts) exports only the local `getRelay` and `RelayRegistry`, `RelayName`, and `RelayTarget` types. The generated `.adnbn/relay.d.ts` augments this registry; both accessors derive their types from it. It does not redeclare accessor overloads.
-- [`adnbn/entry/relay`](../entry/relay/index.ts) is the internal bootstrap interface: `Builder`, its default resolver, and `RelayUnresolvedDefinition`. The unresolved type represents a definition assembled by the virtual module, not the public `defineRelay` contract.
+- [`adnbn/entry/relay`](../entry/relay/index.ts) is the internal bootstrap interface: `Builder`, `resolveDefinition`, the default `relay(definition, contentBuilder)` startup function, and `RelayUnresolvedDefinition`. The unresolved type represents merged runtime input, not the public `defineRelay` contract.
 
 `ProxyRelay`, `RegisterRelay`, and `ProxyRelayParams` are internal implementation details, not exports of `adnbn/relay`. Remote call/result types are available from `adnbn`, not the local-access module. There are no legacy export aliases.
 
@@ -146,7 +146,7 @@ Neither mode freezes the page: frames can navigate, disappear, or appear after d
 
 `defineRelay({allFrames: ...})` controls content-script coverage and build-time permission requirements. `getRelay(name, {allFrames: ...})` controls delivery and return type for that call. One does not replace or implicitly set the other.
 
-The Relay driver converts entrypoint `true`, `Any`, and `All` to the content-script boolean `allFrames: true`. The virtual Relay module applies the same conversion when constructing the runtime content builder, without passing Relay's `method` option to it. `false` remains false, and an omitted value remains omitted. The regular `ContentScriptEntrypointOptions.allFrames` type stays boolean; only Relay replaces it with its own type. Relay's own builder retains the original mode.
+The Relay driver converts entrypoint `true`, `Any`, and `All` to the content-script boolean `allFrames: true`. The runtime Relay builder applies the same conversion when constructing its content builder, without passing Relay's `init`, `main`, `name`, or `method` options to it. `false` remains false, and an omitted value remains omitted. The regular `ContentScriptEntrypointOptions.allFrames` type stays boolean; only Relay replaces it with its own type. Relay's own builder retains the original mode.
 
 An all-frame call cannot make a top-frame-only entrypoint appear inside an iframe. Each frame must still satisfy registration and access requirements.
 
@@ -212,14 +212,29 @@ If the frame-local manager already exists, Scripting starts the method without a
 
 ### Entrypoint lifecycle
 
-The generated [`virtual Relay module`](../cli/virtual/relay.ts) combines the definition with its resolved name and attaches a content builder to [`Builder`](../entry/relay/Builder.ts). Each build:
+The generated [`virtual Relay module`](../cli/virtual/relay.ts) imports the selected content-builder constructor and the user module, then calls `relay(resolveDefinition(module, name), contentBuilder)`.
+
+The runtime [`definition resolver`](../entry/relay/resolvers/definition.ts) merges named exports with the default export without executing callbacks. A default options object overrides named options; a default function overrides `init` and is never interpreted as `render`. The name supplied by the build overrides any runtime `name` export.
+
+[`Builder`](../entry/relay/Builder.ts) receives the selected content-builder constructor as its second argument and creates both builders. It owns the separation of Relay and content options; it does not import React or Vanilla implementations. Each build:
 
 1. Destroys the previous transport/content state.
 2. Creates the instance through `init(options)` and registers it through [`TransportBuilder`](../entry/relay/TransportBuilder.ts).
-3. Builds the content context.
+3. Builds the content context, awaiting per-anchor `prepare` before synchronously mounting UI.
 4. Calls optional `main(instance, context, options)`.
 
+The startup function reports rejected builds as `Failed to build relay: `. Synchronous construction or normalization errors reach the virtual module's `The relay crashed on startup:` handler. The same builder can be rebuilt or destroyed through its lifecycle methods.
+
 Virtual templates are checked against the actual package source exports. The [`virtual module declarations`](../cli/virtual/virtual.d.ts) describe placeholders and derive framework constructors from the real adapters; do not add handwritten ambient declarations that shadow `adnbn` or its real subpaths.
+
+`prepare` follows the shared Content contract, including typed `data`, `container`/`target` props, and `false` for tracked anchors without UI. Literal `render: true` collects anchors without invoking a renderer. Preparation is a content hook and is excluded from transport initialization and Relay main options. Destroying a pending build prevents its `main` from running.
+
+When processing newly discovered anchors, failures in preparation, container creation, or synchronous
+mounting/rendering are logged as an `AggregateError` after each pass. These failures do not prevent content watching or
+Relay `main` from starting; the registered transport remains available. Use `watch: true` for continued
+observation of new anchors. Initialization failures still reject startup. Returning `false` from
+`prepare` also skips iframe embedding for `isolation.page` and `isolation.src`, leaving a tracked
+anchor without UI.
 
 Registration precedes `main`; do not assume an asynchronous `main` finishes before the first remote call. Keep synchronously required state in `init` or explicitly coordinate readiness in the exposed API.
 

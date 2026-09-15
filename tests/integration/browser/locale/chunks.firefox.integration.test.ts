@@ -1,5 +1,3 @@
-/** @jest-environment node */
-
 import {spawn, type ChildProcess} from "child_process";
 import {mkdtemp, rm} from "fs/promises";
 import os from "os";
@@ -10,14 +8,14 @@ import BidiClient from "../utils/BidiClient";
 import {findFirefoxBinary} from "../utils/firefox";
 import {getFreePort, stop, waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
-import {ChangeLanguage, expectPanels, LocaleFixtureDirectory, ReadPanels} from "./utils";
+import {changeLanguage, expectPanels, localeFixtureDirectory, readPanels} from "./utils";
 
 jest.setTimeout(90_000);
 
 test("Firefox MV3 loads locale in ISOLATED and shares the MAIN catalogue through common content", async () => {
     const binary = findFirefoxBinary();
     if (!binary) throw new Error("Install Firefox or set ADNBN_FIREFOX_BIN");
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, LocaleFixtureDirectory);
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, localeFixtureDirectory);
     const profile = await mkdtemp(path.join(os.tmpdir(), "adnbn-locale-firefox-"));
     let process: ChildProcess | undefined;
     let client: BidiClient | undefined;
@@ -40,12 +38,12 @@ test("Firefox MV3 loads locale in ISOLATED and shares the MAIN catalogue through
         await client.send("browsingContext.navigate", {context, url: site.origin, wait: "complete"});
         const contexts = ["isolated", "isolated-secondary", "main", "main-secondary"];
         await waitFor(async () => {
-            expectPanels(await client!.evaluate(context, ReadPanels), contexts);
+            expectPanels(await client!.evaluate(context, readPanels), contexts);
             return true;
         });
         expect(await client.evaluate(context, "typeof globalThis.browser?.i18n")).toBe("undefined");
-        await client.evaluate(context, ChangeLanguage);
-        expectPanels(await client.evaluate(context, ReadPanels), contexts, "fr");
+        await client.evaluate(context, changeLanguage);
+        expectPanels(await client.evaluate(context, readPanels), contexts, "fr");
         expect(client.runtimeErrors).toEqual([]);
     } finally {
         await client?.close();

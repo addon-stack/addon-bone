@@ -1,4 +1,3 @@
-/** @jest-environment node */
 import {once} from "events";
 import {createConnection} from "net";
 import path from "path";

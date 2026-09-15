@@ -1,8 +1,9 @@
+import {createElement} from "react";
 import {createRoot} from "react-dom/client";
 
 import ReactNode from "./Node";
 
-import {ContentScriptShadowMode, type ContentScriptNode} from "@typing/content";
+import {ContentScriptShadowMode} from "@typing/content";
 
 const render = jest.fn();
 const unmount = jest.fn();
@@ -21,18 +22,29 @@ describe("ReactNode", () => {
         "renders into the target while preserving the outer host in %s mode",
         mode => {
             const anchor = document.createElement("div");
+            document.body.append(anchor);
             const container = document.createElement("section");
             const target = document.createElement("div");
-            if (mode) container.attachShadow({mode}).appendChild(target);
-            const node: ContentScriptNode = {
+
+            if (mode) {
+                container.attachShadow({mode}).appendChild(target);
+            }
+
+            const node = {
                 anchor,
                 container,
                 target,
                 mount: jest.fn(() => true),
                 unmount: jest.fn(() => true),
             };
-            const component = "content";
-            const reactNode = new ReactNode(node, component);
+
+            const component = createElement("span", null, "content");
+
+            const reactNode = new ReactNode(
+                node,
+                () => component,
+                () => ({anchor, container, target, data: undefined, boundary: undefined})
+            );
 
             expect(reactNode.mount()).toBe(true);
             expect(node.mount).toHaveBeenCalledTimes(1);
@@ -43,6 +55,7 @@ describe("ReactNode", () => {
             expect(reactNode.unmount()).toBe(true);
             expect(unmount).toHaveBeenCalledTimes(1);
             expect(node.unmount).toHaveBeenCalledTimes(1);
+            anchor.remove();
         }
     );
 });

@@ -20,13 +20,14 @@ import {
 } from "@rspack/core";
 import type {Filename} from "@rspack/core";
 
-import {appFilenameResolver, getCompilationBuildAssets} from "@cli/bundler/utils/output";
+import {appFilenameResolver} from "@cli/bundler/utils/app-filename";
+import {createRuntimeModule, getCompilationBuildAssets} from "@cli/bundler/plugins/utils";
+import {RuntimeModuleRequest, RuntimeModuleReaders, EntrypointAssetsModule} from "@cli/plugins/output/runtime";
 
 import type {EntrypointAssetsMap, EntrypointAssetsMapEntry, EntrypointAssets} from "@typing/entrypoint";
 
 import BuildAssetsMapPlugin from "./BuildAssetsMapPlugin";
 import {GenerateModulePlugin} from "../generate-module";
-import {createEntrypointModule, EntrypointAssetsModule} from "./entrypoint-module";
 
 const AppName = "Build Assets Fixture";
 const AppToken = "build-assets-fixture";
@@ -292,6 +293,8 @@ const compile = async (
                       isolated: {import: "./usage/local.entry.js", layer: "fixture:isolated"},
                       unused: "./usage/unused.entry.js",
                       "unused-isolated": {import: "./usage/unused.entry.js", layer: "fixture:isolated"},
+                      styles: "./usage/styles.entry.js",
+                      "styles-isolated": {import: "./usage/styles.entry.js", layer: "fixture:isolated"},
                       namespace: "./usage/namespace.entry.js",
                       lazy: "./usage/lazy.entry.js",
                       "shared-a": "./usage/shared.entry.js",
@@ -420,7 +423,9 @@ const compile = async (
             ...(options.renameBetaCss ? [new RenameBetaCssPlugin()] : []),
             ...(options.removeBetaCss ? [new RemoveBetaCssPlugin()] : []),
             ...(options.betaRuntimeMarker ? [new AddBetaRuntimeModulePlugin(options.betaRuntimeMarker)] : []),
-            new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
+            new GenerateModulePlugin({
+                [RuntimeModuleRequest]: createRuntimeModule(Object.values(RuntimeModuleReaders)),
+            }),
             new BuildAssetsMapPlugin({
                 module: EntrypointAssetsModule,
                 buildHashSalt: options.buildHashSalt,
@@ -708,11 +713,20 @@ describe("BuildAssetsMapPlugin", () => {
         "selects consumers across layers, reexports and lazy/shared modules (shared=%s)",
         async common => {
             const build = await compile(common, {background: "unused", usage: true});
-            for (const entry of ["background", "unused", "unused-isolated"]) {
+
+            for (const entry of ["background", "unused", "unused-isolated", "styles", "styles-isolated"]) {
                 const source = build.assets[entry].initial.js.map(file => build.sources[file]).join("\n");
+
                 expect(source).not.toContain("__adnbnBuildAssetsFullMap__");
                 expect(source).not.toContain("__adnbnBuildAssetsCurrentMap__");
             }
+
+            for (const entry of ["styles", "styles-isolated"]) {
+                const {sandbox} = executeEntrypoint(build, entry);
+
+                expect((sandbox.readStyles as () => unknown)()).toBeUndefined();
+            }
+
             for (const entry of ["local", "isolated", "namespace", "lazy", "shared-a", "shared-b"]) {
                 const {sandbox} = executeEntrypoint(build, entry);
                 expect(await (sandbox.readCurrent as () => unknown)()).toEqual(runtimeAssets(build.assets[entry]));
@@ -991,7 +1005,9 @@ describe("BuildAssetsMapPlugin", () => {
             module: {rules: [{test: /\.css$/, use: [CssExtractRspackPlugin.loader, "css-loader"]}]},
             plugins: [
                 new CssExtractRspackPlugin({filename: "[name].[contenthash:8].css"}),
-                new GenerateModulePlugin({[EntrypointAssetsModule.request]: createEntrypointModule()}),
+                new GenerateModulePlugin({
+                    [RuntimeModuleRequest]: createRuntimeModule(Object.values(RuntimeModuleReaders)),
+                }),
                 new BuildAssetsMapPlugin({
                     module: EntrypointAssetsModule,
                     fullMapEntrypoint: "background",

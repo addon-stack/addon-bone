@@ -1,8 +1,8 @@
 import {createElement} from "react";
 import {createRoot, type Root} from "react-dom/client";
 
-import Context from "../../../../../../src/entry/content/core/context/ManagedContext";
-import EventEmitter from "../../../../../../src/entry/content/core/context/EventEmitter";
+import Context from "../../../../../../src/entry/content/lifecycle/context/ManagedContext";
+import EventEmitter from "../../../../../../src/entry/content/lifecycle/context/EventEmitter";
 
 // Browser feasibility probe only. No production iframe implementation is imported.
 const context = new Context(new EventEmitter());

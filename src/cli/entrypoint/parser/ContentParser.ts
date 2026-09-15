@@ -2,7 +2,7 @@ import {isContentScriptFrameNavigation, resolveContentScriptIsolation} from "@sh
 import z from "zod";
 
 import AbstractParser from "./AbstractParser";
-import {ExportValueKind} from "../file";
+import {hasContentScriptDefaultRender} from "./utils/content/default-render";
 
 import {
     ContentScriptDeclarative,
@@ -16,7 +16,9 @@ import {
 } from "@typing/content";
 import {EntrypointFile, EntrypointOptions} from "@typing/entrypoint";
 
-export default class<O extends EntrypointOptions = ContentScriptEntrypointOptions> extends AbstractParser<O> {
+export default class ContentParser<
+    O extends EntrypointOptions = ContentScriptEntrypointOptions,
+> extends AbstractParser<O> {
     protected definition(): string | string[] {
         return ["defineContentScript", "defineContentScriptAppend"];
     }
@@ -25,8 +27,6 @@ export default class<O extends EntrypointOptions = ContentScriptEntrypointOption
         const frameSchema = z
             .object({
                 type: z.literal(ContentScriptIsolation.Iframe),
-                width: z.union([z.number(), z.string()]),
-                height: z.union([z.number(), z.string()]),
             })
             .strict();
 
@@ -71,6 +71,7 @@ export default class<O extends EntrypointOptions = ContentScriptEntrypointOption
                 (isContentScriptFrameNavigation(values.isolation) &&
                     !optionFile.getDefinition() &&
                     this.hasDefaultRender(file));
+
             return {...values, isolation: resolveContentScriptIsolation(values.isolation, hasRender)};
         } catch (error) {
             throw new Error(
@@ -91,22 +92,6 @@ export default class<O extends EntrypointOptions = ContentScriptEntrypointOption
 
     /** Interprets generic export metadata using content render rules; Relay overrides this policy. */
     protected hasDefaultRender(file: EntrypointFile): boolean {
-        const exported = this.expressionFile(file).getDefaultExport();
-
-        if (!exported) {
-            return false;
-        }
-
-        switch (exported.kind) {
-            case ExportValueKind.Function:
-            case ExportValueKind.Class:
-            case ExportValueKind.Jsx:
-            case ExportValueKind.Number:
-                return true;
-            case ExportValueKind.String:
-                return exported.value !== "";
-            default:
-                return exported.properties.includes("$$typeof");
-        }
+        return hasContentScriptDefaultRender(this.expressionFile(file).getDefaultExport());
     }
 }

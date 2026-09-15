@@ -10,7 +10,7 @@ import {
 
 const page: ContentScriptDefinition = {isolation: {type: "iframe", page: "panel"}};
 const frame: ContentScriptDefinition = {
-    isolation: {type: ContentScriptIsolation.Iframe, height: 200},
+    isolation: {type: ContentScriptIsolation.Iframe},
     render: "UI",
 };
 const shadow: ContentScriptIsolationOptions = {type: "shadow", mode: ContentScriptShadowMode.Closed};
@@ -34,8 +34,6 @@ const unknown: ContentScriptDefinition = {isolation: {type: "iframe", page: "mis
 getPageUrl("missing");
 // @ts-expect-error browser mode is closed, not close
 defineContentScriptAppend({isolation: {type: "shadow", mode: "close"}});
-// @ts-expect-error dimensions belong to iframe
-defineContentScriptAppend({isolation: {type: "shadow", height: 200}});
 // @ts-expect-error Shadow mode is not an iframe option
 defineContentScriptAppend({isolation: {type: "iframe", mode: "closed"}});
 const misplaced = {type: ContentScriptIsolation.None, page: "panel"} as const;

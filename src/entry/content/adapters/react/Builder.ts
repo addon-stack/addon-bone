@@ -1,40 +1,30 @@
-import {isValidElement} from "react";
+import MountBuilder from "../../lifecycle/MountBuilder";
+import RenderNode from "./Node";
+import {createRenderResolver} from "./resolvers/render";
 
-import MountBuilder from "../../core/MountBuilder";
-import EventNode from "../../core/nodes/EventNode";
-import ReactNode from "./Node";
-
-import {contentScriptReactRenderResolver} from "./resolvers";
-
-import {
-    ContentScriptDefinition,
+import type {
     ContentScriptNode,
+    ContentScriptIsolation,
+    ContentScriptProps,
     ContentScriptRenderHandler,
     ContentScriptRenderValue,
 } from "@typing/content";
 
-export default class extends MountBuilder {
-    constructor(definition: ContentScriptDefinition) {
-        super(definition);
+export default class Builder<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> extends MountBuilder<Data, Isolation> {
+    protected resolveRender(
+        render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
+    ): ContentScriptRenderHandler<Data> | undefined {
+        return render === undefined ? undefined : createRenderResolver(render);
     }
 
-    protected resolveRender(render?: ContentScriptRenderValue): ContentScriptRenderHandler | undefined {
-        if (render === undefined) {
-            return;
-        }
-
-        return contentScriptReactRenderResolver(render);
-    }
-
-    protected async createNode(anchor: Element): Promise<ContentScriptNode> {
-        let value = await this.getValue(anchor);
-
-        if (!isValidElement(value)) {
-            value = undefined;
-
-            console.warn("Content script react value is not a valid React element");
-        }
-
-        return new EventNode(new ReactNode(await super.createNode(anchor), value), this.emitter);
+    protected createRenderer(
+        node: ContentScriptNode,
+        render: ContentScriptRenderHandler<Data>,
+        props: () => ContentScriptProps<Data>
+    ): ContentScriptNode {
+        return new RenderNode(node, render, props);
     }
 }

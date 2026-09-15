@@ -1,13 +1,21 @@
 import {createElement, isValidElement} from "react";
 
-import {ContentScriptRenderHandler, ContentScriptRenderValue} from "@typing/content";
+import type {
+    ContentScriptRenderHandler,
+    ContentScriptRenderValue,
+    ContentScriptRenderReactComponent,
+} from "@typing/content";
 
-export const contentScriptReactRenderResolver =
-    (render?: ContentScriptRenderValue): ContentScriptRenderHandler =>
-    async (props): Promise<undefined | ContentScriptRenderValue> => {
-        let resolvedRender = typeof render === "function" ? createElement(render, props) : render;
+export const createRenderResolver =
+    <Data = unknown>(
+        render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
+    ): ContentScriptRenderHandler<Data> =>
+    props => {
+        // Functions in React entrypoints are components; React owns their invocation and hooks.
+        const value =
+            typeof render === "function"
+                ? createElement(render as ContentScriptRenderReactComponent<Data>, props)
+                : render;
 
-        if (isValidElement(resolvedRender)) {
-            return resolvedRender;
-        }
+        return isValidElement(value) ? value : undefined;
     };

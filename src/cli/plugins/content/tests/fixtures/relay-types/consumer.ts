@@ -1,6 +1,7 @@
 import * as api from "adnbn";
 import * as local from "adnbn/relay";
 import * as entry from "adnbn/entry/relay";
+import {Builder as ContentBuilder} from "adnbn/entry/content/vanilla";
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type Expect<T extends true> = T;
@@ -12,9 +13,28 @@ const definition = api.defineRelay({
     init: () => ({scan: (text: string) => text.length}),
 });
 
-new entry.Builder(definition);
+new entry.Builder(definition, ContentBuilder);
+
+const preparedDefinition = api.defineRelay({
+    name: "scanner",
+    init: () => ({scan: (text: string) => text.length}),
+    prepare: async () => ({title: "Prepared"}),
+
+    render: ({data}) => {
+        const title: string = data.title;
+        // @ts-expect-error: Runtime constructors preserve the inferred prepare data.
+        data.missing;
+
+        return title;
+    },
+});
+
+new entry.Builder(preparedDefinition, ContentBuilder);
+entry.default(preparedDefinition, ContentBuilder);
+
 const unresolved: entry.RelayUnresolvedDefinition<ReturnType<typeof definition.init>> = {};
-new entry.Builder(unresolved);
+new entry.Builder(unresolved, ContentBuilder);
+entry.default(entry.resolveDefinition({default: definition}, "scanner"), ContentBuilder);
 
 const original = local.getRelay("scanner");
 const scalar = api.getRelay("scanner", 1);
@@ -44,9 +64,11 @@ type AsyncBatchResult = Expect<Equal<ReturnType<typeof all.load>, Promise<api.Re
 type NestedScalarResult = Expect<Equal<ReturnType<typeof scalar.nested.ready>, Promise<boolean>>>;
 type NestedBatchResult = Expect<Equal<ReturnType<typeof all.nested.ready>, Promise<api.RelayFramesResult<boolean>>>>;
 type PropertyResult = Expect<Equal<ReturnType<typeof all.nested.count>, Promise<api.RelayFramesResult<number>>>>;
+
 type NestedObjectResult = Expect<
     Equal<ReturnType<typeof all.nested>, Promise<api.RelayFramesResult<local.RelayRegistry["scanner"]["nested"]>>>
 >;
+
 type ScalarAlias = Expect<Equal<typeof scalar, api.RelayProxyTarget<"scanner">>>;
 type BatchAlias = Expect<Equal<typeof all, api.RelayBatchProxyTarget<"scanner">>>;
 type LocalAlias = Expect<Equal<typeof original, local.RelayTarget<"scanner">>>;

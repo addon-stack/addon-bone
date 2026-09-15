@@ -1,5 +1,3 @@
-/** @jest-environment node */
-
 import {spawn, type ChildProcess} from "child_process";
 import {mkdtemp, rm} from "fs/promises";
 import os from "os";

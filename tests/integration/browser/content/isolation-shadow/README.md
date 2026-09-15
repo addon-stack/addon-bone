@@ -45,7 +45,7 @@ From the repository root:
 ```sh
 npm run build
 npx jest tests/integration/browser/content/isolation-shadow.integration.test.ts --runInBand
-npx jest tests/integration/browser/content/isolation-shadow.firefox.integration.test.ts --runInBand
+npx jest tests/integration/browser/content/isolation-shadow-mv2.firefox.integration.test.ts --runInBand
 ```
 
 Set `ADNBN_CHROME_BIN` or `ADNBN_FIREFOX_BIN` when automatic browser discovery selects the wrong

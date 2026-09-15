@@ -16,6 +16,18 @@ const file = (...parts: string[]) => {
     return {file: filename, import: filename};
 };
 
+const expectParseError = (target: ReturnType<typeof file>, message: RegExp): void => {
+    try {
+        parser.options(target);
+    } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toMatch(message);
+        expect((error as Error).message).toContain(target.file);
+        return;
+    }
+    throw new Error(`Expected parsing ${target.file} to fail`);
+};
+
 describe("ContentParser", () => {
     test.each([
         ["enum", {mode: ContentScriptShadowMode.Closed}],
@@ -32,15 +44,13 @@ describe("ContentParser", () => {
     });
     test.each([
         ["iframe", /isolation.mode is not supported/],
-        ["frame", /isolation.height is not supported/],
         ["mode", /isolation.mode must be "open" or "closed"/],
         ["dynamic", /isolation.mode must be statically known/],
         ["identifier", /isolation.mode must be statically known/],
         ["unknown", /isolation.delegatesFocus is not supported/],
     ])("rejects invalid Shadow options from %s", (name, error) => {
         const target = file("invalid", "shadow", name + ".content.ts");
-        expect(() => parser.options(target)).toThrow(error);
-        expect(() => parser.options(target)).toThrow(target.file);
+        expectParseError(target, error);
     });
     test.each([
         "named-function.content.tsx",
@@ -52,10 +62,11 @@ describe("ContentParser", () => {
         "jsx.content.tsx",
         "Panel.content.tsx",
         "element-object.content.ts",
+        "create-element.content.tsx",
+        "local-element.content.tsx",
     ])("rejects frame navigation with default render: %s", name => {
         const target = file("invalid", "default-render", name);
-        expect(() => parser.options(target)).toThrow(/isolation.page\/isolation.src cannot be combined with render/);
-        expect(() => parser.options(target)).toThrow(target.file);
+        expectParseError(target, /isolation.page\/isolation.src cannot be combined with render/);
     });
     test.each([
         "function.content.tsx",
@@ -70,12 +81,12 @@ describe("ContentParser", () => {
     });
     test("resolves a local frame object without treating identifiers as aliases", () => {
         expect(parser.options(file("options", "isolation", "frame-constant.content.ts"))).toMatchObject({
-            isolation: {type: "iframe", page: "panel", height: 320},
+            isolation: {type: "iframe", page: "panel"},
         });
     });
-    test("parses the isolation enum and frame dimensions", () => {
+    test("parses the isolation enum without executing boundary setup", () => {
         expect(parser.options(file("options", "isolation", "iframe.content.ts"))).toMatchObject({
-            isolation: {type: "iframe", height: 320},
+            isolation: {type: "iframe"},
         });
     });
     test("projects the Shadow isolation mode without runtime properties", () => {
@@ -87,23 +98,21 @@ describe("ContentParser", () => {
     });
     test("resolves a local page alias", () => {
         expect(parser.options(file("options", "isolation", "page.content.ts"))).toMatchObject({
-            isolation: {type: "iframe", page: "panel", width: "80%"},
+            isolation: {type: "iframe", page: "panel"},
         });
     });
-    test("preserves frame source and numeric/CSS dimensions in the normalized options", () => {
+    test("preserves the frame source in normalized options", () => {
         expect(parser.options(file("options", "isolation", "source.content.ts"))).toEqual({
             matches: ["http://*/*", "https://*/*"],
             runAt: "document_idle",
             isolation: {
                 type: "iframe",
                 src: "https://example.com/panel",
-                width: 0,
-                height: "calc(100vh - 24px)",
             },
         });
     });
     test.each([
-        ["iframe-short", {type: "iframe", width: "100%", height: 150}],
+        ["iframe-short", {type: "iframe"}],
         ["none-object", {type: "none"}],
     ])("normalizes shorthand and explicit options from %s", (name, isolation) => {
         expect(parser.options(file("options", "isolation", name + ".content.ts"))).toMatchObject({isolation});
@@ -116,7 +125,6 @@ describe("ContentParser", () => {
         ["frame-identifier-page", /statically known/],
         ["frame-conflict", /mutually exclusive/],
         ["frame-render", /cannot be combined/],
-        ["frame-auto", /not supported yet/],
         ["frame-spread", /statically known/],
         ["isolation-dynamic", /statically known/],
         ["frame-dynamic-page", /statically known/],

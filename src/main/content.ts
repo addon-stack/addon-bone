@@ -1,34 +1,25 @@
-import {
-    contentScriptMountAppendResolver,
-    contentScriptAnchorResolver,
-    contentScriptAwaitFirstResolver,
-    contentScriptMutationObserverResolver,
-    contentScriptRenderResolver,
-    contentScriptContainerResolver,
-} from "@entry/content/core/resolvers";
+import {createAppendMountHandler} from "@entry/content/resolvers/mount";
 
-import {ContentScriptAppendDefinition, ContentScriptDefinition} from "@typing/content";
-
-export {
-    contentScriptMountAppendResolver,
-    contentScriptAnchorResolver,
-    contentScriptAwaitFirstResolver,
-    contentScriptMutationObserverResolver,
-    contentScriptRenderResolver,
-    contentScriptContainerResolver,
-};
+import {ContentScriptAppendDefinition, ContentScriptDefinition, ContentScriptIsolation} from "@typing/content";
 
 export * from "@typing/content";
 
-export const defineContentScript = (options: ContentScriptDefinition): ContentScriptDefinition => {
+export const defineContentScript = <Data = undefined, const Isolation extends `${ContentScriptIsolation}` = "none">(
+    options: ContentScriptDefinition<Data, Isolation>
+): ContentScriptDefinition<Data, Isolation> => {
     return options;
 };
 
-export const defineContentScriptAppend = (options: ContentScriptAppendDefinition): ContentScriptDefinition => {
+export const defineContentScriptAppend = <
+    Data = undefined,
+    const Isolation extends `${ContentScriptIsolation}` = "none",
+>(
+    options: ContentScriptAppendDefinition<Data, Isolation>
+): ContentScriptDefinition<Data, Isolation> => {
     const {append, ...definition} = options;
 
     return {
         ...definition,
-        mount: contentScriptMountAppendResolver(append),
-    };
+        mount: createAppendMountHandler(append),
+    } as ContentScriptDefinition<Data, Isolation>;
 };

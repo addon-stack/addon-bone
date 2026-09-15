@@ -1,24 +1,35 @@
 import VanillaNode from "./Node";
 
-import {ContentScriptShadowMode, type ContentScriptNode} from "@typing/content";
+import {ContentScriptShadowMode} from "@typing/content";
 
 describe("VanillaNode", () => {
     test.each([undefined, ContentScriptShadowMode.Open, ContentScriptShadowMode.Closed])(
         "renders into the target while preserving the outer host in %s mode",
         mode => {
             const anchor = document.createElement("div");
+            document.body.append(anchor);
             const container = document.createElement("section");
             const target = document.createElement("div");
-            if (mode) container.attachShadow({mode}).appendChild(target);
+
+            if (mode) {
+                container.attachShadow({mode}).appendChild(target);
+            }
+
             const value = document.createElement("span");
-            const node: ContentScriptNode = {
+
+            const node = {
                 anchor,
                 container,
                 target,
                 mount: jest.fn(() => true),
                 unmount: jest.fn(() => true),
             };
-            const vanillaNode = new VanillaNode(node, value);
+
+            const vanillaNode = new VanillaNode(
+                node,
+                () => value,
+                () => ({anchor, container, target, data: undefined, boundary: undefined})
+            );
 
             expect(vanillaNode.mount()).toBe(true);
             expect(node.mount).toHaveBeenCalledTimes(1);
@@ -27,6 +38,7 @@ describe("VanillaNode", () => {
 
             expect(vanillaNode.unmount()).toBe(true);
             expect(node.unmount).toHaveBeenCalledTimes(1);
+            anchor.remove();
         }
     );
 });

@@ -115,7 +115,12 @@ describe("Relay declarations", () => {
             };
 
             expect(exportsOf("adnbn/relay")).toEqual(["RelayName", "RelayRegistry", "RelayTarget", "getRelay"]);
-            expect(exportsOf("adnbn/entry/relay")).toEqual(["Builder", "RelayUnresolvedDefinition", "default"]);
+            expect(exportsOf("adnbn/entry/relay")).toEqual([
+                "Builder",
+                "RelayUnresolvedDefinition",
+                "default",
+                "resolveDefinition",
+            ]);
             expect(exportsOf("adnbn").filter(name => /Relay/.test(name))).toEqual([
                 "RelayAllFrames",
                 "RelayAllFramesOptions",

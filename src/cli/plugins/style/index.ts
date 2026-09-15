@@ -5,7 +5,7 @@ import {Configuration as RspackConfig, CssExtractRspackPlugin, RuleSetUse, RuleS
 
 import {mergeStyleSources} from "./utils";
 import type {StylePluginOptions} from "./types";
-import {IsolatedStylesLayer} from "@cli/bundler/utils/styles";
+import {IsolatedStylesLayer} from "@cli/bundler/layers";
 
 import {definePlugin} from "@main/plugin";
 

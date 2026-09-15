@@ -1,4 +1,3 @@
-/** @jest-environment node */
 import {spawn, type ChildProcess} from "child_process";
 import {copyFile, readFile, rm, writeFile} from "fs/promises";
 import path from "path";

@@ -1,5 +1,3 @@
-/** @jest-environment node */
-
 import {copyFile, readFile, readdir, rm} from "fs/promises";
 import path from "path";
 import vm from "vm";
