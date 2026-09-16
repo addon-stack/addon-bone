@@ -28,9 +28,10 @@ starts it when processing content and invokes its returned unsubscribe function 
 `ContentScriptContext`, `ContentScriptEventCallback`, and `ContentScriptNode` types. A custom strategy
 receives `(update, context)` and returns an unsubscribe function. Use `context.watch(callback)` for
 lifecycle events; its returned function removes that subscription, and `context.unwatch()` removes all
-context subscriptions. `context.mount()` and `context.unmount()` run synchronously, including their
-lifecycle events. Await asynchronous discovery and preparation through `builder.build()` or the
-watch strategy's `update()` callback.
+context subscriptions. `context.mount()` and `context.unmount()` are synchronous commands.
+For isolated UI, Mount is emitted later, after CSS readiness and acceptance by the renderer adapter;
+Unmount is emitted synchronously. Await asynchronous discovery and preparation through `builder.build()`
+or the watch strategy's `update()` callback; these do not wait for isolated UI to render.
 
 The public `src/content/index.ts` entrypoint explicitly exports these tools from their runtime owners.
 Definition helpers live in `src/main/content.ts`; normalization and mounting helpers are internal.
@@ -42,9 +43,13 @@ resolver required by generated modules.
 
 `lifecycle/Builder.ts` coordinates main execution, watching, context cleanup, and node events.
 `lifecycle/MountBuilder.ts` is a concrete builder that composes mounting and isolation without a UI
-renderer. React and Vanilla extend it with rendering. Related implementations and their tests live together:
+renderer. Its `createNode(anchor, result)` selects the node for the preparation result: `false` or
+headless rendering creates a tracked node without UI; otherwise it composes the `createMountNode`,
+`createIsolation` and `createRenderer` stages. React and Vanilla supply the renderer stage.
+Related implementations and their tests live together:
 
 - `lifecycle/IsolationSetup.ts`: prepares current props, invokes boundary/target handlers, and protects user cleanup.
+- `lifecycle/types.ts`: internal node composition, renderer readiness and mount-completion contracts.
 - `lifecycle/nodes`: host mounting, node decorators, ShadowRoot/iframe targets, and the styles-runtime helper.
 - `lifecycle/markers`: anchor marking and lookup strategies.
 - `lifecycle/context`: the node collection, lifecycle operations, and event subscriptions.
@@ -81,11 +86,20 @@ rejects known default render exports with frame navigation, including explicit e
 The common runtime also rejects an explicit `render` property with frame navigation.
 Relay interprets its default export as transport initialization.
 
-The common lifecycle wraps each complete node in `EventNode`, including any adapter renderer, before
-adding it to the context. Mount/unmount events follow the underlying node operations. Without render,
+The common lifecycle wraps each complete node in `EventNode`, including any adapter renderer, and
+connects the renderer's `setErrorHandler` before adding the node to the context. This ordering also
+covers an Add listener that immediately calls `mount()`. `EventNode` only receives the narrower mount
+notifier contract; it never handles renderer failures. Mount/unmount events follow the underlying node
+operations. Without render,
 `main` runs and context cleanup is available. Anchor processing starts for rendering, `prepare`,
 headless tracking, or page/src navigation. `FrameNode` owns iframe creation, navigation, and
 child-document recovery.
+
+`build()` finishes cleanup of the previous run before invoking `main(context, options)`. It awaits
+`main` before resolving the marker and processing anchors, so main can subscribe to node events
+without waiting for an asynchronous marker factory. Entries with only `main` do not invoke the
+marker factory. Cancellation during either initialization step prevents subsequent processing
+and watcher startup. A marker failure still rejects the build, but main has already run at that point.
 
 When adding a runtime adapter, implement its definition and render resolvers and expose the definition
 resolver from that adapter's `index.ts`. Extend filename/build support and parser metadata interpretation
@@ -125,6 +139,9 @@ policy applies to later passes. Use `watch: true` to keep processing new anchors
 stops watching once it has tracked nodes. A failed anchor is not added as a headless result.
 Initialization errors, such as a rejected marker factory or `main`, reject the build. React
 component errors during React's scheduled rendering follow React's error handling.
+An isolated renderer runs after CSS readiness, outside the initial processing pass. A failure in
+that deferred mount is reported separately and removes the failed node; other anchors continue.
+CSS loading failures instead retain the empty target so a later `context.mount()` can retry.
 
 ```tsx title="src/product.content.tsx"
 import React from "react";
@@ -165,10 +182,18 @@ instances. It works with both adapters and Relay. Use it for parsing existing no
 
 Destroying the builder or removing the anchor invalidates pending results. A new target on remount
 or iframe document recovery receives fresh props and reruns rendering with the same prepared data.
-Mounting an unchanged target preserves its UI and React state. `RenderNode` mounts DOM and invokes the
-renderer synchronously; adapter nodes own UI insertion and disposal. `EventNode` emits Mount before
-`mount()` returns, after the adapter accepts the render value. React schedules its component rendering
-and effects independently; Mount does not wait for a React commit. A render callback that unmounts or
+Mounting an unchanged target preserves its UI and React state. `RenderNode` mounts DOM synchronously.
+Without isolation it also invokes the renderer synchronously. For Shadow and blank iframe targets,
+it waits for the styles runtime's `ready(root)` before invoking the renderer. Repeated mounts of the
+same pending target share one operation. All node and context `mount()` / `unmount()` methods remain
+synchronous. A node's `mount()` returns `false` while its renderer is waiting; it does not return a Promise.
+CSS readiness continues rendering directly without calling `mount()` or the user's mount handler again.
+The renderer notifies `EventNode` once after the adapter accepts the render value. Observe Mount through
+the context to track completion; returning from `mount()` does not guarantee that isolated UI is ready.
+The readiness function and completion notifier are internal lifecycle contracts, not public node methods.
+`EventNode` only dispatches events; the builder handles deferred renderer failures.
+React schedules its component rendering and effects independently; Mount does not wait for a React commit.
+A render callback that unmounts or
 replaces its own target cannot subsequently insert UI into the discarded target or emit a stale Mount.
 
 ## Isolation
@@ -489,11 +514,22 @@ is legal for ordinary-only entries. The required partition also applies with `co
 Initial chunks (including extracted chunks) use `cssFilename`; async chunks use `cssChunkFilename`
 when configuring the CSS extraction plugin directly.
 
-Rendering starts immediately, so briefly unstyled UI is possible. Lazy CSS is requested with
+Shadow and blank iframe renderers wait for all initial CSS and lazy CSS already requested when
+the target starts waiting. The host, boundary and empty target exist during loading; no component
+or React effects run before readiness. Open and closed Shadow roots follow the same lifecycle.
+Unmount, remount and iframe recovery invalidate pending rendering and release old link waits and timers.
+Each new target waits for its own links, even when the browser has cached the stylesheet files.
+
+Lazy CSS is requested with
 `import()`; mixed imports wait for both document CSS and targets active at that request's start. Late targets receive initial
 and already requested lazy CSS. Imports before the first target do not wait for future UI. Failed
-or timed-out lazy links reject the import and permit retry; timeout follows `output.chunkLoadTimeout`.
-Initial CSS errors identify the entrypoint and URL but do not remove UI. Styles are delivered through
+or timed-out lazy links reject the import and permit retry. Initial readiness failures identify
+the entrypoint and URL and leave the target empty, without emitting Mount. A later `context.mount()`
+retries missing styles without duplicating successful links or changing their cascade order.
+The timeout follows `output.chunkLoadTimeout` (Rspack's default is 120 seconds); no separate UI timeout
+or automatic unstyled fallback is applied. Stylesheet readiness does not wait for fonts or images.
+Navigation iframes (`page`/`src`) and non-isolated rendering keep their existing behavior.
+Styles are delivered through
 external stylesheet links. Registries belong to each entry runtime, not `window`; no carrier,
 JSON map or background bundle is injected into other entries.
 

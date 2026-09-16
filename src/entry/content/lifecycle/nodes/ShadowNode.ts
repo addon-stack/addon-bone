@@ -43,6 +43,10 @@ export default class ShadowNode<Data = unknown> implements ContentScriptNode {
         return this.root;
     }
 
+    public ready(): Promise<void> {
+        return this.root && this.runtime ? this.runtime.ready(this.root) : Promise.resolve();
+    }
+
     public mount(): boolean {
         if (this.mounting || this.unmounting) {
             return false;

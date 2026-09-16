@@ -1,4 +1,5 @@
 import Builder from "./Builder";
+import {waitFor} from "@testing-library/react";
 import {resolveDefinition} from "./resolvers/definition";
 import {defineContentScript, defineContentScriptAppend} from "@main/content";
 import {
@@ -17,7 +18,7 @@ jest.mock("nanoid", () => ({
 }));
 
 jest.mock("../../lifecycle/nodes/isolated-styles", () => ({
-    getContentScriptStylesRuntime: () => ({add: jest.fn(), delete: jest.fn()}),
+    getContentScriptStylesRuntime: () => ({add: jest.fn(), ready: jest.fn(async () => undefined), delete: jest.fn()}),
 }));
 
 describe("Vanilla Builder", () => {
@@ -84,6 +85,52 @@ describe("Vanilla Builder", () => {
             await builder.destroy();
         }
     });
+
+    test.each(["shadow", "iframe"] as const)(
+        "%s connects renderer failure handling before an Add listener can mount the node",
+        async isolation => {
+            const anchor = document.createElement("article");
+            document.body.append(anchor);
+            const error = new Error("Deferred renderer failed");
+            const report = jest.spyOn(console, "error").mockImplementation(() => {});
+            const events: ContentScriptEvent[] = [];
+            const render = jest.fn(() => {
+                throw error;
+            });
+
+            const builder = new Builder(
+                defineContentScript({
+                    anchor,
+                    isolation,
+                    render,
+                    main: context => {
+                        context.watch((event, node) => {
+                            events.push(event);
+
+                            if (event === ContentScriptEvent.Add) {
+                                expect(node.mount()).toBe(false);
+                            }
+                        });
+                    },
+                })
+            );
+
+            try {
+                await builder.build();
+                await waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+                expect(report.mock.calls[0][0]).toBeInstanceOf(AggregateError);
+                expect(report.mock.calls[0][0].errors).toEqual([error]);
+                expect(render).toHaveBeenCalledTimes(1);
+                expect(events.filter(event => event === ContentScriptEvent.Remove)).toHaveLength(1);
+                expect(events).not.toContain(ContentScriptEvent.Mount);
+                expect(builder.getContext().nodes.size).toBe(0);
+                expect(anchor.childElementCount).toBe(0);
+            } finally {
+                await builder.destroy();
+                report.mockRestore();
+            }
+        }
+    );
 
     test("Vanilla preserves the literal true used to track an anchor without a container", async () => {
         const anchor = document.createElement("article");
@@ -262,7 +309,9 @@ describe("Vanilla preparation and render props", () => {
             expect(main.mock.calls[0][1]).not.toHaveProperty("target");
             expect(rendered[0]).toMatchObject({boundary: first.boundary, target: node.target});
             expect(node.target?.outerHTML).toBe('<span class="custom-target">Prepared</span>');
-            expect(boundaries).toEqual([undefined, first.boundary]);
+            await waitFor(() => expect(boundaries).toHaveLength(2));
+            expect(boundaries[0]).toBeUndefined();
+            expect(boundaries[1]).toBe(first.boundary);
             context.mount();
             expect(calls).toHaveLength(1);
             context.unmount();
@@ -273,6 +322,7 @@ describe("Vanilla preparation and render props", () => {
             expect(calls[1].boundary).not.toBe(first.boundary);
             expect(calls[1].container).not.toBe(first.container);
             expect(calls[1].data).toBe(data);
+            await waitFor(() => expect(rendered).toHaveLength(2));
             expect(rendered[1].boundary).toBe(node.boundary);
             expect(prepare).toHaveBeenCalledTimes(1);
         } finally {
@@ -453,9 +503,9 @@ describe("Vanilla preparation and render props", () => {
 
             try {
                 await expect(builder.build()).resolves.toBeUndefined();
-                expect(report).toHaveBeenCalledTimes(1);
+                await waitFor(() => expect(report).toHaveBeenCalledTimes(stage === "render" ? 2 : 1));
                 expect(report).toHaveBeenLastCalledWith(expect.any(AggregateError));
-                expect(report.mock.calls[0][0].errors).toEqual([error, error]);
+                expect(report.mock.calls.flatMap(([reported]) => reported.errors)).toEqual([error, error]);
                 expect(builder.getContext().nodes.size).toBe(1);
                 expect(initial.firstElementChild?.shadowRoot?.textContent).toBe("content");
 
@@ -471,9 +521,9 @@ describe("Vanilla preparation and render props", () => {
                 expect(next.firstElementChild?.shadowRoot?.textContent).toBe("content");
                 expect(rejected.childElementCount).toBe(0);
                 expect(builder.getContext().nodes.size).toBe(2);
-                expect(report).toHaveBeenCalledTimes(2);
+                expect(report).toHaveBeenCalledTimes(stage === "render" ? 3 : 2);
                 expect(report).toHaveBeenLastCalledWith(expect.any(AggregateError));
-                expect(report.mock.calls[1][0].errors).toEqual([error]);
+                expect(report.mock.calls.at(-1)![0].errors).toEqual([error]);
 
                 rejected.remove();
                 const last = createAnchor();
@@ -727,6 +777,7 @@ test("boundary cleanup does not hide the original render failure", async () => {
     try {
         await builder.build();
         expect(logged).toHaveBeenCalledWith("Content script boundary cleanup failed", cleanup);
+        await waitFor(() => expect(builder.getContext().nodes.size).toBe(0));
         const aggregate = logged.mock.calls.find(([error]) => error instanceof AggregateError)?.[0] as AggregateError;
         expect(aggregate.errors).toEqual([original]);
         expect(builder.getContext().nodes.size).toBe(0);

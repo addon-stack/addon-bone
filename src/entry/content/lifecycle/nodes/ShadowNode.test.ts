@@ -57,6 +57,7 @@ describe("ShadowNode", () => {
             const runtime: ContentScriptStylesRuntime = {
                 initialize: jest.fn(),
                 add: jest.fn(),
+                ready: jest.fn(async () => undefined),
                 delete: jest.fn(),
                 load: jest.fn(async () => undefined),
             };
@@ -86,6 +87,7 @@ describe("ShadowNode", () => {
             const runtime: ContentScriptStylesRuntime = {
                 initialize: jest.fn(),
                 add: jest.fn(),
+                ready: jest.fn(async () => undefined),
                 delete: jest.fn(root => states.push((root as ShadowRoot).host.isConnected)),
                 load: jest.fn(async () => undefined),
             };
@@ -115,7 +117,13 @@ describe("ShadowNode", () => {
     );
 
     test("creates a custom target per mount with access to a closed root", () => {
-        const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+        const runtime = {
+            initialize: jest.fn(),
+            add: jest.fn(),
+            ready: jest.fn(async () => undefined),
+            delete: jest.fn(),
+            load: jest.fn(),
+        };
 
         const factory = jest.fn(({boundary, document}: ContentScriptTargetProps<undefined, "shadow">) => {
             expect(boundary.mode).toBe("closed");
@@ -153,7 +161,13 @@ describe("ShadowNode", () => {
     });
 
     test("releases the host when target creation fails and can mount a fresh root", () => {
-        const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+        const runtime = {
+            initialize: jest.fn(),
+            add: jest.fn(),
+            ready: jest.fn(async () => undefined),
+            delete: jest.fn(),
+            load: jest.fn(),
+        };
 
         const factory = jest.fn(({document}: ContentScriptTargetProps<undefined, "shadow">) =>
             document.createElement("span")
@@ -180,7 +194,13 @@ describe("ShadowNode", () => {
     });
 
     test("does not register a root unmounted by the target factory", () => {
-        const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+        const runtime = {
+            initialize: jest.fn(),
+            add: jest.fn(),
+            ready: jest.fn(async () => undefined),
+            delete: jest.fn(),
+            load: jest.fn(),
+        };
 
         const {node} = createNode(runtime, undefined, undefined, ({document}) => {
             node.unmount();
@@ -200,6 +220,7 @@ describe("ShadowNode", () => {
             const runtime: ContentScriptStylesRuntime = {
                 initialize: jest.fn(),
                 add: jest.fn(),
+                ready: jest.fn(async () => undefined),
                 delete: jest.fn(),
                 load: jest.fn(async () => undefined),
             };
@@ -224,6 +245,7 @@ describe("ShadowNode", () => {
         const runtime: ContentScriptStylesRuntime = {
             initialize: jest.fn(),
             add: jest.fn(),
+            ready: jest.fn(async () => undefined),
             delete: jest.fn(),
             load: jest.fn(async () => undefined),
         };
@@ -240,6 +262,7 @@ describe("ShadowNode", () => {
         const runtime: ContentScriptStylesRuntime = {
             initialize: jest.fn(),
             add: jest.fn(),
+            ready: jest.fn(async () => undefined),
             delete: jest.fn(),
             load: jest.fn(async () => undefined),
         };
@@ -254,7 +277,13 @@ describe("ShadowNode", () => {
 });
 
 test("ShadowNode sets up each closed boundary once and cleans subscriptions before removing it", () => {
-    const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+    const runtime = {
+        initialize: jest.fn(),
+        add: jest.fn(),
+        ready: jest.fn(async () => undefined),
+        delete: jest.fn(),
+        load: jest.fn(),
+    };
     const calls: string[] = [];
     const cleanup = jest.fn();
 
@@ -296,7 +325,13 @@ test("ShadowNode sets up each closed boundary once and cleans subscriptions befo
 });
 
 test.each(["setup", "target", "unmount"])("ShadowNode releases boundary resources after %s", action => {
-    const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+    const runtime = {
+        initialize: jest.fn(),
+        add: jest.fn(),
+        ready: jest.fn(async () => undefined),
+        delete: jest.fn(),
+        load: jest.fn(),
+    };
     const cleanup = jest.fn();
 
     const {node} = createNode(

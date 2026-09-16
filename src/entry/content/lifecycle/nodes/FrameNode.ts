@@ -53,6 +53,10 @@ export default class FrameNode<Data = unknown> implements ContentScriptNode {
         return this.frame;
     }
 
+    public ready(): Promise<void> {
+        return this.head && this.runtime ? this.runtime.ready(this.head) : Promise.resolve();
+    }
+
     private readonly onLoad = (): void => {
         if (!this.frame || this.queued || this.intact()) {
             return;

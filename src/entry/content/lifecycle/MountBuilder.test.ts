@@ -1,7 +1,12 @@
 import MountBuilder from "./MountBuilder";
 import {resolveDefinition} from "../resolvers/definition";
 import {defineContentScript} from "@main/content";
-import {ContentScriptEvent, ContentScriptIsolation, type ContentScriptDefinition} from "@typing/content";
+import {
+    ContentScriptEvent,
+    ContentScriptIsolation,
+    ContentScriptMarker,
+    type ContentScriptDefinition,
+} from "@typing/content";
 
 // Extend the shared random-ID mock for the builders' generated marker attribute.
 jest.mock("nanoid", () => ({
@@ -12,12 +17,13 @@ jest.mock("nanoid", () => ({
 describe("MountBuilder", () => {
     afterEach(() => document.body.replaceChildren());
 
-    test("Common runtime runs main without creating nodes or starting a DOM watcher", async () => {
+    test("Common runtime runs main without resolving a marker, creating nodes or starting a DOM watcher", async () => {
         const main = jest.fn();
+        const marker = jest.fn(() => ContentScriptMarker.Weak);
         const anchor = jest.fn(() => document.body);
         const container = jest.fn(() => document.createElement("section"));
         const watch = jest.fn(() => jest.fn());
-        const builder = new MountBuilder(resolveDefinition({default: {main, anchor, container, watch}}));
+        const builder = new MountBuilder(resolveDefinition({default: {main, marker, anchor, container, watch}}));
 
         try {
             await builder.build();
@@ -30,6 +36,7 @@ describe("MountBuilder", () => {
             );
 
             expect(main).toHaveBeenCalledTimes(1);
+            expect(marker).not.toHaveBeenCalled();
             expect(anchor).not.toHaveBeenCalled();
             expect(container).not.toHaveBeenCalled();
             expect(watch).not.toHaveBeenCalled();
@@ -45,6 +52,125 @@ describe("MountBuilder", () => {
 
         expect(() => new MountBuilder(definition)).toThrow("Content script rendering requires a renderer adapter");
         expect(render).not.toHaveBeenCalled();
+    });
+
+    test("awaits main before resolving the marker and resolves the marker before processing anchors", async () => {
+        const mainStarted = Promise.withResolvers<void>();
+        const mainReady = Promise.withResolvers<void>();
+        const markerStarted = Promise.withResolvers<void>();
+        const markerReady = Promise.withResolvers<ContentScriptMarker>();
+        const events: ContentScriptEvent[] = [];
+        const anchor = jest.fn(() => document.body);
+        const watch = jest.fn(() => () => {});
+
+        const marker = jest.fn(() => {
+            markerStarted.resolve();
+
+            return markerReady.promise;
+        });
+
+        const builder = new MountBuilder(
+            defineContentScript({
+                anchor,
+                marker,
+                watch,
+                render: true,
+
+                main: async context => {
+                    context.watch(event => events.push(event));
+                    mainStarted.resolve();
+                    await mainReady.promise;
+                },
+            })
+        );
+
+        const building = builder.build();
+
+        try {
+            await mainStarted.promise;
+            expect(marker).not.toHaveBeenCalled();
+            mainReady.resolve();
+            await markerStarted.promise;
+            expect(anchor).not.toHaveBeenCalled();
+            expect(watch).not.toHaveBeenCalled();
+            markerReady.resolve(ContentScriptMarker.Weak);
+            await building;
+            expect(anchor).toHaveBeenCalledTimes(1);
+            expect(watch).toHaveBeenCalledTimes(1);
+            expect(events).toEqual([ContentScriptEvent.Add]);
+        } finally {
+            mainReady.resolve();
+            markerReady.resolve(ContentScriptMarker.Weak);
+            await building;
+            await builder.destroy();
+        }
+    });
+
+    test.each(["main", "marker"])("does not continue initialization after destroy during %s", async stage => {
+        const started = Promise.withResolvers<void>();
+        const released = Promise.withResolvers<void>();
+        const anchor = jest.fn(() => document.body);
+        const prepare = jest.fn();
+        const watch = jest.fn(() => () => {});
+
+        const main = jest.fn(async () => {
+            if (stage === "main") {
+                started.resolve();
+                await released.promise;
+            }
+        });
+
+        const marker = jest.fn(async () => {
+            if (stage === "marker") {
+                started.resolve();
+                await released.promise;
+            }
+
+            return ContentScriptMarker.Weak;
+        });
+
+        const builder = new MountBuilder(defineContentScript({main, marker, anchor, prepare, watch}));
+        const building = builder.build();
+
+        try {
+            await started.promise;
+            await builder.destroy();
+            released.resolve();
+            await building;
+            expect(main).toHaveBeenCalledTimes(1);
+            expect(marker).toHaveBeenCalledTimes(stage === "main" ? 0 : 1);
+            expect(anchor).not.toHaveBeenCalled();
+            expect(prepare).not.toHaveBeenCalled();
+            expect(watch).not.toHaveBeenCalled();
+            expect(builder.getContext().nodes.size).toBe(0);
+        } finally {
+            released.resolve();
+            await building;
+            await builder.destroy();
+        }
+    });
+
+    test("rejects marker initialization after main has run without starting anchor processing", async () => {
+        const error = new Error("Marker initialization failed");
+        const main = jest.fn();
+        const anchor = jest.fn(() => document.body);
+        const watch = jest.fn(() => () => {});
+
+        const marker = jest.fn(async () => {
+            throw error;
+        });
+
+        const builder = new MountBuilder(defineContentScript({main, marker, anchor, watch, render: true}));
+
+        try {
+            await expect(builder.build()).rejects.toBe(error);
+            expect(main).toHaveBeenCalledTimes(1);
+            expect(marker).toHaveBeenCalledTimes(1);
+            expect(anchor).not.toHaveBeenCalled();
+            expect(watch).not.toHaveBeenCalled();
+        } finally {
+            await builder.destroy();
+        }
     });
 
     test("Common runtime mounts, remounts and cleans up navigation with lifecycle events", async () => {

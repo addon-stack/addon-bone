@@ -2,11 +2,18 @@ import Builder from "./Builder";
 import IsolationSetup from "./IsolationSetup";
 import {FrameNode, MountNode, MarkerNode, ShadowNode, Node} from "./nodes";
 import {isContentScriptFrameNavigation} from "@shared/content";
+import type {
+    ContentScriptIsolationAssembly,
+    ContentScriptNodeAssembly,
+    ContentScriptRenderLifecycle,
+    ContentScriptRenderOptions,
+} from "./types";
 
 import {
     ContentScriptDefinition,
     ContentScriptIsolation,
     ContentScriptNode,
+    ContentScriptPrepareResult,
     ContentScriptProps,
     ContentScriptRenderHandler,
 } from "@typing/content";
@@ -33,47 +40,68 @@ export default class MountBuilder<
         };
     }
 
-    protected async createNode(anchor: Element, data: Data, enabled: boolean): Promise<ContentScriptNode> {
+    protected async createNode(
+        anchor: Element,
+        result: ContentScriptPrepareResult<Data> | undefined
+    ): Promise<ContentScriptNodeAssembly> {
         const navigation = isContentScriptFrameNavigation(this.definition.isolation);
         const render = this.definition.render;
 
-        if (!enabled || (!navigation && (render === undefined || render === true))) {
-            return new MarkerNode(new Node(anchor), this.marker);
+        if (result === false || (!navigation && (render === undefined || render === true))) {
+            return {node: new MarkerNode(new Node(anchor), this.marker)};
         }
 
+        const data = result as Data;
+        const mountedNode = await this.createMountNode(anchor, data);
+        const {node, ready} = this.createIsolation(mountedNode, data);
+
+        if (navigation || typeof render !== "function") {
+            return {node};
+        }
+
+        const renderer = this.createRenderer(node, render, () => this.getProps(node, data), {ready});
+
+        return {node: renderer, renderer};
+    }
+
+    protected async createMountNode(anchor: Element, data: Data): Promise<ContentScriptNode> {
         const marker = this.marker;
         const container = await this.definition.container({...this.getPrepareProps(anchor), data});
 
-        const mountedNode = new MountNode(new MarkerNode(new Node(anchor, container), marker), this.definition.mount);
+        return new MountNode(new MarkerNode(new Node(anchor, container), marker), this.definition.mount);
+    }
+
+    protected createIsolation(node: ContentScriptNode, data: Data): ContentScriptIsolationAssembly {
+        const options = this.definition.isolation;
+
+        if (options.type === ContentScriptIsolation.None) {
+            return {node};
+        }
 
         const setup = new IsolationSetup({
-            props: () => ({...this.getPrepareProps(anchor), data}),
-            container: () => mountedNode.container,
+            props: () => ({...this.getPrepareProps(node.anchor), data}),
+            container: () => node.container,
             boundary: this.definition.boundary,
             target: this.definition.target,
         });
 
-        let node: ContentScriptNode = mountedNode;
+        if (options.type === ContentScriptIsolation.Shadow) {
+            const shadow = new ShadowNode(node, options, setup);
 
-        switch (this.definition.isolation.type) {
-            case ContentScriptIsolation.Shadow:
-                node = new ShadowNode(mountedNode, this.definition.isolation, setup);
-                break;
-            case ContentScriptIsolation.Iframe:
-                node = new FrameNode(mountedNode, this.definition.isolation, () => this.context.mount(), setup);
-                break;
+            return {node: shadow, ready: () => shadow.ready()};
         }
 
-        return navigation || typeof render !== "function"
-            ? node
-            : this.createRenderer(node, render, () => this.getProps(node, data));
+        const frame = new FrameNode(node, options, () => this.context.mount(), setup);
+
+        return {node: frame, ready: () => frame.ready()};
     }
 
     protected createRenderer(
         node: ContentScriptNode,
         render: ContentScriptRenderHandler<Data>,
-        props: () => ContentScriptProps<Data>
-    ): ContentScriptNode {
+        props: () => ContentScriptProps<Data>,
+        options: ContentScriptRenderOptions
+    ): ContentScriptNode & ContentScriptRenderLifecycle {
         throw new Error("Content script rendering requires a renderer adapter");
     }
 }

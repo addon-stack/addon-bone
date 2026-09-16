@@ -61,10 +61,22 @@ export async function expectRenderProps(browser: "chrome" | "firefox") {
         const snapshot = (id: string) =>
             session!.evaluate(`JSON.parse(document.getElementById(${JSON.stringify(id)}).dataset.snapshot)`);
 
-        const command = (id: string, command: string) =>
-            session!.evaluate(
-                `document.dispatchEvent(new CustomEvent('probe-command', {detail: ${JSON.stringify(JSON.stringify({id, command}))}}))`
+        const command = async (id: string, command: string) => {
+            await session!.evaluate(`(() => {
+                document.getElementById(${JSON.stringify(id)}).removeAttribute('data-command');
+                document.dispatchEvent(new CustomEvent('probe-command', {detail: ${JSON.stringify(JSON.stringify({id, command}))}}));
+            })()`);
+
+            await until(
+                async () =>
+                    await session!.evaluate(
+                        `document.getElementById(${JSON.stringify(id)}).dataset.command === ${JSON.stringify(command)} || document.body.dataset.error`
+                    ),
+                `${id} to finish ${command}`
             );
+
+            expect(await session!.evaluate("document.body.dataset.error ?? null")).toBeNull();
+        };
 
         const shadow = await snapshot("shadow");
 
@@ -141,8 +153,16 @@ export async function expectRenderProps(browser: "chrome" | "firefox") {
         expect((await snapshot("shadow")).targetId).toBe(shadow.targetId);
         await command("shadow", "remount");
 
+        await until(
+            async () =>
+                await session!.evaluate(
+                    "JSON.parse(document.getElementById('shadow').dataset.lifecycle).events.includes('mount')"
+                ),
+            "Shadow DOM Mount event after CSS readiness"
+        );
+
         expect(await session.evaluate("JSON.parse(document.getElementById('shadow').dataset.lifecycle)")).toMatchObject(
-            {events: ["unmount", "mount"], mounted: true, connected: true}
+            {events: ["unmount", "mount"], mounted: false, connected: true}
         );
 
         await until(async () => (await snapshot("shadow")).targetId !== shadow.targetId, "new Shadow DOM target");

@@ -17,6 +17,8 @@ import {ManagedContext, EventEmitter} from "./context";
 import {AttributeMarker, WeakMarker} from "./markers";
 import {EventNode} from "./nodes";
 
+import type {ContentScriptNodeAssembly} from "./types";
+
 import {
     ContentScriptAnchor,
     ContentScriptAnchorGetter,
@@ -28,6 +30,7 @@ import {
     ContentScriptContext,
     ContentScriptDefinition,
     ContentScriptIsolation,
+    ContentScriptIsolationOptions,
     ContentScriptMarker,
     ContentScriptMarkerContract,
     ContentScriptMarkerGetter,
@@ -36,10 +39,13 @@ import {
     ContentScriptMountFunction,
     ContentScriptNode,
     ContentScriptPrepareProps,
+    ContentScriptPrepareResult,
     ContentScriptOptions,
     ContentScriptRenderHandler,
     ContentScriptRenderValue,
     ContentScriptResolvedDefinition,
+    ContentScriptTarget,
+    ContentScriptTargetCreator,
     ContentScriptWatchStrategy,
 } from "@typing/content";
 
@@ -64,31 +70,16 @@ export default abstract class Builder<
 
     protected unwatch?: () => void;
 
-    protected abstract createNode(anchor: Element, data: Data, enabled: boolean): Promise<ContentScriptNode>;
+    protected abstract createNode(
+        anchor: Element,
+        result: ContentScriptPrepareResult<Data> | undefined
+    ): Promise<ContentScriptNodeAssembly>;
 
     protected constructor(input: ContentScriptDefinition<Data, Isolation>) {
         super();
 
         // Normalization selects the isolation at runtime; its node supplies the matching callback props.
         const definition = input as ContentScriptDefinition<Data>;
-        const isolation = resolveContentScriptIsolation(definition.isolation, "render" in definition);
-
-        if (definition.boundary !== undefined) {
-            if (typeof definition.boundary !== "function") {
-                throw new Error("Content script boundary must be a synchronous setup handler");
-            }
-
-            if (isolation.type === "none") {
-                throw new Error("Content script boundary requires Shadow DOM or an iframe");
-            }
-        }
-
-        if (
-            definition.target !== undefined &&
-            (isolation.type === "none" || isContentScriptFrameNavigation(isolation))
-        ) {
-            throw new Error("Content script target requires Shadow DOM or an iframe with local rendering");
-        }
 
         this.definition = {
             ...definition,
@@ -96,9 +87,9 @@ export default abstract class Builder<
             anchor: this.resolveAnchor(definition.anchor),
             mount: this.resolveMount(definition.mount),
             container: this.resolveContainer(definition.container),
-            target: createTargetResolver(definition.target),
-            render: definition.render === true ? true : this.resolveRender(definition.render),
-            isolation,
+            target: this.resolveTarget(definition.target),
+            isolation: this.resolveIsolation(definition),
+            render: this.resolveRender(definition.render),
             watch: this.resolveWatch(definition.watch),
         };
     }
@@ -142,14 +133,41 @@ export default abstract class Builder<
         return createContainerResolver(container);
     }
 
-    protected resolveRender(
-        render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
-    ): ContentScriptRenderHandler<Data> | undefined {
-        if (render !== undefined) {
-            throw new Error("Content script rendering requires a renderer adapter");
+    protected resolveTarget(target?: ContentScriptTarget<Data>): ContentScriptTargetCreator<Data> {
+        return createTargetResolver(target);
+    }
+
+    protected resolveIsolation(definition: ContentScriptDefinition<Data>): ContentScriptIsolationOptions {
+        const isolation = resolveContentScriptIsolation(definition.isolation, "render" in definition);
+
+        if (definition.boundary !== undefined) {
+            if (typeof definition.boundary !== "function") {
+                throw new Error("Content script boundary must be a synchronous setup handler");
+            }
+
+            if (isolation.type === "none") {
+                throw new Error("Content script boundary requires Shadow DOM or an iframe");
+            }
         }
 
-        return undefined;
+        if (
+            definition.target !== undefined &&
+            (isolation.type === "none" || isContentScriptFrameNavigation(isolation))
+        ) {
+            throw new Error("Content script target requires Shadow DOM or an iframe with local rendering");
+        }
+
+        return isolation;
+    }
+
+    protected resolveRender(
+        render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
+    ): true | ContentScriptRenderHandler<Data> | undefined {
+        if (render === true || render === undefined) {
+            return render;
+        }
+
+        throw new Error("Content script rendering requires a renderer adapter");
     }
 
     protected resolveWatch(watch?: true | ContentScriptWatchStrategy): ContentScriptWatchStrategy {
@@ -178,14 +196,6 @@ export default abstract class Builder<
         const {render, prepare, main, anchor, marker, container, boundary, target, watch, mount, ...options} =
             this.definition;
 
-        const resolvedMarker = await marker(options);
-
-        if (generation !== this.generation) {
-            return;
-        }
-
-        this.marker = resolvedMarker;
-
         await main?.(this.context, options);
 
         if (generation !== this.generation) {
@@ -197,6 +207,14 @@ export default abstract class Builder<
             prepare !== undefined ||
             isContentScriptFrameNavigation(this.definition.isolation)
         ) {
+            const resolvedMarker = await marker(options);
+
+            if (generation !== this.generation) {
+                return;
+            }
+
+            this.marker = resolvedMarker;
+
             await this.processing(generation);
 
             if (generation !== this.generation) {
@@ -287,7 +305,8 @@ export default abstract class Builder<
             return;
         }
 
-        const node = new EventNode(await this.createNode(anchor, data as Data, data !== false), this.emitter);
+        const assembly = await this.createNode(anchor, data);
+        const node = new EventNode(assembly.node, this.emitter, assembly.renderer);
 
         if (!current()) {
             node.unmount();
@@ -295,6 +314,8 @@ export default abstract class Builder<
             return;
         }
 
+        // Add listeners can mount immediately, so connect the renderer before publishing the node.
+        assembly.renderer?.setErrorHandler(error => this.handleRenderError(node, error, generation));
         this.context.add(node);
 
         if (generation !== this.generation) {
@@ -311,5 +332,21 @@ export default abstract class Builder<
             this.context.remove(node);
             throw error;
         }
+    }
+
+    private handleRenderError(node: ContentScriptNode, error: unknown, generation: number): void {
+        if (generation !== this.generation) {
+            return;
+        }
+
+        const errors = [error];
+
+        try {
+            this.context.remove(node);
+        } catch (cause) {
+            errors.push(cause);
+        }
+
+        console.error(new AggregateError(errors, "Content script deferred mount failed"));
     }
 }

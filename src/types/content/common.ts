@@ -70,6 +70,8 @@ export interface ContentScriptStylesRuntime {
     initialize(resolveUrl: (file: string) => string): void;
     /** Retry restored styles once on load error; future loads keep the default failure behavior. */
     add(root: ShadowRoot | HTMLElement, target: Element | null, retry?: boolean): void;
+    /** Waits for initial and already requested CSS for this root; retries missing failed links. */
+    ready(root: ShadowRoot | HTMLElement): Promise<void>;
     delete(root: ShadowRoot | HTMLElement): void;
     load(url: string): Promise<void>;
 }

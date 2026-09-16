@@ -19,7 +19,9 @@ export default defineContentScriptAppend({
 
         return host;
     },
-    render() {
+    render({container, target}) {
+        const links = Array.from(target.ownerDocument.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+        container.setAttribute("data-styled-first-render", String(links.length > 0 && links.every(link => link.sheet)));
         const root = document.createElement("div");
         root.classList.add(styles.root, sharedStyles.shared);
         root.dataset.shadowResult = "secondary";

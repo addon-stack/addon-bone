@@ -27,6 +27,7 @@ interface ShadowProbe {
     readonly links: string[];
     readonly ready?: string;
     readonly sharedCss?: string;
+    readonly styledFirstRender?: string;
 }
 
 interface ShadowDocumentState {
@@ -52,6 +53,7 @@ const documentStateExpression = `(document => {
             kind: host.getAttribute("data-shadow-probe"),
             instance: host.getAttribute("data-instance"),
             closed: host.shadowRoot === null,
+            styledFirstRender: host.getAttribute("data-styled-first-render"),
         };
         const root = host.shadowRoot ?? host.querySelector("iframe")?.contentDocument;
         const result = root && root.querySelector("[data-shadow-result]");
@@ -70,6 +72,7 @@ const documentStateExpression = `(document => {
             ...(result ? Object.fromEntries(Object.entries(result.dataset)) : {ready: "missing"}),
             instance: host.getAttribute("data-instance") || undefined,
             kind: host.getAttribute("data-shadow-probe") || undefined,
+            styledFirstRender: host.getAttribute("data-styled-first-render") || undefined,
             links: root ? Array.from(root.querySelectorAll('link[rel="stylesheet"]'), link => link.href) : [],
         };
     });
@@ -121,6 +124,7 @@ const expectDocument = (
         expect(probe.initialCss).toBe("applied");
         expect(probe.asyncCss).toBe("applied");
         expect(probe.sharedCss).toBe("applied");
+        expect(probe.styledFirstRender).toBe("true");
         expect(probe.links.length).toBeGreaterThanOrEqual(3);
         expect(probe.links.every(url => /^(chrome|moz)-extension:\/\//.test(url))).toBe(true);
 
