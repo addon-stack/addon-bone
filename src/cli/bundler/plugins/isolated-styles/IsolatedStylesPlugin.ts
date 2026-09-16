@@ -5,7 +5,8 @@ import type {RuntimePropertyOptions} from "../types";
 import {getManifestHooks} from "../utils/manifest-hooks";
 
 import {renderIsolatedStylesCssLoader, renderIsolatedStylesRuntime} from "./templates";
-import {getIsolatedStylesFiles, isIsolatedStylesChunk} from "./chunks";
+import {getStylesFiles, isIsolatedStylesChunk} from "./chunks";
+import {createStylesCacheGroup, DocumentStylesCacheGroup} from "./split-chunks";
 
 const PluginName = "IsolatedStylesPlugin";
 const CssLoadingRuntimeIdentifier = "webpack/runtime/css loading";
@@ -17,7 +18,7 @@ export interface IsolatedStylesPluginOptions extends RuntimePropertyOptions {
     cssChunkFilename: Filename;
     test: (entry: string) => boolean;
     timeout?: number;
-    /** Inspects every entry's initial, shared and async CSS, independently of test. Throw to reject; return warning messages to report without changing delivery. */
+    /** Inspects every entry's initial, shared and async CSS using its delivery policy. Throw to reject; return warning messages without changing delivery. */
     validate?: (entry: string, files: IsolatedStylesPluginFiles) => void | readonly string[];
 }
 
@@ -43,7 +44,10 @@ class IsolatedStylesRuntimeModule extends RuntimeModule {
 
     public generate(): string {
         const compilation = this.compilation;
-        if (!compilation) throw new Error("Isolated styles runtime is not attached to a compilation");
+
+        if (!compilation) {
+            throw new Error("Isolated styles runtime is not attached to a compilation");
+        }
 
         const initialStyles = initialStyleChunks(compilation, this.entry, this.cssFilename, this.cssChunkFilename).map(
             ({chunk, filename}) => resolveChunkFilename(compilation, chunk, filename, CssContentHashType)
@@ -66,12 +70,14 @@ const initialStyleChunks = (
     cssChunkFilename: Filename
 ): {chunk: Chunk; filename: Filename}[] => {
     const entrypoint = compilation.entrypoints.get(entry);
-    if (!entrypoint) throw new Error(`Isolated styles entrypoint "${entry}" is unavailable`);
 
-    const entryChunk = entrypoint.getEntrypointChunk();
+    if (!entrypoint) {
+        throw new Error(`Isolated styles entrypoint "${entry}" is unavailable`);
+    }
+
     return Array.from(entrypoint.chunks)
         .filter(chunk => isIsolatedStylesChunk(compilation, chunk))
-        .map(chunk => ({chunk, filename: chunk === entryChunk ? cssFilename : cssChunkFilename}));
+        .map(chunk => ({chunk, filename: chunk.canBeInitial() ? cssFilename : cssChunkFilename}));
 };
 
 const hasAsyncCss = (chunk: Chunk): boolean => {
@@ -86,15 +92,39 @@ export default class IsolatedStylesPlugin {
     public constructor(private readonly options: IsolatedStylesPluginOptions) {}
 
     public apply(compiler: Compiler): void {
+        const cacheGroup = createStylesCacheGroup(compiler, this.options.test);
+
+        // Defaults are resolved before this hook; SplitChunksPlugin is configured afterwards.
+        compiler.hooks.afterEnvironment.tap(PluginName, () => {
+            const splitChunks = compiler.options.optimization.splitChunks;
+
+            if (splitChunks) {
+                splitChunks.cacheGroups = {
+                    [DocumentStylesCacheGroup]: cacheGroup,
+                    ...splitChunks.cacheGroups,
+                };
+            }
+        });
+
         compiler.hooks.compilation.tap(PluginName, compilation => {
             getManifestHooks(compilation).prepareDependencies.tap(PluginName, dependencies => {
-                const isolatedFiles = getIsolatedStylesFiles(compilation);
                 for (const [entry, dependency] of dependencies) {
-                    if (!this.options.test(entry)) continue;
+                    if (!this.options.test(entry)) {
+                        continue;
+                    }
+
+                    const files = getStylesFiles(compilation, compilation.entrypoints.get(entry)?.chunks ?? []);
 
                     for (const file of dependency.css) {
-                        if (!isolatedFiles.has(file)) continue;
-                        dependency.css.delete(file);
+                        if (!files.defaults.has(file)) {
+                            continue;
+                        }
+
+                        // Identical CSS can have the same contenthash filename in both destinations.
+                        if (!files.document.has(file)) {
+                            dependency.css.delete(file);
+                        }
+
                         dependency.assets.add(file);
                     }
                 }
@@ -115,6 +145,7 @@ export default class IsolatedStylesPlugin {
                 requirements.add(RuntimeGlobals.require);
                 requirements.add(RuntimeGlobals.publicPath);
                 injected.add(chunk);
+
                 const fullHash = initialStyleChunks(
                     compilation,
                     chunk.name,
@@ -123,6 +154,7 @@ export default class IsolatedStylesPlugin {
                 ).some(({chunk, filename}) =>
                     filenameRequiresFullHash(compilation, chunk, filename, CssContentHashType)
                 );
+
                 compilation.addRuntimeModule(
                     chunk,
                     new IsolatedStylesRuntimeModule(
@@ -170,7 +202,7 @@ export default class IsolatedStylesPlugin {
 
                 source.source = renderIsolatedStylesCssLoader({
                     isolatedChunks: Object.fromEntries(
-                        [...compilation.chunks]
+                        [...chunk.getAllReferencedChunks()]
                             .filter(candidate => isIsolatedStylesChunk(compilation, candidate))
                             .map(candidate => [candidate.id, true])
                     ),
@@ -181,6 +213,7 @@ export default class IsolatedStylesPlugin {
                     require: RuntimeGlobals.require,
                     property: this.options.property,
                 });
+
                 patched.add(chunk);
             });
 
@@ -191,21 +224,33 @@ export default class IsolatedStylesPlugin {
                     if (this.options.validate) {
                         const document = new Set<string>();
                         const isolated = new Set<string>();
+
                         const referenced = new Set([
                             ...entrypoint.chunks,
                             ...entrypoint.getEntrypointChunk().getAllReferencedChunks(),
                         ]);
+
                         for (const candidate of referenced) {
-                            const destination = isIsolatedStylesChunk(compilation, candidate) ? isolated : document;
+                            const destination =
+                                this.options.test(entry) && isIsolatedStylesChunk(compilation, candidate)
+                                    ? isolated
+                                    : document;
+
                             for (const file of candidate.files) {
-                                if (file.endsWith(".css")) destination.add(file);
+                                if (file.endsWith(".css")) {
+                                    destination.add(file);
+                                }
                             }
                         }
+
                         const warnings = this.options.validate(entry, {
                             document: [...document].sort(),
                             isolated: [...isolated].sort(),
                         });
-                        for (const message of warnings ?? []) compilation.warnings.push(new Error(message));
+
+                        for (const message of warnings ?? []) {
+                            compilation.warnings.push(new Error(message));
+                        }
                     }
 
                     if (

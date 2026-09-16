@@ -1,0 +1,5 @@
+:global(.cascade-probe) {
+  color: rgb(204, 0, 0);
+  border-top: 7px solid currentColor;
+  --split-document: last;
+}

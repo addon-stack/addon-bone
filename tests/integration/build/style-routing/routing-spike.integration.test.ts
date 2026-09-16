@@ -21,26 +21,38 @@ const createCompiler = (output: string, filename: Filename, enabled: () => boole
             popup: "./entry.js",
         },
         output: {path: output, filename, chunkFilename: filename, publicPath: "/", uniqueName: "routingSpike"},
+        resolve: {modules: [path.join(fixtures, "vendor"), "node_modules"]},
         resolveLoader: {modules: [path.join(project, "node_modules")]},
         module: {
             rules: [
                 {
-                    test: /\.css$/,
+                    test: /\.(css|scss)$/,
                     type: "javascript/auto",
                     oneOf: [
                         {
-                            issuerLayer: /^adnbn:content:/,
-                            resourceQuery: /[?&]isolation(?:[=&]|$)/,
+                            issuerLayer: {or: [/^adnbn:content:/, layer]},
+                            resourceQuery: {not: [/[?&]unisolated(?:[=&]|$)/]},
                             layer,
                             use: [
                                 CssExtractRspackPlugin.loader,
-                                {loader: "css-loader", ident: "isolation", options: {modules: false}},
+                                {
+                                    loader: "css-loader",
+                                    ident: "isolation",
+                                    options: {modules: {auto: true, namedExport: false}},
+                                },
+                                "sass-loader",
                             ],
                         },
                         {
+                            layer: "fixture:document",
                             use: [
                                 CssExtractRspackPlugin.loader,
-                                {loader: "css-loader", ident: "document", options: {modules: false}},
+                                {
+                                    loader: "css-loader",
+                                    ident: "document",
+                                    options: {modules: {auto: true, namedExport: false}},
+                                },
+                                "sass-loader",
                             ],
                         },
                     ],
@@ -72,12 +84,20 @@ const createCompiler = (output: string, filename: Filename, enabled: () => boole
                                 !enabled() ||
                                 chunk.name === "popup" ||
                                 module.identifier() !== "webpack/runtime/css loading"
-                            )
+                            ) {
                                 return;
+                            }
+
                             const source = module.source;
-                            if (!source || typeof source.source !== "string")
+
+                            if (!source || typeof source.source !== "string") {
                                 throw new Error("CSS runtime source unavailable");
-                            if (!source.source) return;
+                            }
+
+                            if (!source.source) {
+                                return;
+                            }
+
                             const ids = Object.fromEntries(
                                 [...compilation.chunks]
                                     .filter(chunk =>
@@ -87,8 +107,13 @@ const createCompiler = (output: string, filename: Filename, enabled: () => boole
                                     )
                                     .map(chunk => [chunk.id, true])
                             );
+
                             const position = source.source.indexOf(boundary);
-                            if (position < 0) throw new Error("CSS runtime seam unavailable");
+
+                            if (position < 0) {
+                                throw new Error("CSS runtime seam unavailable");
+                            }
+
                             source.source =
                                 source.source.slice(0, position) +
                                 `var loadPageStylesheet = loadStylesheet;
@@ -108,13 +133,17 @@ const createCompiler = (output: string, filename: Filename, enabled: () => boole
 const run = (compiler: Compiler): Promise<Stats> =>
     new Promise((resolve, reject) =>
         compiler.run((error, stats) => {
-            if (error || !stats || stats.hasErrors())
+            if (error || !stats || stats.hasErrors()) {
                 reject(error ?? new Error(stats?.toString({all: false, errors: true})));
-            else resolve(stats);
+            } else {
+                resolve(stats);
+            }
         })
     );
+
 const close = (compiler: Compiler): Promise<void> =>
     new Promise((resolve, reject) => compiler.close(error => (error ? reject(error) : resolve())));
+
 const css = (stats: Stats, files: Iterable<string>): string =>
     [...files]
         .filter(file => file.endsWith(".css"))
@@ -129,6 +158,7 @@ test.each<Filename>([
 ])("partitions CSS before rendering chunks and leaves popup extraction intact (%s)", async filename => {
     const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-routing-"));
     const compiler = createCompiler(output, filename);
+
     try {
         const stats = await run(compiler);
         const popup = stats.compilation.entrypoints.get("popup")!;
@@ -136,35 +166,46 @@ test.each<Filename>([
         const relay = stats.compilation.entrypoints.get("relay")!;
         expect(popup.getFiles().filter(file => file.endsWith(".css"))).toHaveLength(1);
         expect(css(stats, popup.getFiles())).toContain(".nested");
+
         const uiChunks = [...stats.compilation.chunks].filter(chunk =>
             [...stats.compilation.chunkGraph.getChunkModulesIterable(chunk)].some(
                 m => m.type === "css/mini-extract" && m.layer === layer
             )
         );
+
         expect(uiChunks).toHaveLength(2);
+
         for (const chunk of uiChunks) {
             expect(css(stats, chunk.files)).not.toContain(".page");
             expect(css(stats, chunk.files)).not.toContain(".lazy-page");
             expect([...chunk.files].some(file => file.endsWith(".js"))).toBe(false);
         }
+
         expect(content.getFiles()).toHaveLength(3);
+
         expect(
             content.getFiles().filter(file => file.endsWith(".css") && relay.getFiles().includes(file))
         ).toHaveLength(1);
+
         expect(content.getFiles().some(file => file.includes("background"))).toBe(false);
 
         const requested: {target: string; resolve(): void}[] = [];
         let context: vm.Context;
+
         const head = {
             appendChild(node: any) {
                 node.parentNode = head;
+
                 if (node.tagName === "SCRIPT") {
                     vm.runInContext(fs.readFileSync(path.join(output, node.src.slice(1)), "utf8"), context);
                     queueMicrotask(() => node.onload?.({type: "load", target: node}));
-                } else requested.push({target: "page", resolve: () => node.onload({type: "load", target: node})});
+                } else {
+                    requested.push({target: "page", resolve: () => node.onload({type: "load", target: node})});
+                }
             },
             removeChild() {},
         };
+
         const sandbox = {
             setTimeout,
             clearTimeout,
@@ -180,15 +221,20 @@ test.each<Filename>([
             },
             loadIsolatedCss: () => new Promise<void>(resolve => requested.push({target: "isolation", resolve})),
         };
+
         context = vm.createContext(sandbox);
         vm.runInContext("self = globalThis", context);
+
         for (const file of content.getFiles().filter(file => file.endsWith(".js")))
             vm.runInContext(fs.readFileSync(path.join(output, file), "utf8"), context);
+
         const loaded = vm.runInContext("loadPanel()", context) as Promise<{loaded: boolean}>;
         let resolved = false;
+
         void loaded.then(() => {
             resolved = true;
         });
+
         expect(requested.map(item => item.target).sort()).toEqual(["isolation", "page"]);
         requested[0].resolve();
         await new Promise(resolve => setImmediate(resolve));
@@ -206,16 +252,22 @@ test("recomputes selective CSS routing on watch rebuilds", async () => {
     let enabled = true;
     const compiler = createCompiler(output, "[name].[contenthash:8].js", () => enabled);
     let next: {resolve(stats: Stats): void; reject(error: Error): void};
+
     const result = () =>
         new Promise<Stats>((resolve, reject) => {
             next = {resolve, reject};
         });
+
     let pending = result();
+
     const watching = compiler.watch({}, (error, stats) => {
-        if (error || !stats || stats.hasErrors())
+        if (error || !stats || stats.hasErrors()) {
             next.reject(error ?? new Error(stats?.toString({all: false, errors: true})));
-        else next.resolve(stats);
+        } else {
+            next.resolve(stats);
+        }
     });
+
     try {
         for (const selection of [true, false, true]) {
             if (selection !== enabled) {
@@ -223,13 +275,16 @@ test("recomputes selective CSS routing on watch rebuilds", async () => {
                 pending = result();
                 watching.invalidate();
             }
+
             const stats = await pending;
             const entry = stats.compilation.entrypoints.get("content")!;
+
             const source = entry
                 .getFiles()
                 .filter(file => file.endsWith(".js"))
                 .map(file => stats.compilation.getAsset(file)!.source.source())
                 .join("\n");
+
             expect(source.includes("loadIsolatedCss")).toBe(selection);
         }
     } finally {

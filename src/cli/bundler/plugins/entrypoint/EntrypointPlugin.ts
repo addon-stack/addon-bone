@@ -1,7 +1,7 @@
 import _ from "lodash";
 import path from "path";
 
-import {Compiler, type EntryDescription, EntryNormalized} from "@rspack/core";
+import {Compiler, DynamicEntryPlugin, type EntryDescription, EntryNormalized} from "@rspack/core";
 import {RspackVirtualModulePlugin as VirtualModulesPlugin} from "rspack-plugin-virtual-module";
 
 import {EntrypointEntries, EntrypointFile} from "@typing/entrypoint";
@@ -106,6 +106,24 @@ export default class EntrypointPlugin {
         });
 
         if (this.update) {
+            // Static EntryPlugin captures options once. Resolve the completed entry table
+            // per compilation so watch changes to layers and asyncChunks reach Rspack too.
+            // Register after other plugins have prepared their entryOption hooks, but
+            // before Rspack installs its default static entry handler.
+            compiler.hooks.afterEnvironment.tap(this.pluginName, () => {
+                compiler.hooks.entryOption.tap(`${this.pluginName}:watch`, (context, entry) => {
+                    compiler.options.entry = entry;
+
+                    new DynamicEntryPlugin(context, async () => {
+                        const entry = compiler.options.entry;
+
+                        return typeof entry === "function" ? entry() : entry;
+                    }).apply(compiler);
+
+                    return true;
+                });
+            });
+
             compiler.hooks.watchRun.tapAsync(this.pluginName, (compiler, callback) => {
                 this.hookWatchRun(compiler)
                     .then(() => callback())

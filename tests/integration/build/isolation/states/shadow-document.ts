@@ -1,5 +1,6 @@
 import {defineContentScriptAppend} from "adnbn";
-import "./watch.css";
+import "./watch.css?unisolated";
+
 export default defineContentScriptAppend({
     matches: ["http://127.0.0.1/*"],
     isolation: "shadow",

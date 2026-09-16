@@ -31,7 +31,6 @@ import {
 } from "../plugins";
 
 import {fromRootPath, getAppPath, getAppSourcePath, getConfigFile} from "../resolvers/path";
-import {isContentLayer} from "@cli/bundler/layers";
 
 import type {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
 import {Command, Mode, Workspace} from "@typing/app";
@@ -364,7 +363,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         pluginReact(),
         pluginIcon(),
         pluginAsset(),
-        pluginStyle({isolationIssuerLayer: isContentLayer}),
+        pluginStyle(),
         pluginLocale(),
         pluginMeta(),
         pluginContent(),

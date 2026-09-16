@@ -310,17 +310,17 @@ declare module "*?asis" {
     export default src;
 }
 
-declare module "*?isolation" {
+declare module "*?unisolated" {
     const classes: Readonly<Record<string, string>>;
     export default classes;
 }
 
-declare module "*?isolation&asis" {
+declare module "*?unisolated&asis" {
     const src: string;
     export default src;
 }
 
-declare module "*?asis&isolation" {
+declare module "*?asis&unisolated" {
     const src: string;
     export default src;
 }

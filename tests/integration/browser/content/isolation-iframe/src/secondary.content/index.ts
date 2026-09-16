@@ -2,8 +2,8 @@ import {observeMounts} from "../shared/events";
 import {ContentScriptIsolation, ContentScriptAppend, defineContentScriptAppend} from "adnbn";
 import {createAwaitFirstStrategy} from "adnbn/content";
 
-import sharedStyles from "../shared/styles.module.css?isolation";
-import styles from "./styles.module.css?isolation";
+import sharedStyles from "../shared/styles.module.css";
+import styles from "./styles.module.css";
 
 export default defineContentScriptAppend({
     main: observeMounts,

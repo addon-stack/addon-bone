@@ -5,7 +5,7 @@ import Content from "./Content";
 import Relay from "./Relay";
 import RelayDeclaration from "./RelayDeclaration";
 import {hasIsolatedTarget} from "./utils";
-import {createPageAccessRequirements, getContentChunkName, validateContentStyles} from "./bundler";
+import {createPageAccessRequirements, getContentChunkName} from "./bundler";
 import {createRelayModule, RelayModuleName} from "./relay-module";
 
 import {definePlugin} from "@main/plugin";
@@ -54,6 +54,7 @@ export default definePlugin(() => {
             const getModules = async () => ({
                 [RelayModuleName]: createRelayModule(await relayProvider.getOptionsMap()),
             });
+
             const modulePlugin = new GenerateModulePlugin(await getModules());
 
             if (config.command === Command.Watch) {
@@ -74,6 +75,7 @@ export default definePlugin(() => {
 
                         const views = await new PageFinder(config).views();
                         const pages = new Map(Array.from(views.values(), view => [view.alias, view.filename]));
+
                         return createPageAccessRequirements(entryOptionsByName, pages);
                     },
                 }),
@@ -88,6 +90,7 @@ export default definePlugin(() => {
             }
 
             const entries = await contentManager.entries();
+
             const getEntryWorld = (name: string): ContentScriptWorld => {
                 const options = entryOptionsByName.get(name);
 
@@ -167,9 +170,9 @@ export default definePlugin(() => {
                         property: ContentScriptStylesRuntimeProperty,
                         test: entry => {
                             const options = entryOptionsByName.get(entry);
+
                             return options !== undefined && hasIsolatedTarget(options);
                         },
-                        validate: (entry, files) => validateContentStyles(entry, entryOptionsByName.get(entry), files),
                     }),
                     ...basePlugins,
                 ],

@@ -31,6 +31,7 @@ describe("content contracts", () => {
             const program = ts.createProgram(
                 [
                     fixture,
+                    path.join(__dirname, "fixtures/content/styles.ts"),
                     watchFixture,
                     path.join(__dirname, "fixtures/content/prepare.tsx"),
                     path.join(__dirname, "fixtures/content/target.tsx"),

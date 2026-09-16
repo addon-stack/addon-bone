@@ -299,7 +299,7 @@ existing anchors, containers, mount/append placement, and context methods remain
 
 ```tsx title="src/panel.content/index.tsx"
 import {ContentScriptIsolation, defineContentScriptAppend} from "adnbn";
-import "./panel.css?isolation";
+import "./panel.scss";
 import Panel from "./Panel";
 
 export default defineContentScriptAppend({
@@ -328,7 +328,7 @@ Browser defaults and page styles apply unless you override them. CSS sizes use t
 values; automatic content-based iframe sizing is not provided. The blank iframe has no `src`
 attribute. The framework creates the host and target, so a custom `container` factory is optional.
 
-Import UI styles with `?isolation` and declare fonts in CSS as described below. Relay supports the
+Import UI styles normally and declare fonts in SCSS as described below. Relay supports the
 same isolation and frame variants; its RPC transport and all-frame addressing remain independent
 of UI isolation.
 
@@ -338,7 +338,7 @@ Set `mode` inside an isolation object with `type: Shadow`, in content scripts or
 
 ```tsx title="src/panel.content/index.tsx"
 import {ContentScriptIsolation, ContentScriptShadowMode, defineContentScriptAppend} from "adnbn";
-import "./panel.css?isolation";
+import "./panel.scss";
 import Panel from "./Panel";
 
 export default defineContentScriptAppend({
@@ -441,55 +441,53 @@ if it must survive. For page/src, reload remains ordinary browser navigation beh
 ## Styles and fonts
 
 Shadow and all iframe entries bypass `concatContentScripts`. They support `commonChunks`.
-Plain CSS/SCSS imports keep document delivery: initial CSS goes into `content_scripts.css`; lazy CSS
-loads into the page only when its `import()` runs. UI isolation does not change plain imports.
+For Shadow and blank iframe content/Relay entries, ordinary CSS/SCSS imports go to the isolated
+render target. This includes styles imported by child components, shared components, libraries and
+lazy modules. Mark only host-page styles with `?unisolated`:
 
 ```ts title="src/panel.content/index.ts"
-import "./host.css?asis";
-import styles from "./panel.module.css?isolation";
+import "./host.scss?unisolated";
+import styles from "./panel.module.scss";
 
 export {};
 ```
 
-`?isolation` sends CSS to ShadowRoot or the blank iframe document. Combine it with `?asis` as
-`?isolation&asis` to disable CSS Modules; the two flags have independent roles. Local CSS imports and
-Sass dependencies inherit their stylesheet's destination. A separate CSS import in JavaScript chooses
-its own destination.
+The query controls delivery, not CSS Modules. Module exports and class names retain their normal
+behavior. CSS imports and Sass dependencies inherit their stylesheet's destination. To deliver a
+stylesheet outside the UI, put the query on its JavaScript/TypeScript import; Sass `@use`/`@forward`
+compile into their parent stylesheet and do not create another delivery destination.
 
 Initial isolated CSS is excluded from `content_scripts.css` and exposed through WAR. Each root or
-iframe head receives its own links in asset-map order. A shared CSS file can remain in an ordinary
-consumer's manifest and also be linked by an isolated consumer. `getEntrypointAssets()` includes every
-CSS file in `initial.css` / `async.css`. The isolated styles runtime owns CSS routing; the asset map does not expose delivery-specific subsets.
+iframe head receives its own links in dependency order. Initial `?unisolated` CSS goes into the
+content manifest. Lazy styles of both destinations still wait for `import()`.
 
-With `isolation: None`, marked CSS loads normally into the page. Outside content and Relay, including
-popup and page entries, `?isolation` has no routing effect and adds no isolated-style runtime.
-`isolation.page`/`isolation.src` entries have no local render target: importing `?isolation` CSS there is a build
-error. Import the styles in the embedded page instead. That page's own CSS behaves normally.
+A component shared between popup and content needs no special imports: the popup gets ordinary
+page CSS, while a Shadow/blank-iframe consumer gets isolated CSS. Shared sources can be emitted
+separately by destination. If identical CSS resolves to one contenthash filename, that file can
+appear both in the content manifest and in isolated delivery. `getEntrypointAssets()` still includes
+the complete inventory in `initial.css` / `async.css`, without delivery-specific fields.
 
-The build reports `[adnbn:missing-isolation-css]` when a Shadow or blank-iframe content/Relay entry
-has CSS dependencies but none are marked `?isolation`. The check includes initial, shared and lazy CSS;
-it reports once per entry per compilation and is refreshed in watch mode. It does not change asset
-delivery. Entries without CSS, non-isolated entries, embedded pages and unrelated entrypoints are
-not warned. Document-only CSS is legitimate, for example when only a font is imported and the UI uses
-inline styles. To silence this diagnostic intentionally, use the existing bundler warning filter:
+With `isolation: None`, styles load into the host document. Outside content and Relay, including
+popup and page entries, `?unisolated` adds no behavior or isolated-style runtime.
+`isolation.page`/`isolation.src` entries do not render locally: their imports style the host document;
+import the embedded UI's styles in the embedded page itself.
 
-```ts title="adnbn.config.ts"
-import {defineConfig} from "adnbn";
+The `adnbnDocumentStyles` cache group extracts `?unisolated` CSS only from chunks reachable by
+Shadow/blank-iframe entries, including lazy chunks. Default UI CSS stays in its original chunk.
+Ordinary pages, popup/options, content and Relay entries keep both categories together unless they
+share a physical chunk with an isolated consumer. No extra category priority is imposed on those
+unsplit files; Rspack's normal CSS ordering applies. This does not enable general common-CSS extraction.
 
-export default defineConfig({
-    bundler: {
-        ignoreWarnings: [/\[adnbn:missing-isolation-css\]/],
-    },
-});
-```
+A lazy chunk shared by ordinary and isolated entries must be split for both consumers. In the
+ordinary document, the two files follow chunk order, which can differ from source import order.
+On the tested Rspack version, document CSS precedes UI CSS for both source orders. This is a shared
+physical-chunk constraint, not a query-priority contract. In Shadow/iframe the destinations differ.
 
-This is a heuristic: a single correctly marked dependency prevents the warning even if another UI
-stylesheet is missing its query. Initial document CSS still goes into the manifest; lazy document
-CSS still waits for its import.
-
-Rspack separates CSS destinations before emitting assets. Preserve the `adnbnIsolatedStyles` cache
-group if customizing `splitChunks`: a chunk mixing destinations fails the build rather than injecting
-styles into the wrong document. This partition is necessary even with `commonChunks: false`.
+Preserve `adnbnDocumentStyles` when customizing `splitChunks`: a mixed-destination chunk reachable
+by an isolated entry fails the build instead of injecting CSS into the wrong document. Mixed CSS
+is legal for ordinary-only entries. The required partition also applies with `commonChunks: false`.
+Initial chunks (including extracted chunks) use `cssFilename`; async chunks use `cssChunkFilename`
+when configuring the CSS extraction plugin directly.
 
 Rendering starts immediately, so briefly unstyled UI is possible. Lazy CSS is requested with
 `import()`; mixed imports wait for both document CSS and targets active at that request's start. Late targets receive initial
@@ -499,11 +497,11 @@ Initial CSS errors identify the entrypoint and URL but do not remove UI. Styles 
 external stylesheet links. Registries belong to each entry runtime, not `window`; no carrier,
 JSON map or background bundle is injected into other entries.
 
-For Shadow, declare `@font-face` in ordinary document CSS, then use that family inside `?isolation`
-CSS. `@font-face` inside a shadow stylesheet does not reliably register the face. Use a unique family
+For Shadow, declare `@font-face` in `fonts.scss?unisolated`, then use that family in ordinary UI
+SCSS. `@font-face` inside a shadow stylesheet does not reliably register the face. Use a unique family
 name: the document declaration is visible to the host page and outlives UI unmount.
 
-```css title="src/panel.content/host.css"
+```scss title="src/panel.content/fonts.scss"
 @font-face {
     font-family: "AdnbnPanelInter";
     src: url("./panel.woff2?browser") format("woff2");
@@ -520,7 +518,7 @@ stylesheets and specialized `?react`/`?raw` imports retain their own loaders. Th
 is interpreted in CSS, not JavaScript: use the browser `getUrl()` helper for ordinary JS asset
 imports rather than treating that token as a ready runtime URL. User asset names and hashes remain intact.
 
-For a blank iframe, put `@font-face` directly in its `?isolation` CSS and use a local relative font URL.
+For a blank iframe, put `@font-face` directly in its ordinary SCSS and use a local relative font URL.
 It belongs to that iframe document; a host-page font declaration does not register it there. If both
 destinations need the face, import a small shared font stylesheet from both destination stylesheets.
 After document recovery, reconnecting the iframe CSS restores its font declarations too.

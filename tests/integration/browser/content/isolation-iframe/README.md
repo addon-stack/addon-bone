@@ -4,7 +4,7 @@ This fixture uses the production `isolation: Iframe` API with a React primary en
 secondary entry and an ordinary content entry. Shared CSS verifies manifest and WAR delivery to
 both kinds of consumers. Each isolated entry has its own style registry.
 
-UI CSS uses `?isolation`. The local font is declared with `@font-face` in iframe CSS, with no
+Ordinary UI CSS goes to the iframe document by default. The local font is declared with `@font-face` in iframe CSS, with no
 FontFace registration in JavaScript. Ordinary CSS remains in the host document.
 
 The site directory contains the receiving page and child frame, not extension entrypoints. Tests

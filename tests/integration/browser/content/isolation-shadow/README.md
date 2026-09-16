@@ -1,6 +1,6 @@
 # Shadow DOM content integration
 
-This fixture exercises the production `isolation: Shadow` content-entrypoint API with the native Vanilla
+This fixture exercises the production `isolation: Shadow` content-entrypoint API with the native React and Vanilla
 renderer. It contains two shadow entrypoints and one ordinary entrypoint. All three consume a forced
 shared CSS-only chunk, while each shadow entrypoint also loads its own initial and lazy styles.
 
@@ -11,8 +11,10 @@ continues to load through `content_scripts.css` outside Shadow DOM.
 
 ## What the runner verifies
 
-- Plain document CSS remains in the manifest, including the font declaration. Initial, lazy and shared
-  `?isolation` CSS files are in web accessible resources and delivered only to the selected roots.
+- Explicit `?unisolated` CSS remains in the manifest, including the font declaration. Ordinary initial, lazy and shared
+  UI styles are in web accessible resources and delivered only to the selected roots.
+- In Chrome, the same React component and lazy SCSS also render in the popup document without special imports.
+  Firefox builds the same popup but BiDi does not allow direct navigation to its private extension URL.
 - The ordinary entrypoint retains manifest-level CSS, including the shared chunk.
 - No content entrypoint receives a background file.
 - Every root contains file-backed extension `<link>` elements and receives initial and requested lazy

@@ -1,8 +1,8 @@
 import {ContentScriptIsolation, ContentScriptShadowMode, ContentScriptAppend, defineContentScriptAppend} from "adnbn";
 import {createMutationObserverStrategy} from "adnbn/content";
 
-import sharedStyles from "../shared/styles.module.css?isolation";
-import styles from "./styles.module.css?isolation";
+import sharedStyles from "../shared/styles.module.css";
+import styles from "./styles.module.css";
 
 let instance = 0;
 
@@ -53,8 +53,13 @@ export default defineContentScriptAppend({
 // results from inside the fixture, without exposing the root or changing production code.
 const report = (element: HTMLElement): void => {
     const root = element.getRootNode() as ShadowRoot;
-    if (!root.host) return;
+
+    if (!root.host) {
+        return;
+    }
+
     const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+
     (root.host as HTMLElement).dataset.shadowReport = JSON.stringify({
         ...element.dataset,
         mode: root.mode,

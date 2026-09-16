@@ -1,8 +1,8 @@
 # Relay style routing
 
 Two native Relay panels share a component and use Shadow/blank iframe rendering. An extension page
-imports that same component (where `?isolation` is inert). Background calls both Relays through Messaging RPC.
-Each call imports lazy document and UI CSS and checks their actual application before returning.
+imports that same component (where all CSS loads normally). Background calls both Relays through Messaging RPC.
+Document styles use `?unisolated`; UI styles use ordinary imports. Each call imports lazy document and UI CSS and checks their actual application before returning.
 The Shadow Relay uses `isolation: {type: Shadow, mode: Closed}`. Its RPC result includes measurements from the closed
 root and verifies that `host.shadowRoot` is `null`; rendering and lazy styles still work.
 A third Relay embeds this page through `isolation.page`, exercising the navigation adapter and WAR check.

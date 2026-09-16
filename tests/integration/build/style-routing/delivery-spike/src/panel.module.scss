@@ -1,0 +1,9 @@
+@use "./tokens";
+
+:global(:root) {
+  --delivery-cascade: default;
+}
+
+.panel {
+  --delivery-ui: #{tokens.$value};
+}
