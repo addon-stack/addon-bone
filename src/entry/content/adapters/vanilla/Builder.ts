@@ -1,6 +1,6 @@
 import MountBuilder from "../../lifecycle/MountBuilder";
-import RenderNode from "./Node";
-import {createRenderResolver} from "./resolvers/render";
+import VanillaNode from "./Node";
+import {isValidRenderValue} from "./utils";
 import type {ContentScriptRenderOptions} from "../../lifecycle/types";
 
 import type {
@@ -22,7 +22,15 @@ export default class Builder<
             return render;
         }
 
-        return createRenderResolver(render);
+        return props => {
+            const resolvedRender = typeof render === "function" ? render(props) : render;
+
+            if (!isValidRenderValue(resolvedRender)) {
+                return;
+            }
+
+            return resolvedRender;
+        };
     }
 
     protected createRenderer(
@@ -30,7 +38,7 @@ export default class Builder<
         render: ContentScriptRenderHandler<Data>,
         props: () => ContentScriptProps<Data>,
         options: ContentScriptRenderOptions
-    ): RenderNode<Data> {
-        return new RenderNode(node, render, props, options);
+    ): VanillaNode<Data> {
+        return new VanillaNode(node, render, props, options);
     }
 }

@@ -1,5 +1,5 @@
 import {isValidElement} from "react";
-import {mergeDefinition} from "../../../resolvers/definition";
+import {mergeDefinition} from "../../resolvers/definition";
 
 import type {ContentScriptDefinition} from "@typing/content";
 

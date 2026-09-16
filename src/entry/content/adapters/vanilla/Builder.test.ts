@@ -1,6 +1,6 @@
 import Builder from "./Builder";
 import {waitFor} from "@testing-library/react";
-import {resolveDefinition} from "./resolvers/definition";
+import {resolveDefinition} from "./definition";
 import {defineContentScript, defineContentScriptAppend} from "@main/content";
 import {
     ContentScriptAppend,

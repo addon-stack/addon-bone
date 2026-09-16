@@ -2,7 +2,7 @@ import {act} from "@testing-library/react";
 import {createElement, useEffect, useState} from "react";
 
 import Builder from "./Builder";
-import {resolveDefinition} from "./resolvers/definition";
+import {resolveDefinition} from "./definition";
 import {ContentScriptEvent, type ContentScriptContext, type ContentScriptProps} from "@typing/content";
 
 // Extend the shared random-ID mock for the builders' generated marker attribute.

@@ -54,7 +54,8 @@ Related implementations and their tests live together:
 - `lifecycle/markers`: anchor marking and lookup strategies.
 - `lifecycle/context`: the node collection, lifecycle operations, and event subscriptions.
 - `resolvers`: shared option handlers and definition merging, without framework detection or rendering.
-- `adapters/react` and `adapters/vanilla`: default-export interpretation, render normalization, and UI rendering.
+- `adapters/react` and `adapters/vanilla`: `definition.ts` interprets default exports, `Builder.ts`
+  normalizes render handlers, and `Node.ts` renders UI. Tests live beside each implementation.
 - `index.ts`: the common runtime entrypoint, exporting `MountBuilder` as `Builder` and its startup resolver.
 
 Pure structural validation and the frame-navigation predicate live in `src/shared/content/isolation.ts`.
@@ -75,9 +76,10 @@ For React UI, pass a React element or component function. Component functions ar
 and may use hooks. Vanilla renders DOM elements, nonempty strings, and numbers.
 `mergeDefinition` combines exports using the selected resolver's interpretation of default
 values. The common `resolveDefinition` accepts configuration without recognizing framework
-components; adapters provide their own definition resolvers. The common builder accepts absent rendering and literal `render: true`; UI rendering requires an adapter. Vanilla keeps its value check and
-synchronous handler normalization together in `adapters/vanilla/resolvers/render.ts`, used internally by the
-Vanilla builder.
+components; adapters provide their own definition resolvers. The common builder accepts absent rendering
+and literal `render: true`; UI rendering requires an adapter. Each adapter prepares synchronous render
+handlers in its builder's `resolveRender()` method. Vanilla shares its value check between the builder
+and the definition resolver through `adapters/vanilla/utils.ts`.
 
 The CLI `ContentParser.ts` and its test live beside the other parsers in `src/cli/entrypoint/parser`.
 Content fixtures live in `parser/tests/fixtures/content`. The helper in

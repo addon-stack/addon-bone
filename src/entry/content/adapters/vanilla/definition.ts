@@ -1,5 +1,5 @@
-import {mergeDefinition} from "../../../resolvers/definition";
-import {isValidRenderValue} from "./render";
+import {mergeDefinition} from "../../resolvers/definition";
+import {isValidRenderValue} from "./utils";
 
 import type {ContentScriptDefinition} from "@typing/content";
 

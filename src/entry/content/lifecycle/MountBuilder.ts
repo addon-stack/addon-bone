@@ -1,7 +1,9 @@
 import Builder from "./Builder";
 import IsolationSetup from "./IsolationSetup";
 import {FrameNode, MountNode, MarkerNode, ShadowNode, Node} from "./nodes";
+
 import {isContentScriptFrameNavigation} from "@shared/content";
+
 import type {
     ContentScriptIsolationAssembly,
     ContentScriptNodeAssembly,
