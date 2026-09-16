@@ -13,6 +13,7 @@ import {
     project,
     runCompiler,
     worldLayer,
+    watchSelections,
 } from "./delivery-spike/compiler";
 import {executeEntry} from "./delivery-spike/runtime";
 
@@ -243,13 +244,25 @@ test("watch switches document/shadow/iframe delivery without changing JavaScript
     const compiler = await createCompiler(path.join(output, "dist"), {selectionFile});
     let completion: ((error: Error | null, stats?: Stats) => void) | undefined;
 
-    const next = (update?: () => void) =>
+    const next = (state: string, update?: () => void) =>
         new Promise<Stats>((resolve, reject) => {
+            let observed: string | undefined;
             const timer = setTimeout(() => {
                 completion = undefined;
-                reject(new Error("Delivery spike watch did not finish the requested CSS destination change"));
+                reject(
+                    new Error(`Delivery watch expected ${state}, last compilation selected ${observed ?? "unknown"}`)
+                );
             }, 10_000);
+
             completion = (error, stats) => {
+                if (!error && stats && !stats.hasErrors()) {
+                    observed = watchSelections.get(stats.compilation);
+
+                    if (observed !== state) {
+                        return;
+                    }
+                }
+
                 clearTimeout(timer);
                 completion = undefined;
 
@@ -259,9 +272,11 @@ test("watch switches document/shadow/iframe delivery without changing JavaScript
                     resolve(stats);
                 }
             };
+
             update?.();
         });
-    const first = next();
+
+    const first = next("none");
     const watcher = compiler.watch({poll: 50}, (error, stats) => completion?.(error, stats));
 
     try {
@@ -270,10 +285,10 @@ test("watch switches document/shadow/iframe delivery without changing JavaScript
         verifyDelivery(stats, "switch", false);
 
         for (const state of ["shadow", "iframe", "none", "shadow"]) {
-            await flush();
-            stats = await next(() => {
+            stats = await next(state, () => {
                 fs.writeFileSync(selectionFile, fs.readFileSync(path.join(states, state + ".json")));
             });
+
             verifyGraph(stats, true);
             expect(moduleIds(stats, path.join(fixtures, "Panel.js"))).toEqual(identities);
             expect(getCompilationBuildAssets(stats.compilation)!.switch.initial.css).toHaveLength(

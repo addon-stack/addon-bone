@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import {rspack, type Configuration, type Compiler, type Filename, type Stats} from "@rspack/core";
+import {rspack, type Configuration, type Compilation, type Compiler, type Filename, type Stats} from "@rspack/core";
 import {getContentLayer} from "@cli/bundler/layers";
 import stylePlugin from "@cli/plugins/style";
 import type {ReadonlyConfig} from "@typing/config";
@@ -20,6 +20,7 @@ export const origin = "https://extension.test/";
 export const contentEntries = ["normal", "shadow", "iframe", "relay", "switch"];
 export const worldLayer = getContentLayer(ContentScriptWorld.Isolated);
 export const mainLayer = getContentLayer(ContentScriptWorld.Main);
+export const watchSelections = new WeakMap<Compilation, string>();
 
 interface CompilerOptions {
     filename?: Filename;
@@ -126,6 +127,7 @@ export const createCompiler = async (output: string, options: CompilerOptions = 
                         selection = JSON.parse(fs.readFileSync(selectionFile, "utf8")).isolation;
                     });
                     compiler.hooks.compilation.tap("DeliverySelection", compilation => {
+                        watchSelections.set(compilation, selection);
                         compilation.fileDependencies.add(selectionFile);
                     });
                 },

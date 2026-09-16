@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import {rspack, type Filename, type Configuration, type Compiler, type Stats} from "@rspack/core";
+import {rspack, type Filename, type Configuration, type Compilation, type Compiler, type Stats} from "@rspack/core";
 
 import {getContentLayer} from "@cli/bundler/layers";
 import ChunkLoaderPlugin from "@cli/bundler/plugins/chunk-loader";
@@ -19,6 +19,7 @@ import type {ReadonlyConfig} from "@typing/config";
 export const project = path.resolve(__dirname, "../../../../..");
 export const fixture = path.join(__dirname, "src");
 export const orders = ["document-first", "document-last"] as const;
+export const watchSelections = new WeakMap<Compilation, boolean>();
 
 interface CompilerOptions {
     initial?: boolean;
@@ -101,6 +102,7 @@ export const createCompiler = async (
                     });
 
                     compiler.hooks.thisCompilation.tap("SelectiveSplitSelection", compilation => {
+                        watchSelections.set(compilation, isolatedDelivery);
                         compilation.fileDependencies.add(file);
                     });
                 },

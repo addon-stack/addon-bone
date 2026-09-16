@@ -6,7 +6,7 @@ import type {NormalModule, Stats} from "@rspack/core";
 import {getContentLayer} from "@cli/bundler/layers";
 import {ContentScriptWorld} from "@typing/content";
 
-import {closeCompiler, createCompiler, fixture, orders, runCompiler} from "./selective-split/compiler";
+import {closeCompiler, createCompiler, fixture, orders, runCompiler, watchSelections} from "./selective-split/compiler";
 
 test("selective split keeps one shared lazy module and orders document CSS before UI CSS for both import orders", async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), "adnbn-selective-split-"));
@@ -138,14 +138,40 @@ test("watch adds and removes the shared lazy split and restores the ordinary CSS
         writeFile(selectionFile, await readFile(path.join(__dirname, "delivery-spike/states", `${state}.json`)));
     await setState("none");
     const compiler = await createCompiler(output, false, {initial: true, selectionFile});
+    let queuedState: string | undefined;
+
+    compiler.hooks.done.tapPromise("ChangeSelectionBeforeWatchResult", async () => {
+        if (queuedState === undefined) {
+            return;
+        }
+
+        const state = queuedState;
+        queuedState = undefined;
+        await setState(state);
+    });
+
     let complete: ((error: Error | null, stats?: Stats) => void) | undefined;
-    const next = (update?: () => Promise<void>) =>
+    const next = (isolated: boolean, update?: () => Promise<void>) =>
         new Promise<Stats>((resolve, reject) => {
+            let observed: boolean | undefined;
             const timer = setTimeout(() => {
                 complete = undefined;
-                reject(new Error("Selective CSS watch did not finish the requested compilation"));
+                reject(
+                    new Error(
+                        `Selective CSS watch expected isolation=${isolated}, last compilation selected ${observed ?? "unknown"}`
+                    )
+                );
             }, 10_000);
+
             complete = (error, stats) => {
+                if (!error && stats && !stats.hasErrors()) {
+                    observed = watchSelections.get(stats.compilation);
+
+                    if (observed !== isolated) {
+                        return;
+                    }
+                }
+
                 clearTimeout(timer);
                 complete = undefined;
 
@@ -155,9 +181,11 @@ test("watch adds and removes the shared lazy split and restores the ordinary CSS
                     resolve(stats);
                 }
             };
+
             void update?.().catch(error => complete?.(error));
         });
-    const initial = next();
+
+    const initial = next(false);
     const watcher = compiler.watch({poll: 50}, (error, stats) => complete?.(error, stats));
 
     try {
@@ -165,13 +193,20 @@ test("watch adds and removes the shared lazy split and restores the ordinary CSS
         const identities = new Map<string, string | number | null>();
         let previousIsolatedCss: string | undefined;
 
-        for (const state of ["none", "shadow", "none", "shadow", "none"]) {
-            if (identities.size) {
-                stats = await next(() => setState(state));
+        for (const [index, state] of ["none", "shadow", "none", "shadow", "none"].entries()) {
+            const isolated = state === "shadow";
+
+            if (index === 1) {
+                // Change the input after compilation, before its watch callback: that result is stale.
+                stats = await next(isolated, async () => {
+                    queuedState = state;
+                    watcher.invalidate();
+                });
+            } else if (index > 1) {
+                stats = await next(isolated, () => setState(state));
             }
 
             const {compilation} = stats;
-            const isolated = state === "shadow";
 
             for (const order of orders) {
                 const module = [...compilation.modules].find(
