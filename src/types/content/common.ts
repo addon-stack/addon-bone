@@ -322,6 +322,13 @@ export interface ContentScriptContext extends ContentScriptMount {
     nodes: ReadonlySet<ContentScriptNode>;
 
     /**
+     * Whether target belongs to UI mounted by this context, including ShadowRoot descendants.
+     * Already-connected site containers and containers wrapping their anchors are excluded.
+     * Membership ends at unmount. Traversal does not cross an iframe document into its host.
+     */
+    owns(target: Node): boolean;
+
+    /**
      * Registers a callback function that will be invoked when a specific content script context event occurs.
      *
      * @param {ContentScriptEventCallback} callback - The function to be executed when the event is triggered. Receives event-related data as its argument.

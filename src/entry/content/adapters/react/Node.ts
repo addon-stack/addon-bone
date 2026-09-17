@@ -20,7 +20,8 @@ export default class Node<Data = unknown> extends RenderNode<Data> {
     }
 
     protected clear(): void {
-        this.root?.unmount();
+        const root = this.root;
         this.root = undefined;
+        root?.unmount();
     }
 }

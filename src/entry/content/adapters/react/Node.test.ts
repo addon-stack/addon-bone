@@ -18,6 +18,38 @@ describe("ReactNode", () => {
         jest.mocked(createRoot).mockReturnValue({render, unmount} as never);
     });
 
+    test("a failed React unmount releases the inner node and does not retain the root", () => {
+        const anchor = document.createElement("article");
+        const target = document.createElement("section");
+        document.body.append(anchor);
+        const node = {anchor, target, mount: jest.fn(), unmount: jest.fn()};
+        const renderer = new ReactNode(
+            node,
+            () => createElement("span"),
+            () => ({
+                anchor,
+                container: target,
+                target,
+                boundary: undefined,
+                data: undefined,
+            })
+        );
+
+        try {
+            renderer.mount();
+            unmount.mockImplementationOnce(() => {
+                throw new Error("React cleanup failed");
+            });
+
+            expect(() => renderer.unmount()).toThrow("React cleanup failed");
+            expect(node.unmount).toHaveBeenCalledTimes(1);
+            renderer.unmount();
+            expect(unmount).toHaveBeenCalledTimes(1);
+        } finally {
+            anchor.remove();
+        }
+    });
+
     test.each([undefined, ContentScriptShadowMode.Open, ContentScriptShadowMode.Closed])(
         "renders into the target while preserving the outer host in %s mode",
         mode => {

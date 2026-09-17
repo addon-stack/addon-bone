@@ -1,3 +1,4 @@
+import {ContainerRegistry} from "../context";
 import {MountNode, Node, ShadowNode} from "./index";
 import IsolationSetup from "../IsolationSetup";
 import {getContentScriptStylesRuntime} from "./isolated-styles";
@@ -27,7 +28,7 @@ const createNode = (
     document.body.appendChild(anchor);
     jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
 
-    const mountedNode = new MountNode(new Node(anchor, host), (_anchor, container) => {
+    const mountedNode = new MountNode(new Node(anchor, host), new ContainerRegistry(), (_anchor, container) => {
         anchor.appendChild(container);
     });
 

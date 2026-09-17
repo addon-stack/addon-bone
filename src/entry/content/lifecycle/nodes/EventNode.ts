@@ -1,4 +1,4 @@
-import {ContentScriptBoundary, ContentScriptEventEmitter, ContentScriptNode} from "@typing/content";
+import {ContentScriptNode, ContentScriptBoundary, ContentScriptEventEmitter} from "@typing/content";
 import type {ContentScriptMountNotifier} from "../types";
 
 export default class EventNode implements ContentScriptNode {

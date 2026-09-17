@@ -1,4 +1,4 @@
-import {ContentScriptBoundary, ContentScriptMarkerContract, ContentScriptNode} from "@typing/content";
+import {ContentScriptNode, ContentScriptBoundary, ContentScriptMarkerContract} from "@typing/content";
 
 export default class MarkerNode implements ContentScriptNode {
     constructor(

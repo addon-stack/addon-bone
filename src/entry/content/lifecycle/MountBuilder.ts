@@ -70,7 +70,11 @@ export default class MountBuilder<
         const marker = this.marker;
         const container = await this.definition.container({...this.getPrepareProps(anchor), data});
 
-        return new MountNode(new MarkerNode(new Node(anchor, container), marker), this.definition.mount);
+        return new MountNode(
+            new MarkerNode(new Node(anchor, container), marker),
+            this.context.containers,
+            this.definition.mount
+        );
     }
 
     protected createIsolation(node: ContentScriptNode, data: Data): ContentScriptIsolationAssembly {

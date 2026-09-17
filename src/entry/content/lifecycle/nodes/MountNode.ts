@@ -1,10 +1,14 @@
-import {ContentScriptBoundary, ContentScriptMountFunction, ContentScriptNode} from "@typing/content";
+import {ContentScriptNode, ContentScriptBoundary, ContentScriptMountFunction} from "@typing/content";
+import type ContainerRegistry from "../context/ContainerRegistry";
 
 export default class MountNode implements ContentScriptNode {
-    private unmounting?: () => void;
+    private unregister?: () => void;
+    private cleanup?: () => void;
+    private unmounting = false;
 
     constructor(
         protected node: ContentScriptNode,
+        private readonly registry: ContainerRegistry,
         protected mounter?: ContentScriptMountFunction
     ) {}
 
@@ -25,29 +29,69 @@ export default class MountNode implements ContentScriptNode {
     }
 
     public mount(): boolean {
-        this.node.mount();
-
-        if (!this.container || this.container.isConnected) {
+        if (this.unmounting) {
             return false;
         }
 
-        if (this.mounter) {
-            const unmounting = this.mounter(this.anchor, this.container);
+        this.node.mount();
+        const container = this.container;
 
-            if (unmounting) {
-                this.unmounting = unmounting;
-            }
-
-            return true;
+        if (!container || container.isConnected || !this.mounter) {
+            return false;
         }
 
-        return false;
+        this.unregister?.();
+        const unregister = this.registry.register(container, this.anchor);
+        this.unregister = unregister;
+
+        try {
+            const cleanup = this.mounter(this.anchor, container);
+
+            if (this.unregister !== unregister || this.container !== container) {
+                // A synchronous cancellation must not retain cleanup or revive the registration.
+                cleanup?.();
+
+                return false;
+            }
+
+            this.cleanup = cleanup || undefined;
+
+            return true;
+        } catch (error) {
+            unregister();
+
+            if (this.unregister === unregister) {
+                this.unregister = undefined;
+            }
+
+            throw error;
+        }
     }
 
     public unmount(): boolean {
-        this.unmounting?.();
-        this.unmounting = undefined;
+        if (this.unmounting) {
+            return false;
+        }
 
-        return !!this.node.unmount();
+        const unregister = this.unregister;
+        const cleanup = this.cleanup;
+        this.unregister = undefined;
+        this.cleanup = undefined;
+        this.unmounting = true;
+        let removed = false;
+
+        try {
+            unregister?.();
+
+            try {
+                cleanup?.();
+            } finally {
+                removed = !!this.node.unmount();
+            }
+        } finally {
+            this.unmounting = false;
+        }
+
+        return removed;
     }
 }

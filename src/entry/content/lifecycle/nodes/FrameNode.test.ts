@@ -7,7 +7,7 @@ import type {
 
 import {ContentScriptEvent} from "@typing/content";
 import {FrameNode, Node, MountNode, EventNode} from "./index";
-import {EventEmitter} from "../context";
+import {ContainerRegistry, EventEmitter} from "../context";
 import IsolationSetup from "../IsolationSetup";
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
@@ -29,7 +29,7 @@ test("FrameNode explains a disconnected host and allows mounting again once the 
     document.body.append(anchor);
     let connect = false;
 
-    const mountedNode = new MountNode(new Node(anchor, container), (anchor, container) => {
+    const mountedNode = new MountNode(new Node(anchor, container), new ContainerRegistry(), (anchor, container) => {
         if (connect) {
             anchor.append(container);
         }
@@ -107,13 +107,17 @@ test.each<ContentScriptIsolationFrameOptions>([
     let cancel = true;
     let node: EventNode;
 
-    const mounted = new MountNode(new Node(anchor, document.createElement("div")), (anchor, container) => {
-        anchor.append(container);
+    const mounted = new MountNode(
+        new Node(anchor, document.createElement("div")),
+        new ContainerRegistry(),
+        (anchor, container) => {
+            anchor.append(container);
 
-        if (cancel) {
-            node.unmount();
+            if (cancel) {
+                node.unmount();
+            }
         }
-    });
+    );
 
     const frame = new FrameNode(
         mounted,
@@ -165,9 +169,13 @@ test("FrameNode replaces lost targets, unregisters old styles and releases its l
         return document.createElement("section");
     });
 
-    const mountedNode = new MountNode(new Node(anchor, document.createElement("div")), (anchor, container) => {
-        anchor.append(container);
-    });
+    const mountedNode = new MountNode(
+        new Node(anchor, document.createElement("div")),
+        new ContainerRegistry(),
+        (anchor, container) => {
+            anchor.append(container);
+        }
+    );
 
     const node = new FrameNode(
         mountedNode,
@@ -242,8 +250,10 @@ test.each(["throw", "unmount"])("FrameNode cleans up when target creation trigge
     const anchor = document.createElement("section");
     document.body.append(anchor);
 
-    const mountedNode = new MountNode(new Node(anchor, document.createElement("div")), (anchor, container) =>
-        anchor.append(container)
+    const mountedNode = new MountNode(
+        new Node(anchor, document.createElement("div")),
+        new ContainerRegistry(),
+        (anchor, container) => anchor.append(container)
     );
 
     const node = new FrameNode(
@@ -300,6 +310,7 @@ const createBoundaryNode = (
 
     const mountedNode = new MountNode(
         new Node(document.body, document.createElement("section")),
+        new ContainerRegistry(),
         (anchor, container) => {
             anchor.append(container);
         }

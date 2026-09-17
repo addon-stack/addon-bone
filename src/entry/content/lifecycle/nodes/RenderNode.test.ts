@@ -6,7 +6,7 @@ import ReactNode from "../../adapters/react/Node";
 import {act, waitFor} from "@testing-library/react";
 import {createElement, useEffect, useLayoutEffect} from "react";
 import IsolationSetup from "../IsolationSetup";
-import {EventEmitter} from "../context";
+import {ContainerRegistry, EventEmitter} from "../context";
 import {EventNode, FrameNode, MountNode, Node, ShadowNode} from "./index";
 
 jest.mock("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
@@ -38,7 +38,7 @@ const createNode = (mode: "shadow" | "iframe" = "shadow") => {
     const mount = jest.fn((anchor: Element, container: Element) => {
         anchor.append(container);
     });
-    const host = new MountNode(new Node(anchor, document.createElement("section")), mount);
+    const host = new MountNode(new Node(anchor, document.createElement("section")), new ContainerRegistry(), mount);
 
     const setup = new IsolationSetup({
         props: () => ({anchor, data: undefined}),
@@ -107,6 +107,37 @@ afterEach(() => {
     document.body.replaceChildren();
     jest.restoreAllMocks();
     jest.useRealTimers();
+});
+
+test("a renderer cleanup failure still unmounts the underlying host", () => {
+    const failure = new Error("Renderer cleanup failed");
+    const anchor = document.createElement("article");
+    const container = document.createElement("section");
+    document.body.append(anchor);
+    const registry = new ContainerRegistry();
+    const mounted = new MountNode(new Node(anchor, container), registry, (anchor, container) =>
+        anchor.append(container)
+    );
+
+    class FailingNode extends VanillaNode {
+        protected clear(): void {
+            if (container.textContent) {
+                throw failure;
+            }
+        }
+    }
+
+    const renderer = new FailingNode(
+        mounted,
+        () => "UI",
+        () => ({anchor, container, target: container, boundary: undefined, data: undefined})
+    );
+    expect(renderer.mount()).toBe(true);
+    expect(registry.owns(container)).toBe(true);
+    expect(() => renderer.unmount()).toThrow(failure);
+    expect(container.isConnected).toBe(false);
+    expect(registry.owns(container)).toBe(false);
+    expect(mounted.container).toBeUndefined();
 });
 
 test("requires an error handler before mounting a deferred renderer and accepts it after construction", async () => {

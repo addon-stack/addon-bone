@@ -1,9 +1,9 @@
 import {getPageUrl} from "@main/page";
 
 import type {
+    ContentScriptNode,
     ContentScriptBoundaryCleanup,
     ContentScriptIsolationFrameOptions,
-    ContentScriptNode,
     ContentScriptStylesRuntime,
 } from "@typing/content";
 import {ContentScriptIsolation} from "@typing/content";

@@ -1,6 +1,6 @@
 import type {
-    ContentScriptBoundary,
     ContentScriptNode,
+    ContentScriptBoundary,
     ContentScriptProps,
     ContentScriptRenderHandler,
     ContentScriptRenderValue,
@@ -176,8 +176,14 @@ export default abstract class RenderNode<Data = unknown> implements ContentScrip
         this.renderedTarget = undefined;
         this.pendingTarget = undefined;
 
-        this.clear();
+        let removed = false;
 
-        return !!this.node.unmount();
+        try {
+            this.clear();
+        } finally {
+            removed = !!this.node.unmount();
+        }
+
+        return removed;
     }
 }

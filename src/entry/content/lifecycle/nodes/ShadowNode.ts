@@ -3,10 +3,10 @@ import type IsolationSetup from "../IsolationSetup";
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
 import {
+    ContentScriptNode,
     ContentScriptShadowMode,
     type ContentScriptShadowOptions,
     type ContentScriptStylesRuntime,
-    type ContentScriptNode,
     type ContentScriptBoundaryCleanup,
 } from "@typing/content";
 

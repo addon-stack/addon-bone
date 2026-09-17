@@ -1,4 +1,4 @@
-import {ContentScriptNode} from "@typing/content";
+import type {ContentScriptNode} from "@typing/content";
 
 export default class Node implements ContentScriptNode {
     private readonly _container?: Element;
