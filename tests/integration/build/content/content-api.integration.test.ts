@@ -39,8 +39,11 @@ describe("published content API", () => {
         const inputs = Object.keys(result.metafile!.inputs).map(filename => filename.replaceAll("\\", "/"));
         expect(inputs.some(filename => filename.includes("entry/content/adapters/"))).toBe(false);
         expect(inputs.some(filename => /node_modules\/(react|react-dom)\//.test(filename))).toBe(false);
+
         if (entry === "adnbn/content") {
             expect(inputs).toContain("dist/content/index.js");
+
+            // Watchers depend only on the public context contract, not lifecycle implementations.
             expect(inputs.some(filename => filename.includes("entry/content/lifecycle/"))).toBe(false);
         }
     });

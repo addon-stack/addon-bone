@@ -1,5 +1,4 @@
 import {isContentScriptFrameNavigation, resolveContentScriptIsolation} from "@shared/content";
-import AwaitLock from "await-lock";
 
 import EntrypointBuilder from "@entry/core/Builder";
 
@@ -17,9 +16,10 @@ import {ManagedContext, EventEmitter} from "./context";
 import {AttributeMarker, WeakMarker} from "./markers";
 import {EventNode} from "./nodes";
 
-import type {ContentScriptNodeAssembly} from "./types";
+import type {ContentScriptNodeAssembly, ContentScriptCycle} from "./types";
 
 import {
+    ContentScriptNode,
     ContentScriptAnchor,
     ContentScriptAnchorGetter,
     ContentScriptBuilder,
@@ -37,7 +37,6 @@ import {
     ContentScriptMarkerResolver,
     ContentScriptMarkerType,
     ContentScriptMountFunction,
-    ContentScriptNode,
     ContentScriptPrepareProps,
     ContentScriptPrepareResult,
     ContentScriptOptions,
@@ -56,7 +55,7 @@ export default abstract class Builder<
     extends EntrypointBuilder
     implements ContentScriptBuilder
 {
-    private lock = new AwaitLock();
+    private cycle?: ContentScriptCycle;
 
     protected generation = 0;
 
@@ -215,37 +214,33 @@ export default abstract class Builder<
 
             this.marker = resolvedMarker;
 
-            await this.processing(generation);
+            await this.requestProcessing(generation);
 
             if (generation !== this.generation) {
                 return;
             }
 
-            this.unwatch = watch(async () => {
-                if (generation !== this.generation) {
-                    return;
-                }
+            const onError = (error: unknown): void => {
+                console.error("Content script processing on watch error", error);
+            };
 
-                try {
-                    this.context.mount();
-                    await this.processing(generation);
-                } catch (error) {
-                    console.error("Content script processing on watch error", error);
-                }
-            }, this.context);
+            this.unwatch = watch(() => this.requestProcessing(generation, onError), this.context);
         }
     }
 
     public async destroy(): Promise<void> {
         this.generation++;
-        this.lock = new AwaitLock();
+        this.cycle = undefined;
 
         this.unwatch?.();
         this.unwatch = undefined;
 
-        this.context.clear();
-        this.context.unwatch();
-        this.marker.reset();
+        try {
+            this.context.clear();
+        } finally {
+            this.context.unwatch();
+            this.marker.reset();
+        }
     }
 
     protected getPrepareProps(anchor: Element): ContentScriptPrepareProps {
@@ -266,34 +261,69 @@ export default abstract class Builder<
         return {...options, anchor};
     }
 
-    protected async processing(generation: number): Promise<void> {
-        const lock = this.lock;
-        await lock.acquireAsync();
+    private requestProcessing(generation: number, onError?: (error: unknown) => void): Promise<void> {
+        if (generation !== this.generation) {
+            return Promise.resolve();
+        }
 
+        if (this.cycle?.generation === generation) {
+            this.cycle.pending = true;
+
+            return this.cycle.promise;
+        }
+
+        const cycle: ContentScriptCycle = {
+            generation,
+            pending: true,
+            promise: Promise.resolve().then(() => this.drainProcessing(cycle)),
+        };
+
+        if (onError) {
+            // One handler per cycle, not one suspended async callback per watch notification.
+            cycle.promise = cycle.promise.catch(onError);
+        }
+
+        this.cycle = cycle;
+
+        return cycle.promise;
+    }
+
+    private async drainProcessing(cycle: ContentScriptCycle): Promise<void> {
         try {
-            if (generation !== this.generation) {
-                return;
-            }
+            while (cycle.pending && cycle.generation === this.generation) {
+                cycle.pending = false;
+                this.context.mount();
 
-            const anchor = await this.definition.anchor();
+                if (cycle.generation !== this.generation) {
+                    return;
+                }
 
-            if (generation !== this.generation) {
-                return;
-            }
-
-            const anchors = this.marker
-                .for(anchor)
-                .unmarked()
-                .filter(anchor => anchor.isConnected);
-
-            const results = await Promise.allSettled(anchors.map(anchor => this.processAnchor(anchor, generation)));
-            const errors = results.flatMap(result => (result.status === "rejected" ? [result.reason] : []));
-
-            if (errors.length && generation === this.generation) {
-                console.error(new AggregateError(errors, "Content script anchor processing failed"));
+                await this.processing(cycle.generation);
             }
         } finally {
-            lock.release();
+            if (this.cycle === cycle) {
+                this.cycle = undefined;
+            }
+        }
+    }
+
+    protected async processing(generation: number): Promise<void> {
+        const anchor = await this.definition.anchor();
+
+        if (generation !== this.generation) {
+            return;
+        }
+
+        const anchors = this.marker
+            .for(anchor)
+            .unmarked()
+            .filter(anchor => anchor.isConnected);
+
+        const results = await Promise.allSettled(anchors.map(anchor => this.processAnchor(anchor, generation)));
+        const errors = results.flatMap(result => (result.status === "rejected" ? [result.reason] : []));
+
+        if (errors.length && generation === this.generation) {
+            console.error(new AggregateError(errors, "Content script anchor processing failed"));
         }
     }
 

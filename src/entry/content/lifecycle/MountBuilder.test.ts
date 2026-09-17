@@ -17,6 +17,228 @@ jest.mock("nanoid", () => ({
 describe("MountBuilder", () => {
     afterEach(() => document.body.replaceChildren());
 
+    test("coalesces watched updates across mounting and discovery and awaits every pending pass", async () => {
+        const initial = document.createElement("article");
+        const second = document.createElement("article");
+        const third = document.createElement("article");
+        document.body.append(initial);
+        const secondStarted = Promise.withResolvers<void>();
+        const secondReady = Promise.withResolvers<void>();
+        const thirdStarted = Promise.withResolvers<void>();
+        const thirdReady = Promise.withResolvers<void>();
+        const anchor = jest.fn(() => "article");
+        let update!: () => void | Promise<void>;
+
+        const builder = new MountBuilder({
+            anchor,
+            render: true,
+            prepare: async ({anchor}) => {
+                if (anchor === second) {
+                    secondStarted.resolve();
+                    await secondReady.promise;
+                } else if (anchor === third) {
+                    thirdStarted.resolve();
+                    await thirdReady.promise;
+                }
+            },
+            watch: callback => {
+                update = callback;
+
+                return () => {};
+            },
+        });
+
+        const requests: Promise<void>[] = [];
+
+        try {
+            await builder.build();
+            document.body.append(second);
+            requests.push(Promise.resolve(update()));
+            await secondStarted.promise;
+
+            initial.remove();
+            document.body.append(third);
+
+            for (let request = 0; request < 5; request++) {
+                requests.push(Promise.resolve(update()));
+            }
+
+            expect([...builder.getContext().nodes].map(node => node.anchor)).toEqual([initial]);
+            let firstCompleted = false;
+
+            void requests[0].then(() => {
+                firstCompleted = true;
+            });
+
+            secondReady.resolve();
+            await thirdStarted.promise;
+            expect(firstCompleted).toBe(false);
+            thirdReady.resolve();
+            await Promise.all(requests);
+
+            expect(anchor).toHaveBeenCalledTimes(3);
+            expect([...builder.getContext().nodes].map(node => node.anchor)).toEqual([second, third]);
+        } finally {
+            secondReady.resolve();
+            thirdReady.resolve();
+            await Promise.all(requests);
+            await builder.destroy();
+        }
+    });
+
+    test("destroy cancels pending passes and stale callbacks cannot start work after rebuild", async () => {
+        const anchor = jest.fn(() => "article");
+        const started = Promise.withResolvers<void>();
+        const ready = Promise.withResolvers<void>();
+        const currentStarted = Promise.withResolvers<void>();
+        const currentReady = Promise.withResolvers<void>();
+        const currentAnchor = document.createElement("article");
+        const updates: (() => void | Promise<void>)[] = [];
+        let delay = true;
+
+        const builder = new MountBuilder({
+            anchor,
+            render: true,
+            prepare: async ({anchor}) => {
+                if (delay) {
+                    delay = false;
+                    started.resolve();
+                    await ready.promise;
+                } else if (anchor === currentAnchor) {
+                    currentStarted.resolve();
+                    await currentReady.promise;
+                }
+            },
+            watch: update => {
+                updates.push(update);
+
+                return () => {};
+            },
+        });
+
+        const requests: Promise<void>[] = [];
+        const currentRequests: Promise<void>[] = [];
+
+        try {
+            await builder.build();
+            document.body.append(document.createElement("article"));
+            requests.push(Promise.resolve(updates[0]()));
+            await started.promise;
+            requests.push(Promise.resolve(updates[0]()));
+            await builder.destroy();
+            await builder.build();
+
+            document.body.append(currentAnchor);
+            currentRequests.push(Promise.resolve(updates[1]()));
+            await currentStarted.promise;
+            ready.resolve();
+            await Promise.all(requests);
+            await updates[0]();
+            expect(anchor).toHaveBeenCalledTimes(4);
+            expect(builder.getContext().nodes.size).toBe(1);
+
+            currentRequests.push(Promise.resolve(updates[1]()), Promise.resolve(updates[1]()));
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(anchor).toHaveBeenCalledTimes(4);
+            currentReady.resolve();
+            await Promise.all(currentRequests);
+            expect(anchor).toHaveBeenCalledTimes(5);
+            expect(builder.getContext().nodes.size).toBe(2);
+        } finally {
+            ready.resolve();
+            currentReady.resolve();
+            await Promise.all([...requests, ...currentRequests]);
+            await builder.destroy();
+        }
+    });
+
+    test("a failed discovery releases the watch cycle for the next request", async () => {
+        const failure = new Error("Discovery failed");
+        const anchor = jest.fn(() => "article");
+        const report = jest.spyOn(console, "error").mockImplementation(() => {});
+        let update!: () => void | Promise<void>;
+
+        const builder = new MountBuilder({
+            anchor,
+            render: true,
+            watch: callback => {
+                update = callback;
+
+                return () => {};
+            },
+        });
+
+        try {
+            await builder.build();
+
+            anchor.mockImplementationOnce(() => {
+                throw failure;
+            });
+
+            await update();
+            expect(report).toHaveBeenCalledWith("Content script processing on watch error", failure);
+            document.body.append(document.createElement("article"));
+            await update();
+            expect(builder.getContext().nodes.size).toBe(1);
+        } finally {
+            await builder.destroy();
+            report.mockRestore();
+        }
+    });
+
+    test("watch requests share one completion and report a failed cycle once", async () => {
+        const failure = new Error("Delayed discovery failed");
+        const started = Promise.withResolvers<void>();
+        const discovery = Promise.withResolvers<string>();
+        const report = jest.spyOn(console, "error").mockImplementation(() => {});
+        let delayed = false;
+        let update!: () => void | Promise<void>;
+
+        const builder = new MountBuilder({
+            anchor: () => {
+                if (delayed) {
+                    started.resolve();
+
+                    return discovery.promise;
+                }
+
+                return "article";
+            },
+            render: true,
+            watch: callback => {
+                update = callback;
+
+                return () => {};
+            },
+        });
+
+        try {
+            await builder.build();
+            delayed = true;
+            const completion = update();
+            await started.promise;
+            const requests = Array.from({length: 100}, () => update());
+            discovery.reject(failure);
+            await Promise.all([completion, ...requests]);
+
+            for (const request of requests) {
+                expect(request).toBe(completion);
+            }
+
+            expect(report).toHaveBeenCalledTimes(1);
+            expect(report).toHaveBeenCalledWith("Content script processing on watch error", failure);
+            delayed = false;
+            document.body.append(document.createElement("article"));
+            await update();
+            expect(builder.getContext().nodes.size).toBe(1);
+        } finally {
+            discovery.resolve("article");
+            await builder.destroy();
+            report.mockRestore();
+        }
+    });
+
     test("Common runtime runs main without resolving a marker, creating nodes or starting a DOM watcher", async () => {
         const main = jest.fn();
         const marker = jest.fn(() => ContentScriptMarker.Weak);

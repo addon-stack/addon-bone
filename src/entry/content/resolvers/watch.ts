@@ -1,30 +1,32 @@
-import debounce from "debounce";
-
 import type {ContentScriptWatchStrategy} from "@typing/content";
 
-/** Create a debounced DOM-mutation strategy. Calling the returned strategy starts observing. */
+/** Batch DOM mutations in a fixed window. Calling the returned strategy starts observing. */
 // prettier-ignore
 export const createMutationObserverStrategy =
     (options?: MutationObserverInit): ContentScriptWatchStrategy =>
-        update => {
-            if (!options) {
-                options = {};
-            }
+        (update, context) => {
+            let timer: ReturnType<typeof setTimeout> | undefined;
 
-            const handle = debounce(update, 200);
+            const observer = new MutationObserver(records => {
+                if (timer !== undefined || !records.some(record => !context.owns(record.target))) {
+                    return;
+                }
 
-            const observer = new MutationObserver(handle);
+                timer = setTimeout(() => {
+                    timer = undefined;
+                    void update();
+                }, 200);
+            });
 
             observer.observe(document.body ?? document.documentElement ?? document, {
                 childList: true,
                 subtree: true,
-                attributes: true,
-                characterData: true,
                 ...options,
             });
 
             return () => {
-                handle.clear();
+                clearTimeout(timer);
+                timer = undefined;
                 observer.disconnect();
             };
         };
@@ -41,19 +43,33 @@ export const createAwaitFirstStrategy =
             });
 
             let unwatch: { (): void } | undefined;
+            let pending: Promise<void> | undefined;
 
             const clear = () => {
                 unwatch && unwatch();
                 unwatch = undefined;
+                pending = undefined;
             };
 
             if (context.nodes.size === 0) {
-                unwatch = resolver(async () => {
-                    await update();
+                unwatch = resolver(() => {
+                    const completion = Promise.resolve(update());
 
-                    if (context.nodes.size > 0) {
-                        clear();
+                    if (completion === pending) {
+                        return completion;
                     }
+
+                    pending = completion;
+
+                    return completion.then(() => {
+                        if (context.nodes.size > 0) {
+                            clear();
+                        }
+                    }).finally(() => {
+                        if (pending === completion) {
+                            pending = undefined;
+                        }
+                    });
                 }, context);
             }
 

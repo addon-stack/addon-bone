@@ -1,5 +1,12 @@
 import type {ContentScriptNode} from "@typing/content";
 
+/** One owner drains discovery requests for a single builder generation. */
+export interface ContentScriptCycle {
+    generation: number;
+    pending: boolean;
+    promise: Promise<void>;
+}
+
 /** One completion callback for the event decorator paired with this renderer. */
 export interface ContentScriptMountNotifier {
     setMountHandler(handler: () => void): void;

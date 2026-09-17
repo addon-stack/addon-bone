@@ -24,6 +24,86 @@ jest.mock("../../lifecycle/nodes/isolated-styles", () => ({
 describe("Vanilla Builder", () => {
     afterEach(() => document.body.replaceChildren());
 
+    test("destroy releases membership, markers and listeners despite a failing mount cleanup", async () => {
+        const anchor = document.createElement("article");
+        document.body.append(anchor);
+        const events = jest.fn();
+        let fail = true;
+        const builder = new Builder({
+            anchor,
+            render: () => "UI",
+            mount: (anchor, container) => {
+                anchor.append(container);
+
+                return () => {
+                    if (fail) {
+                        fail = false;
+
+                        throw new Error("Cleanup failed");
+                    }
+                };
+            },
+        });
+
+        try {
+            await builder.build();
+            const context = builder.getContext();
+            const [node] = context.nodes;
+            const host = node.container!;
+            context.watch(events);
+            await expect(builder.destroy()).rejects.toThrow("Content script context cleanup failed");
+            expect(context.owns(host)).toBe(false);
+            expect(host.isConnected).toBe(false);
+            expect(anchor.getAttributeNames()).toEqual([]);
+            events.mockClear();
+            await builder.build();
+            expect(context.nodes.size).toBe(1);
+            expect(events).not.toHaveBeenCalled();
+        } finally {
+            await builder.destroy();
+        }
+    });
+
+    test.each(["none", "shadow", "iframe"] as const)(
+        "an idle %s mount does not mutate the document",
+        async isolation => {
+            const anchor = document.createElement("article");
+            document.body.append(anchor);
+            const builder = new Builder({anchor, isolation, render: () => "ready"});
+            const observer = new MutationObserver(() => {});
+
+            try {
+                await builder.build();
+                const context = builder.getContext();
+                const [node] = context.nodes;
+                await waitFor(() => expect(node.target?.textContent).toBe("ready"));
+                const host = node.container!;
+                const target = node.target!;
+                expect(context.owns(host)).toBe(true);
+                expect(context.owns(target)).toBe(isolation !== "iframe");
+                observer.observe(document.body, {
+                    subtree: true,
+                    childList: true,
+                    attributes: true,
+                    characterData: true,
+                });
+
+                context.mount();
+                expect(observer.takeRecords().length).toBe(0);
+                observer.disconnect();
+                context.unmount();
+                expect(context.owns(host)).toBe(false);
+                expect(context.owns(target)).toBe(false);
+                context.mount();
+                await waitFor(() => expect(node.target?.textContent).toBe("ready"));
+                expect(context.owns(node.container!)).toBe(true);
+            } finally {
+                observer.disconnect();
+                await builder.destroy();
+            }
+        }
+    );
+
     test("Vanilla invokes a default handler and preserves props, placement and cleanup", async () => {
         const anchor = document.createElement("article");
         document.body.appendChild(anchor);

@@ -1,6 +1,5 @@
 import type {Config} from "jest";
 import {availableParallelism} from "node:os";
-import {fileURLToPath} from "node:url";
 
 const shared: Config = {
     rootDir: import.meta.dirname,
@@ -85,12 +84,6 @@ const config: Config = {
             ...shared,
             displayName: "unit-dom",
             testEnvironment: "jsdom",
-            // Content builders use the import-only await-lock package; exercise its real implementation.
-            moduleNameMapper: {
-                ...shared.moduleNameMapper,
-                "^await-lock$": fileURLToPath(import.meta.resolve("await-lock")),
-            },
-            transformIgnorePatterns: ["/node_modules/(?!await-lock/)"],
             testMatch: domTests,
         },
         {...shared, displayName: "build", testMatch: buildTests},

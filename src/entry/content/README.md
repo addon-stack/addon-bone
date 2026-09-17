@@ -10,19 +10,73 @@ import {defineContentScript} from "adnbn";
 import {createMutationObserverStrategy} from "adnbn/content";
 
 export default defineContentScript({
-    anchor: "article",
+    anchor: "article.ready",
     watch: createMutationObserverStrategy({
-        attributes: false,
-        characterData: false,
+        attributes: true,
+        attributeFilter: ["class"],
     }),
     render: () => "Hello",
 });
 ```
 
-`createMutationObserverStrategy(options?)` creates a debounced DOM-mutation strategy with configurable
-`MutationObserverInit` options. `createAwaitFirstStrategy(options?)` provides the strategy used while
-waiting for the first content nodes. Creating a strategy does not start observing; the lifecycle
-starts it when processing content and invokes its returned unsubscribe function during cleanup.
+`watch: true` keeps observing added and removed nodes throughout the document body (`childList` and
+`subtree`). Attribute and character-data changes are not watched by default. If an existing element
+becomes an anchor through a class or attribute change, opt in with `createMutationObserverStrategy`
+and preferably an `attributeFilter`, as above. Text-dependent XPath can opt in to `characterData`.
+
+`createMutationObserverStrategy(options?)` accepts `MutationObserverInit` options and batches relevant
+mutations in a fixed 200 ms window. Further mutations do not postpone that window, so a continuously
+changing page still gets processed. While an asynchronous discovery/preparation pass is running,
+requests are merged into a pending pass rather than queued individually. The strategy's `update()`
+returns the same Promise for requests within an active cycle, completing after all requested repeat
+passes. Failed watch cycles are reported once, without accumulating one error handler per notification.
+Destroying/rebuilding the builder invalidates the old cycle and cancels its observer and timer;
+already-running user promises are not aborted, but their obsolete results are ignored. An externally
+retained, unresolved `prepare()` Promise can keep its in-flight builder and anchor reachable until it
+settles; `destroy()` does not cancel that user operation.
+
+Built-in strategies ignore changes inside UI containers attached by the framework's mount handler.
+This includes containers created by a user factory, but not already-connected elements returned by
+that factory. A container wrapping its own anchor is never excluded. Removing/moving the host or a
+batch containing external changes still triggers processing. This is a watch rule, not merely a
+performance optimization: internal UI changes do not trigger anchor discovery, even when an external
+selector such as `:has()` would match differently. Discovery itself still uses the full anchor
+query, including CSS and XPath; it is not restricted to added subtrees.
+
+`context.owns(target)` answers whether a DOM node belongs to UI attached by this context. It is a
+required method of `ContentScriptContext`, so custom strategies and wrapped contexts use the same
+query without knowing lifecycle classes. It includes the host itself and descendants across open or
+closed ShadowRoots. Traversal stops at a document: it does not cross from iframe contents to the outer
+host (the iframe element itself is included). Already-connected site containers are excluded, and
+whether a registered container wraps any of its anchors is checked at query time. Unmount releases
+membership before user cleanup. Tracking is local to each context, with no global registry or extra
+properties on `ContentScriptNode`.
+
+A custom strategy can reuse this query to avoid reacting to its own UI:
+
+```ts
+import type {ContentScriptWatchStrategy} from "adnbn/content";
+
+const watch: ContentScriptWatchStrategy = (update, context) => {
+    const observer = new MutationObserver(records => {
+        if (records.some(record => !context.owns(record.target))) {
+            void update();
+        }
+    });
+
+    observer.observe(document.body ?? document.documentElement, {childList: true, subtree: true});
+
+    return () => observer.disconnect();
+};
+```
+
+This example requests processing immediately for each relevant batch; the built-in strategy also
+provides the 200 ms window described above.
+
+When `watch` is omitted, `createAwaitFirstStrategy(options?)` waits for the first content nodes and
+then stops DOM observation. Creating either strategy does not start observing; the lifecycle starts
+it when processing content and invokes its unsubscribe function during cleanup. Location tracking
+remains separate: it checks URL changes and mounts existing nodes, even after await-first stops.
 
 `adnbn/content` also exports `ContentScriptEvent` and the `ContentScriptWatchStrategy`,
 `ContentScriptContext`, `ContentScriptEventCallback`, and `ContentScriptNode` types. A custom strategy
@@ -36,6 +90,7 @@ or the watch strategy's `update()` callback; these do not wait for isolated UI t
 The public `src/content/index.ts` entrypoint explicitly exports these tools from their runtime owners.
 Definition helpers live in `src/main/content.ts`; normalization and mounting helpers are internal.
 Runtime code imports implementations directly, without depending on the public `adnbn/content` facade.
+Watch factories depend only on the public context contract and import no lifecycle implementations.
 The separate `adnbn/entry/content` entrypoint supplies the builder, startup function, and definition
 resolver required by generated modules.
 
@@ -49,10 +104,12 @@ headless rendering creates a tracked node without UI; otherwise it composes the 
 Related implementations and their tests live together:
 
 - `lifecycle/IsolationSetup.ts`: prepares current props, invokes boundary/target handlers, and protects user cleanup.
-- `lifecycle/types.ts`: internal node composition, renderer readiness and mount-completion contracts.
+- `lifecycle/types.ts`: node composition, processing, renderer readiness, and mount-completion contracts.
 - `lifecycle/nodes`: host mounting, node decorators, ShadowRoot/iframe targets, and the styles-runtime helper.
 - `lifecycle/markers`: anchor marking and lookup strategies.
-- `lifecycle/context`: the node collection, lifecycle operations, and event subscriptions.
+- `lifecycle/context`: the node collection, lifecycle operations, event subscriptions, and per-context
+  `ContainerRegistry`. `MountNode` registers before invoking the mount handler and releases only its
+  own registration on failure or unmount; decorators and renderer adapters do not carry this state.
 - `resolvers`: shared option handlers and definition merging, without framework detection or rendering.
 - `adapters/react` and `adapters/vanilla`: `definition.ts` interprets default exports, `Builder.ts`
   normalizes render handlers, and `Node.ts` renders UI. Tests live beside each implementation.
