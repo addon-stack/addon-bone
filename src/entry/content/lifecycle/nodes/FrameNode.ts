@@ -1,9 +1,9 @@
 import {getPageUrl} from "@main/page";
 
 import type {
+    ContentScriptNode,
     ContentScriptBoundaryCleanup,
     ContentScriptIsolationFrameOptions,
-    ContentScriptNode,
     ContentScriptStylesRuntime,
 } from "@typing/content";
 import {ContentScriptIsolation} from "@typing/content";
@@ -51,6 +51,10 @@ export default class FrameNode<Data = unknown> implements ContentScriptNode {
 
     public get boundary(): HTMLIFrameElement | undefined {
         return this.frame;
+    }
+
+    public ready(): Promise<void> {
+        return this.head && this.runtime ? this.runtime.ready(this.head) : Promise.resolve();
     }
 
     private readonly onLoad = (): void => {

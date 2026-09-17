@@ -4,6 +4,7 @@ import path from "path";
 import vm from "vm";
 import {createIntegrationFixture} from "../../utils/fixture";
 import {stop, waitFor} from "../../browser/utils/browser";
+import {escapeLocaleMessages} from "@shared/locale";
 
 jest.setTimeout(90_000);
 
@@ -33,10 +34,10 @@ const inspect = async (directory: string) => {
     expect(Object.keys(catalogue).sort()).toEqual(languages.sort());
     for (const lang of languages) {
         const messages = JSON.parse(await readFile(path.join(directory, "_locales", lang, "messages.json"), "utf8"));
-        const flattened = Object.fromEntries(
-            Object.entries(messages).map(([key, value]) => [key, (value as {message: string}).message])
+        const native = escapeLocaleMessages(
+            Object.fromEntries(Object.entries(catalogue[lang]).map(([key, message]) => [key, {message}]))
         );
-        expect(catalogue[lang]).toEqual(flattened);
+        expect(messages).toEqual(native);
         expect(catalogue[lang].locale).toBe(lang);
     }
     return {catalogue, keys: sandbox.readLocaleKeys!(), lang, languages: exportedLanguages};

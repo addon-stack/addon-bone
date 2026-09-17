@@ -1,0 +1,5 @@
+@use "./tokens";
+
+.child {
+  --child-style: #{tokens.$marker};
+}

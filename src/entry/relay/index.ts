@@ -6,6 +6,7 @@ import type {ContentScriptIsolation} from "@typing/content";
 
 export {Builder};
 export {resolveDefinition} from "./resolvers/definition";
+
 export type {RelayUnresolvedDefinition} from "@typing/relay";
 
 export default function relay<

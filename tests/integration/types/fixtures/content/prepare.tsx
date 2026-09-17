@@ -1,5 +1,5 @@
 import {ContentScriptAppend, defineContentScript, defineContentScriptAppend, defineRelay} from "adnbn";
-import type {ContentScriptMount, ContentScriptProps, ContentScriptRenderReactComponent} from "adnbn";
+import type {ContentScriptMount, ContentScriptNode, ContentScriptProps, ContentScriptRenderReactComponent} from "adnbn";
 
 const service = {get: async () => ({title: "Product", visible: true})};
 
@@ -112,6 +112,13 @@ defineContentScript({render: Promise.resolve(<span />)});
 const AsyncPanel: ContentScriptRenderReactComponent = async () => <span />;
 
 function useMount(node: ContentScriptMount): void {
+    const mounted: boolean | undefined | void = node.mount();
+    const unmounted: boolean | undefined | void = node.unmount();
+}
+
+function useNode(node: ContentScriptNode): void {
+    // Context nodes retain the same synchronous command contract as other mountables.
+    useMount(node);
     const mounted: boolean | undefined | void = node.mount();
     const unmounted: boolean | undefined | void = node.unmount();
 }

@@ -1,12 +1,18 @@
-import {ContentScriptBoundary, ContentScriptEventEmitter, ContentScriptNode} from "@typing/content";
+import {ContentScriptNode, ContentScriptBoundary, ContentScriptEventEmitter} from "@typing/content";
+import type {ContentScriptMountNotifier} from "../types";
 
 export default class EventNode implements ContentScriptNode {
     private generation = 0;
 
     constructor(
         protected readonly node: ContentScriptNode,
-        protected readonly emitter: ContentScriptEventEmitter
-    ) {}
+        protected readonly emitter: ContentScriptEventEmitter,
+        private readonly notifier?: ContentScriptMountNotifier
+    ) {
+        notifier?.setMountHandler(() => {
+            this.emitter.emitMount(this.node);
+        });
+    }
 
     public get anchor(): Element {
         return this.node.anchor;
@@ -32,7 +38,7 @@ export default class EventNode implements ContentScriptNode {
             return false;
         }
 
-        if (result === true) {
+        if (result === true && !this.notifier) {
             this.emitter.emitMount(this.node);
         }
 

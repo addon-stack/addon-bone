@@ -3,7 +3,10 @@ import stringify from "json-stringify-deterministic";
 import ts from "typescript";
 
 import {collectBuildAssets} from "@cli/bundler/utils/assets";
+import {normalizeAssets, normalizeAssetsMap} from "./normalize";
+import {renderBuildAssetsRuntime} from "./templates";
 import {setCompilationBuildAssets} from "../utils";
+
 import {
     CssContentHashType,
     JavaScriptContentHashType,
@@ -11,6 +14,7 @@ import {
     resolveFilenameTemplate,
     filenameRequiresFullHash,
 } from "@cli/bundler/utils/chunk-filename";
+
 import {toPosix} from "@cli/utils/path";
 
 import type {EntrypointAssetsMap, EntrypointAssets} from "@typing/entrypoint";
@@ -54,6 +58,7 @@ const validateAsyncChunkFilenames = (compilation: Compilation, cssChunkFilename:
             return Array.from(entrypoint.getEntrypointChunk().getAllAsyncChunks());
         })
     );
+
     const validate = (
         filename: Filename,
         chunks: Iterable<Chunk>,
@@ -89,6 +94,7 @@ const validateAsyncChunkFilenames = (compilation: Compilation, cssChunkFilename:
             "jsFilename"
         );
     }
+
     validate(
         cssChunkFilename,
         Array.from(asyncChunks).filter(chunk => chunkHasCss(compilation, chunk)),
@@ -107,7 +113,10 @@ const chunkHasCss = (compilation: Compilation, chunk: Chunk): boolean => {
 const chunkHasJavaScript = (compilation: Compilation, chunk: Chunk): boolean => {
     // splitChunks can move every user module out of an entry, but its bootstrap
     // still emits a JavaScript file and remains an initial dependency.
-    if (chunk.hasRuntime()) return true;
+    if (chunk.hasRuntime()) {
+        return true;
+    }
+
     return Array.from(compilation.chunkGraph.getChunkModulesIterable(chunk)).some(module => {
         return module.type.startsWith("javascript");
     });
@@ -153,7 +162,7 @@ const getEntrypointRuntimeAssets = (
                     return resolveChunkFilename(
                         compilation,
                         chunk,
-                        chunk === entryChunk ? cssFilename : cssChunkFilename,
+                        chunk.canBeInitial() ? cssFilename : cssChunkFilename,
                         CssContentHashType
                     );
                 }),
@@ -203,12 +212,13 @@ const entrypointRuntimeUsesFullHash = (
                 chunk === entryChunk ? jsFilename : jsChunkFilename,
                 JavaScriptContentHashType
             );
+
             const css =
                 chunkHasCss(compilation, chunk) &&
                 filenameRequiresFullHash(
                     compilation,
                     chunk,
-                    chunk === entryChunk ? cssFilename : cssChunkFilename,
+                    chunk.canBeInitial() ? cssFilename : cssChunkFilename,
                     CssContentHashType
                 );
 
@@ -216,6 +226,7 @@ const entrypointRuntimeUsesFullHash = (
         }) ||
         asyncChunks.some(chunk => {
             const js = filenameRequiresFullHash(compilation, chunk, jsChunkFilename, JavaScriptContentHashType);
+
             const css =
                 chunkHasCss(compilation, chunk) &&
                 filenameRequiresFullHash(compilation, chunk, cssChunkFilename, CssContentHashType);
@@ -251,6 +262,7 @@ const getFullMapRuntimeFiles = (fullMap: FullMapRuntime, assets: EntrypointAsset
 
 const validateEntrypointRuntime = (compilation: Compilation, name: string): void => {
     const entrypoint = compilation.entrypoints.get(name)!;
+
     if (entrypoint.getRuntimeChunk() !== entrypoint.getEntrypointChunk()) {
         throw new Error(
             `Build assets require a self-contained runtime for entrypoint "${name}"; disable optimization.runtimeChunk`
@@ -322,7 +334,10 @@ const updateBuildAssetsChunkHashes = (
     runtimes: ReadonlySet<Chunk>
 ): void => {
     compilation.hooks.chunkHash.tap(PluginName, (chunk, hash) => {
-        if (!runtimes.has(chunk)) return;
+        if (!runtimes.has(chunk)) {
+            return;
+        }
+
         const runtimeEntry = Array.from(compilation.entrypoints).find(([, entrypoint]) => {
             return entrypoint.getRuntimeChunk() === chunk;
         });
@@ -333,6 +348,7 @@ const updateBuildAssetsChunkHashes = (
 
         const [runtimeName] = runtimeEntry;
         const fullMap = runtimeName === options.fullMapEntrypoint;
+
         const entries = fullMap
             ? Array.from(compilation.entrypoints).toSorted(([left], [right]) => left.localeCompare(right))
             : [runtimeEntry];
@@ -353,6 +369,7 @@ const updateBuildAssetsChunkHashes = (
 
             const entryChunk = entrypoint.getEntrypointChunk();
             const initialChunks = new Set(entrypoint.chunks);
+
             const chunks = Array.from(entryChunk.getAllReferencedChunks()).toSorted((left, right) =>
                 getChunkKey(left).localeCompare(getChunkKey(right))
             );
@@ -379,7 +396,8 @@ const updateBuildAssetsChunkHashes = (
                 }
 
                 if (chunkHasCss(compilation, referencedChunk)) {
-                    const cssFilename = referencedChunk === entryChunk ? options.cssFilename : options.cssChunkFilename;
+                    const cssFilename = referencedChunk.canBeInitial() ? options.cssFilename : options.cssChunkFilename;
+
                     const template = resolveFilenameTemplate(
                         compilation,
                         referencedChunk,
@@ -435,7 +453,13 @@ class BuildAssetsRuntimeModule extends RuntimeModule {
         const runtime = RuntimeGlobals.require;
 
         if (this.fullMap) {
-            return `${runtime}[${JSON.stringify(this.property)}] = JSON.parse(${JSON.stringify(FullMapPlaceholder)}).${FullMapEnvelopeKey};`;
+            return renderBuildAssetsRuntime({
+                require: runtime,
+                property: this.property,
+                value: FullMapPlaceholder,
+                envelope: FullMapEnvelopeKey,
+                full: true,
+            });
         }
 
         const compilation = this.compilation;
@@ -453,7 +477,13 @@ class BuildAssetsRuntimeModule extends RuntimeModule {
 
         const envelope = JSON.stringify({[CurrentMapEnvelopeKey]: current});
 
-        return `${runtime}[${JSON.stringify(this.property)}] = JSON.parse(${JSON.stringify(envelope)}).${CurrentMapEnvelopeKey};`;
+        return renderBuildAssetsRuntime({
+            require: runtime,
+            property: this.property,
+            value: envelope,
+            envelope: CurrentMapEnvelopeKey,
+            full: false,
+        });
     }
 }
 
@@ -529,6 +559,7 @@ const extractEmbeddedMap = (file: string, source: string): EntrypointAssetsMap =
 
 const validateEmbeddedMap = (compilation: Compilation, fullMap: FullMapRuntime, assets: EntrypointAssetsMap): void => {
     const runtimeFiles = getFullMapRuntimeFiles(fullMap, assets);
+
     const runtime = runtimeFiles
         .map(file => ({file, source: compilation.getAsset(file)?.source.source().toString() ?? ""}))
         .find(({source}) => source.length > 0);
@@ -541,7 +572,7 @@ const validateEmbeddedMap = (compilation: Compilation, fullMap: FullMapRuntime, 
 
     const embedded = extractEmbeddedMap(runtime.file, runtime.source);
 
-    if (stringify(embedded) !== stringify(assets)) {
+    if (stringify(normalizeAssetsMap(embedded)) !== stringify(assets)) {
         throw new Error(
             "Build assets changed after the runtime map was embedded; finalize entrypoint assets before processAssets begins"
         );
@@ -565,9 +596,12 @@ const validateCurrentEntrypointMaps = (
             throw new Error(`Build assets entrypoint "${name}" is unavailable`);
         }
 
-        if (!runtimes.has(entrypoint.getRuntimeChunk())) continue;
+        if (!runtimes.has(entrypoint.getRuntimeChunk())) {
+            continue;
+        }
 
         const runtimeFiles = new Set(Array.from(entrypoint.getRuntimeChunk().files, toPosix));
+
         const runtime = entrypointAssets.initial.js
             .filter(file => runtimeFiles.has(file))
             .map(file => ({file, source: compilation.getAsset(file)?.source.source().toString() ?? ""}))
@@ -582,12 +616,13 @@ const validateCurrentEntrypointMaps = (
             runtime.source,
             CurrentMapEnvelopeKey
         );
+
         const finalizedAssets: EntrypointAssets = {
             initial: entrypointAssets.initial,
             async: entrypointAssets.async,
         };
 
-        if (stringify(runtimeAssets) !== stringify(finalizedAssets)) {
+        if (stringify(normalizeAssets(runtimeAssets)) !== stringify(finalizedAssets)) {
             throw new Error(
                 `Build assets changed after the runtime map for entrypoint "${name}" was embedded: ${JSON.stringify({embedded: runtimeAssets, finalized: finalizedAssets})}`
             );
@@ -644,10 +679,17 @@ export default class BuildAssetsMapPlugin {
                         const runtime = entrypoint.getRuntimeChunk();
                         const fullMap = name === this.options.fullMapEntrypoint;
                         const delivery = fullMap ? this.options.module.full : this.options.module.current;
-                        if (!isUsed(runtime, delivery.export)) continue;
+
+                        if (!isUsed(runtime, delivery.export)) {
+                            continue;
+                        }
 
                         validateEntrypointRuntime(compilation, name);
-                        if (fullMap) validateFullMapEntrypoint(compilation, name);
+
+                        if (fullMap) {
+                            validateFullMapEntrypoint(compilation, name);
+                        }
+
                         selectedRuntimes.set(runtime, {name, fullMap, property: delivery.property});
                     }
                 }
@@ -658,10 +700,14 @@ export default class BuildAssetsMapPlugin {
                 }
 
                 const selection = selectedRuntimes.get(chunk);
-                if (!selection || injectedRuntimes.has(chunk)) return;
+
+                if (!selection || injectedRuntimes.has(chunk)) {
+                    return;
+                }
 
                 requirements.add(RuntimeGlobals.require);
                 injectedRuntimes.add(chunk);
+
                 compilation.addRuntimeModule(
                     chunk,
                     new BuildAssetsRuntimeModule(
@@ -714,7 +760,10 @@ export default class BuildAssetsMapPlugin {
                     {name: `${PluginName}:finalValidation`, stage: FinalValidationStage},
                     compilation => {
                         const runtimes = runtimeSelections.get(compilation);
-                        if (runtimes) finalizeBuildAssets(compilation, this.options, runtimes);
+
+                        if (runtimes) {
+                            finalizeBuildAssets(compilation, this.options, runtimes);
+                        }
                     }
                 );
             },

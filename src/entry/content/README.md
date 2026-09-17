@@ -10,31 +10,87 @@ import {defineContentScript} from "adnbn";
 import {createMutationObserverStrategy} from "adnbn/content";
 
 export default defineContentScript({
-    anchor: "article",
+    anchor: "article.ready",
     watch: createMutationObserverStrategy({
-        attributes: false,
-        characterData: false,
+        attributes: true,
+        attributeFilter: ["class"],
     }),
     render: () => "Hello",
 });
 ```
 
-`createMutationObserverStrategy(options?)` creates a debounced DOM-mutation strategy with configurable
-`MutationObserverInit` options. `createAwaitFirstStrategy(options?)` provides the strategy used while
-waiting for the first content nodes. Creating a strategy does not start observing; the lifecycle
-starts it when processing content and invokes its returned unsubscribe function during cleanup.
+`watch: true` keeps observing added and removed nodes throughout the document body (`childList` and
+`subtree`). Attribute and character-data changes are not watched by default. If an existing element
+becomes an anchor through a class or attribute change, opt in with `createMutationObserverStrategy`
+and preferably an `attributeFilter`, as above. Text-dependent XPath can opt in to `characterData`.
+
+`createMutationObserverStrategy(options?)` accepts `MutationObserverInit` options and batches relevant
+mutations in a fixed 200 ms window. Further mutations do not postpone that window, so a continuously
+changing page still gets processed. While an asynchronous discovery/preparation pass is running,
+requests are merged into a pending pass rather than queued individually. The strategy's `update()`
+returns the same Promise for requests within an active cycle, completing after all requested repeat
+passes. Failed watch cycles are reported once, without accumulating one error handler per notification.
+Destroying/rebuilding the builder invalidates the old cycle and cancels its observer and timer;
+already-running user promises are not aborted, but their obsolete results are ignored. An externally
+retained, unresolved `prepare()` Promise can keep its in-flight builder and anchor reachable until it
+settles; `destroy()` does not cancel that user operation.
+
+Built-in strategies ignore changes inside UI containers attached by the framework's mount handler.
+This includes containers created by a user factory, but not already-connected elements returned by
+that factory. A container wrapping its own anchor is never excluded. Removing/moving the host or a
+batch containing external changes still triggers processing. This is a watch rule, not merely a
+performance optimization: internal UI changes do not trigger anchor discovery, even when an external
+selector such as `:has()` would match differently. Discovery itself still uses the full anchor
+query, including CSS and XPath; it is not restricted to added subtrees.
+
+`context.owns(target)` answers whether a DOM node belongs to UI attached by this context. It is a
+required method of `ContentScriptContext`, so custom strategies and wrapped contexts use the same
+query without knowing lifecycle classes. It includes the host itself and descendants across open or
+closed ShadowRoots. Traversal stops at a document: it does not cross from iframe contents to the outer
+host (the iframe element itself is included). Already-connected site containers are excluded, and
+whether a registered container wraps any of its anchors is checked at query time. Unmount releases
+membership before user cleanup. Tracking is local to each context, with no global registry or extra
+properties on `ContentScriptNode`.
+
+A custom strategy can reuse this query to avoid reacting to its own UI:
+
+```ts
+import type {ContentScriptWatchStrategy} from "adnbn/content";
+
+const watch: ContentScriptWatchStrategy = (update, context) => {
+    const observer = new MutationObserver(records => {
+        if (records.some(record => !context.owns(record.target))) {
+            void update();
+        }
+    });
+
+    observer.observe(document.body ?? document.documentElement, {childList: true, subtree: true});
+
+    return () => observer.disconnect();
+};
+```
+
+This example requests processing immediately for each relevant batch; the built-in strategy also
+provides the 200 ms window described above.
+
+When `watch` is omitted, `createAwaitFirstStrategy(options?)` waits for the first content nodes and
+then stops DOM observation. Creating either strategy does not start observing; the lifecycle starts
+it when processing content and invokes its unsubscribe function during cleanup. Location tracking
+remains separate: it checks URL changes and mounts existing nodes, even after await-first stops.
 
 `adnbn/content` also exports `ContentScriptEvent` and the `ContentScriptWatchStrategy`,
 `ContentScriptContext`, `ContentScriptEventCallback`, and `ContentScriptNode` types. A custom strategy
 receives `(update, context)` and returns an unsubscribe function. Use `context.watch(callback)` for
 lifecycle events; its returned function removes that subscription, and `context.unwatch()` removes all
-context subscriptions. `context.mount()` and `context.unmount()` run synchronously, including their
-lifecycle events. Await asynchronous discovery and preparation through `builder.build()` or the
-watch strategy's `update()` callback.
+context subscriptions. `context.mount()` and `context.unmount()` are synchronous commands.
+For isolated UI, Mount is emitted later, after CSS readiness and acceptance by the renderer adapter;
+Unmount is emitted synchronously. Await asynchronous discovery and preparation through `builder.build()`
+or the watch strategy's `update()` callback; these do not wait for isolated UI to render.
 
 The public `src/content/index.ts` entrypoint explicitly exports these tools from their runtime owners.
 Definition helpers live in `src/main/content.ts`; normalization and mounting helpers are internal.
 Runtime code imports implementations directly, without depending on the public `adnbn/content` facade.
+Watch factories depend only on the public context contract and import no lifecycle implementations.
 The separate `adnbn/entry/content` entrypoint supplies the builder, startup function, and definition
 resolver required by generated modules.
 
@@ -42,14 +98,21 @@ resolver required by generated modules.
 
 `lifecycle/Builder.ts` coordinates main execution, watching, context cleanup, and node events.
 `lifecycle/MountBuilder.ts` is a concrete builder that composes mounting and isolation without a UI
-renderer. React and Vanilla extend it with rendering. Related implementations and their tests live together:
+renderer. Its `createNode(anchor, result)` selects the node for the preparation result: `false` or
+headless rendering creates a tracked node without UI; otherwise it composes the `createMountNode`,
+`createIsolation` and `createRenderer` stages. React and Vanilla supply the renderer stage.
+Related implementations and their tests live together:
 
 - `lifecycle/IsolationSetup.ts`: prepares current props, invokes boundary/target handlers, and protects user cleanup.
+- `lifecycle/types.ts`: node composition, processing, renderer readiness, and mount-completion contracts.
 - `lifecycle/nodes`: host mounting, node decorators, ShadowRoot/iframe targets, and the styles-runtime helper.
 - `lifecycle/markers`: anchor marking and lookup strategies.
-- `lifecycle/context`: the node collection, lifecycle operations, and event subscriptions.
+- `lifecycle/context`: the node collection, lifecycle operations, event subscriptions, and per-context
+  `ContainerRegistry`. `MountNode` registers before invoking the mount handler and releases only its
+  own registration on failure or unmount; decorators and renderer adapters do not carry this state.
 - `resolvers`: shared option handlers and definition merging, without framework detection or rendering.
-- `adapters/react` and `adapters/vanilla`: default-export interpretation, render normalization, and UI rendering.
+- `adapters/react` and `adapters/vanilla`: `definition.ts` interprets default exports, `Builder.ts`
+  normalizes render handlers, and `Node.ts` renders UI. Tests live beside each implementation.
 - `index.ts`: the common runtime entrypoint, exporting `MountBuilder` as `Builder` and its startup resolver.
 
 Pure structural validation and the frame-navigation predicate live in `src/shared/content/isolation.ts`.
@@ -70,9 +133,10 @@ For React UI, pass a React element or component function. Component functions ar
 and may use hooks. Vanilla renders DOM elements, nonempty strings, and numbers.
 `mergeDefinition` combines exports using the selected resolver's interpretation of default
 values. The common `resolveDefinition` accepts configuration without recognizing framework
-components; adapters provide their own definition resolvers. The common builder accepts absent rendering and literal `render: true`; UI rendering requires an adapter. Vanilla keeps its value check and
-synchronous handler normalization together in `adapters/vanilla/resolvers/render.ts`, used internally by the
-Vanilla builder.
+components; adapters provide their own definition resolvers. The common builder accepts absent rendering
+and literal `render: true`; UI rendering requires an adapter. Each adapter prepares synchronous render
+handlers in its builder's `resolveRender()` method. Vanilla shares its value check between the builder
+and the definition resolver through `adapters/vanilla/utils.ts`.
 
 The CLI `ContentParser.ts` and its test live beside the other parsers in `src/cli/entrypoint/parser`.
 Content fixtures live in `parser/tests/fixtures/content`. The helper in
@@ -81,11 +145,20 @@ rejects known default render exports with frame navigation, including explicit e
 The common runtime also rejects an explicit `render` property with frame navigation.
 Relay interprets its default export as transport initialization.
 
-The common lifecycle wraps each complete node in `EventNode`, including any adapter renderer, before
-adding it to the context. Mount/unmount events follow the underlying node operations. Without render,
+The common lifecycle wraps each complete node in `EventNode`, including any adapter renderer, and
+connects the renderer's `setErrorHandler` before adding the node to the context. This ordering also
+covers an Add listener that immediately calls `mount()`. `EventNode` only receives the narrower mount
+notifier contract; it never handles renderer failures. Mount/unmount events follow the underlying node
+operations. Without render,
 `main` runs and context cleanup is available. Anchor processing starts for rendering, `prepare`,
 headless tracking, or page/src navigation. `FrameNode` owns iframe creation, navigation, and
 child-document recovery.
+
+`build()` finishes cleanup of the previous run before invoking `main(context, options)`. It awaits
+`main` before resolving the marker and processing anchors, so main can subscribe to node events
+without waiting for an asynchronous marker factory. Entries with only `main` do not invoke the
+marker factory. Cancellation during either initialization step prevents subsequent processing
+and watcher startup. A marker failure still rejects the build, but main has already run at that point.
 
 When adding a runtime adapter, implement its definition and render resolvers and expose the definition
 resolver from that adapter's `index.ts`. Extend filename/build support and parser metadata interpretation
@@ -125,6 +198,9 @@ policy applies to later passes. Use `watch: true` to keep processing new anchors
 stops watching once it has tracked nodes. A failed anchor is not added as a headless result.
 Initialization errors, such as a rejected marker factory or `main`, reject the build. React
 component errors during React's scheduled rendering follow React's error handling.
+An isolated renderer runs after CSS readiness, outside the initial processing pass. A failure in
+that deferred mount is reported separately and removes the failed node; other anchors continue.
+CSS loading failures instead retain the empty target so a later `context.mount()` can retry.
 
 ```tsx title="src/product.content.tsx"
 import React from "react";
@@ -165,10 +241,18 @@ instances. It works with both adapters and Relay. Use it for parsing existing no
 
 Destroying the builder or removing the anchor invalidates pending results. A new target on remount
 or iframe document recovery receives fresh props and reruns rendering with the same prepared data.
-Mounting an unchanged target preserves its UI and React state. `RenderNode` mounts DOM and invokes the
-renderer synchronously; adapter nodes own UI insertion and disposal. `EventNode` emits Mount before
-`mount()` returns, after the adapter accepts the render value. React schedules its component rendering
-and effects independently; Mount does not wait for a React commit. A render callback that unmounts or
+Mounting an unchanged target preserves its UI and React state. `RenderNode` mounts DOM synchronously.
+Without isolation it also invokes the renderer synchronously. For Shadow and blank iframe targets,
+it waits for the styles runtime's `ready(root)` before invoking the renderer. Repeated mounts of the
+same pending target share one operation. All node and context `mount()` / `unmount()` methods remain
+synchronous. A node's `mount()` returns `false` while its renderer is waiting; it does not return a Promise.
+CSS readiness continues rendering directly without calling `mount()` or the user's mount handler again.
+The renderer notifies `EventNode` once after the adapter accepts the render value. Observe Mount through
+the context to track completion; returning from `mount()` does not guarantee that isolated UI is ready.
+The readiness function and completion notifier are internal lifecycle contracts, not public node methods.
+`EventNode` only dispatches events; the builder handles deferred renderer failures.
+React schedules its component rendering and effects independently; Mount does not wait for a React commit.
+A render callback that unmounts or
 replaces its own target cannot subsequently insert UI into the discarded target or emit a stale Mount.
 
 ## Isolation
@@ -299,7 +383,7 @@ existing anchors, containers, mount/append placement, and context methods remain
 
 ```tsx title="src/panel.content/index.tsx"
 import {ContentScriptIsolation, defineContentScriptAppend} from "adnbn";
-import "./panel.css?isolation";
+import "./panel.scss";
 import Panel from "./Panel";
 
 export default defineContentScriptAppend({
@@ -328,7 +412,7 @@ Browser defaults and page styles apply unless you override them. CSS sizes use t
 values; automatic content-based iframe sizing is not provided. The blank iframe has no `src`
 attribute. The framework creates the host and target, so a custom `container` factory is optional.
 
-Import UI styles with `?isolation` and declare fonts in CSS as described below. Relay supports the
+Import UI styles normally and declare fonts in SCSS as described below. Relay supports the
 same isolation and frame variants; its RPC transport and all-frame addressing remain independent
 of UI isolation.
 
@@ -338,7 +422,7 @@ Set `mode` inside an isolation object with `type: Shadow`, in content scripts or
 
 ```tsx title="src/panel.content/index.tsx"
 import {ContentScriptIsolation, ContentScriptShadowMode, defineContentScriptAppend} from "adnbn";
-import "./panel.css?isolation";
+import "./panel.scss";
 import Panel from "./Panel";
 
 export default defineContentScriptAppend({
@@ -441,69 +525,78 @@ if it must survive. For page/src, reload remains ordinary browser navigation beh
 ## Styles and fonts
 
 Shadow and all iframe entries bypass `concatContentScripts`. They support `commonChunks`.
-Plain CSS/SCSS imports keep document delivery: initial CSS goes into `content_scripts.css`; lazy CSS
-loads into the page only when its `import()` runs. UI isolation does not change plain imports.
+For Shadow and blank iframe content/Relay entries, ordinary CSS/SCSS imports go to the isolated
+render target. This includes styles imported by child components, shared components, libraries and
+lazy modules. Mark only host-page styles with `?unisolated`:
 
 ```ts title="src/panel.content/index.ts"
-import "./host.css?asis";
-import styles from "./panel.module.css?isolation";
+import "./host.scss?unisolated";
+import styles from "./panel.module.scss";
 
 export {};
 ```
 
-`?isolation` sends CSS to ShadowRoot or the blank iframe document. Combine it with `?asis` as
-`?isolation&asis` to disable CSS Modules; the two flags have independent roles. Local CSS imports and
-Sass dependencies inherit their stylesheet's destination. A separate CSS import in JavaScript chooses
-its own destination.
+The query controls delivery, not CSS Modules. Module exports and class names retain their normal
+behavior. CSS imports and Sass dependencies inherit their stylesheet's destination. To deliver a
+stylesheet outside the UI, put the query on its JavaScript/TypeScript import; Sass `@use`/`@forward`
+compile into their parent stylesheet and do not create another delivery destination.
 
 Initial isolated CSS is excluded from `content_scripts.css` and exposed through WAR. Each root or
-iframe head receives its own links in asset-map order. A shared CSS file can remain in an ordinary
-consumer's manifest and also be linked by an isolated consumer. `getEntrypointAssets()` includes every
-CSS file in `initial.css` / `async.css`. The isolated styles runtime owns CSS routing; the asset map does not expose delivery-specific subsets.
+iframe head receives its own links in dependency order. Initial `?unisolated` CSS goes into the
+content manifest. Lazy styles of both destinations still wait for `import()`.
 
-With `isolation: None`, marked CSS loads normally into the page. Outside content and Relay, including
-popup and page entries, `?isolation` has no routing effect and adds no isolated-style runtime.
-`isolation.page`/`isolation.src` entries have no local render target: importing `?isolation` CSS there is a build
-error. Import the styles in the embedded page instead. That page's own CSS behaves normally.
+A component shared between popup and content needs no special imports: the popup gets ordinary
+page CSS, while a Shadow/blank-iframe consumer gets isolated CSS. Shared sources can be emitted
+separately by destination. If identical CSS resolves to one contenthash filename, that file can
+appear both in the content manifest and in isolated delivery. `getEntrypointAssets()` still includes
+the complete inventory in `initial.css` / `async.css`, without delivery-specific fields.
 
-The build reports `[adnbn:missing-isolation-css]` when a Shadow or blank-iframe content/Relay entry
-has CSS dependencies but none are marked `?isolation`. The check includes initial, shared and lazy CSS;
-it reports once per entry per compilation and is refreshed in watch mode. It does not change asset
-delivery. Entries without CSS, non-isolated entries, embedded pages and unrelated entrypoints are
-not warned. Document-only CSS is legitimate, for example when only a font is imported and the UI uses
-inline styles. To silence this diagnostic intentionally, use the existing bundler warning filter:
+With `isolation: None`, styles load into the host document. Outside content and Relay, including
+popup and page entries, `?unisolated` adds no behavior or isolated-style runtime.
+`isolation.page`/`isolation.src` entries do not render locally: their imports style the host document;
+import the embedded UI's styles in the embedded page itself.
 
-```ts title="adnbn.config.ts"
-import {defineConfig} from "adnbn";
+The `adnbnDocumentStyles` cache group extracts `?unisolated` CSS only from chunks reachable by
+Shadow/blank-iframe entries, including lazy chunks. Default UI CSS stays in its original chunk.
+Ordinary pages, popup/options, content and Relay entries keep both categories together unless they
+share a physical chunk with an isolated consumer. No extra category priority is imposed on those
+unsplit files; Rspack's normal CSS ordering applies. This does not enable general common-CSS extraction.
 
-export default defineConfig({
-    bundler: {
-        ignoreWarnings: [/\[adnbn:missing-isolation-css\]/],
-    },
-});
-```
+A lazy chunk shared by ordinary and isolated entries must be split for both consumers. In the
+ordinary document, the two files follow chunk order, which can differ from source import order.
+On the tested Rspack version, document CSS precedes UI CSS for both source orders. This is a shared
+physical-chunk constraint, not a query-priority contract. In Shadow/iframe the destinations differ.
 
-This is a heuristic: a single correctly marked dependency prevents the warning even if another UI
-stylesheet is missing its query. Initial document CSS still goes into the manifest; lazy document
-CSS still waits for its import.
+Preserve `adnbnDocumentStyles` when customizing `splitChunks`: a mixed-destination chunk reachable
+by an isolated entry fails the build instead of injecting CSS into the wrong document. Mixed CSS
+is legal for ordinary-only entries. The required partition also applies with `commonChunks: false`.
+Initial chunks (including extracted chunks) use `cssFilename`; async chunks use `cssChunkFilename`
+when configuring the CSS extraction plugin directly.
 
-Rspack separates CSS destinations before emitting assets. Preserve the `adnbnIsolatedStyles` cache
-group if customizing `splitChunks`: a chunk mixing destinations fails the build rather than injecting
-styles into the wrong document. This partition is necessary even with `commonChunks: false`.
+Shadow and blank iframe renderers wait for all initial CSS and lazy CSS already requested when
+the target starts waiting. The host, boundary and empty target exist during loading; no component
+or React effects run before readiness. Open and closed Shadow roots follow the same lifecycle.
+Unmount, remount and iframe recovery invalidate pending rendering and release old link waits and timers.
+Each new target waits for its own links, even when the browser has cached the stylesheet files.
 
-Rendering starts immediately, so briefly unstyled UI is possible. Lazy CSS is requested with
+Lazy CSS is requested with
 `import()`; mixed imports wait for both document CSS and targets active at that request's start. Late targets receive initial
 and already requested lazy CSS. Imports before the first target do not wait for future UI. Failed
-or timed-out lazy links reject the import and permit retry; timeout follows `output.chunkLoadTimeout`.
-Initial CSS errors identify the entrypoint and URL but do not remove UI. Styles are delivered through
+or timed-out lazy links reject the import and permit retry. Initial readiness failures identify
+the entrypoint and URL and leave the target empty, without emitting Mount. A later `context.mount()`
+retries missing styles without duplicating successful links or changing their cascade order.
+The timeout follows `output.chunkLoadTimeout` (Rspack's default is 120 seconds); no separate UI timeout
+or automatic unstyled fallback is applied. Stylesheet readiness does not wait for fonts or images.
+Navigation iframes (`page`/`src`) and non-isolated rendering keep their existing behavior.
+Styles are delivered through
 external stylesheet links. Registries belong to each entry runtime, not `window`; no carrier,
 JSON map or background bundle is injected into other entries.
 
-For Shadow, declare `@font-face` in ordinary document CSS, then use that family inside `?isolation`
-CSS. `@font-face` inside a shadow stylesheet does not reliably register the face. Use a unique family
+For Shadow, declare `@font-face` in `fonts.scss?unisolated`, then use that family in ordinary UI
+SCSS. `@font-face` inside a shadow stylesheet does not reliably register the face. Use a unique family
 name: the document declaration is visible to the host page and outlives UI unmount.
 
-```css title="src/panel.content/host.css"
+```scss title="src/panel.content/fonts.scss"
 @font-face {
     font-family: "AdnbnPanelInter";
     src: url("./panel.woff2?browser") format("woff2");
@@ -520,7 +613,7 @@ stylesheets and specialized `?react`/`?raw` imports retain their own loaders. Th
 is interpreted in CSS, not JavaScript: use the browser `getUrl()` helper for ordinary JS asset
 imports rather than treating that token as a ready runtime URL. User asset names and hashes remain intact.
 
-For a blank iframe, put `@font-face` directly in its `?isolation` CSS and use a local relative font URL.
+For a blank iframe, put `@font-face` directly in its ordinary SCSS and use a local relative font URL.
 It belongs to that iframe document; a host-page font declaration does not register it there. If both
 destinations need the face, import a small shared font stylesheet from both destination stylesheets.
 After document recovery, reconnecting the iframe CSS restores its font declarations too.

@@ -1,19 +1,27 @@
+import type ContainerRegistry from "./ContainerRegistry";
+
 import {
+    ContentScriptNode,
     ContentScriptContext,
     ContentScriptEventCallback,
     ContentScriptEventEmitter,
-    ContentScriptNode,
-    ContentScriptNodeSet,
 } from "@typing/content";
 
 export default class Context implements ContentScriptContext {
-    protected readonly collection: ContentScriptNodeSet = new Set();
+    protected readonly collection = new Set<ContentScriptNode>();
     private unmounting = false;
 
-    constructor(protected readonly emitter: ContentScriptEventEmitter) {}
+    constructor(
+        protected readonly emitter: ContentScriptEventEmitter,
+        private readonly registry: ContainerRegistry
+    ) {}
 
     public get nodes(): ReadonlySet<ContentScriptNode> {
         return this.collection;
+    }
+
+    public owns(target: Node): boolean {
+        return this.registry.owns(target);
     }
 
     public mount(): void {
@@ -60,22 +68,35 @@ export default class Context implements ContentScriptContext {
             return;
         }
 
-        node.unmount();
-        this.emitter.emitRemove(node);
+        try {
+            node.unmount();
+        } finally {
+            this.emitter.emitRemove(node);
+        }
     }
 
     public clear(): void {
         const unmounting = this.unmounting;
+
         this.unmounting = true;
+
+        const errors: unknown[] = [];
 
         try {
             for (const node of this.collection) {
-                node.unmount();
-                this.collection.delete(node);
-                this.emitter.emitRemove(node);
+                try {
+                    this.remove(node);
+                } catch (error) {
+                    errors.push(error);
+                }
             }
         } finally {
+            this.registry.clear();
             this.unmounting = unmounting;
+        }
+
+        if (errors.length > 0) {
+            throw new AggregateError(errors, "Content script context cleanup failed");
         }
     }
 

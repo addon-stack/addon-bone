@@ -1,38 +1,43 @@
 import type {Chunk, Compilation, Module} from "@rspack/core";
 
-import {IsolatedStylesLayer} from "@cli/bundler/layers";
+import {DocumentStylesLayer} from "@cli/bundler/layers";
+import {DocumentStylesCacheGroup} from "./split-chunks";
 
-const isIsolatedStylesModule = (module: Module): boolean =>
-    module.type === "css/mini-extract" && module.layer === IsolatedStylesLayer;
+const isDocumentStylesModule = (module: Module): boolean => module.layer === DocumentStylesLayer;
 
+/** Only call for chunks reachable by an entry with isolated delivery. Other entries may mix CSS categories. */
 export const isIsolatedStylesChunk = (compilation: Compilation, chunk: Chunk): boolean => {
     const modules = [...compilation.chunkGraph.getChunkModulesIterable(chunk)].filter(
         module => module.type === "css/mini-extract"
     );
 
-    const isolated = modules.some(isIsolatedStylesModule);
+    const document = modules.some(isDocumentStylesModule);
 
-    if (isolated && !modules.every(isIsolatedStylesModule)) {
+    if (document && !modules.every(isDocumentStylesModule)) {
         throw new Error(
-            `CSS chunk "${chunk.name ?? chunk.id}" mixes document and ?isolation styles. Preserve the adnbnIsolatedStyles CSS cache group in your bundler configuration.`
+            `CSS chunk "${chunk.name ?? chunk.id}" mixes document and default styles for isolated delivery. Preserve the ${DocumentStylesCacheGroup} CSS cache group in your bundler configuration.`
         );
     }
 
-    return isolated;
+    return modules.length > 0 && !document;
 };
 
-export const getIsolatedStylesFiles = (compilation: Compilation): ReadonlySet<string> => {
-    const files = new Set<string>();
+export const getStylesFiles = (
+    compilation: Compilation,
+    chunks: Iterable<Chunk>
+): {document: ReadonlySet<string>; defaults: ReadonlySet<string>} => {
+    const document = new Set<string>();
+    const defaults = new Set<string>();
 
-    for (const chunk of compilation.chunks) {
-        if (isIsolatedStylesChunk(compilation, chunk)) {
-            for (const file of chunk.files) {
-                if (file.endsWith(".css")) {
-                    files.add(file);
-                }
+    for (const chunk of chunks) {
+        const files = isIsolatedStylesChunk(compilation, chunk) ? defaults : document;
+
+        for (const file of chunk.files) {
+            if (file.endsWith(".css")) {
+                files.add(file);
             }
         }
     }
 
-    return files;
+    return {document, defaults};
 };

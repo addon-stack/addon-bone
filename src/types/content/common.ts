@@ -70,6 +70,8 @@ export interface ContentScriptStylesRuntime {
     initialize(resolveUrl: (file: string) => string): void;
     /** Retry restored styles once on load error; future loads keep the default failure behavior. */
     add(root: ShadowRoot | HTMLElement, target: Element | null, retry?: boolean): void;
+    /** Waits for initial and already requested CSS for this root; retries missing failed links. */
+    ready(root: ShadowRoot | HTMLElement): Promise<void>;
     delete(root: ShadowRoot | HTMLElement): void;
     load(url: string): Promise<void>;
 }
@@ -318,6 +320,13 @@ export interface ContentScriptEventEmitter {
 // Context
 export interface ContentScriptContext extends ContentScriptMount {
     nodes: ReadonlySet<ContentScriptNode>;
+
+    /**
+     * Whether target belongs to UI mounted by this context, including ShadowRoot descendants.
+     * Already-connected site containers and containers wrapping their anchors are excluded.
+     * Membership ends at unmount. Traversal does not cross an iframe document into its host.
+     */
+    owns(target: Node): boolean;
 
     /**
      * Registers a callback function that will be invoked when a specific content script context event occurs.

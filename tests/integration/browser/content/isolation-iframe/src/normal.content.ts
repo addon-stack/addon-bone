@@ -1,6 +1,6 @@
 import {defineContentScript} from "adnbn";
 
-import sharedStyles from "./shared/styles.module.css?isolation";
+import sharedStyles from "./shared/styles.module.css";
 
 export default defineContentScript({
     matches: ["http://127.0.0.1/*"],

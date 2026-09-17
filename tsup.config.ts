@@ -68,6 +68,7 @@ const virtualEntrypointImportPlugin = (): Plugin => ({
 });
 
 const runtimeTemplateEntries = [
+    "src/cli/bundler/plugins/build-assets-map/templates.ts",
     "src/cli/bundler/plugins/chunk-loader/templates.ts",
     "src/cli/bundler/plugins/isolated-styles/templates.ts",
 ];

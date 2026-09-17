@@ -1,14 +1,11 @@
 import type {ContentScriptWorld} from "@typing/content";
 
-const ContentLayerPrefix = "adnbn:content:";
+// CSS classification is independent of the importing JavaScript module's layer.
+// Default styles follow each entry's delivery policy; ?unisolated always targets the document.
+export const DefaultStylesLayer = "adnbn:css:default";
+export const DocumentStylesLayer = "adnbn:css:document";
 
-// This is a bundler layer, not a CSS @layer. A distinct css-loader identity is
-// also required: CssExtract deduplicates dependencies by their loader request.
-export const IsolatedStylesLayer = "adnbn:css:isolation";
-
-/** Shared build identity for content and Relay modules, independent of their UI isolation. */
+/** JavaScript identity depends on the execution world, never on CSS delivery. */
 export const getContentLayer = (world: ContentScriptWorld): string => {
-    return `${ContentLayerPrefix}${world.toLowerCase()}`;
+    return `adnbn:content:${world.toLowerCase()}`;
 };
-
-export const isContentLayer = (layer: string): boolean => layer.startsWith(ContentLayerPrefix);

@@ -2,7 +2,12 @@ import type {ContentScriptContext} from "adnbn";
 
 export function main(context: ContentScriptContext) {
     const events: string[] = [];
-    context.watch(event => events.push(event));
+    let update: (() => void) | undefined;
+
+    context.watch(event => {
+        events.push(event);
+        update?.();
+    });
 
     document.addEventListener("probe-command", event => {
         const {id, command} = JSON.parse((event as CustomEvent<string>).detail) as {id: string; command: string};
@@ -13,6 +18,7 @@ export function main(context: ContentScriptContext) {
         }
 
         try {
+            update = undefined;
             events.length = 0;
             let mounted: ReturnType<typeof node.mount>;
 
@@ -44,10 +50,19 @@ export function main(context: ContentScriptContext) {
             node.anchor.setAttribute("data-tracked", String(context.nodes.size));
             node.anchor.setAttribute("data-command", command);
 
-            node.anchor.setAttribute(
-                "data-lifecycle",
-                JSON.stringify({events, mounted, connected: node.target?.isConnected, text: node.target?.textContent})
-            );
+            update = () => {
+                node.anchor.setAttribute(
+                    "data-lifecycle",
+                    JSON.stringify({
+                        events,
+                        mounted,
+                        connected: node.target?.isConnected,
+                        text: node.target?.textContent,
+                    })
+                );
+            };
+
+            update();
         } catch (error) {
             document.body.dataset.error = String(error);
         }

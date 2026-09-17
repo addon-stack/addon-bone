@@ -18,7 +18,9 @@ export default class AttributeMarker extends AbstractMarker {
     }
 
     public mark(element: Element, value: ContentScriptMarkerValue): boolean {
-        element.setAttribute(this.attr, value);
+        if (element.getAttribute(this.attr) !== value) {
+            element.setAttribute(this.attr, value);
+        }
 
         return true;
     }

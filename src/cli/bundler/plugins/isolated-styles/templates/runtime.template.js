@@ -21,6 +21,8 @@ var attachStyle = function (root, url, retry) {
 
     if (existing) return existing.promise;
 
+    rootState.order.add(url);
+
     var resolveStyle;
     var rejectStyle;
     var promise = new Promise(function (resolve, reject) {
@@ -48,6 +50,7 @@ var attachStyle = function (root, url, retry) {
         if (error) {
             rootState.styles.delete(url);
             record.link.remove();
+            console.error(error);
             rejectStyle(error);
         } else {
             resolveStyle();
@@ -74,8 +77,26 @@ var attachStyle = function (root, url, retry) {
                 settle(createStyleError(url, type));
             }
         };
-        // Replace in place: appending a retry could change the CSS cascade order.
-        root.insertBefore(link, previous || rootState.target);
+        // A failed link may be retried after later styles succeeded. Preserve its original position.
+        var next = previous || rootState.target;
+        var after = false;
+
+        if (!previous) {
+            for (var file of rootState.order) {
+                if (file === url) {
+                    after = true;
+                } else if (after) {
+                    var following = rootState.styles.get(file);
+
+                    if (following && following.link) {
+                        next = following.link;
+                        break;
+                    }
+                }
+            }
+        }
+
+        root.insertBefore(link, next);
         if (previous) previous.remove();
     };
     // One budget for both attempts, never another timer for the retry.
@@ -97,13 +118,22 @@ __ADNBN_REQUIRE__[__ADNBN_PROPERTY__] = {
         if (!isolatedInitialStyles)
             throw new Error('Isolated stylesheet URLs for entrypoint "' + isolatedStyleEntry + '" are not initialized');
 
-        isolatedStyleRoots.set(root, {target: target, styles: new Map()});
+        isolatedStyleRoots.set(root, {target: target, styles: new Map(), order: new Set()});
 
         isolatedInitialStyles.concat(Array.from(isolatedRequestedStyles)).forEach(function (url) {
-            attachStyle(root, url, retry).catch(function (error) {
-                console.error(error);
-            });
+            attachStyle(root, url, retry).catch(function () {});
         });
+    },
+    ready: function (root) {
+        if (!isolatedStyleRoots.has(root)) {
+            return Promise.resolve();
+        }
+
+        return Promise.all(
+            isolatedInitialStyles.concat(Array.from(isolatedRequestedStyles)).map(function (url) {
+                return attachStyle(root, url);
+            })
+        ).then(function () {});
     },
     delete: function (root) {
         var rootState = isolatedStyleRoots.get(root);

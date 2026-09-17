@@ -3,10 +3,10 @@ import type IsolationSetup from "../IsolationSetup";
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
 import {
+    ContentScriptNode,
     ContentScriptShadowMode,
     type ContentScriptShadowOptions,
     type ContentScriptStylesRuntime,
-    type ContentScriptNode,
     type ContentScriptBoundaryCleanup,
 } from "@typing/content";
 
@@ -41,6 +41,10 @@ export default class ShadowNode<Data = unknown> implements ContentScriptNode {
 
     public get boundary(): ShadowRoot | undefined {
         return this.root;
+    }
+
+    public ready(): Promise<void> {
+        return this.root && this.runtime ? this.runtime.ready(this.root) : Promise.resolve();
     }
 
     public mount(): boolean {

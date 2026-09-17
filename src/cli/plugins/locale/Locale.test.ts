@@ -210,7 +210,7 @@ describe("locale JSON completion", () => {
     });
 
     test.each([Browser.Chrome, Browser.Firefox])(
-        "catalogue matches every completed JSON message for %s",
+        "catalogue matches completed JSON messages without native escapes for %s",
         async browser => {
             const locale = makeLayeredLocale({browser});
             const [json, catalogue] = await Promise.all([locale.json(), locale.catalogue()]);
@@ -222,6 +222,32 @@ describe("locale JSON completion", () => {
             expect(catalogue.fr).toMatchObject({empty: "", pluginItems: "élément plugin|éléments plugin"});
         }
     );
+
+    test.each([Browser.Chrome, Browser.Firefox])("escapes dollars only in native JSON for %s", async browser => {
+        const locale = makeLocale("dollars", {browser});
+        const catalogue = await locale.catalogue();
+        const json = await locale.json();
+
+        for (const lang of [Language.English, Language.French]) {
+            expect(catalogue[lang]).toMatchObject({
+                price: "${{value}}/week",
+                spaced: "$ {{value}}/week",
+                dollars: "$$ and $$$",
+                named: "$USD$",
+            });
+            expect(messages(json, lang)).toMatchObject({
+                price: {message: "$${{value}}/week"},
+                spaced: {message: "$$ {{value}}/week"},
+                dollars: {message: "$$$ and $$$$"},
+                named: {message: "$text$", placeholders: {text: {content: "$$USD$$"}}},
+            });
+        }
+
+        expect(await locale.catalogue()).toEqual(catalogue);
+        expect(await locale.json()).toEqual(json);
+        expect((await locale.builders()).get(Language.English)!.get().get("price")).toBe("${{value}}/week");
+        expect((await locale.structure()).price).toEqual({plural: false, substitutions: ["value"]});
+    });
 
     test("validates the catalogue directly and recovers after clearing invalid sources", async () => {
         const root = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-locale-catalogue-"));

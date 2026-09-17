@@ -1,3 +1,6 @@
 {
-  "extends": "./.adnbn/tsconfig.json"
+  "extends": "./.adnbn/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
 }

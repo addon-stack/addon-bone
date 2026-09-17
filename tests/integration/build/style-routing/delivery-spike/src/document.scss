@@ -1,0 +1,9 @@
+@use "./document-child";
+
+:global(:root) {
+  --delivery-cascade: document;
+}
+
+.document {
+  --delivery-document: initial;
+}

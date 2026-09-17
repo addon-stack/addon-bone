@@ -22,6 +22,7 @@ test("initializes and returns the styles runtime supplied by the facade", () => 
     const runtime: ContentScriptStylesRuntime = {
         initialize: jest.fn(),
         add: jest.fn(),
+        ready: jest.fn(async () => undefined),
         delete: jest.fn(),
         load: jest.fn(),
     };

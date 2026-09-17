@@ -4,8 +4,7 @@ import fs from "fs";
 import {Configuration as RspackConfig, CssExtractRspackPlugin, RuleSetUse, RuleSetUseItem} from "@rspack/core";
 
 import {mergeStyleSources} from "./utils";
-import type {StylePluginOptions} from "./types";
-import {IsolatedStylesLayer} from "@cli/bundler/layers";
+import {DocumentStylesLayer, DefaultStylesLayer} from "@cli/bundler/layers";
 
 import {definePlugin} from "@main/plugin";
 
@@ -16,9 +15,9 @@ import {toPosix} from "@cli/utils/path";
 import {ReadonlyConfig} from "@typing/config";
 
 // CssExtract also identifies dependencies by loader request, not just by layer.
-// Keep isolated requests distinct from ordinary CSS and from each other's options.
-const IsolatedAsIsLoaderIdent = "adnbn-isolated-asis";
-const IsolatedModulesLoaderIdent = "adnbn-isolated-modules";
+// Keep default and document styles distinct even when their contents are identical.
+const DefaultAsIsLoaderIdent = "adnbn-default-asis";
+const DefaultModulesLoaderIdent = "adnbn-default-modules";
 
 // prettier-ignore
 const styleMergerLoader =
@@ -59,7 +58,7 @@ const styleMergerLoader =
             }
         };
 
-export default definePlugin(({isolationIssuerLayer}: StylePluginOptions = {}) => {
+export default definePlugin(() => {
     return {
         name: "adnbn:styles",
         bundler: ({config}) => {
@@ -83,19 +82,19 @@ export default definePlugin(({isolationIssuerLayer}: StylePluginOptions = {}) =>
                 return rules;
             };
 
-            const createStyleRules = (isolated = false) => [
+            const createStyleRules = (defaultStyles = false) => [
                 {
                     resourceQuery: /[?&]asis(?:[=&]|$)/,
                     use: createSassRuleSet({
                         loader: "css-loader",
-                        ...(isolated ? {ident: IsolatedAsIsLoaderIdent} : {}),
+                        ...(defaultStyles ? {ident: DefaultAsIsLoaderIdent} : {}),
                         options: {esModule: true, modules: false},
                     }),
                 },
                 {
                     use: createSassRuleSet({
                         loader: "css-loader",
-                        ...(isolated ? {ident: IsolatedModulesLoaderIdent} : {}),
+                        ...(defaultStyles ? {ident: DefaultModulesLoaderIdent} : {}),
                         options: {
                             esModule: true,
                             modules: {
@@ -119,37 +118,24 @@ export default definePlugin(({isolationIssuerLayer}: StylePluginOptions = {}) =>
                         chunkFilename: filename,
                     }),
                 ],
-                optimization: {
-                    splitChunks: {
-                        cacheGroups: {
-                            adnbnIsolatedStyles: {
-                                type: "css/mini-extract",
-                                layer: IsolatedStylesLayer,
-                                chunks: "all",
-                                enforce: true,
-                                name: false,
-                                priority: 100,
-                            },
-                        },
-                    },
-                },
                 module: {
                     rules: [
                         {
                             test: /\.(scss|css)$/,
                             type: "javascript/auto",
                             oneOf: [
-                                ...(isolationIssuerLayer === undefined
-                                    ? []
-                                    : [
-                                          {
-                                              issuerLayer: isolationIssuerLayer,
-                                              resourceQuery: /[?&]isolation(?:[=&]|$)/,
-                                              layer: IsolatedStylesLayer,
-                                              oneOf: createStyleRules(true),
-                                          },
-                                      ]),
-                                {oneOf: createStyleRules()},
+                                {
+                                    resourceQuery: /[?&]unisolated(?:[=&]|$)/,
+                                    layer: DocumentStylesLayer,
+                                    oneOf: createStyleRules(),
+                                },
+                                {
+                                    // Nested CSS imports preserve an explicit document destination.
+                                    issuerLayer: DocumentStylesLayer,
+                                    layer: DocumentStylesLayer,
+                                    oneOf: createStyleRules(),
+                                },
+                                {layer: DefaultStylesLayer, oneOf: createStyleRules(true)},
                             ],
                         },
                     ],

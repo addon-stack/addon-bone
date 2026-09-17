@@ -1,6 +1,7 @@
 import MountBuilder from "../../lifecycle/MountBuilder";
-import RenderNode from "./Node";
-import {createRenderResolver} from "./resolvers/render";
+import VanillaNode from "./Node";
+import {isValidRenderValue} from "./utils";
+import type {ContentScriptRenderOptions} from "../../lifecycle/types";
 
 import type {
     ContentScriptNode,
@@ -16,15 +17,28 @@ export default class Builder<
 > extends MountBuilder<Data, Isolation> {
     protected resolveRender(
         render?: ContentScriptRenderValue<Data> | ContentScriptRenderHandler<Data>
-    ): ContentScriptRenderHandler<Data> | undefined {
-        return render === undefined ? undefined : createRenderResolver(render);
+    ): true | ContentScriptRenderHandler<Data> | undefined {
+        if (render === true || render === undefined) {
+            return render;
+        }
+
+        return props => {
+            const resolvedRender = typeof render === "function" ? render(props) : render;
+
+            if (!isValidRenderValue(resolvedRender)) {
+                return;
+            }
+
+            return resolvedRender;
+        };
     }
 
     protected createRenderer(
         node: ContentScriptNode,
         render: ContentScriptRenderHandler<Data>,
-        props: () => ContentScriptProps<Data>
-    ): ContentScriptNode {
-        return new RenderNode(node, render, props);
+        props: () => ContentScriptProps<Data>,
+        options: ContentScriptRenderOptions
+    ): VanillaNode<Data> {
+        return new VanillaNode(node, render, props, options);
     }
 }

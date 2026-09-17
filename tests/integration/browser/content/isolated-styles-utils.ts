@@ -27,6 +27,7 @@ interface ShadowProbe {
     readonly links: string[];
     readonly ready?: string;
     readonly sharedCss?: string;
+    readonly styledFirstRender?: string;
 }
 
 interface ShadowDocumentState {
@@ -52,6 +53,7 @@ const documentStateExpression = `(document => {
             kind: host.getAttribute("data-shadow-probe"),
             instance: host.getAttribute("data-instance"),
             closed: host.shadowRoot === null,
+            styledFirstRender: host.getAttribute("data-styled-first-render"),
         };
         const root = host.shadowRoot ?? host.querySelector("iframe")?.contentDocument;
         const result = root && root.querySelector("[data-shadow-result]");
@@ -70,6 +72,7 @@ const documentStateExpression = `(document => {
             ...(result ? Object.fromEntries(Object.entries(result.dataset)) : {ready: "missing"}),
             instance: host.getAttribute("data-instance") || undefined,
             kind: host.getAttribute("data-shadow-probe") || undefined,
+            styledFirstRender: host.getAttribute("data-styled-first-render") || undefined,
             links: root ? Array.from(root.querySelectorAll('link[rel="stylesheet"]'), link => link.href) : [],
         };
     });
@@ -101,7 +104,12 @@ const isReady = (state: ShadowDocumentState | undefined, expected: number): stat
     );
 };
 
-const expectDocument = (state: ShadowDocumentState, frame: "top" | "child", primaryCount: number): void => {
+const expectDocument = (
+    state: ShadowDocumentState,
+    frame: "top" | "child",
+    primaryCount: number,
+    sharedCss: readonly string[]
+): void => {
     const primary = state.probes.filter(probe => probe.kind === "primary");
     const secondary = state.probes.filter(probe => probe.kind === "secondary");
 
@@ -116,8 +124,13 @@ const expectDocument = (state: ShadowDocumentState, frame: "top" | "child", prim
         expect(probe.initialCss).toBe("applied");
         expect(probe.asyncCss).toBe("applied");
         expect(probe.sharedCss).toBe("applied");
+        expect(probe.styledFirstRender).toBe("true");
         expect(probe.links.length).toBeGreaterThanOrEqual(3);
         expect(probe.links.every(url => /^(chrome|moz)-extension:\/\//.test(url))).toBe(true);
+
+        for (const file of sharedCss) {
+            expect(probe.links.some(url => new URL(url).pathname === "/" + file)).toBe(true);
+        }
     }
 
     expect(primary.every(probe => probe.font === "applied")).toBe(true);
@@ -130,7 +143,10 @@ export const runIsolatedStylesIntegration = async (
 ): Promise<void> => {
     const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
     const binary = name === "chrome" ? findChromeBinary(rootDir) : findFirefoxBinary();
-    if (!binary || !path.isAbsolute(binary)) throw new Error("Install " + name + " or set its ADNBN_*_BIN path");
+
+    if (!binary || !path.isAbsolute(binary)) {
+        throw new Error("Install " + name + " or set its ADNBN_*_BIN path");
+    }
 
     const profile = await mkdtemp(path.join(os.tmpdir(), "adnbn-isolation-integration-"));
     let browserProcess: ChildProcess | undefined;
@@ -146,10 +162,12 @@ export const runIsolatedStylesIntegration = async (
         const extensionDir = await fixture.build({browser: name, manifestVersion});
         const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
         const scripts = manifest.content_scripts as Array<{css?: string[]; js: string[]}>;
+
         const resources: string[] =
             manifestVersion === 2
                 ? manifest.web_accessible_resources
                 : manifest.web_accessible_resources.flatMap((entry: {resources: string[]}) => entry.resources);
+
         const normal = scripts.find(script => script.js.some(file => file.includes("normal.content")));
         const shadows = scripts.filter(script => script !== normal);
 
@@ -157,8 +175,24 @@ export const runIsolatedStylesIntegration = async (
         expect(normal).toBeDefined();
         expect(shadows).toHaveLength(2);
         expect(scripts.every(script => script.js.every(file => !/background/i.test(file)))).toBe(true);
-        const sharedCss = normal!.css!.find(file => resources.includes(file));
-        expect(sharedCss).toMatch(/^css\/.+\.[a-f0-9]{8}\.css$/);
+        // The same emitted stylesheet is shared by document and isolated consumers.
+        const sharedCss = normal!.css!.filter(file => resources.includes(file));
+        expect(sharedCss.length).toBeGreaterThan(0);
+
+        const documentCss = (
+            await Promise.all(normal!.css!.map(file => readFile(path.join(extensionDir, file), "utf8")))
+        ).join("\n");
+
+        const isolatedCss = (
+            await Promise.all(
+                resources
+                    .filter(file => file.endsWith(".css"))
+                    .map(file => readFile(path.join(extensionDir, file), "utf8"))
+            )
+        ).join("\n");
+
+        expect(documentCss).toMatch(/border-top:\s*3px/);
+        expect(isolatedCss).toMatch(/border-top:\s*3px/);
         expect(resources.some(file => /^assets\/probe\.[a-f0-9]{8}\.woff2$/.test(file))).toBe(true);
         expect(resources.some(file => /^css\/.+\.[a-f0-9]{8}\.css$/.test(file))).toBe(true);
 
@@ -188,6 +222,7 @@ export const runIsolatedStylesIntegration = async (
                 ],
                 {stdio: ["ignore", "ignore", "pipe"]}
             );
+
             browserProcess.stderr?.on("data", chunk => (processOutput += chunk));
             const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(port));
             chrome = await CdpClient.connect(webSocketDebuggerUrl);
@@ -199,13 +234,18 @@ export const runIsolatedStylesIntegration = async (
             await chrome.send("Runtime.enable", {}, sessionId);
             await chrome.send("Page.enable", {}, sessionId);
             navigate = url => chrome!.send("Page.navigate", {url}, sessionId);
+
             evaluate = async expression => {
                 const result = await chrome!.send(
                     "Runtime.evaluate",
                     {expression, awaitPromise: true, returnByValue: true},
                     sessionId
                 );
-                if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+
+                if (result.exceptionDetails) {
+                    throw new Error(JSON.stringify(result.exceptionDetails));
+                }
+
                 return result.result.value;
             };
         } else {
@@ -222,13 +262,16 @@ export const runIsolatedStylesIntegration = async (
                 ],
                 {stdio: ["ignore", "ignore", "pipe"]}
             );
+
             browserProcess.stderr?.on("data", chunk => (processOutput += chunk));
             firefox = await waitFor(() => BidiClient.connect("ws://127.0.0.1:" + port + "/session"));
             const session = await firefox.send("session.new", {capabilities: {alwaysMatch: {}}});
             version = "Firefox/" + session.capabilities.browserVersion;
+
             const extension = await firefox.send("webExtension.install", {
                 extensionData: {path: extensionDir, type: "path"},
             });
+
             expect(typeof extension.extension).toBe("string");
             const {context} = await firefox.send("browsingContext.create", {type: "tab"});
             navigate = url => firefox!.send("browsingContext.navigate", {context, url, wait: "complete"});
@@ -236,6 +279,7 @@ export const runIsolatedStylesIntegration = async (
         }
 
         const measurements: Array<{policy: string; top: ShadowDocumentState; frames: FrameState}> = [];
+
         for (const policy of [null, strictCsp]) {
             site = await startIntegrationSite(path.join(fixture.directory, "site"), policy);
             const topUrl = site.origin + "/top.html";
@@ -243,37 +287,90 @@ export const runIsolatedStylesIntegration = async (
             expect(response.headers.get("content-security-policy")).toBe(policy);
             await response.arrayBuffer();
             await navigate(topUrl);
+
             const top = await waitFor(async () => {
                 const state = await evaluate(`${documentStateExpression}(document)`);
                 lastState = state;
+
                 return state?.pageUrl === topUrl && isReady(state, 3) ? state : undefined;
             }, 30_000);
-            expectDocument(top, "top", 2);
+
+            expectDocument(top, "top", 2, sharedCss);
+
+            if (fixtureName === "isolation-shadow" && name === "chrome") {
+                // Firefox BiDi rejects navigation from a web tab to a private extension page.
+                // Open the actual popup document: the same React component and lazy CSS
+                // must work without isolated-style delivery in an extension page.
+                const stylesheet = top.probes.find(probe => probe.kind === "primary")!.links[0];
+                const popupPath = manifest.action?.default_popup ?? manifest.browser_action?.default_popup;
+                expect(popupPath).toBeDefined();
+                await navigate(new URL("/" + popupPath, stylesheet).href);
+
+                await waitFor(
+                    async () => {
+                        const ready = await evaluate(`(() => {
+                        const panel = document.querySelector('[data-shadow-result="primary"]');
+                        return panel?.dataset.ready === "true" &&
+                            getComputedStyle(panel).color === "rgb(17, 85, 153)" &&
+                            getComputedStyle(panel).backgroundColor === "rgb(34, 102, 68)";
+                    })()`);
+
+                        return ready || undefined;
+                    },
+                    30_000,
+                    "shared React component and lazy stylesheet in popup"
+                );
+
+                expect(
+                    await evaluate(
+                        `getComputedStyle(document.documentElement).getPropertyValue("--adnbn-cascade-order").trim()`
+                    )
+                ).toBe("default");
+
+                await navigate(topUrl);
+
+                await waitFor(
+                    async () => {
+                        const state = await evaluate(`${documentStateExpression}(document)`);
+
+                        return isReady(state, 3) ? state : undefined;
+                    },
+                    30_000,
+                    "content styles after popup reuse"
+                );
+            }
 
             if (fixtureName === "isolation-shadow") {
                 expect(top.probes.filter(probe => probe.kind === "primary").every(probe => probe.mode === "open")).toBe(
                     true
                 );
+
                 expect(top.probes.find(probe => probe.kind === "secondary")).toMatchObject({
                     mode: "closed",
                     closed: true,
                 });
+
                 const instance = Number(top.probes.find(probe => probe.kind === "secondary")!.instance);
+
                 await evaluate(`(() => {
                     document.querySelector('[data-shadow-secondary]')?.remove();
                     const anchor = document.createElement("div");
                     anchor.setAttribute("data-shadow-secondary", "");
                     document.body.appendChild(anchor);
                 })()`);
+
                 const replaced = await waitFor(async () => {
                     const state = await evaluate(`${documentStateExpression}(document)`);
                     lastState = state;
+
                     return isReady(state, 3) &&
                         Number(state.probes.find(probe => probe.kind === "secondary")?.instance) > instance
                         ? state
                         : undefined;
                 }, 30_000);
-                expectDocument(replaced, "top", 2);
+
+                expectDocument(replaced, "top", 2, sharedCss);
+
                 expect(replaced.probes.find(probe => probe.kind === "secondary")).toMatchObject({
                     mode: "closed",
                     closed: true,
@@ -282,6 +379,7 @@ export const runIsolatedStylesIntegration = async (
 
             if (fixtureName === "isolation-iframe") {
                 let mounts = top.probes.map(probe => probe.mounts!);
+
                 for (const operation of ["append", "insert", "reinsert"]) {
                     await evaluate(`(() => {
                         const destination = document.createElement("section");
@@ -292,47 +390,59 @@ export const runIsolatedStylesIntegration = async (
                             else destination.appendChild(host);
                         }
                     })()`);
+
                     const recovered = await waitFor(async () => {
                         const state = await evaluate(`${documentStateExpression}(document)`);
                         lastState = state;
+
                         return isReady(state, 3) && state.probes.every(probe => probe.mounts! > Math.max(...mounts))
                             ? state
                             : undefined;
                     }, 10000);
-                    expectDocument(recovered, "top", 2);
+
+                    expectDocument(recovered, "top", 2, sharedCss);
                     expect(recovered.probes.every(probe => probe.mounts === Math.max(...mounts) + 1)).toBe(true);
                     mounts = recovered.probes.map(probe => probe.mounts!);
                 }
             }
 
             const oldInstance = Number(top.probes.find(probe => probe.anchor === "first")?.instance);
+
             await evaluate(`(() => {
                 document.querySelector('[data-shadow-primary="first"]')?.remove();
                 const replacement = document.createElement("div");
                 replacement.setAttribute("data-shadow-primary", "first");
                 document.body.append(replacement);
             })()`);
+
             const remounted = await waitFor(async () => {
                 const state = await evaluate(`${documentStateExpression}(document)`);
                 lastState = state;
                 const instance = Number(state?.probes.find(probe => probe.anchor === "first")?.instance);
+
                 return isReady(state, 3) && instance > oldInstance ? state : undefined;
             }, 30_000);
-            expectDocument(remounted, "top", 2);
+
+            expectDocument(remounted, "top", 2, sharedCss);
 
             const framesUrl = site.origin + "/frames.html";
             await navigate(framesUrl);
+
             const frames = await waitFor(async () => {
                 const state = await evaluate(`(() => {
                     const child = document.querySelector('[data-testid="child-frame"]')?.contentDocument;
                     if (!child || child.readyState !== "complete") return undefined;
                     return {top: ${documentStateExpression}(document), child: ${documentStateExpression}(child)};
                 })()`);
+
                 lastState = state;
+
                 return isReady(state?.top, 2) && isReady(state?.child, 2) ? state : undefined;
             }, 30_000);
-            expectDocument(frames.top, "top", 1);
-            expectDocument(frames.child, "child", 1);
+
+            expectDocument(frames.top, "top", 1, sharedCss);
+            expectDocument(frames.child, "child", 1, sharedCss);
+
             if (fixtureName === "isolation-shadow") {
                 for (const document of [frames.top, frames.child]) {
                     expect(document.probes.find(probe => probe.kind === "secondary")).toMatchObject({
@@ -341,18 +451,21 @@ export const runIsolatedStylesIntegration = async (
                     });
                 }
             }
+
             measurements.push({policy: policy === null ? "none" : "strict", top: remounted, frames});
             await site.close();
             site = undefined;
         }
 
         const report = {browser: version, manifestVersion, measurements};
+
         const reportPath = path.join(
             rootDir,
             ".cache",
             "integration",
             fixtureName + "-" + name + "-mv" + manifestVersion + ".json"
         );
+
         await writeFile(reportPath, JSON.stringify(report, null, 2) + "\n");
         console.info(JSON.stringify(report, null, 2));
         expect(version).toMatch(new RegExp(`^${name === "chrome" ? "Chrome" : "Firefox"}\\/\\d+(?:\\.\\d+)+$`));
@@ -364,15 +477,21 @@ export const runIsolatedStylesIntegration = async (
         );
     } finally {
         await chrome?.close();
+
         if (firefox) {
             try {
                 await firefox.send("session.end", {}, 2_000);
             } catch {
                 // Firefox may close before replying.
             }
+
             await firefox.close();
         }
-        if (browserProcess) await stop(browserProcess);
+
+        if (browserProcess) {
+            await stop(browserProcess);
+        }
+
         await site?.close();
         await fixture?.dispose();
         await rm(profile, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});

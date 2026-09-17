@@ -5,7 +5,9 @@ import type {
     ContentScriptIsolationFrameOptions,
 } from "@typing/content";
 
-import {FrameNode, Node, MountNode} from "./index";
+import {ContentScriptEvent} from "@typing/content";
+import {FrameNode, Node, MountNode, EventNode} from "./index";
+import {ContainerRegistry, EventEmitter} from "../context";
 import IsolationSetup from "../IsolationSetup";
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
@@ -14,14 +16,20 @@ jest.mock("#adnbn/page", () => ({aliases: {panel: "panel.html"}}));
 jest.mock("./isolated-styles", () => ({getContentScriptStylesRuntime: jest.fn()}));
 
 test("FrameNode explains a disconnected host and allows mounting again once the mounter connects it", () => {
-    const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+    const runtime = {
+        initialize: jest.fn(),
+        add: jest.fn(),
+        ready: jest.fn(async () => undefined),
+        delete: jest.fn(),
+        load: jest.fn(),
+    };
     jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
     const anchor = document.createElement("section");
     const container = document.createElement("div");
     document.body.append(anchor);
     let connect = false;
 
-    const mountedNode = new MountNode(new Node(anchor, container), (anchor, container) => {
+    const mountedNode = new MountNode(new Node(anchor, container), new ContainerRegistry(), (anchor, container) => {
         if (connect) {
             anchor.append(container);
         }
@@ -87,8 +95,69 @@ test("FrameNode does not require a connected host for document navigation", () =
     }
 });
 
+test.each<ContentScriptIsolationFrameOptions>([
+    {type: "iframe", page: "panel"},
+    {type: "iframe", src: "https://example.com/panel"},
+])("FrameNode %j emits no Mount after the mounter cancels its node and allows a later remount", options => {
+    const anchor = document.createElement("section");
+    document.body.append(anchor);
+    const events: ContentScriptEvent[] = [];
+    const emitter = new EventEmitter();
+    emitter.on(event => events.push(event));
+    let cancel = true;
+    let node: EventNode;
+
+    const mounted = new MountNode(
+        new Node(anchor, document.createElement("div")),
+        new ContainerRegistry(),
+        (anchor, container) => {
+            anchor.append(container);
+
+            if (cancel) {
+                node.unmount();
+            }
+        }
+    );
+
+    const frame = new FrameNode(
+        mounted,
+        options,
+        () => {},
+        new IsolationSetup<undefined, "iframe">({
+            props: () => ({anchor, data: undefined}),
+            container: () => mounted.container,
+            target: ({document}) => document.createElement("div"),
+        })
+    );
+
+    node = new EventNode(frame, emitter);
+
+    try {
+        const result = node.mount();
+        expect(events).toEqual([ContentScriptEvent.Unmount]);
+        expect(result).toBe(false);
+        expect(node.container).toBeUndefined();
+        expect(node.boundary).toBeUndefined();
+
+        cancel = false;
+        expect(node.mount()).toBe(true);
+        expect(node.boundary?.isConnected).toBe(true);
+        expect(node.mount()).toBe(false);
+        expect(events).toEqual([ContentScriptEvent.Unmount, ContentScriptEvent.Mount]);
+    } finally {
+        node.unmount();
+        anchor.remove();
+    }
+});
+
 test("FrameNode replaces lost targets, unregisters old styles and releases its load callback", async () => {
-    const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+    const runtime = {
+        initialize: jest.fn(),
+        add: jest.fn(),
+        ready: jest.fn(async () => undefined),
+        delete: jest.fn(),
+        load: jest.fn(),
+    };
     jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
     const anchor = document.createElement("section");
     document.body.append(anchor);
@@ -100,9 +169,13 @@ test("FrameNode replaces lost targets, unregisters old styles and releases its l
         return document.createElement("section");
     });
 
-    const mountedNode = new MountNode(new Node(anchor, document.createElement("div")), (anchor, container) => {
-        anchor.append(container);
-    });
+    const mountedNode = new MountNode(
+        new Node(anchor, document.createElement("div")),
+        new ContainerRegistry(),
+        (anchor, container) => {
+            anchor.append(container);
+        }
+    );
 
     const node = new FrameNode(
         mountedNode,
@@ -166,13 +239,21 @@ test("FrameNode replaces lost targets, unregisters old styles and releases its l
 });
 
 test.each(["throw", "unmount"])("FrameNode cleans up when target creation triggers %s", action => {
-    const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+    const runtime = {
+        initialize: jest.fn(),
+        add: jest.fn(),
+        ready: jest.fn(async () => undefined),
+        delete: jest.fn(),
+        load: jest.fn(),
+    };
     jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
     const anchor = document.createElement("section");
     document.body.append(anchor);
 
-    const mountedNode = new MountNode(new Node(anchor, document.createElement("div")), (anchor, container) =>
-        anchor.append(container)
+    const mountedNode = new MountNode(
+        new Node(anchor, document.createElement("div")),
+        new ContainerRegistry(),
+        (anchor, container) => anchor.append(container)
     );
 
     const node = new FrameNode(
@@ -218,11 +299,18 @@ const createBoundaryNode = (
         ({document}: ContentScriptTargetProps<undefined, "iframe">) => document.createElement("section")
     )
 ) => {
-    const runtime = {initialize: jest.fn(), add: jest.fn(), delete: jest.fn(), load: jest.fn()};
+    const runtime = {
+        initialize: jest.fn(),
+        add: jest.fn(),
+        ready: jest.fn(async () => undefined),
+        delete: jest.fn(),
+        load: jest.fn(),
+    };
     jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
 
     const mountedNode = new MountNode(
         new Node(document.body, document.createElement("section")),
+        new ContainerRegistry(),
         (anchor, container) => {
             anchor.append(container);
         }

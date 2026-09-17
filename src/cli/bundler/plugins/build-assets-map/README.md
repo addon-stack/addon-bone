@@ -32,3 +32,9 @@ definitions; it has no knowledge of content or entrypoint asset properties.
 Asset collection and classification live in `bundler/utils/assets.ts`. The per-compilation result is
 shared with manifest generation through `bundler/plugins/utils/compilation-assets.ts`. Filename
 template handling is independent in `bundler/utils/app-filename.ts` and `chunk-filename.ts`.
+
+Contenthash-only filenames can merge byte-identical CSS chunks used in different destinations.
+The owning runtime normalizes filename lists after hash substitution: duplicates are removed without
+changing initial dependency order, and files already initial are omitted from async lists. Final
+validation compares that same canonical inventory. No emitted-file rewrite or public getter logic
+is needed for this normalization.

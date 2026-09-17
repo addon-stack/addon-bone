@@ -228,6 +228,7 @@ const compile = async (
         betaCssChange?: boolean;
         buildHashSalt?: string;
         cssDir?: string;
+        cssChunkDir?: string;
         cssFullHashCallback?: boolean;
         fullHashCallback?: boolean;
         htmlChunks?: readonly string[];
@@ -269,6 +270,11 @@ const compile = async (
         ? "[name].[app].[fullhash:8].css"
         : "[name].[app].[contenthash:8].css";
     const cssFilename = appFilenameResolver(AppName, () => cssTemplate, options.cssDir ?? "custom/css");
+    const cssChunkFilename = appFilenameResolver(
+        AppName,
+        () => cssTemplate,
+        options.cssChunkDir ?? options.cssDir ?? "custom/css"
+    );
     const assetFilename = appFilenameResolver(AppName, () => "[name].[app].[contenthash:8][ext]", "custom/assets");
     const background =
         options.background === "async"
@@ -395,7 +401,7 @@ const compile = async (
                 : false,
         },
         plugins: [
-            new CssExtractRspackPlugin({filename: cssFilename, chunkFilename: cssFilename}),
+            new CssExtractRspackPlugin({filename: cssFilename, chunkFilename: cssChunkFilename}),
             ...(options.betaCssChange
                 ? [
                       new NormalModuleReplacementPlugin(/beta\.css$/, resource => {
@@ -429,7 +435,7 @@ const compile = async (
             new BuildAssetsMapPlugin({
                 module: EntrypointAssetsModule,
                 buildHashSalt: options.buildHashSalt,
-                cssChunkFilename: cssFilename,
+                cssChunkFilename,
                 cssFilename,
                 fullMapEntrypoint: "background",
             }),
@@ -928,20 +934,23 @@ describe("BuildAssetsMapPlugin", () => {
         expectNoChangedBytesUnderStableNames(before, after);
     });
 
-    test("does not invent a JavaScript file for a CSS-only shared chunk", async () => {
-        const build = await compile(true, {sharedCssChunk: true});
-        const sharedCss = build.assets.alpha.initial.css.find(file => build.assets.beta.initial.css.includes(file));
+    test.each(["custom/css", "lazy/css"])(
+        "maps CSS-only initial shared chunks with async directory %s",
+        async cssChunkDir => {
+            const build = await compile(true, {sharedCssChunk: true, cssChunkDir});
+            const sharedCss = build.assets.alpha.initial.css.find(file => build.assets.beta.initial.css.includes(file));
 
-        expect(sharedCss).toMatch(/^custom\/css\/shared-styles\..+\.css$/);
-        expect(build.assets.alpha.initial.js.some(file => file.includes("shared-styles"))).toBe(false);
-        expect(build.assets.beta.initial.js.some(file => file.includes("shared-styles"))).toBe(false);
-        expect(executeEntrypoint(build, "alpha").sandbox.__alphaEntrypointAssets).toEqual(
-            runtimeAssets(build.assets.alpha)
-        );
-        expect(executeEntrypoint(build, "beta").sandbox.__betaEntrypointAssets).toEqual(
-            runtimeAssets(build.assets.beta)
-        );
-    });
+            expect(sharedCss).toMatch(/^custom\/css\/shared-styles\..+\.css$/);
+            expect(build.assets.alpha.initial.js.some(file => file.includes("shared-styles"))).toBe(false);
+            expect(build.assets.beta.initial.js.some(file => file.includes("shared-styles"))).toBe(false);
+            expect(executeEntrypoint(build, "alpha").sandbox.__alphaEntrypointAssets).toEqual(
+                runtimeAssets(build.assets.alpha)
+            );
+            expect(executeEntrypoint(build, "beta").sandbox.__betaEntrypointAssets).toEqual(
+                runtimeAssets(build.assets.beta)
+            );
+        }
+    );
 
     test("keeps configured CSS directories inside callback-generated names", async () => {
         const [css, styles] = await Promise.all([

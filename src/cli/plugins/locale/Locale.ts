@@ -3,7 +3,7 @@ import {LocaleFinder} from "@cli/entrypoint";
 import type {GenerateJsonPluginData, GenerateModulePluginDependencies} from "@cli/bundler";
 import {getSourcePath, getSharedPath, getAppPath, getAppSourcePath} from "@cli/resolvers/path";
 
-import {flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
+import {escapeLocaleMessages, flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
 
 import type {Language, LocaleCatalogue, LocaleMessages} from "@typing/locale";
 
@@ -26,7 +26,10 @@ export default class Locale extends LocaleFinder {
 
     public async json(): Promise<GenerateJsonPluginData> {
         return Object.fromEntries(
-            [...(await this.messages())].map(([lang, messages]) => [getLocaleFilename(lang), messages])
+            [...(await this.messages())].map(([lang, messages]) => [
+                getLocaleFilename(lang),
+                escapeLocaleMessages(messages),
+            ])
         );
     }
 

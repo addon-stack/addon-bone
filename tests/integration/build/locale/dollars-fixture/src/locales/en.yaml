@@ -1,0 +1,12 @@
+price: "${{value}}/week"
+spaced: "$ {{value}}/week"
+number: "$1/week"
+trailing: "cost $"
+single: "$"
+double: "$$"
+triple: "$$$"
+named: "$USD$"
+substitution: "{{value}}/week"
+plural:
+    - "${{value}} for {{count}} week"
+    - "${{value}} for {{count}} weeks"

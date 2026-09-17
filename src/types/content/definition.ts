@@ -39,6 +39,12 @@ export interface ContentScriptDefinitionBase<Data = unknown> extends Partial<Con
         | ContentScriptContainerFactory<NoInfer<Data>>;
 
     prepare?: ContentScriptPrepareHandler<Data>;
+
+    /**
+     * Omit to watch until the first nodes are found; true keeps observing child-list changes.
+     * Use a custom strategy to observe attributes or text. Built-in strategies ignore internal
+     * changes in owned UI containers unless a container wraps its own anchor.
+     */
     watch?: true | ContentScriptWatchStrategy;
     main?: ContentScriptMainFunction;
 }

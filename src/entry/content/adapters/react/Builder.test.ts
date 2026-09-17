@@ -2,7 +2,8 @@ import {act} from "@testing-library/react";
 import {createElement, useEffect, useState} from "react";
 
 import Builder from "./Builder";
-import {resolveDefinition} from "./resolvers/definition";
+import {resolveDefinition} from "./definition";
+import {createMutationObserverStrategy} from "../../resolvers/watch";
 import {ContentScriptEvent, type ContentScriptContext, type ContentScriptProps} from "@typing/content";
 
 // Extend the shared random-ID mock for the builders' generated marker attribute.
@@ -13,6 +14,50 @@ jest.mock("nanoid", () => ({
 
 describe("React Builder", () => {
     afterEach(() => document.body.replaceChildren());
+
+    test("React UI updates do not schedule discovery inside a container mounted by the framework", async () => {
+        jest.useFakeTimers();
+        const anchor = document.createElement("article");
+        document.body.append(anchor);
+        const discover = jest.fn(() => anchor);
+        const update = jest.fn();
+        const observe = createMutationObserverStrategy();
+
+        const builder = new Builder({
+            anchor: discover,
+            watch: (process, context) =>
+                observe(() => {
+                    update();
+
+                    return process();
+                }, context),
+            render: () => {
+                const [expanded, setExpanded] = useState(false);
+
+                return createElement(
+                    "button",
+                    {onClick: () => setExpanded(value => !value)},
+                    expanded ? createElement("strong", null, "expanded") : "collapsed"
+                );
+            },
+        });
+
+        try {
+            await act(() => builder.build());
+
+            await act(async () => {
+                anchor.querySelector("button")!.click();
+            });
+
+            await act(() => jest.advanceTimersByTimeAsync(201));
+            expect(anchor.querySelector("strong")?.textContent).toBe("expanded");
+            expect(update).not.toHaveBeenCalled();
+            expect(discover).toHaveBeenCalledTimes(1);
+        } finally {
+            await act(() => builder.destroy());
+            jest.useRealTimers();
+        }
+    });
 
     test("React renders a default component with hooks and cleans up its effects", async () => {
         const anchor = document.createElement("article");

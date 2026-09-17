@@ -3,7 +3,7 @@ import React from "react";
 import {Panel} from "./Panel";
 import {ContentScriptIsolation, ContentScriptAppend, ContentScriptWorld, defineContentScriptAppend} from "adnbn";
 
-import "./fonts.css?isolation&asis";
+import "./fonts.css?asis";
 
 let instance = 0;
 
@@ -25,5 +25,10 @@ export default defineContentScriptAppend({
 
         return host;
     },
-    render: ({anchor}) => <Panel anchor={anchor} />,
+    render: ({anchor, container, target}) => {
+        const links = Array.from(target.ownerDocument.head.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+        container.setAttribute("data-styled-first-render", String(links.length > 0 && links.every(link => link.sheet)));
+
+        return <Panel anchor={anchor} />;
+    },
 });

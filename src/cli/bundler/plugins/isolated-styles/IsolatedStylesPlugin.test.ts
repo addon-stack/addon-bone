@@ -7,7 +7,7 @@ import vm from "vm";
 
 import {type Compiler, CssExtractRspackPlugin, type Filename, rspack, type Stats} from "@rspack/core";
 
-import {IsolatedStylesLayer} from "@cli/bundler/layers";
+import {DefaultStylesLayer, DocumentStylesLayer} from "@cli/bundler/layers";
 
 import IsolatedStylesPlugin, {
     type IsolatedStylesPluginOptions,
@@ -82,6 +82,7 @@ interface CompileOptions {
     context?: string;
     filename?: Filename;
     cssFilename?: Filename;
+    cssChunkFilename?: Filename;
     sharedInitial?: boolean;
     mode?: "development" | "production";
     selected?: (entry: string) => boolean;
@@ -92,6 +93,7 @@ const createCompiler = (outputPath: string, options: CompileOptions = {}): Compi
     const filename = options.filename ?? "js/[name].[contenthash:8].js";
 
     const cssFilename = options.cssFilename ?? "css/[name].[contenthash:8].css";
+    const cssChunkFilename = options.cssChunkFilename ?? cssFilename;
 
     return rspack({
         context: options.context ?? fixtures,
@@ -117,7 +119,8 @@ const createCompiler = (outputPath: string, options: CompileOptions = {}): Compi
         },
         module: {
             rules: [
-                {test: /shadow.*\.css$/, layer: IsolatedStylesLayer},
+                {test: /shadow.*\.css$/, layer: DefaultStylesLayer},
+                {test: /normal.*\.css$/, layer: DocumentStylesLayer},
                 {
                     test: /\.css$/i,
                     sideEffects: true,
@@ -152,11 +155,11 @@ const createCompiler = (outputPath: string, options: CompileOptions = {}): Compi
         plugins: [
             new CssExtractRspackPlugin({
                 filename: cssFilename,
-                chunkFilename: cssFilename,
+                chunkFilename: cssChunkFilename,
             }),
             new IsolatedStylesPlugin({
                 cssFilename,
-                cssChunkFilename: cssFilename,
+                cssChunkFilename,
                 property: options.property ?? RuntimeProperty,
                 validate: options.validate,
                 test: options.selected ?? (entry => entry === "shadow"),
@@ -191,12 +194,11 @@ const compile = async (options: CompileOptions = {}): Promise<BuildResult> => {
 };
 
 test.each(["./shadow.js", "./shadow-async.js"])(
-    "reports initial and async CSS independently of runtime selection (%s)",
+    "reports initial and async CSS using the entry delivery policy (%s)",
     async shadowEntry => {
         const validated = new Map<string, IsolatedStylesPluginFiles>();
         const result = await compile({
             shadowEntry,
-            selected: () => false,
             validate: (entry, files) => {
                 validated.set(entry, files);
             },
@@ -214,9 +216,10 @@ test.each(["./shadow.js", "./shadow-async.js"])(
         await expect(
             compile({
                 shadowEntry,
-                selected: () => false,
                 validate: (entry, files) => {
-                    if (files.isolated.length) throw new Error(`Consumer policy rejects styles for "${entry}"`);
+                    if (files.isolated.length) {
+                        throw new Error(`Consumer policy rejects styles for "${entry}"`);
+                    }
                 },
             })
         ).rejects.toThrow('Consumer policy rejects styles for "shadow"');
@@ -234,16 +237,36 @@ test("reports shared styles to both entries without duplicate filenames", async 
     try {
         const shared = validated.get("shadow")!.isolated.find(file => /shared-styles\./.test(file));
         expect(shared).toBeDefined();
-        expect(validated.get("normal")!.isolated).toEqual([shared]);
+        expect(validated.get("normal")!.isolated).toEqual([]);
+        expect(validated.get("normal")!.document).toContain(shared);
         expect(validated.get("shadow")!.isolated).toHaveLength(2);
     } finally {
         await result.close();
     }
 });
 
+test("rejects a mixed chunk only when it has isolated delivery and splitting is disabled", async () => {
+    const ordinary = await compile({shadowEntry: "./mixed.js", selected: () => false});
+
+    try {
+        expect(
+            ordinary.stats.compilation.entrypoints
+                .get("shadow")!
+                .getFiles()
+                .filter(file => file.endsWith(".css"))
+        ).toHaveLength(1);
+    } finally {
+        await ordinary.close();
+    }
+
+    await expect(compile({shadowEntry: "./mixed.js"})).rejects.toThrow(
+        'CSS chunk "shadow" mixes document and default styles for isolated delivery. Preserve the adnbnDocumentStyles CSS cache group'
+    );
+});
+
 test("refreshes warnings between compilations and supports the bundler warning filter", async () => {
     let warn = true;
-    const message = '[fixture:missing-isolation-css] Entrypoint "shadow"';
+    const message = '[fixture:style-policy] Entrypoint "shadow"';
     const validate: IsolatedStylesPluginOptions["validate"] = (entry, files) =>
         warn && entry === "shadow" && files.document.length > 0 && files.isolated.length === 0 ? [message] : [];
     const result = await compile({shadowEntry: "./normal.js", validate});
@@ -275,7 +298,7 @@ test("refreshes warnings between compilations and supports the bundler warning f
     const suppressed = await compile({
         shadowEntry: "./normal.js",
         validate,
-        ignoreWarnings: [/fixture:missing-isolation-css/],
+        ignoreWarnings: [/fixture:style-policy/],
     });
     try {
         expect(suppressed.stats.toJson({all: false, warnings: true}).warnings).toEqual([]);
@@ -755,28 +778,36 @@ test.each(["contenthash", "chunkhash", "fullhash"])(
     }
 );
 
-test("owns multiple initial files in bundler order, including a shared CSS chunk, and initializes once", async () => {
-    const result = await compile({sharedInitial: true});
-    try {
-        const harness = executeShadowEntrypoint(result);
-        const resolveAgain = jest.fn();
-        harness.runtime.initialize(resolveAgain);
-        expect(resolveAgain).not.toHaveBeenCalled();
-        const root = createRoot(link => queueMicrotask(() => link.onload?.()));
-        harness.runtime.add(root, {});
-        const initial = result.stats.compilation.entrypoints
-            .get("shadow")!
-            .getFiles()
-            .filter(file => file.endsWith(".css"));
-        expect(initial).toHaveLength(2);
-        expect(root.links.map(link => link.href)).toEqual(initial.map(file => `https://extension.test/${file}`));
-        const normal = result.stats.compilation.entrypoints.get("normal")!.getFiles();
-        expect(initial.some(file => normal.includes(file))).toBe(true);
-        harness.runtime.delete(root);
-    } finally {
-        await result.close();
+test.each(["contenthash", "chunkhash", "fullhash", "callback"])(
+    "owns initial shared CSS with distinct filename templates (%s)",
+    async hash => {
+        const template = `initial/[name].[${hash === "callback" ? "contenthash" : hash}:8].css`;
+        const result = await compile({
+            sharedInitial: true,
+            cssFilename: hash === "callback" ? () => template : template,
+            cssChunkFilename: "lazy/[name].[contenthash:8].css",
+        });
+        try {
+            const harness = executeShadowEntrypoint(result);
+            const resolveAgain = jest.fn();
+            harness.runtime.initialize(resolveAgain);
+            expect(resolveAgain).not.toHaveBeenCalled();
+            const root = createRoot(link => queueMicrotask(() => link.onload?.()));
+            harness.runtime.add(root, {});
+            const initial = result.stats.compilation.entrypoints
+                .get("shadow")!
+                .getFiles()
+                .filter(file => file.endsWith(".css"));
+            expect(initial).toHaveLength(2);
+            expect(root.links.map(link => link.href)).toEqual(initial.map(file => `https://extension.test/${file}`));
+            const normal = result.stats.compilation.entrypoints.get("normal")!.getFiles();
+            expect(initial.some(file => normal.includes(file))).toBe(true);
+            harness.runtime.delete(root);
+        } finally {
+            await result.close();
+        }
     }
-});
+);
 
 test.each(["contenthash", "chunkhash", "fullhash", "callback"])(
     "refreshes initial CSS URLs after editing CSS across %s rebuilds",

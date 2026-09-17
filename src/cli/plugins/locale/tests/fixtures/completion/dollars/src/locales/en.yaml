@@ -1,0 +1,5 @@
+title: Dollar test
+price: "${{value}}/week"
+spaced: "$ {{value}}/week"
+dollars: "$$ and $$$"
+named: "$USD$"
