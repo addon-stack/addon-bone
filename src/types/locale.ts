@@ -95,6 +95,7 @@ export type LocaleKeys = ReadonlySet<string>;
 export type LocaleMessages = {
     [key: string]: {
         message: string;
+        placeholders?: Record<string, {content: string}>;
     };
 };
 
