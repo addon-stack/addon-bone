@@ -32,7 +32,10 @@ export default class extends ViewCspFinder<PageEntrypointOptions> {
             .reserve(EntrypointType.Popup)
             .reserve(EntrypointType.Offscreen)
             .reserve(EntrypointType.Sandbox)
-            .reserve(EntrypointType.Options);
+            .reserve(EntrypointType.Options)
+            .reserve(EntrypointType.Newtab)
+            .reserve(EntrypointType.Bookmarks)
+            .reserve(EntrypointType.History);
     }
 
     protected createViewAlias(file: EntrypointFile, options: PageEntrypointOptions): string {

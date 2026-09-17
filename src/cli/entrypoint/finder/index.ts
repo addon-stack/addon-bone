@@ -1,5 +1,6 @@
 export {default as AbstractFinder} from "./AbstractFinder";
 export {default as AbstractEntrypointFinder} from "./AbstractEntrypointFinder";
+export {default as AbstractOverrideFinder} from "./AbstractOverrideFinder";
 export {default as AbstractPluginFinder} from "./AbstractPluginFinder";
 export {
     default as AbstractViewFinder,
@@ -11,10 +12,13 @@ export {
 export {default as ViewCspFinder} from "./ViewCspFinder";
 export {default as AbstractParsedFinder} from "./AbstractParsedFinder";
 export {default as BackgroundFinder} from "./BackgroundFinder";
+export {default as BookmarksFinder} from "./BookmarksFinder";
 export {default as CommandFinder} from "./CommandFinder";
 export {default as ContentFinder} from "./ContentFinder";
+export {default as HistoryFinder} from "./HistoryFinder";
 export {default as IconFinder, type IconName, type IconGroups, type IconItem, type IconItems} from "./IconFinder";
 export {default as LocaleFinder} from "./LocaleFinder";
+export {default as NewtabFinder} from "./NewtabFinder";
 export {default as OffscreenFinder} from "./OffscreenFinder";
 export {default as OffscreenViewFinder} from "./OffscreenViewFinder";
 export {default as OptionsFinder} from "./OptionsFinder";

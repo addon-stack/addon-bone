@@ -1,0 +1,9 @@
+{
+  "name": "adnbn-test-override-newtab",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "adnbn": "file:../../../../.."
+  }
+}

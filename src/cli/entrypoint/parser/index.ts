@@ -1,6 +1,9 @@
 export {default as BackgroundParser} from "./BackgroundParser";
+export {default as BookmarksParser} from "./BookmarksParser";
 export {default as CommandParser} from "./CommandParser";
 export {default as ContentParser} from "./ContentParser";
+export {default as HistoryParser} from "./HistoryParser";
+export {default as NewtabParser} from "./NewtabParser";
 export {default as OptionsParser} from "./OptionsParser";
 export {default as PageParser} from "./PageParser";
 export {default as PopupParser} from "./PopupParser";
