@@ -1,5 +1,93 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.13.0 (2026-09-17)
+
+### 💥 Breaking Changes
+
+* default watch observes child-list mutations only and ignores
+changes inside managed UI. Use a custom strategy to observe attributes or text.
+
+* custom ContentScriptContext implementations must provide owns(target).
+
+* Styles follow the entry's isolation by default. Use ?unisolated
+to deliver CSS to the host document instead of opting into isolation with ?isolation.
+
+
+### ⚡️ Performance Improvements
+
+* **content:** coalesce watch cycles and filter UI mutations ([07f3a9e](https://github.com/addon-stack/addon-bone/commit/07f3a9e007acd2d73e50e3c994458108b0f35acf))
+
+  Batch mutations in fixed windows and merge discovery requests into one cycle.
+  Ignore updates inside managed UI and avoid redundant marker writes.
+  Share completion and error handling without accumulating pending watch callbacks.
+  Release cycle resources on destroy and remove await-lock and debounce.
+  Document watch configuration, context ownership, and unresolved prepare promises.
+
+
+
+### ✨ Features
+
+* **content:** track managed containers through context ownership ([4dbb344](https://github.com/addon-stack/addon-bone/commit/4dbb344e0fbb946bb8654c9dba33737ec0bbf754))
+
+  Register each mount independently and query managed UI through context.owns().
+  Release registrations and renderer resources even when cleanup fails.
+  Cover reentrant unmounts, reused containers, Shadow DOM, and the public contract.
+
+* **styles:** route CSS by entry isolation and split document styles ([8b87b3b](https://github.com/addon-stack/addon-bone/commit/8b87b3b867a1b6b3a4adf36b142abf097a311dd8))
+
+  Keep one JavaScript layer per execution world and choose stylesheet delivery
+  per entry. Extract document CSS only from chunks used by isolated consumers,
+  including shared lazy chunks, and refresh entry options during watch rebuilds.
+
+  Cover shared components, initial and lazy CSS order, manifest/WAR, filename
+  templates, asset inventories, watch transitions, and Chrome/Firefox delivery.
+  Document the shared physical lazy-chunk ordering constraint.
+
+
+
+### 🐛 Bug Fixed
+
+* **bundler:** normalize asset maps and initial CSS filenames ([4fb40e4](https://github.com/addon-stack/addon-bone/commit/4fb40e478f8ce05858e8500290355b01bbeea1cd))
+
+  Deduplicate emitted asset inventories after content hash substitution while
+  preserving dependency order. Use the initial CSS filename template for shared
+  initial chunks and keep runtime templates beside the asset-map plugin.
+
+* **content:** wait for isolated styles before rendering ([e6cf5ea](https://github.com/addon-stack/addon-bone/commit/e6cf5eab1cca8ee870b3acf8bcb44ef632a5c636))
+
+  Gate Shadow DOM and blank iframe rendering on stylesheet readiness while keeping
+  mount and unmount synchronous. Preserve retry order, cancellation and mount events.
+
+  Separate node composition stages, initialize main before markers, and centralize
+  resolver checks. Cover lifecycle behavior with unit, type and browser tests.
+
+* **locale:** preserve literal dollars in native translations ([f42b98a](https://github.com/addon-stack/addon-bone/commit/f42b98ae84f92b57267793c60a242b2ff1745c1a))
+
+
+
+
+### 🧪 Tests
+
+* **styles:** wait for the requested watch compilation ([1108f0e](https://github.com/addon-stack/addon-bone/commit/1108f0ecce8a3be62a1efe16b6f2c0b3812ec48b))
+
+  Record CSS delivery selections per compilation and ignore stale watch results.
+  Exercise an input change before the watch callback to reproduce the race without
+  fixed delays or changes to production style routing.
+
+
+
+### 🛠️ Refactoring
+
+* **content:** simplify adapter render and definition layout ([a3ffabf](https://github.com/addon-stack/addon-bone/commit/a3ffabf765f62d4eda77404872d6e6e6d2546a4c))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 9
+
 ## 🚀 Release Addon Bone v0.12.0 (2026-09-15)
 
 ### 💥 Breaking Changes
