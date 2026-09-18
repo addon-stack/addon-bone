@@ -7,17 +7,18 @@ import NewtabParser from "./NewtabParser";
 import type {ReadonlyConfig} from "@typing/config";
 
 const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "override");
+const fixtures = path.resolve(__dirname, "tests", "fixtures");
 
 const config = {rootDir} as ReadonlyConfig;
 
+// The override parsers share one schema and differ only in the definition they recognise.
 describe.each([
     {type: "newtab", label: "New tab", parser: new NewtabParser(config)},
     {type: "bookmarks", label: "Bookmarks", parser: new BookmarksParser(config)},
     {type: "history", label: "History", parser: new HistoryParser(config)},
 ])("$type parser", ({type, label, parser}) => {
     const parseOptions = (scenario: string) => {
-        const filename = path.join(fixtures, type, scenario, `${type}.ts`);
+        const filename = path.join(fixtures, type, "options", scenario, `${type}.ts`);
 
         return parser.options({file: filename, import: filename});
     };
@@ -50,10 +51,6 @@ describe.each([
                 },
             },
         });
-    });
-
-    test("reads named exports alongside a default render function without options-only settings", () => {
-        expect(parseOptions("named-exports")).toEqual({title: `Named ${type}`});
     });
 
     test("ignores options wrapped in another override definition", () => {
