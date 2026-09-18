@@ -1,6 +1,7 @@
 import {z} from "zod";
 
 import AbstractParser from "./AbstractParser";
+import {PermissionsSchema} from "./schemas/permissions";
 
 import {BackgroundEntrypointOptions} from "@typing/background";
 
@@ -10,12 +11,8 @@ export default class<T extends BackgroundEntrypointOptions = BackgroundEntrypoin
     }
 
     protected schema(): typeof this.CommonPropertiesSchema {
-        return this.CommonPropertiesSchema.extend({
+        return this.CommonPropertiesSchema.merge(PermissionsSchema).extend({
             persistent: z.boolean().optional(),
-            permissions: z.array(z.string()).optional(),
-            optionalPermissions: z.array(z.string()).optional(),
-            hostPermissions: z.array(z.string()).optional(),
-            optionalHostPermissions: z.array(z.string()).optional(),
         });
     }
 }

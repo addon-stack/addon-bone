@@ -1,18 +1,11 @@
 import {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";
 import {Awaiter} from "@typing/helpers";
+import {PermissionsOptions} from "@typing/permissions";
 
 export const BackgroundEntryName = "background";
 
-type ManifestPermissions = chrome.runtime.ManifestPermission;
-
-type ManifestOptionalPermissions = chrome.runtime.ManifestOptionalPermission;
-
-export interface BackgroundConfig {
+export interface BackgroundConfig extends PermissionsOptions {
     persistent?: boolean;
-    permissions?: ManifestPermissions[];
-    optionalPermissions?: ManifestOptionalPermissions[];
-    hostPermissions?: string[];
-    optionalHostPermissions?: string[];
 }
 
 export type BackgroundOptions = BackgroundConfig & EntrypointOptions;

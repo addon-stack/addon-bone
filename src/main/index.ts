@@ -13,6 +13,7 @@ export * from "./offscreen";
 export * from "./options";
 export * from "./override";
 export * from "./page";
+export * from "./permissions";
 export * from "./plugin";
 export * from "./popup";
 export * from "./relay";
