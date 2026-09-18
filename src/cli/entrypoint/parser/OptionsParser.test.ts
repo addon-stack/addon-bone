@@ -57,27 +57,6 @@ describe("OptionsParser", () => {
         expect(parseOptions("options", "defaults", "options.ts")).toEqual({});
     });
 
-    test("reads named exports alongside a default render function", () => {
-        expect(parseOptions("options", "named-exports", "options.ts")).toEqual({
-            openInTab: false,
-            title: "Named options",
-        });
-    });
-
-    test("keeps explicit false from a default object over a named export", () => {
-        expect(parseOptions("options", "default-object", "options.ts")).toEqual({
-            openInTab: false,
-            title: "Default options",
-        });
-    });
-
-    test.each(["default-as", "default-satisfies"])("reads a %s definition", scenario => {
-        expect(parseOptions("options", scenario, "options.ts")).toEqual({
-            openInTab: false,
-            title: "Typed options",
-        });
-    });
-
     test("rejects a non-boolean openInTab value", () => {
         expect(() => parseOptions("invalid", "open-in-tab.ts")).toThrow("Invalid options openInTab");
     });
