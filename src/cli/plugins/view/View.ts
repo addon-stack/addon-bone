@@ -4,7 +4,7 @@ import _ from "lodash";
 import type {HtmlRspackPluginOptions} from "@rspack/core";
 import type {Options as HtmlRspackTagsPluginOptions} from "html-rspack-tags-plugin";
 
-import {AbstractViewFinder} from "@cli/entrypoint";
+import {AbstractViewFinder, HtmlOptionKeys} from "@cli/entrypoint";
 
 import {EntrypointEntries} from "@typing/entrypoint";
 import {ViewEntrypointOptions} from "@typing/view";
@@ -51,17 +51,8 @@ export default class<O extends ViewEntrypointOptions> {
         const views = await this.finder.views();
 
         for (const {filename, options} of views.values()) {
-            // prettier-ignore
-            const {
-                as,
-                title,
-                template,
-                excludeApp,
-                includeApp,
-                excludeBrowser,
-                includeBrowser,
-                ...tagOptions
-            } = options;
+            // Only HTML options reach the tags plugin; view, build and manifest options stay out of it.
+            const tagOptions = _.pick(options, HtmlOptionKeys);
 
             if (!_.isEmpty(tagOptions)) {
                 tags.push({
