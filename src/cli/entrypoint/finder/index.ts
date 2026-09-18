@@ -30,3 +30,4 @@ export {default as SandboxViewFinder} from "./SandboxViewFinder";
 export {default as ServiceFinder} from "./ServiceFinder";
 export {default as PluginFinder} from "./PluginFinder";
 export {default as SidebarFinder} from "./SidebarFinder";
+export {collectPermissions} from "./utils/permissions";

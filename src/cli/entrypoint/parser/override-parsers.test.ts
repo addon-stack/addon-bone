@@ -11,7 +11,8 @@ const fixtures = path.resolve(__dirname, "tests", "fixtures");
 
 const config = {rootDir} as ReadonlyConfig;
 
-// The override parsers share one schema and differ only in the definition they recognise.
+// The override parsers share one schema, including the permissions contract adopted by the family,
+// and differ only in the definition they recognise.
 describe.each([
     {type: "newtab", label: "New tab", parser: new NewtabParser(config)},
     {type: "bookmarks", label: "Bookmarks", parser: new BookmarksParser(config)},
@@ -23,7 +24,7 @@ describe.each([
         return parser.options({file: filename, import: filename});
     };
 
-    test("parses its own definition with inherited view, CSP and build filters", () => {
+    test("parses its own definition with permissions and inherited view, CSP and build filters", () => {
         expect(parseOptions("full")).toEqual({
             as: "dashboard",
             title: `${label} override`,
@@ -42,6 +43,10 @@ describe.each([
                     image: ["'self'", "data:", "blob:"],
                 },
             },
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["topSites"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
             scripts: "extra.js",
             links: "extra.css",
             metas: {

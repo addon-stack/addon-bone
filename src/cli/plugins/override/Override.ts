@@ -2,7 +2,13 @@ import path from "path";
 
 import View from "../view/View";
 
-import {AbstractOverrideFinder, BookmarksFinder, HistoryFinder, NewtabFinder} from "@cli/entrypoint";
+import {
+    AbstractOverrideFinder,
+    BookmarksFinder,
+    collectPermissions,
+    HistoryFinder,
+    NewtabFinder,
+} from "@cli/entrypoint";
 import {resolveRootPath} from "@cli/resolvers/path";
 import {toPosix} from "@cli/utils/path";
 
@@ -12,6 +18,7 @@ import type {ReadonlyConfig} from "@typing/config";
 import type {CspConfig} from "@typing/csp";
 import type {ManifestOverride} from "@typing/manifest";
 import type {OverrideEntrypointOptions, OverrideEntrypointType} from "@typing/override";
+import type {EntrypointPermissions} from "@typing/permissions";
 
 type OverrideFinder = AbstractOverrideFinder<OverrideEntrypointOptions>;
 
@@ -67,6 +74,13 @@ export default class Override {
         const finder = await this.finder();
 
         return finder ? finder.csp() : [];
+    }
+
+    /** Permissions of the override that reaches the build; skipped and losing candidates contribute nothing. */
+    public async permissions(): Promise<EntrypointPermissions> {
+        const finder = await this.finder();
+
+        return collectPermissions(finder ? await finder.selectedOptions() : []);
     }
 
     public clear(): this {

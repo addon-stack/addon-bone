@@ -30,10 +30,20 @@ const createCompetingFixture = async (): Promise<IntegrationFixture> => {
 };
 
 describe.each([
-    {page: "newtab", supported: ["chrome", "edge", "firefox", "safari"], unsupported: ["opera"]},
-    {page: "bookmarks", supported: ["chrome", "edge"], unsupported: ["firefox", "safari", "opera"]},
-    {page: "history", supported: ["chrome", "edge"], unsupported: ["firefox", "safari", "opera"]},
-])("$page override", ({page, supported, unsupported}) => {
+    {page: "newtab", permission: "search", supported: ["chrome", "edge", "firefox", "safari"], unsupported: ["opera"]},
+    {
+        page: "bookmarks",
+        permission: "bookmarks",
+        supported: ["chrome", "edge"],
+        unsupported: ["firefox", "safari", "opera"],
+    },
+    {
+        page: "history",
+        permission: "history",
+        supported: ["chrome", "edge"],
+        unsupported: ["firefox", "safari", "opera"],
+    },
+])("$page override", ({page, permission, supported, unsupported}) => {
     const fixtureDir = path.join(__dirname, page);
     const source = `https://${page}.example.com`;
 
@@ -49,6 +59,7 @@ describe.each([
                 expect(manifest.manifest_version).toBe(manifestVersion);
                 expect(manifest.chrome_url_overrides).toEqual({[page]: `${page}.html`});
                 expect(JSON.stringify(manifest.content_security_policy)).toContain(source);
+                expect(manifest.permissions).toContain(permission);
                 expect(html).toContain("<title>Custom");
                 expect(html).toContain("<script");
             } finally {
@@ -68,6 +79,7 @@ describe.each([
                 expect(manifest.manifest_version).toBe(manifestVersion);
                 expect(manifest).not.toHaveProperty("chrome_url_overrides");
                 expect(JSON.stringify(manifest)).not.toContain(source);
+                expect(manifest.permissions ?? []).not.toContain(permission);
                 expect(await readdir(extensionDir)).not.toContain(`${page}.html`);
             } finally {
                 await fixture.dispose();
@@ -93,7 +105,7 @@ describe("competing overrides", () => {
         }
     });
 
-    test("firefox build keeps the new tab because it does not support the history page", async () => {
+    test("firefox build keeps the new tab and its permission without the unsupported history page", async () => {
         const fixture = await createCompetingFixture();
 
         try {
@@ -101,6 +113,7 @@ describe("competing overrides", () => {
             const manifest = await readManifest(extensionDir);
 
             expect(manifest.chrome_url_overrides).toEqual({newtab: "newtab.html"});
+            expect(manifest.permissions).toEqual(["search"]);
             expect(await readdir(extensionDir)).not.toContain("history.html");
         } finally {
             await fixture.dispose();

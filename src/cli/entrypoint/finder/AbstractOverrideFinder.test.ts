@@ -98,6 +98,16 @@ describe.each([
         await expect(finder.csp()).resolves.toEqual([{sources: {connect: ["https://app.example.com"]}}]);
     });
 
+    test("reports the parsed options of the selected candidate only, with its manifest settings", async () => {
+        await expect(makeFinder().selectedOptions()).resolves.toEqual([
+            {
+                title: `App ${type}`,
+                csp: {sources: {connect: ["https://app.example.com"]}},
+                permissions: ["storage"],
+            },
+        ]);
+    });
+
     test("uses the plugin candidate when the workspace has none", async () => {
         const finder = makeFinder({srcDir: "missing"});
         const [view] = (await finder.views()).values();
@@ -108,5 +118,6 @@ describe.each([
             options: {title: `Plugin ${type}`},
         });
         await expect(finder.csp()).resolves.toEqual([{sources: {connect: ["https://plugin.example.com"]}}]);
+        await expect(finder.selectedOptions()).resolves.toMatchObject([{permissions: ["topSites"]}]);
     });
 });

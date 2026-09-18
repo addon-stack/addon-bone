@@ -18,6 +18,10 @@ export default defineBookmarks({
             image: [CspSource.Self, "data:", "blob:"],
         },
     },
+    permissions: ["storage", "tabs"],
+    optionalPermissions: ["topSites"],
+    hostPermissions: ["https://*.example.com/*"],
+    optionalHostPermissions: ["https://other.test/*"],
     scripts: "extra.js",
     links: "extra.css",
     metas: {

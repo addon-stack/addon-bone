@@ -1,6 +1,7 @@
 import {ViewDefinition, ViewOptions} from "@typing/view";
 import {CspOptions} from "@typing/csp";
 import {EntrypointType} from "@typing/entrypoint";
+import {PermissionsOptions} from "@typing/permissions";
 
 /**
  * Entrypoints that replace a built-in browser page through `chrome_url_overrides`.
@@ -9,7 +10,7 @@ import {EntrypointType} from "@typing/entrypoint";
  */
 export type OverrideEntrypointType = EntrypointType.Newtab | EntrypointType.Bookmarks | EntrypointType.History;
 
-export type OverrideEntrypointOptions = CspOptions & ViewOptions;
+export type OverrideEntrypointOptions = PermissionsOptions & CspOptions & ViewOptions;
 
 export type OverrideProps = OverrideEntrypointOptions;
 
