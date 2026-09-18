@@ -12,6 +12,14 @@
 - Wait for the expected compilation or observable output with a descriptive timeout. Do not rely on fixed sleeps or assume that emitted files mean the watcher has finished reconnecting. Preserve exact filename casing and account for platform line endings when they are not part of the tested contract.
 - A local pass on one operating system does not establish cross-platform compatibility. For platform-specific failures, reproduce the relevant filesystem or process behavior when possible and distinguish that simulation from validation on the actual CI runner. Do not hide the failure by skipping the platform or only increasing timeouts.
 
+## Entrypoint parsing tests
+
+- `src/cli/entrypoint/file` reads source files without knowing entrypoints: a parser only supplies a definition name and its schema keys through `AbstractParser.optionFile()`. Organize its tests and fixtures by what the reader can read, not by entrypoint: export shapes in `tests/fixtures/export-shapes`, static value resolution in `static-options`, and expression kinds in `expression`. Cover every way a file may declare options there once; do not repeat that matrix per entrypoint.
+- `src/cli/entrypoint/parser` tests are organized by entrypoint: one `<Name>Parser.test.ts` per parser, or one kebab-case file using `describe.each` for a family whose parsers differ only in the definition they recognise. Keep fixtures in `tests/fixtures/<entrypoint>/options/<scenario>/`, `invalid/`, and `contracts/`. Use real entrypoint files rather than mocked readers or generated source strings.
+- A parser test proves what the parser owns: its definition is recognised and a sibling's is ignored; a `full` scenario reads every accepted key through its own definition; defaults; invalid values of its own keys; entrypoint-specific interpretation; and `contract()` when the parser declares an agreement. The `full` scenario is also how an entrypoint proves that it adopted a shared schema fragment.
+- Test a shared schema fragment once at its owner: the common filters in `AbstractParser.test.ts`; view and CSP options belong beside `ViewParser` and `ViewCspParser`. Do not add a cross-cutting test file with one row per adopting entrypoint.
+- Do not re-test export shapes such as named exports, default objects, `as`, or `satisfies` in a parser test. Add a parser-level shape scenario only when the entrypoint gives that shape a meaning, for example the Content default render or the Relay init.
+
 ## Responsibility boundaries
 
 ### Layer ownership
