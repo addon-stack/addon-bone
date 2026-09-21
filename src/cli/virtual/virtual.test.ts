@@ -16,7 +16,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualCommandModule",
-            imports: ["adnbn", "adnbn/entry/command", "{entry}"],
+            imports: ["adnbn/entry/command", "{entry}"],
         },
         {
             generator: "virtualContentScriptModule",
@@ -173,6 +173,12 @@ describe("Built virtual modules", () => {
                 specifier: "adnbn/entry/background",
                 startup: "background",
                 call: "background(resolveDefinition(module))",
+            },
+            {
+                generator: "virtualCommandModule",
+                specifier: "adnbn/entry/command",
+                startup: "command",
+                call: 'command(resolveDefinition(module, "example"))',
             },
             {
                 generator: "virtualContentScriptModule",
