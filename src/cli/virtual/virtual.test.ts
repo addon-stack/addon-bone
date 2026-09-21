@@ -12,7 +12,7 @@ describe("Built virtual modules", () => {
     const cases: {generator: Generator; imports: string[]}[] = [
         {
             generator: "virtualBackgroundModule",
-            imports: ["adnbn", "adnbn/entry/background", "{entry}"],
+            imports: ["adnbn/entry/background", "{entry}"],
         },
         {
             generator: "virtualCommandModule",
@@ -168,6 +168,12 @@ describe("Built virtual modules", () => {
         {extension: "tsx" as const, framework: "react"},
     ])("with $framework entrypoints", ({extension, framework}) => {
         test.each([
+            {
+                generator: "virtualBackgroundModule",
+                specifier: "adnbn/entry/background",
+                startup: "background",
+                call: "background(resolveDefinition(module))",
+            },
             {
                 generator: "virtualContentScriptModule",
                 specifier: "adnbn/entry/content/{framework}",
