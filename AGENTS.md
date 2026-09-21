@@ -119,6 +119,16 @@ return node;
 - Name classes after their responsibility and role, such as `LocaleFinder` or `ContentParser`. Avoid names tied only to a temporary implementation detail or former file location.
 - Keep private helpers and local variables concise when their surrounding scope already supplies the domain. Do not mechanically repeat a long public prefix everywhere.
 
+## Type declarations and reuse
+
+- Apply these conventions to every type the project owns: shared contracts, runtime APIs, entrypoints, CLI, bundler plugins, and tests.
+- Refer to a type by its name wherever it appears in class and function code: return types, parameters, properties, generic arguments, and local annotations. Do not reach into another type with an indexed access such as `ReadonlyConfig["homepage"]` or `ViewItem<O>["options"]`. The reader has to open the other declaration to learn what the member is, and the signature silently changes when that declaration does.
+- Reuse before declaring. Look for the named type that already describes the value, starting in `src/types`, and use it instead of describing the same shape again inline. For example, use `ManifestHostPermissions` rather than `Set<string>`, `EntrypointFile` rather than `{file: string; import: string}`, and `ViewItems<O>` rather than `Map<string, ViewItem<O>>`. One concept has one name across types, parsers, finders, plugins, and builders.
+- When no name exists, declare one where the concept is owned: a shared contract in `src/types`, a type private to one module beside its only consumer. Follow the symbol naming rules above, and do not keep two names for the same shape.
+- For a third-party type that exposes only a nested member, add a local alias in the owning contract, as `types/manifest.ts` does for `chrome.runtime.ManifestPermission`, instead of indexing it inside a class.
+- Build a contract by composing named contracts rather than copying their fields, for example `PopupConfig & PermissionsOptions & CspOptions & ViewOptions`. A contract that only part of the entrypoints adopt stays a separate named mixin.
+- Indexed access remains appropriate inside type-level utilities that are generic over the key, such as `PluginHandlerOptions<K>`, where no single named type can replace it.
+
 ## Class exports
 
 - When a class is the main export of a file, always export it by default. Keep the class explicitly named to match the file, for example `export default class ReactLocale` in `ReactLocale.ts`.
