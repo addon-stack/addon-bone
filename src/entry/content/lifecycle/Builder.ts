@@ -2,15 +2,11 @@ import {isContentScriptFrameNavigation, resolveContentScriptIsolation} from "@sh
 
 import EntrypointBuilder from "@entry/core/Builder";
 
-import {
-    createAnchorResolver,
-    createAwaitFirstStrategy,
-    createContainerResolver,
-    createTargetResolver,
-    withLocationTracking,
-    createAppendMountHandler,
-    createMutationObserverStrategy,
-} from "../resolvers";
+import {createAnchorResolver} from "../resolvers/anchor";
+import {createContainerResolver} from "../resolvers/container";
+import {createAppendMountHandler} from "../resolvers/mount";
+import {createTargetResolver} from "../resolvers/target";
+import {createAwaitFirstStrategy, createMutationObserverStrategy, withLocationTracking} from "../resolvers/watch";
 
 import {ManagedContext, EventEmitter} from "./context";
 import {AttributeMarker, WeakMarker} from "./markers";

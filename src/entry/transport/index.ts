@@ -1,1 +1,6 @@
-export * from "./resolvers";
+export {
+    isValidTransportDefinition,
+    isValidTransportInitFunction,
+    isValidTransportMainFunction,
+    isValidTransportName,
+} from "./resolvers/definition";

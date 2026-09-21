@@ -80,6 +80,8 @@
 - Import internal TypeScript modules through configured aliases or relative paths without a file extension. Do not write the future `.js` output path into a TypeScript source import.
 - Output extensions and external-module paths belong to the build configuration. When a bundled entry needs an external dependency, resolve its source import to the emitted ESM path during the build.
 - Imports of actual JavaScript files, package subpaths, and loader-specific resources such as `.ts?raw` keep the syntax required by their owner. This rule does not rewrite raw template contents or generated JavaScript imports.
+- A directory of functions inside an entrypoint runtime, such as `src/entry/<name>/resolvers`, has no `index.ts`. Import the owning file, for example `./resolvers/definition`, so the path shows where the logic lives. Directories of classes follow the class export rules below.
+- An entrypoint runtime's `index.ts` is its package subpath `adnbn/entry/<name>`. List its exports explicitly and do not use `export *`, so an internal helper never becomes public by accident.
 - Apply this convention to new and changed imports; do not mass-rewrite unrelated files.
 
 ## Code layout
