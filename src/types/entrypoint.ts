@@ -149,6 +149,8 @@ export interface EntrypointNameGenerator {
 
     file(file: EntrypointFile): string;
 
+    derive(file: EntrypointFile): string;
+
     likely(name?: string): boolean;
 
     has(name: string): boolean;

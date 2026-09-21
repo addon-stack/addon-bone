@@ -40,6 +40,14 @@ describe("NameGenerator", () => {
         expect(new NameGenerator(EntrypointType.Page).file(file("/project/src/docs/index.ts"))).toBe("docs.page");
     });
 
+    test("derives a file name without claiming it", () => {
+        const generator = new NameGenerator(EntrypointType.Page);
+
+        expect(generator.derive(file("/project/src/docs.page.ts"))).toBe("docs");
+        expect(generator.has("docs.page")).toBe(false);
+        expect(generator.file(file("/project/src/docs.page.ts"))).toBe("docs.page");
+    });
+
     test("skips reserved names", () => {
         expect(new NameGenerator(EntrypointType.Page).reserve("docs.page").name("docs")).toBe("docs1.page");
     });
