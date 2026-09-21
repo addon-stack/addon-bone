@@ -1,4 +1,7 @@
 import {isValidElement} from "react";
+
+import {isDomRenderValue} from "@entry/core/render";
+
 import {mergeDefinition} from "../../resolvers/definition";
 
 import type {ContentScriptDefinition} from "@typing/content";
@@ -6,11 +9,6 @@ import type {ContentScriptDefinition} from "@typing/content";
 export const resolveDefinition = (module: object): ContentScriptDefinition => {
     return mergeDefinition(
         module,
-        value =>
-            typeof value === "function" ||
-            isValidElement(value) ||
-            typeof value === "number" ||
-            (typeof value === "string" && value.length > 0) ||
-            value instanceof Element
+        value => typeof value === "function" || isValidElement(value) || isDomRenderValue(value)
     );
 };

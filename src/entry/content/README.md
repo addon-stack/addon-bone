@@ -130,13 +130,17 @@ Each adapter interprets its own default export before shared code merges options
 override named options; a recognized default render value overrides a named `render`. React uses
 `isValidElement` to recognize elements without exposing that dependency to Vanilla or the common runtime.
 For React UI, pass a React element or component function. Component functions are invoked by React
-and may use hooks. Vanilla renders DOM elements, nonempty strings, and numbers.
+and may use hooks. Every adapter also renders the framework-independent values the same way: a
+nonempty string or a number becomes text through `textContent` and is never parsed as HTML, and a DOM
+element is appended as is. Markup comes from elements or from the UI framework. Empty strings,
+booleans, `null`, and `undefined` render nothing.
 `mergeDefinition` combines exports using the selected resolver's interpretation of default
 values. The common `resolveDefinition` accepts configuration without recognizing framework
 components; adapters provide their own definition resolvers. The common builder accepts absent rendering
 and literal `render: true`; UI rendering requires an adapter. Each adapter prepares synchronous render
-handlers in its builder's `resolveRender()` method. Vanilla shares its value check between the builder
-and the definition resolver through `adapters/vanilla/utils.ts`.
+handlers in its builder's `resolveRender()` method. The value check and the text/element rendering are
+shared with the view adapters through `src/entry/core/render.ts`; it compares the node type instead of
+`instanceof Element`, so elements created in an iframe document are accepted.
 
 The CLI `ContentParser.ts` and its test live beside the other parsers in `src/cli/entrypoint/parser`.
 Content fixtures live in `parser/tests/fixtures/content`. The helper in

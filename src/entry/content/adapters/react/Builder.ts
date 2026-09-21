@@ -1,5 +1,7 @@
 import {createElement, isValidElement} from "react";
 
+import {isDomRenderValue} from "@entry/core/render";
+
 import ReactNode from "./Node";
 
 import MountBuilder from "../../lifecycle/MountBuilder";
@@ -32,7 +34,7 @@ export default class Builder<
                     ? createElement(render as ContentScriptRenderReactComponent<Data>, props)
                     : render;
 
-            return isValidElement(value) ? value : undefined;
+            return isValidElement(value) || isDomRenderValue(value) ? value : undefined;
         };
     }
 

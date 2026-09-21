@@ -1,6 +1,8 @@
 import {createElement, isValidElement} from "react";
 import {createRoot, Root} from "react-dom/client";
 
+import {isDomRenderValue, renderDomValue} from "@entry/core/render";
+
 import ViewBuilder from "../../Builder";
 
 import {ViewConfig, ViewDefinition, ViewRenderHandler, ViewRenderReactComponent, ViewRenderValue} from "@typing/view";
@@ -22,17 +24,17 @@ export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
             const value =
                 typeof render === "function" ? createElement(render as ViewRenderReactComponent<T>, props) : render;
 
-            return isValidElement(value) ? value : undefined;
+            return isValidElement(value) || isDomRenderValue(value) ? value : undefined;
         };
     }
 
     protected mount(container: Element, value: ViewRenderValue<T>): void {
-        if (!isValidElement(value)) {
-            return;
+        if (isValidElement(value)) {
+            this.root = createRoot(container);
+            this.root.render(value);
+        } else if (isDomRenderValue(value)) {
+            renderDomValue(container, value);
         }
-
-        this.root = createRoot(container);
-        this.root.render(value);
     }
 
     protected unmount(): void {

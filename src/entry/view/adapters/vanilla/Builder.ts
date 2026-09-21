@@ -1,5 +1,6 @@
+import {isDomRenderValue, renderDomValue} from "@entry/core/render";
+
 import ViewBuilder from "../../Builder";
-import {isValidRenderValue} from "./utils";
 
 import {ViewConfig, ViewDefinition, ViewRenderHandler, ViewRenderValue} from "@typing/view";
 
@@ -16,15 +17,13 @@ export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
         return async props => {
             const value = typeof render === "function" ? await render(props) : render;
 
-            return isValidRenderValue(value) ? value : undefined;
+            return isDomRenderValue(value) ? value : undefined;
         };
     }
 
     protected mount(container: Element, value: ViewRenderValue<T>): void {
-        if (value instanceof Element) {
-            container.appendChild(value);
-        } else if (typeof value === "string" || typeof value === "number") {
-            container.innerHTML = value.toString();
+        if (isDomRenderValue(value)) {
+            renderDomValue(container, value);
         }
     }
 }

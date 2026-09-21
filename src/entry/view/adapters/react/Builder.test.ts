@@ -59,9 +59,28 @@ describe("React view Builder", () => {
         expect(document.body.children).toHaveLength(0);
     });
 
-    test("creates no container for a value React cannot render", async () => {
-        await act(() => new Builder<ViewConfig>({render: "text"}).build());
+    test.each([
+        ["an HTML string", "<b>bold</b>"],
+        ["zero", 0],
+    ])("renders %s as text", async (_, value) => {
+        await act(() => new Builder<ViewConfig>({render: value}).build());
 
+        expect(document.body.firstElementChild?.textContent).toBe(String(value));
+        expect(document.body.firstElementChild?.children).toHaveLength(0);
+    });
+
+    test("appends a DOM element render value", async () => {
+        const element = document.createElement("p");
+
+        await act(() => new Builder<ViewConfig>({render: element}).build());
+
+        expect(document.body.firstElementChild?.firstElementChild).toBe(element);
+    });
+
+    test("creates no container for an unsupported value", async () => {
+        await act(() => new Builder<ViewConfig>({title: "Empty", render: true}).build());
+
+        expect(document.title).toBe("Empty");
         expect(document.body.children).toHaveLength(0);
     });
 });

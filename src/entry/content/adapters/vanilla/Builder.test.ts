@@ -153,7 +153,7 @@ describe("Vanilla Builder", () => {
         ]);
     });
 
-    test.each(["text", 0, 12])("Vanilla preserves the default render value %p", async value => {
+    test.each(["text", "<b>text</b>", 0, 12])("Vanilla renders the default value %p as text", async value => {
         const anchor = document.createElement("article");
         document.body.appendChild(anchor);
         const builder = new Builder(resolveDefinition({anchor, default: value}));
@@ -161,6 +161,7 @@ describe("Vanilla Builder", () => {
         try {
             await builder.build();
             expect(anchor.textContent).toBe(String(value));
+            expect(anchor.querySelector("b")).toBeNull();
         } finally {
             await builder.destroy();
         }

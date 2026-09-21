@@ -121,6 +121,34 @@ describe("React Builder", () => {
             await act(() => builder.destroy());
         }
     });
+
+    test.each(["text", "<b>text</b>", 0, 12])("React renders the default value %p as text", async value => {
+        const anchor = document.createElement("article");
+        document.body.appendChild(anchor);
+        const builder = new Builder(resolveDefinition({anchor, default: value}));
+
+        try {
+            await act(() => builder.build());
+            expect(anchor.textContent).toBe(String(value));
+            expect(anchor.querySelector("b")).toBeNull();
+        } finally {
+            await act(() => builder.destroy());
+        }
+    });
+
+    test("React appends a DOM element render value", async () => {
+        const anchor = document.createElement("article");
+        const element = document.createElement("span");
+        document.body.appendChild(anchor);
+        const builder = new Builder(resolveDefinition({anchor, default: element}));
+
+        try {
+            await act(() => builder.build());
+            expect(anchor.querySelector("span")).toBe(element);
+        } finally {
+            await act(() => builder.destroy());
+        }
+    });
 });
 
 test("React receives prepared data and fresh DOM props while retaining state on the same target", async () => {

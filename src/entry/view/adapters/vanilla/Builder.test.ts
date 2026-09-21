@@ -32,12 +32,13 @@ describe("Vanilla view Builder", () => {
     });
 
     test.each([
-        ["an HTML string as markup", "<b>bold</b>", "<b>bold</b>"],
-        ["zero as text", 0, "0"],
-    ])("renders %s", async (_, value, html) => {
+        ["an HTML string", "<b>bold</b>"],
+        ["zero", 0],
+    ])("renders %s as text", async (_, value) => {
         await new Builder<ViewConfig>({render: value}).build();
 
-        expect(document.body.firstElementChild?.innerHTML).toBe(html);
+        expect(document.body.firstElementChild?.textContent).toBe(String(value));
+        expect(document.body.firstElementChild?.children).toHaveLength(0);
     });
 
     test("creates the container from the container option", async () => {
