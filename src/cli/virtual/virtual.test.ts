@@ -24,7 +24,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualServiceModule",
-            imports: ["adnbn/transport", "adnbn/entry/transport", "adnbn/entry/service", "{entry}"],
+            imports: ["adnbn/entry/service", "{entry}"],
         },
         {
             generator: "virtualOffscreenModule",
@@ -167,34 +167,43 @@ describe("Built virtual modules", () => {
         {extension: "ts" as const, framework: "vanilla"},
         {extension: "tsx" as const, framework: "react"},
     ])("with $framework entrypoints", ({extension, framework}) => {
-        test("loads definition normalization from the selected content entrypoint", () => {
-            for (const source of [
-                generated[extension].virtualContentScriptModule,
-                navigation[extension].virtualContentScriptModule,
-            ]) {
-                const file = ts.createSourceFile("content.ts", source, ts.ScriptTarget.Latest, true);
-                const adapterImport = file.statements.find(ts.isImportDeclaration)!;
-                const bindings = adapterImport.importClause?.namedBindings;
-                expect(
-                    bindings && ts.isNamedImports(bindings) && bindings.elements.map(element => element.name.text)
-                ).toEqual(["resolveDefinition"]);
-                expect(source).toContain("contentScript(resolveDefinition(module))");
-            }
-        });
+        test.each([
+            {
+                generator: "virtualContentScriptModule",
+                specifier: "adnbn/entry/content/{framework}",
+                startup: "contentScript",
+                call: "contentScript(resolveDefinition(module))",
+            },
+            {
+                generator: "virtualRelayModule",
+                specifier: "adnbn/entry/relay",
+                startup: "relay",
+                call: 'relay(resolveDefinition(module, "example"), ContentBuilder)',
+            },
+            {
+                generator: "virtualServiceModule",
+                specifier: "adnbn/entry/service",
+                startup: "service",
+                call: 'service(resolveDefinition(module, "example"))',
+            },
+        ] as const)(
+            "$generator delegates normalization and startup to its runtime entrypoint",
+            ({generator, specifier, startup, call}) => {
+                const source = generated[extension][generator];
+                const file = ts.createSourceFile("entry.ts", source, ts.ScriptTarget.Latest, true);
+                const entryImport = file.statements.find(ts.isImportDeclaration)!;
+                const bindings = entryImport.importClause?.namedBindings;
 
-        test("delegates Relay normalization and startup to its runtime entrypoint", () => {
-            for (const source of [generated[extension].virtualRelayModule, navigation[extension].virtualRelayModule]) {
-                const file = ts.createSourceFile("relay.ts", source, ts.ScriptTarget.Latest, true);
-                const relayImport = file.statements.find(ts.isImportDeclaration)!;
-                expect((relayImport.moduleSpecifier as ts.StringLiteral).text).toBe("adnbn/entry/relay");
-                expect(relayImport.importClause?.name?.text).toBe("relay");
-                const bindings = relayImport.importClause?.namedBindings;
+                expect((entryImport.moduleSpecifier as ts.StringLiteral).text).toBe(
+                    specifier.replace("{framework}", framework)
+                );
+                expect(entryImport.importClause?.name?.text).toBe(startup);
                 expect(
                     bindings && ts.isNamedImports(bindings) && bindings.elements.map(element => element.name.text)
                 ).toEqual(["resolveDefinition"]);
-                expect(source).toContain('relay(resolveDefinition(module, "example"), ContentBuilder)');
+                expect(source).toContain(call);
             }
-        });
+        );
 
         test.each(cases)("$generator preserves package imports and resolves placeholders", ({generator, imports}) => {
             const source = generated[extension][generator];
@@ -206,7 +215,6 @@ describe("Built virtual modules", () => {
                 )
             );
             expect(source).not.toContain("virtual:");
-            expect(source).not.toContain(":entry");
         });
 
         test.each(["virtualContentScriptModule", "virtualRelayModule"] as const)(

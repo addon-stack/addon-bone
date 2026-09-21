@@ -136,20 +136,13 @@ declare module "virtual:view-framework" {
     export default view;
 }
 
-declare module "virtual:transport-entrypoint" {
-    type TransportDefinition = import("@typing/transport").TransportDefinition<any, any>;
+declare module "virtual:service-entrypoint" {
+    type ServiceDefinition = import("@typing/service").ServiceDefinition<import("@typing/transport").TransportType>;
 
-    interface ModuleType extends TransportDefinition {
-        default: TransportDefinition | TransportDefinition["init"] | undefined;
+    interface ModuleType extends ServiceDefinition {
+        default: ServiceDefinition | ServiceDefinition["init"] | undefined;
     }
 
     const module: ModuleType;
     export = module;
-}
-
-declare module "adnbn/entry/:entry" {
-    import type {TransportUnresolvedDefinition, TransportOptions, TransportType} from "@typing/transport";
-
-    const transport: (definition: TransportUnresolvedDefinition<TransportOptions, TransportType>) => void;
-    export default transport;
 }
