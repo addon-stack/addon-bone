@@ -40,7 +40,7 @@ export const virtualContentScriptModule = (file: EntrypointFile, navigation = fa
 export const virtualOffscreenModule = (file: EntrypointFile, name: string): string => {
     return getVirtualModule(file, "offscreen")
         .replace("virtual:offscreen-name", name)
-        .replace(`virtual:view-framework`, getEntryFramework(file, "view"));
+        .replace(`virtual:view-builder`, getEntryFramework(file, "view"));
 };
 
 export const virtualOffscreenBackgroundModule = (): string => {
@@ -59,7 +59,7 @@ export const virtualRelayModule = (file: EntrypointFile, name: string, navigatio
 export const virtualSandboxModule = (file: EntrypointFile, name: string): string => {
     return getVirtualModule(file, "sandbox")
         .replace("virtual:sandbox-name", name)
-        .replace(`virtual:view-framework`, getEntryFramework(file, "view"));
+        .replace(`virtual:view-builder`, getEntryFramework(file, "view"));
 };
 
 export const virtualServiceModule = (file: EntrypointFile, name: string): string => {
@@ -69,5 +69,5 @@ export const virtualServiceModule = (file: EntrypointFile, name: string): string
 export const virtualViewModule = (file: EntrypointFile): string => {
     // prettier-ignore
     return getVirtualModule(file, "view")
-        .replace(`virtual:view-framework`, getEntryFramework(file, "view"));
+        .replace(`virtual:view-builder`, getEntryFramework(file, "view"));
 };

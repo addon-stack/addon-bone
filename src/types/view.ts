@@ -42,7 +42,7 @@ export interface ViewDefinition<T extends ViewConfig> extends ViewOptions {
 }
 
 export interface ViewResolvedDefinition<T extends ViewConfig> extends ViewDefinition<T> {
-    render: ViewRenderHandler<T>;
+    render?: ViewRenderHandler<T>;
     container: ViewContainerCreator<T>;
 }
 

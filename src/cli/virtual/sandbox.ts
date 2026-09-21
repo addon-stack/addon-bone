@@ -3,7 +3,7 @@ import type {TransportType} from "adnbn/transport";
 import {isValidTransportDefinition, isValidTransportInitFunction} from "adnbn/entry/transport";
 import {Builder as SandboxBuilder} from "adnbn/entry/sandbox";
 
-import {Builder as ViewBuilder} from "virtual:view-framework";
+import {Builder as ViewBuilder} from "virtual:view-builder";
 
 import * as module from "virtual:sandbox-entrypoint";
 

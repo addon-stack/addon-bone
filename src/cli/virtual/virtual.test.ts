@@ -58,12 +58,29 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualViewModule",
-            imports: ["adnbn", "adnbn/entry/view", "adnbn/entry/view/{framework}", "{entry}"],
+            imports: ["adnbn/entry/view/{framework}", "{entry}"],
         },
     ];
     let generated: Record<"ts" | "tsx", Record<Generator, string>>;
     let navigation: Record<"ts" | "tsx", Record<"virtualContentScriptModule" | "virtualRelayModule", string>>;
     let contentModule: string;
+
+    const bundleInputs = async (entrypoint: string): Promise<string[]> => {
+        const result = await build({
+            absWorkingDir: projectDir,
+            entryPoints: [entrypoint],
+            bundle: true,
+            platform: "browser",
+            format: "esm",
+            // Resolve the published package exports instead of the source aliases in tsconfig.json.
+            tsconfigRaw: {},
+            write: false,
+            metafile: true,
+            logLevel: "silent",
+        });
+
+        return Object.keys(result.metafile!.inputs).map(filename => filename.replaceAll("\\", "/"));
+    };
 
     beforeAll(() => {
         // Run the final JS artifact in Node, without Jest transforms, source aliases, or module mocks.
@@ -137,19 +154,7 @@ describe("Built virtual modules", () => {
         "adnbn/entry/content",
         "adnbn/entry/relay",
     ])("%s includes only its own framework dependencies in the bundle graph", async entrypoint => {
-        const result = await build({
-            absWorkingDir: projectDir,
-            entryPoints: [entrypoint],
-            bundle: true,
-            platform: "browser",
-            format: "esm",
-            // Resolve the published package exports instead of the source aliases in tsconfig.json.
-            tsconfigRaw: {},
-            write: false,
-            metafile: true,
-            logLevel: "silent",
-        });
-        const inputs = Object.keys(result.metafile!.inputs).map(filename => filename.replaceAll("\\", "/"));
+        const inputs = await bundleInputs(entrypoint);
         const usesReact = entrypoint.endsWith("/react");
 
         expect(inputs.some(filename => /node_modules\/react\//.test(filename))).toBe(usesReact);
@@ -162,6 +167,18 @@ describe("Built virtual modules", () => {
             entrypoint.endsWith("/vanilla")
         );
     });
+
+    test.each(["adnbn/entry/view/vanilla", "adnbn/entry/view/react"])(
+        "%s includes React only in the React view adapter bundle graph",
+        async entrypoint => {
+            const inputs = await bundleInputs(entrypoint);
+            const usesReact = entrypoint.endsWith("/react");
+
+            expect(inputs.some(filename => /node_modules\/react\//.test(filename))).toBe(usesReact);
+            expect(inputs.some(filename => /node_modules\/react-dom\//.test(filename))).toBe(usesReact);
+            expect(inputs.some(filename => filename.includes("entry/view/adapters/react/"))).toBe(usesReact);
+        }
+    );
 
     describe.each([
         {extension: "ts" as const, framework: "vanilla"},
@@ -197,6 +214,12 @@ describe("Built virtual modules", () => {
                 specifier: "adnbn/entry/service",
                 startup: "service",
                 call: 'service(resolveDefinition(module, "example"))',
+            },
+            {
+                generator: "virtualViewModule",
+                specifier: "adnbn/entry/view/{framework}",
+                startup: "view",
+                call: "view(resolveDefinition(module))",
             },
         ] as const)(
             "$generator delegates normalization and startup to its runtime entrypoint",

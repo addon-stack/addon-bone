@@ -1,54 +1,42 @@
-import {isValidElement} from "react";
+import {createElement, isValidElement} from "react";
 import {createRoot, Root} from "react-dom/client";
 
-import Builder from "../../core/Builder";
+import ViewBuilder from "../../Builder";
 
-import {viewReactRenderResolver} from "./resolvers/render";
+import {ViewConfig, ViewDefinition, ViewRenderHandler, ViewRenderReactComponent, ViewRenderValue} from "@typing/view";
 
-import {ViewConfig, ViewDefinition, ViewRenderHandler, ViewRenderValue} from "@typing/view";
-
-export default class<T extends ViewConfig> extends Builder<T> {
+export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
     protected root?: Root;
-
-    protected container?: Element;
 
     public constructor(definition: ViewDefinition<T>) {
         super(definition);
     }
 
-    protected resolveRender(render?: ViewRenderValue<T>): ViewRenderHandler<T> {
-        return viewReactRenderResolver(render);
-    }
-
-    public async build(): Promise<void> {
-        await super.build();
-
-        const props = this.getProps();
-
-        const element = await this.definition.render(props);
-
-        if (!isValidElement(element)) {
+    protected resolveRender(render?: ViewRenderValue<T> | ViewRenderHandler<T>): ViewRenderHandler<T> | undefined {
+        if (render === undefined) {
             return;
         }
 
-        this.container = await this.definition.container(props);
+        return async props => {
+            // Functions in React entrypoints are components; React owns their invocation and hooks.
+            const value =
+                typeof render === "function" ? createElement(render as ViewRenderReactComponent<T>, props) : render;
 
-        if (!this.container) {
+            return isValidElement(value) ? value : undefined;
+        };
+    }
+
+    protected mount(container: Element, value: ViewRenderValue<T>): void {
+        if (!isValidElement(value)) {
             return;
         }
 
-        document.body.prepend(this.container);
-
-        this.root = createRoot(this.container);
-
-        this.root.render(element);
+        this.root = createRoot(container);
+        this.root.render(value);
     }
 
-    public async destroy(): Promise<void> {
+    protected unmount(): void {
         this.root?.unmount();
         this.root = undefined;
-
-        this.container?.remove();
-        this.container = undefined;
     }
 }

@@ -1,44 +1,30 @@
-import Builder from "../../core/Builder";
+import ViewBuilder from "../../Builder";
+import {isValidRenderValue} from "./utils";
 
-import {ViewConfig, ViewDefinition} from "@typing/view";
+import {ViewConfig, ViewDefinition, ViewRenderHandler, ViewRenderValue} from "@typing/view";
 
-export default class<T extends ViewConfig> extends Builder<T> {
-    protected container?: Element;
-
+export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
     public constructor(definition: ViewDefinition<T>) {
         super(definition);
     }
 
-    public async build(): Promise<void> {
-        await super.build();
-
-        const props = this.getProps();
-
-        const content = await this.definition.render(props);
-
-        if (!content) {
+    protected resolveRender(render?: ViewRenderValue<T> | ViewRenderHandler<T>): ViewRenderHandler<T> | undefined {
+        if (render === undefined) {
             return;
         }
 
-        this.container = await this.definition.container(props);
+        return async props => {
+            const value = typeof render === "function" ? await render(props) : render;
 
-        if (!this.container) {
-            return;
-        }
-
-        if (content instanceof Element) {
-            this.container.appendChild(content);
-        } else if (typeof content === "string" || typeof content === "number") {
-            this.container.innerHTML = content.toString();
-        } else {
-            return;
-        }
-
-        document.body.prepend(this.container);
+            return isValidRenderValue(value) ? value : undefined;
+        };
     }
 
-    public async destroy(): Promise<void> {
-        this.container?.remove();
-        this.container = undefined;
+    protected mount(container: Element, value: ViewRenderValue<T>): void {
+        if (value instanceof Element) {
+            container.appendChild(value);
+        } else if (typeof value === "string" || typeof value === "number") {
+            container.innerHTML = value.toString();
+        }
     }
 }

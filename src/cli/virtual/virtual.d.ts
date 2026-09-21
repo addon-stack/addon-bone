@@ -125,7 +125,11 @@ declare module "virtual:view-entrypoint" {
     export = module;
 }
 
-declare module "virtual:view-framework" {
+declare module "virtual:view-builder" {
+    export const resolveDefinition: (
+        module: object
+    ) => import("@typing/view").ViewDefinition<import("@typing/view").ViewConfig>;
+
     export const Builder:
         | typeof import("@entry/view/adapters/vanilla").Builder
         | typeof import("@entry/view/adapters/react").Builder;

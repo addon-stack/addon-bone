@@ -3,7 +3,7 @@ import type {TransportType} from "adnbn/transport";
 import {isValidTransportDefinition, isValidTransportInitFunction} from "adnbn/entry/transport";
 import {Builder as OffscreenBuilder} from "adnbn/entry/offscreen";
 
-import {Builder as ViewBuilder} from "virtual:view-framework";
+import {Builder as ViewBuilder} from "virtual:view-builder";
 
 import * as module from "virtual:offscreen-entrypoint";
 
