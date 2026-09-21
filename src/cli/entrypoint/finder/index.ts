@@ -10,6 +10,7 @@ export {
     type ViewFileToFilename,
 } from "./AbstractViewFinder";
 export {default as ViewCspFinder} from "./ViewCspFinder";
+export {default as ViewPermissionsFinder} from "./ViewPermissionsFinder";
 export {default as AbstractParsedFinder} from "./AbstractParsedFinder";
 export {default as BackgroundFinder} from "./BackgroundFinder";
 export {default as BookmarksFinder} from "./BookmarksFinder";
@@ -30,4 +31,3 @@ export {default as SandboxViewFinder} from "./SandboxViewFinder";
 export {default as ServiceFinder} from "./ServiceFinder";
 export {default as PluginFinder} from "./PluginFinder";
 export {default as SidebarFinder} from "./SidebarFinder";
-export {collectPermissions} from "./utils/permissions";

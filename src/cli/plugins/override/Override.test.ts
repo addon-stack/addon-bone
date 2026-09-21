@@ -40,6 +40,13 @@ const makeOverride = (fixture: string, config: Partial<ReadonlyConfig> = {}): Ov
 
 const chromium = [Browser.Chrome, Browser.Chromium, Browser.Edge];
 
+const readPermissions = async (override: Override) => ({
+    permissions: await override.permissions(),
+    optionalPermissions: await override.optionalPermissions(),
+    hostPermissions: await override.hostPermissions(),
+    optionalHostPermissions: await override.optionalHostPermissions(),
+});
+
 const none = {
     permissions: new Set(),
     optionalPermissions: new Set(),
@@ -70,7 +77,7 @@ describe.each([
 
         await expect(override.manifest()).resolves.toEqual({page, path: `${page}.html`});
         await expect(override.csp()).resolves.toEqual([{sources: {connect: [`https://${page}.example.com`]}}]);
-        await expect(override.permissions()).resolves.toEqual(declared[page]);
+        await expect(readPermissions(override)).resolves.toEqual(declared[page]);
         await expect(view?.entries()).resolves.toEqual(new Map([[page, new Set([expect.objectContaining(entry)])]]));
         await expect(view?.html()).resolves.toMatchObject([
             {filename: `${page}.html`, title: `Custom ${page}`, chunks: [page]},
@@ -83,7 +90,7 @@ describe.each([
         await expect(override.view()).resolves.toBeUndefined();
         await expect(override.manifest()).resolves.toBeUndefined();
         await expect(override.csp()).resolves.toEqual([]);
-        await expect(override.permissions()).resolves.toEqual(none);
+        await expect(readPermissions(override)).resolves.toEqual(none);
     });
 });
 
@@ -101,7 +108,7 @@ describe("Override with competing entrypoints", () => {
         await expect(override.view()).rejects.toThrow(message);
         await expect(override.manifest()).rejects.toThrow(message);
         await expect(override.csp()).rejects.toThrow(message);
-        await expect(override.permissions()).rejects.toThrow(message);
+        await expect(readPermissions(override)).rejects.toThrow(message);
     });
 
     test.each([Browser.Firefox, Browser.Safari])(
@@ -112,7 +119,7 @@ describe("Override with competing entrypoints", () => {
             await expect(override.manifest()).resolves.toEqual({page: "newtab", path: "newtab.html"});
             await expect(override.csp()).resolves.toEqual([{sources: {connect: ["https://newtab.example.com"]}}]);
             // The skipped History page must not request its browsing-history permission.
-            await expect(override.permissions()).resolves.toEqual(declared.newtab);
+            await expect(readPermissions(override)).resolves.toEqual(declared.newtab);
         }
     );
 
@@ -135,7 +142,7 @@ describe("Override without entrypoints", () => {
         await expect(override.view()).resolves.toBeUndefined();
         await expect(override.manifest()).resolves.toBeUndefined();
         await expect(override.csp()).resolves.toEqual([]);
-        await expect(override.permissions()).resolves.toEqual(none);
+        await expect(readPermissions(override)).resolves.toEqual(none);
     });
 });
 

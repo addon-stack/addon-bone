@@ -8,6 +8,10 @@ export default definePopup({
     apply: false,
     includeBrowser: [Browser.Chrome],
     csp: {sources: {connect: [CspSource.Self, "https://api.example.com"]}},
+    permissions: ["storage", "tabs"],
+    optionalPermissions: ["topSites"],
+    hostPermissions: ["https://*.example.com/*"],
+    optionalHostPermissions: ["https://other.test/*"],
     links: "extra.css",
     render: ({title}) => title,
 });

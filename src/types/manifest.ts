@@ -29,9 +29,9 @@ type ManifestCommon = chrome.runtime.Manifest;
 
 type ManifestBase = chrome.runtime.ManifestBase;
 
-type ManifestPermission = chrome.runtime.ManifestPermission;
+export type ManifestPermission = chrome.runtime.ManifestPermission;
 
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
+export type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
 
 type ManifestFixed<T extends ManifestBase> = Omit<T, "manifest_version"> & {
     manifest_version: ManifestVersion;

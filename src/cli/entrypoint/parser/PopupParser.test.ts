@@ -16,7 +16,7 @@ const parseOptions = (...parts: string[]) => {
 };
 
 describe("PopupParser", () => {
-    test("parses definePopup with its icon, apply flag and inherited view and CSP options", () => {
+    test("parses definePopup with its icon, apply flag, permissions and inherited view and CSP options", () => {
         expect(parseOptions("options", "full", "popup.ts")).toEqual({
             as: "panel",
             title: "Extension panel",
@@ -25,6 +25,10 @@ describe("PopupParser", () => {
             apply: false,
             includeBrowser: ["chrome"],
             csp: {sources: {connect: ["'self'", "https://api.example.com"]}},
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["topSites"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
             links: "extra.css",
         });
     });

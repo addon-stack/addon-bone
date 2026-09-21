@@ -16,7 +16,7 @@ const parseOptions = (...parts: string[]) => {
 };
 
 describe("SidebarParser", () => {
-    test("parses defineSidebar with its icon, apply flag and inherited view and CSP options", () => {
+    test("parses defineSidebar with its icon, apply flag, permissions and inherited view and CSP options", () => {
         expect(parseOptions("options", "full", "sidebar.ts")).toEqual({
             as: "panel",
             title: "Extension panel",
@@ -25,6 +25,10 @@ describe("SidebarParser", () => {
             apply: false,
             includeBrowser: ["chrome"],
             csp: {sources: {connect: ["'self'", "https://api.example.com"]}},
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["topSites"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
             links: "extra.css",
         });
     });

@@ -1,4 +1,4 @@
-import ViewCspFinder from "./ViewCspFinder";
+import ViewPermissionsFinder from "./ViewPermissionsFinder";
 import PluginFinder from "./PluginFinder";
 
 import {PopupParser} from "../parser";
@@ -7,7 +7,7 @@ import {ReadonlyConfig} from "@typing/config";
 import {PopupEntrypointOptions} from "@typing/popup";
 import {EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class extends ViewCspFinder<PopupEntrypointOptions> {
+export default class extends ViewPermissionsFinder<PopupEntrypointOptions> {
     constructor(config: ReadonlyConfig) {
         super(config);
     }

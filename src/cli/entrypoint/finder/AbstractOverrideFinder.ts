@@ -1,4 +1,4 @@
-import ViewCspFinder from "./ViewCspFinder";
+import ViewPermissionsFinder from "./ViewPermissionsFinder";
 import PluginFinder from "./PluginFinder";
 
 import {ReadonlyConfig} from "@typing/config";
@@ -9,7 +9,9 @@ import {OverrideEntrypointOptions, OverrideEntrypointType} from "@typing/overrid
  * Override pages are singletons: app files replace shared ones instead of merging with them,
  * and only the highest-precedence candidate becomes a view.
  */
-export default abstract class AbstractOverrideFinder<O extends OverrideEntrypointOptions> extends ViewCspFinder<O> {
+export default abstract class AbstractOverrideFinder<
+    O extends OverrideEntrypointOptions,
+> extends ViewPermissionsFinder<O> {
     protected constructor(config: ReadonlyConfig) {
         super(config);
     }

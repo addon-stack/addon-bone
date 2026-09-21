@@ -21,7 +21,7 @@ const file = (...parts: string[]) => {
 const parseOptions = (...parts: string[]) => parser.options(file(...parts));
 
 describe("OptionsParser", () => {
-    test("parses defineOptions with inherited view, CSP and build filters", () => {
+    test("parses defineOptions with permissions and inherited view, CSP and build filters", () => {
         expect(parseOptions("options", "full", "options.ts")).toEqual({
             openInTab: true,
             as: "settings",
@@ -42,6 +42,10 @@ describe("OptionsParser", () => {
                     style: ["'self'", "'unsafe-inline'"],
                 },
             },
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["topSites"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
             scripts: "extra.js",
             links: "extra.css",
             metas: {

@@ -46,16 +46,13 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {
-            const {permissions, optionalPermissions, hostPermissions, optionalHostPermissions} =
-                await override.permissions();
-
             manifest
                 .setOverride(await override.manifest())
                 .appendCsp(await override.csp())
-                .appendPermissions(permissions)
-                .appendOptionalPermissions(optionalPermissions)
-                .appendHostPermissions(hostPermissions)
-                .appendOptionalHostPermissions(optionalHostPermissions);
+                .appendPermissions(await override.permissions())
+                .appendOptionalPermissions(await override.optionalPermissions())
+                .appendHostPermissions(await override.hostPermissions())
+                .appendOptionalHostPermissions(await override.optionalHostPermissions());
         },
     };
 });

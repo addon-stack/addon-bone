@@ -1,5 +1,6 @@
 import {ViewDefinition, ViewOptions} from "@typing/view";
 import {CspOptions} from "@typing/csp";
+import {PermissionsOptions} from "@typing/permissions";
 import type {ManifestPopup} from "@typing/manifest";
 
 /**
@@ -17,7 +18,7 @@ export interface PopupConfig {
     apply?: boolean;
 }
 
-export type PopupEntrypointOptions = PopupConfig & CspOptions & ViewOptions;
+export type PopupEntrypointOptions = PopupConfig & PermissionsOptions & CspOptions & ViewOptions;
 
 export type PopupProps = PopupEntrypointOptions;
 

@@ -2,13 +2,7 @@ import path from "path";
 
 import View from "../view/View";
 
-import {
-    AbstractOverrideFinder,
-    BookmarksFinder,
-    collectPermissions,
-    HistoryFinder,
-    NewtabFinder,
-} from "@cli/entrypoint";
+import {AbstractOverrideFinder, BookmarksFinder, HistoryFinder, NewtabFinder} from "@cli/entrypoint";
 import {resolveRootPath} from "@cli/resolvers/path";
 import {toPosix} from "@cli/utils/path";
 
@@ -16,9 +10,13 @@ import {Browser} from "@typing/browser";
 import {EntrypointFile, EntrypointType} from "@typing/entrypoint";
 import type {ReadonlyConfig} from "@typing/config";
 import type {CspConfig} from "@typing/csp";
-import type {ManifestOverride} from "@typing/manifest";
+import type {
+    ManifestHostPermissions,
+    ManifestOptionalPermissions,
+    ManifestOverride,
+    ManifestPermissions,
+} from "@typing/manifest";
 import type {OverrideEntrypointOptions, OverrideEntrypointType} from "@typing/override";
-import type {EntrypointPermissions} from "@typing/permissions";
 
 type OverrideFinder = AbstractOverrideFinder<OverrideEntrypointOptions>;
 
@@ -76,11 +74,21 @@ export default class Override {
         return finder ? finder.csp() : [];
     }
 
-    /** Permissions of the override that reaches the build; skipped and losing candidates contribute nothing. */
-    public async permissions(): Promise<EntrypointPermissions> {
-        const finder = await this.finder();
+    // Permissions of the override that reaches the build; skipped and losing candidates contribute nothing.
+    public async permissions(): Promise<ManifestPermissions> {
+        return (await (await this.finder())?.permissions()) ?? new Set();
+    }
 
-        return collectPermissions(finder ? await finder.selectedOptions() : []);
+    public async optionalPermissions(): Promise<ManifestOptionalPermissions> {
+        return (await (await this.finder())?.optionalPermissions()) ?? new Set();
+    }
+
+    public async hostPermissions(): Promise<ManifestHostPermissions> {
+        return (await (await this.finder())?.hostPermissions()) ?? new Set();
+    }
+
+    public async optionalHostPermissions(): Promise<ManifestHostPermissions> {
+        return (await (await this.finder())?.optionalHostPermissions()) ?? new Set();
     }
 
     public clear(): this {

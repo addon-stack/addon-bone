@@ -1,6 +1,10 @@
-type ManifestPermission = chrome.runtime.ManifestPermission;
-
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
+import type {
+    ManifestHostPermissions,
+    ManifestOptionalPermission,
+    ManifestOptionalPermissions,
+    ManifestPermission,
+    ManifestPermissions,
+} from "@typing/manifest";
 
 /**
  * Manifest permissions required by an entrypoint.
@@ -39,8 +43,8 @@ export interface PermissionsOptions {
  * Permissions collected from the entrypoints that reach a build, ready to be appended to the manifest.
  */
 export interface EntrypointPermissions {
-    permissions: Set<ManifestPermission>;
-    optionalPermissions: Set<ManifestOptionalPermission>;
-    hostPermissions: Set<string>;
-    optionalHostPermissions: Set<string>;
+    permissions: ManifestPermissions;
+    optionalPermissions: ManifestOptionalPermissions;
+    hostPermissions: ManifestHostPermissions;
+    optionalHostPermissions: ManifestHostPermissions;
 }
