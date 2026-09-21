@@ -61,6 +61,41 @@ export default defineCommand({
 `;
 
 describe("CommandParser", () => {
+    test("parses defineCommand with shortcuts and inherited background options from a real entrypoint file", () => {
+        const file = path.join(__dirname, "tests", "fixtures", "command", "options", "full", "save.command.ts");
+
+        expect(new CommandParser({rootDir} as ReadonlyConfig).options({file, import: file})).toEqual({
+            name: "save",
+            description: "Save the page",
+            global: false,
+            defaultKey: "Ctrl+Shift+K",
+            macKey: "Command+Shift+K",
+            persistent: true,
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["history"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
+            excludeBrowser: ["firefox"],
+        });
+    });
+
+    test("names a defineExecuteActionCommand entrypoint after the browser action command", () => {
+        const file = path.join(
+            __dirname,
+            "tests",
+            "fixtures",
+            "command",
+            "options",
+            "execute-action",
+            "open.command.ts"
+        );
+
+        expect(new CommandParser({rootDir} as ReadonlyConfig).options({file, import: file})).toEqual({
+            name: "_execute_action",
+            defaultKey: "Ctrl+Shift+O",
+        });
+    });
+
     test("accepts browser command shortcuts", () => {
         const options = parse(
             command(`

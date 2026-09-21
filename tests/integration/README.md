@@ -22,6 +22,14 @@ tests/integration/
 │   ├── options/
 │   │   ├── options.integration.test.ts
 │   │   └── embedded/
+│   ├── override/
+│   │   ├── override.integration.test.ts
+│   │   ├── newtab/
+│   │   ├── bookmarks/
+│   │   └── history/
+│   ├── permissions/
+│   │   ├── permissions.integration.test.ts
+│   │   └── views/
 │   └── …
 ├── browser/
 │   ├── content/
@@ -44,6 +52,7 @@ tests/integration/
 │   ├── locale/
 │   ├── offscreen/
 │   ├── options/
+│   ├── override/
 │   └── utils/
 │       ├── BidiClient.ts
 │       ├── CdpClient.ts
@@ -119,6 +128,9 @@ Tests copy application inputs to unique directories under `.cache/integration`. 
 - `types/registries`: generated registry augmentation, empty fallbacks, public and internal type agreement, and message contracts against source and built package APIs. Compiler-host path checks cover both slash styles.
 - `build/options/embedded`: ten manifest checks covering explicit `openInTab: false` across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. No browser is launched.
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
+- `build/override`: thirty manifest checks covering the New Tab, Bookmarks, and History applications across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. Supporting browsers receive `chrome_url_overrides`, the page HTML, its CSP, and the permission declared by the entrypoint; the others receive none of them. Three more cases add the History entrypoint to a copy of the New Tab application: Chrome and Edge builds fail naming both entrypoints, while Firefox keeps the New Tab with its own permission and without the History one. No browser is launched.
+- `build/permissions/views`: four manifest checks of one application with two popups, two sidebars, and an options page that each declare permissions. Every built view contributes, including a popup and a sidebar that are not applied by default; Chrome MV2 has no sidebar, so its permissions are not requested; Firefox builds the sidebar action without `sidePanel`; MV2 declares hosts as permissions. No browser is launched.
+- `browser/override`: three Chrome MV3 cases opening `chrome://newtab`, `chrome://bookmarks`, and `chrome://history`. They verify that Chrome serves the extension page, React and Vanilla rendering, CSS, state/events, custom `as` and `htmlDir` naming, and a View chunk shared with a Page.
 - `browser/offscreen/service`: one Chrome MV3 round trip from background through Offscreen to a registered background service.
 - `browser/content/entrypoint-assets`: one Chrome MV3 case and two Firefox cases (MV2 and MV3) using the same application and probe assertions. They cover current asset getters, rejecting the full-map getter outside background, common chunks, dynamic imports, CSS/SVG resource URLs, world separation, and top/child frames. The Chrome case also reads the full-map readiness flag in background.
 - `browser/content/isolation-shadow`: production Shadow DOM coverage in Chrome MV3 and Firefox MV2/MV3. Two shadow entrypoints and one ordinary entrypoint verify file-backed initial/lazy/shared CSS, independent runtime registries, strict CSP, local fonts declared with CSS `@font-face`, watch-driven remount, top documents, and child iframes. The shared CSS remains manifest CSS for the ordinary consumer and a web accessible resource for the shadow consumers.

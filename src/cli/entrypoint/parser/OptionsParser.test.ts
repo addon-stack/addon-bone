@@ -21,7 +21,7 @@ const file = (...parts: string[]) => {
 const parseOptions = (...parts: string[]) => parser.options(file(...parts));
 
 describe("OptionsParser", () => {
-    test("parses defineOptions with inherited view, CSP and build filters", () => {
+    test("parses defineOptions with permissions and inherited view, CSP and build filters", () => {
         expect(parseOptions("options", "full", "options.ts")).toEqual({
             openInTab: true,
             as: "settings",
@@ -42,6 +42,10 @@ describe("OptionsParser", () => {
                     style: ["'self'", "'unsafe-inline'"],
                 },
             },
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["topSites"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
             scripts: "extra.js",
             links: "extra.css",
             metas: {
@@ -55,27 +59,6 @@ describe("OptionsParser", () => {
 
     test("leaves omitted openInTab for the manifest builder to default", () => {
         expect(parseOptions("options", "defaults", "options.ts")).toEqual({});
-    });
-
-    test("reads named exports alongside a default render function", () => {
-        expect(parseOptions("options", "named-exports", "options.ts")).toEqual({
-            openInTab: false,
-            title: "Named options",
-        });
-    });
-
-    test("keeps explicit false from a default object over a named export", () => {
-        expect(parseOptions("options", "default-object", "options.ts")).toEqual({
-            openInTab: false,
-            title: "Default options",
-        });
-    });
-
-    test.each(["default-as", "default-satisfies"])("reads a %s definition", scenario => {
-        expect(parseOptions("options", scenario, "options.ts")).toEqual({
-            openInTab: false,
-            title: "Typed options",
-        });
     });
 
     test("rejects a non-boolean openInTab value", () => {

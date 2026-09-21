@@ -19,6 +19,9 @@ export enum EntrypointType {
     Sidebar = "sidebar",
     Offscreen = "offscreen",
     Sandbox = "sandbox",
+    Newtab = "newtab",
+    Bookmarks = "bookmarks",
+    History = "history",
 }
 
 export interface EntrypointOptions {

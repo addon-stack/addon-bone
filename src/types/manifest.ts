@@ -29,9 +29,9 @@ type ManifestCommon = chrome.runtime.Manifest;
 
 type ManifestBase = chrome.runtime.ManifestBase;
 
-type ManifestPermission = chrome.runtime.ManifestPermission;
+export type ManifestPermission = chrome.runtime.ManifestPermission;
 
-type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
+export type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
 
 type ManifestFixed<T extends ManifestBase> = Omit<T, "manifest_version"> & {
     manifest_version: ManifestVersion;
@@ -132,6 +132,8 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setSidebar(sidebar?: ManifestSidebar): this;
 
     setOptions(options?: ManifestOptions): this;
+
+    setOverride(override?: ManifestOverride): this;
 
     // Sandbox
     addSandbox(sandbox: ManifestSandbox): this;
@@ -255,6 +257,25 @@ export interface ManifestOptions {
      * Set to `false` to request an embedded page where supported by the browser.
      */
     openInTab?: boolean;
+}
+
+export type ManifestOverridePage = "newtab" | "bookmarks" | "history";
+
+/**
+ * Chromium refuses to load an extension that overrides more than one page and other browsers
+ * only support `newtab`, so the manifest holds a single override instead of a dictionary.
+ */
+export interface ManifestOverride {
+    /**
+     * Built-in browser page replaced by the extension.
+     * Written as the key of `chrome_url_overrides` in the manifest.
+     */
+    page: ManifestOverridePage;
+    /**
+     * Path to the replacement HTML file relative to the extension root.
+     * Written as the value of `chrome_url_overrides[page]`.
+     */
+    path: string;
 }
 
 export interface ManifestAccessibleResource {

@@ -64,11 +64,14 @@ describe("PageFinder", () => {
         expect(new PageFinder(makeConfig({mergePages: false})).canMerge()).toBe(false);
     });
 
-    test.each(["sandbox", "options"])("keeps page filenames away from reserved %s output", async name => {
-        const page = new ExposedPageFinder(config, new Map([[file(`${name}.ts`), {as: name}]]));
+    test.each(["sandbox", "options", "newtab", "bookmarks", "history"])(
+        "keeps page filenames away from reserved %s output",
+        async name => {
+            const page = new ExposedPageFinder(config, new Map([[file(`${name}.ts`), {as: name}]]));
 
-        await expect(page.views()).resolves.toMatchObject(new Map([[`${name}.page`, {filename: `${name}1.html`}]]));
-    });
+            await expect(page.views()).resolves.toMatchObject(new Map([[`${name}.page`, {filename: `${name}1.html`}]]));
+        }
+    );
 
     test("uses page name as an alias when it is defined", () => {
         expect(new ExposedPageFinder(config).aliasFrom(file("named.ts"), {name: "docs"})).toBe("docs");

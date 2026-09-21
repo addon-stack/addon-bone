@@ -1,6 +1,7 @@
 import {ViewDefinition, ViewOptions} from "@typing/view";
 import {Browser} from "@typing/browser";
 import {CspOptions} from "@typing/csp";
+import {PermissionsOptions} from "@typing/permissions";
 import type {ManifestSidebar} from "@typing/manifest";
 
 export const SidebarAlternativeBrowsers: ReadonlySet<Browser> = new Set([Browser.Opera, Browser.Firefox]);
@@ -22,7 +23,7 @@ export interface SidebarConfig {
     apply?: boolean;
 }
 
-export type SidebarEntrypointOptions = SidebarConfig & CspOptions & ViewOptions;
+export type SidebarEntrypointOptions = SidebarConfig & PermissionsOptions & CspOptions & ViewOptions;
 
 export type SidebarProps = SidebarEntrypointOptions;
 

@@ -66,7 +66,14 @@ export default definePlugin(() => {
             } as RspackConfig;
         },
         manifest: async ({manifest}) => {
-            manifest.setPopup(await popup.manifest()).appendCsp(await popup.csp());
+            // Every built popup can be switched to at runtime, so all of them contribute their permissions.
+            manifest
+                .setPopup(await popup.manifest())
+                .appendCsp(await popup.csp())
+                .appendPermissions(await popup.permissions())
+                .appendOptionalPermissions(await popup.optionalPermissions())
+                .appendHostPermissions(await popup.hostPermissions())
+                .appendOptionalHostPermissions(await popup.optionalHostPermissions());
         },
     };
 });

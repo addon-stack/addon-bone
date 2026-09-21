@@ -41,7 +41,13 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {
-            manifest.setOptions(await options.manifest()).appendCsp(await options.csp());
+            manifest
+                .setOptions(await options.manifest())
+                .appendCsp(await options.csp())
+                .appendPermissions(await options.permissions())
+                .appendOptionalPermissions(await options.optionalPermissions())
+                .appendHostPermissions(await options.hostPermissions())
+                .appendOptionalHostPermissions(await options.optionalHostPermissions());
         },
     };
 });

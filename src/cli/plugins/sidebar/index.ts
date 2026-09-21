@@ -87,8 +87,14 @@ export default definePlugin(() => {
                 return;
             }
 
-            manifest.setSidebar(await sidebar.manifest());
-            manifest.appendCsp(await sidebar.csp());
+            // Every built sidebar can be switched to at runtime, so all of them contribute their permissions.
+            manifest
+                .setSidebar(await sidebar.manifest())
+                .appendCsp(await sidebar.csp())
+                .appendPermissions(await sidebar.permissions())
+                .appendOptionalPermissions(await sidebar.optionalPermissions())
+                .appendHostPermissions(await sidebar.hostPermissions())
+                .appendOptionalHostPermissions(await sidebar.optionalHostPermissions());
 
             if ((await sidebar.exists()) && !SidebarAlternativeBrowsers.has(config.browser)) {
                 manifest.addPermission("sidePanel");
