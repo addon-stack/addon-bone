@@ -96,11 +96,6 @@ const types = new Map([
     ["fix", "🐛 Bug Fixed"],
     ["perf", "⚡️ Performance Improvements"],
     ["refactor", "🛠️ Refactoring"],
-    ["docs", "📝 Documentation"],
-    ["test", "🧪 Tests"],
-    ["build", "🏗️ Build System"],
-    ["ci", "🤖 CI"],
-    ["chore", "🧹 Chores"],
     ["revert", "⏪ Reverts"],
 ]);
 
@@ -254,11 +249,11 @@ const createReleaseConfig = () => {
                         const type = (nextCommit.type || "").toLowerCase().replace(/!+$/, "");
                         const section = types.get(type);
 
-                        if (section) {
-                            nextCommit.type = section;
-                        } else {
-                            nextCommit.type = "🧩 Other";
+                        if (!section) {
+                            return null;
                         }
+
+                        nextCommit.type = section;
 
                         if (nextCommit.body) {
                             const body = nextCommit.body.replace(/\r\n/g, "\n").trim();
