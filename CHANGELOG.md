@@ -1,5 +1,281 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.14.0 (2026-09-22)
+
+### 💥 Breaking Changes
+
+* The sandbox Builder now takes the view builder class as
+its second constructor argument and no longer has a view() method,
+adnbn/entry/sandbox no longer exports TransportBuilder, and the
+adnbn/entry/transport subpath is removed.
+
+* The offscreen Builder now takes the view builder class
+as its second constructor argument and no longer has a view() method.
+
+* A string returned by a Vanilla view render is shown as
+text; return an Element or use a UI framework to render markup.
+
+* The adnbn/entry/view subpath is removed together with
+isViewDefinition() and isValidViewDefinitionRenderValue().
+
+* adnbn/entry/command no longer exports
+isValidCommandDefinition(), isValidCommandExecuteFunction() and
+isValidCommandName().
+
+* adnbn/entry/background no longer exports
+isValidBackgroundDefinition() and isValidBackgroundMainHandler().
+
+* Projects whose commands share a name, explicitly or
+through their file names, now fail to build. Give each command a distinct
+"name" option or file name.
+
+* top-level newtab, bookmarks and history files and
+directories in app or shared sources are entrypoints now. Page
+entrypoints named newtab, bookmarks or history receive a numbered HTML
+filename such as history1.html; their aliases do not change.
+
+
+### ✨ Features
+
+* **entrypoint:** add a shared permissions options contract ([7366e6a](https://github.com/addon-stack/addon-bone/commit/7366e6ad586b9a42ab8f05d7f9ce22f6fdf492f0))
+
+  Describe install-time and optional API and host permissions once as
+  PermissionsOptions with a matching schema module that a parser merges
+  only when its entrypoint opts in. Apply it to the background family,
+  which already declared these fields, without changing its behavior,
+  and export the contract publicly.
+
+  Document that schemas shared by unrelated parsers are mixin modules
+  rather than members of AbstractParser or intermediate parser classes.
+
+* **entrypoint:** declare permissions in popup, sidebar and options ([90c51b0](https://github.com/addon-stack/addon-bone/commit/90c51b0321ddea864af422aa6889d64e2ce7ce6b))
+
+  Let popup, sidebar and options entrypoints declare the permissions
+  their code needs. Whatever reaches the build contributes: every built
+  popup or sidebar when several are allowed, because any of them can be
+  switched to at runtime, and the single winning file otherwise. A
+  sidebar that is unavailable for the target requests nothing.
+
+  Collect the permissions in a view finder layer that only adopting
+  entrypoints extend, next to the CSP layer, and expose one getter per
+  kind typed with the manifest permission types. Plugins pass these
+  values to the manifest builder explicitly; the override plugin follows
+  the same shape and the standalone collecting helper is removed.
+
+  Cover the adoption in each parser, the selection and caching on real
+  directories, and real builds across Chrome and Firefox in MV2 and MV3.
+
+* **entry:** render text and DOM elements the same way in every adapter ([e80fe23](https://github.com/addon-stack/addon-bone/commit/e80fe2344764e00d1f4cbacd669b8ec10e926e20))
+
+  Share one render-value contract between the view and content adapters in
+  src/entry/core/render.ts: a non-empty string or a number is inserted as
+  text and never parsed as HTML, a DOM element is appended as is, and a
+  React element still goes through React. The React adapters now render
+  text and DOM elements instead of silently dropping them, the Vanilla view
+  adapter stops parsing strings with innerHTML, and elements from another
+  realm such as an iframe document are recognized by node type. Cover the
+  shared contract in render.test.ts and the adapters through their
+  builders, and document the rule in the content README.
+
+* **offscreen:** render offscreen views with the injected view builder ([012df13](https://github.com/addon-stack/addon-bone/commit/012df1349be2eb037f8bfd64efb6fb144c113f73))
+
+  Resolve offscreen exports in the runtime through resolveDefinition() over
+  the shared transport merge, and let the offscreen Builder compose its
+  transport with a view builder passed by the generated module, as Relay
+  does with its content builder. Offscreen definitions adopt the new
+  ViewRenderDefinition mixin, so render and container work with the adapter
+  selected by the file extension, while init and main still receive only
+  the offscreen options. The generated module becomes a single
+  offscreen(resolveDefinition(module, name), ViewBuilder) call. Cover the
+  startup and the layer composition in index.test.ts, and check the
+  template and the adapter-free offscreen bundle graph in virtual.test.ts.
+
+* **override:** add newtab, bookmarks and history entrypoints ([ebf8143](https://github.com/addon-stack/addon-bone/commit/ebf81433722804176594b7addd0ee54cf8f1a1e2))
+
+  Discover, parse and build the pages that replace the browser new tab,
+  bookmarks and history through chrome_url_overrides. Each page is a
+  singleton view: app files replace shared ones instead of merging, and
+  only the highest-precedence candidate is built.
+
+  Select the override per build in one plugin: skip pages the target
+  browser does not support and fail when more than one remains, because
+  Chromium refuses to load an extension that overrides several pages.
+  Write the selected page as a single manifest override that replaces
+  raw chrome_url_overrides.
+
+  Cover parsing, discovery, manifest generation, the selection policy and
+  real Chrome rendering with unit, build and browser integration tests,
+  and document the fixtures.
+
+* **override:** declare permissions in override entrypoints ([05a0a51](https://github.com/addon-stack/addon-bone/commit/05a0a51bc25da9172cd83ac07fcb73420c470a74))
+
+  Let the new tab, bookmarks and history pages declare the permissions
+  their code needs. The manifest receives them only from the page that
+  reaches the build: a candidate that lost the selection or a page the
+  target browser does not support contributes nothing.
+
+  Expose the parsed options of the selected views from the view finder
+  and collect permissions from them with a pure helper, so other view
+  entrypoints can adopt the contract the same way.
+
+  Cover the schema adoption, winner-only selection, the plugin policy and
+  real builds across browsers, where a skipped History page no longer
+  requests the browsing history permission.
+
+* **sandbox:** render sandbox views with the injected view builder ([8d27fe1](https://github.com/addon-stack/addon-bone/commit/8d27fe17e93069edb4b98e7e8b592b9a4ef6bb25))
+
+  Resolve sandbox exports in the runtime through resolveDefinition() over
+  the shared transport merge, and let the sandbox Builder compose its
+  transport with the view builder passed by the generated module, as
+  offscreen does. Sandbox definitions adopt ViewRenderDefinition, so render
+  and container use the adapter selected by the file extension, while init
+  and main receive only the sandbox options; adnbn/entry/sandbox exports
+  its startup function instead of TransportBuilder. With no template left
+  on the transport guards, remove the adnbn/entry/transport subpath, make
+  the options-object check private to mergeDefinition, and drop the Relay
+  and offscreen types from the transport resolvers. Cover the startup and
+  the layer composition in index.test.ts, and check the template and the
+  adapter-free sandbox bundle graph in virtual.test.ts.
+
+* **view:** organize view types by adapter and export the render contract ([2479b76](https://github.com/addon-stack/addon-bone/commit/2479b768dbe9ed0d4d4a2cbf48471ea9c4bf44e0))
+
+  Split @typing/view into common options and containers, per-adapter render
+  values, the combined render contract, and the definitions, the same way
+  the content types are organized. The Vanilla adapter owns DOM, text and
+  empty values, the React adapter owns React nodes and components, and
+  render.ts combines them, so a new adapter only adds its own file. Export
+  the render contract types from adnbn next to ViewDefinition and
+  ViewOptions. A Promise is no longer accepted as a render value, matching
+  the runtime, which never rendered one; handlers can still await data.
+  Cover the public types through source and package APIs in
+  view.integration.test.ts and list the check in the integration README.
+
+
+
+### 🐛 Bug Fixed
+
+* **command:** reject duplicate command names ([4bc0e88](https://github.com/addon-stack/addon-bone/commit/4bc0e8883bb5e6de3e4cbbe005ac1af3dafc0b13))
+
+  Fail the build when two commands resolve to the same name instead of
+  renaming the later one with a numeric suffix. A command name is its
+  identity in the manifest and in the browser's shortcut settings, so the
+  silent rename broke the runtime subscription and could move a user's
+  custom shortcut to another command. Report a dedicated error for a second
+  action command, and derive file-based names through NameGenerator.derive()
+  without claiming them. Cover explicit, merged app/shared and action
+  collisions with real fixtures in CommandFinder.test.ts, and derive() in
+  NameGenerator.test.ts.
+
+* **entry:** render every React node the React adapters accept ([bc65b50](https://github.com/addon-stack/addon-bone/commit/bc65b50c4c170b00a69ea53e92c78a3e6d504c6f))
+
+  The React view and content adapters accepted arrays, portals and bigints
+  in their render types, since both use React's own ReactNode, but passed
+  only React elements to React and silently rendered nothing for the rest;
+  a default-exported portal was even merged as an options object. Recognize
+  every React node through isReactRenderValue() in src/entry/core/react.ts,
+  which only the React adapters import, and hand it to the React root,
+  while text, numbers and DOM elements keep the shared render path; an
+  iterable needs a callable iterator, so options objects stay options.
+  Cover recognition, default exports and rendering of arrays, fragments,
+  portals and bigints for both adapters, extend the type fixtures, and
+  describe the contract in the view and content READMEs, noting that a
+  bigint renders only with React 19.
+
+* **view:** pass only HTML options to the tags plugin ([b7338de](https://github.com/addon-stack/addon-bone/commit/b7338ded770150d3bba233622c92bbd2158afb1e))
+
+  Select the tags plugin options from the HTML options schema instead of
+  excluding a few known keys, so view, build and manifest options such as
+  icon, apply, mode, debug or manifestVersion no longer reach it and a
+  view without HTML options adds no tags plugin at all.
+
+  Move the HTML options schema out of ViewParser into a parser schema
+  module shared by the parser and the view, and cover the selection with
+  real popup fixtures.
+
+
+
+### 🛠️ Refactoring
+
+* **background:** resolve background definitions in the runtime entry ([17c9f95](https://github.com/addon-stack/addon-bone/commit/17c9f95c5e8c50794bdf60c165ea685e48121c16))
+
+  Move default-export interpretation out of the generated background module
+  into resolveDefinition() in the background resolvers: default options
+  override named exports, a default function becomes main, and any other
+  default value is ignored. The generated module becomes a single
+  background(resolveDefinition(module)) call, and adnbn/entry/background now
+  exports only the startup function and resolveDefinition(). Cover the merge
+  rules in the background resolver test and check the template in
+  virtual.test.ts alongside the other thin templates.
+
+* **cli:** declare generated entrypoint modules with one wildcard ([a3cfaee](https://github.com/addon-stack/addon-bone/commit/a3cfaee1e340d8d4978c2c890e969cdbb78a13c9))
+
+  Replace the eight virtual:*-entrypoint declarations with a single
+  wildcard declaration: every generated module passes the entrypoint
+  namespace to its runtime resolveDefinition(), which accepts any object,
+  so the per-entrypoint export lists no longer describe anything the
+  templates use. Keep the content and view builder declarations, whose
+  startup and Builder types the templates still rely on. Remove the relay
+  fixture assertions that pinned the old declaration to
+  RelayUnresolvedDefinition; the fixture still type-checks the relay
+  template against the real builders.
+
+* **command:** resolve command definitions in the runtime entry ([954382a](https://github.com/addon-stack/addon-bone/commit/954382adb3423b8ba811c418bbfc39de80418856))
+
+  Move default-export interpretation out of the generated command module
+  into resolveDefinition() in the command resolvers: default options
+  override named exports, a default function becomes execute, and the build
+  always supplies the name, as for Relay and Service. The generated module
+  becomes a single command(resolveDefinition(module, name)) call, and
+  adnbn/entry/command now exports only the startup function and
+  resolveDefinition(). Cover the merge and naming rules in the command
+  resolver test and check the template in virtual.test.ts alongside the
+  other thin templates.
+
+* **entry:** import resolvers from their owning files ([2fc5eb9](https://github.com/addon-stack/addon-bone/commit/2fc5eb991448648729ca29cf1d61386d68736131))
+
+  Remove the resolvers/index.ts barrels from the background, command,
+  transport and content entrypoint runtimes and import each resolver from
+  the file that owns it, as most callers already did. List the exports of
+  adnbn/entry/transport explicitly, so mergeDefinition() stays internal and
+  only the transport guards used by the offscreen and sandbox templates
+  remain public. The behavior is unchanged and the existing suites cover the
+  moved imports. Record both rules in the internal imports section of
+  AGENTS.md.
+
+* **transport:** share definition resolution across transport entrypoints ([70c305c](https://github.com/addon-stack/addon-bone/commit/70c305c307789a845ec936d476e2af432fb6f145))
+
+  Move the Relay export merging into mergeDefinition() in the transport
+  resolvers, so every transport entrypoint interprets a default options
+  object or init function the same way and takes its name from the build.
+  Relay and Service expose typed resolveDefinition() wrappers, and the
+  generated Service module becomes a single service(resolveDefinition(...))
+  call. Replace the generic transport template and its ":entry" placeholder,
+  ts-ignore stripping and "adnbn/entry/:entry" declaration with a dedicated
+  service template. Cover the shared merge rules in the transport resolver
+  test, keep Relay's init-versus-render rule in its own test, and check the
+  Service template in virtual.test.ts alongside Content and Relay.
+
+* **view:** resolve and mount views in one adapter-driven builder ([73effdc](https://github.com/addon-stack/addon-bone/commit/73effdc34912e6a90198341d9bf8c9d118b2a434))
+
+  Replace the view guards with mergeDefinition() and give the Vanilla and
+  React adapters their own resolveDefinition(), so the generated view module
+  becomes a single view(resolveDefinition(module)) call and only the React
+  adapter knows React elements. Merge the view core builder and the
+  duplicated adapter lifecycles into one abstract Builder that owns the
+  title and the container, while adapters only resolve the render and mount
+  its value; a Vanilla render of 0 is now rendered instead of skipped.
+  Rename virtual:view-framework to virtual:view-builder for view, offscreen
+  and sandbox. Cover definition merging, adapter recognition and both
+  builders through their public build/destroy behavior, and check the
+  template and the React-free Vanilla bundle graph in virtual.test.ts.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 30
+
 ## 🚀 Release Addon Bone v0.13.0 (2026-09-17)
 
 ### 💥 Breaking Changes
