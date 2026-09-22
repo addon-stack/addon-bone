@@ -5,7 +5,7 @@ import {
     TransportTarget,
     TransportType,
 } from "@typing/transport";
-import {ViewOptions} from "@typing/view";
+import {ViewOptions, ViewRenderDefinition} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
 import {CspOptions} from "@typing/csp";
 
@@ -83,7 +83,10 @@ export type OffscreenMainHandler<T extends TransportType> = (
 ) => Awaiter<void>;
 
 export interface OffscreenDefinition<T extends TransportType>
-    extends TransportDefinition<OffscreenOptions, T>, OffscreenEntrypointOptions {
+    extends
+        TransportDefinition<OffscreenOptions, T>,
+        OffscreenEntrypointOptions,
+        ViewRenderDefinition<OffscreenEntrypointOptions> {
     main?: OffscreenMainHandler<T>;
 }
 

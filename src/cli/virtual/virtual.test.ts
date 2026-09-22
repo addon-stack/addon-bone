@@ -28,14 +28,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualOffscreenModule",
-            imports: [
-                "adnbn",
-                "adnbn/transport",
-                "adnbn/entry/transport",
-                "adnbn/entry/offscreen",
-                "adnbn/entry/view/{framework}",
-                "{entry}",
-            ],
+            imports: ["adnbn/entry/offscreen", "adnbn/entry/view/{framework}", "{entry}"],
         },
         {
             generator: "virtualOffscreenBackgroundModule",
@@ -153,6 +146,7 @@ describe("Built virtual modules", () => {
         "adnbn/entry/content/react",
         "adnbn/entry/content",
         "adnbn/entry/relay",
+        "adnbn/entry/offscreen",
     ])("%s includes only its own framework dependencies in the bundle graph", async entrypoint => {
         const inputs = await bundleInputs(entrypoint);
         const usesReact = entrypoint.endsWith("/react");
@@ -162,6 +156,9 @@ describe("Built virtual modules", () => {
         expect(inputs.some(filename => filename.includes("entry/content/adapters/react/"))).toBe(usesReact);
         if (entrypoint === "adnbn/entry/relay") {
             expect(inputs.some(filename => filename.includes("entry/content/"))).toBe(false);
+        }
+        if (entrypoint === "adnbn/entry/offscreen") {
+            expect(inputs.some(filename => filename.includes("entry/view/"))).toBe(false);
         }
         expect(inputs.some(filename => /entry\/content\/adapters\/vanilla\/(Builder|Node)\.js$/.test(filename))).toBe(
             entrypoint.endsWith("/vanilla")
@@ -202,6 +199,12 @@ describe("Built virtual modules", () => {
                 specifier: "adnbn/entry/content/{framework}",
                 startup: "contentScript",
                 call: "contentScript(resolveDefinition(module))",
+            },
+            {
+                generator: "virtualOffscreenModule",
+                specifier: "adnbn/entry/offscreen",
+                startup: "offscreen",
+                call: 'offscreen(resolveDefinition(module, "example"), ViewBuilder)',
             },
             {
                 generator: "virtualRelayModule",
