@@ -1,5 +1,5 @@
 import {TransportConfig, TransportDefinition, TransportType} from "@typing/transport";
-import {ViewOptions} from "@typing/view";
+import {ViewOptions, ViewRenderDefinition} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
 import {MessageError, MessageSender} from "@typing/message";
 import type {RpcAsyncProxy} from "@typing/rpc";
@@ -84,7 +84,10 @@ export type SandboxMainHandler<T extends TransportType> = (
 ) => Awaiter<void>;
 
 export interface SandboxDefinition<T extends TransportType>
-    extends TransportDefinition<SandboxOptions, T>, SandboxEntrypointOptions {
+    extends
+        TransportDefinition<SandboxOptions, T>,
+        SandboxEntrypointOptions,
+        ViewRenderDefinition<SandboxEntrypointOptions> {
     main?: SandboxMainHandler<T>;
 }
 

@@ -1,36 +1,38 @@
-import TransportBuilder from "./TransportBuilder";
+import EntrypointBuilder from "@entry/core/Builder";
 
-import Builder from "../core/Builder";
+import TransportBuilder from "./TransportBuilder";
 
 import {sandboxChannel} from "@sandbox/utils";
 
 import {
+    SandboxEntrypointOptions,
     SandboxGlobalAccess,
     SandboxReadyMessage,
     SandboxReadyMessageType,
     SandboxUnresolvedDefinition,
 } from "@typing/sandbox";
 import {TransportType} from "@typing/transport";
-import {ViewBuilder} from "@typing/view";
+import {ViewBuilder, ViewBuilderConstructor} from "@typing/view";
 
-export default class<T extends TransportType = TransportType> extends Builder {
+export default class Builder<T extends TransportType = TransportType> extends EntrypointBuilder {
     protected readonly _transport: TransportBuilder<T>;
 
-    protected _view?: ViewBuilder;
+    protected readonly _view: ViewBuilder;
 
     private readonly name: string;
 
-    constructor(definition: SandboxUnresolvedDefinition<T>) {
+    constructor(
+        definition: SandboxUnresolvedDefinition<T>,
+        viewBuilder: ViewBuilderConstructor<SandboxEntrypointOptions>
+    ) {
         super();
 
         this.name = definition.name!;
         this._transport = new TransportBuilder(definition);
-    }
 
-    public view(view: ViewBuilder): this {
-        this._view = view;
+        const {init, main, name, ...viewOptions} = definition;
 
-        return this;
+        this._view = new viewBuilder(viewOptions);
     }
 
     public async build(): Promise<void> {
@@ -39,14 +41,14 @@ export default class<T extends TransportType = TransportType> extends Builder {
         globalThis[SandboxGlobalAccess] = true;
 
         await this._transport.build();
-        await this._view?.build();
+        await this._view.build();
 
         this.ready();
     }
 
     public async destroy(): Promise<void> {
         await this._transport.destroy();
-        await this._view?.destroy();
+        await this._view.destroy();
     }
 
     private ready(): void {

@@ -40,14 +40,7 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualSandboxModule",
-            imports: [
-                "adnbn",
-                "adnbn/transport",
-                "adnbn/entry/transport",
-                "adnbn/entry/sandbox",
-                "adnbn/entry/view/{framework}",
-                "{entry}",
-            ],
+            imports: ["adnbn/entry/sandbox", "adnbn/entry/view/{framework}", "{entry}"],
         },
         {
             generator: "virtualViewModule",
@@ -147,6 +140,7 @@ describe("Built virtual modules", () => {
         "adnbn/entry/content",
         "adnbn/entry/relay",
         "adnbn/entry/offscreen",
+        "adnbn/entry/sandbox",
     ])("%s includes only its own framework dependencies in the bundle graph", async entrypoint => {
         const inputs = await bundleInputs(entrypoint);
         const usesReact = entrypoint.endsWith("/react");
@@ -157,7 +151,7 @@ describe("Built virtual modules", () => {
         if (entrypoint === "adnbn/entry/relay") {
             expect(inputs.some(filename => filename.includes("entry/content/"))).toBe(false);
         }
-        if (entrypoint === "adnbn/entry/offscreen") {
+        if (entrypoint === "adnbn/entry/offscreen" || entrypoint === "adnbn/entry/sandbox") {
             expect(inputs.some(filename => filename.includes("entry/view/"))).toBe(false);
         }
         expect(inputs.some(filename => /entry\/content\/adapters\/vanilla\/(Builder|Node)\.js$/.test(filename))).toBe(
@@ -211,6 +205,12 @@ describe("Built virtual modules", () => {
                 specifier: "adnbn/entry/relay",
                 startup: "relay",
                 call: 'relay(resolveDefinition(module, "example"), ContentBuilder)',
+            },
+            {
+                generator: "virtualSandboxModule",
+                specifier: "adnbn/entry/sandbox",
+                startup: "sandbox",
+                call: 'sandbox(resolveDefinition(module, "example"), ViewBuilder)',
             },
             {
                 generator: "virtualServiceModule",
