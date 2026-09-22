@@ -1,6 +1,7 @@
-import {createElement, isValidElement} from "react";
+import {createElement} from "react";
 
 import {isDomRenderValue} from "@entry/core/render";
+import {isReactRenderValue} from "@entry/core/react";
 
 import ReactNode from "./Node";
 
@@ -34,7 +35,7 @@ export default class Builder<
                     ? createElement(render as ContentScriptRenderReactComponent<Data>, props)
                     : render;
 
-            return isValidElement(value) || isDomRenderValue(value) ? value : undefined;
+            return isDomRenderValue(value) || isReactRenderValue(value) ? value : undefined;
         };
     }
 

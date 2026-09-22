@@ -1,5 +1,6 @@
 import {act} from "@testing-library/react";
-import {createElement, useEffect, useState} from "react";
+import {createElement, Fragment, useEffect, useState} from "react";
+import {createPortal} from "react-dom";
 
 import Builder from "./Builder";
 import {resolveDefinition} from "./definition";
@@ -134,6 +135,41 @@ describe("React Builder", () => {
         } finally {
             await act(() => builder.destroy());
         }
+    });
+
+    test.each([
+        ["an array of nodes", [createElement("strong", {key: "strong"}, "a"), "b"], "<strong>a</strong>b"],
+        ["a fragment", createElement(Fragment, null, createElement("em", null, "a"), "b"), "<em>a</em>b"],
+        ["a bigint as text", 42n, "42"],
+    ])("React renders %s", async (_, value, html) => {
+        const anchor = document.createElement("article");
+        document.body.appendChild(anchor);
+        const builder = new Builder(resolveDefinition({anchor, default: value}));
+
+        try {
+            await act(() => builder.build());
+            expect(anchor.firstElementChild?.innerHTML).toBe(html);
+        } finally {
+            await act(() => builder.destroy());
+        }
+    });
+
+    test("React renders a portal into its own target", async () => {
+        const anchor = document.createElement("article");
+        const target = document.createElement("aside");
+        document.body.append(anchor, target);
+        const builder = new Builder(
+            resolveDefinition({anchor, default: createPortal(createElement("p", null, "portal"), target)})
+        );
+
+        try {
+            await act(() => builder.build());
+            expect(target.innerHTML).toBe("<p>portal</p>");
+        } finally {
+            await act(() => builder.destroy());
+        }
+
+        expect(target.innerHTML).toBe("");
     });
 
     test("React appends a DOM element render value", async () => {

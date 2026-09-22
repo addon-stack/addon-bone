@@ -1,3 +1,4 @@
+import {createPortal} from "react-dom";
 import {ContentScriptAppend, ContentScriptIsolation, defineContentScript, defineContentScriptAppend} from "adnbn";
 
 import type {
@@ -32,6 +33,8 @@ const reactValues: ContentScriptReactRenderValue[] = [
         boundary={undefined}
     />,
     [<span />, "text"],
+    createPortal(<span />, document.body),
+    42n,
 ];
 
 const values: ContentScriptRenderValue[] = [...vanillaValues, ...reactValues];

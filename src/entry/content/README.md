@@ -127,13 +127,15 @@ Vanilla. `isolation.page`/`isolation.src` selects the common builder regardless 
 Content and Relay. Scripts with only `main` use the filename-based selection.
 
 Each adapter interprets its own default export before shared code merges options. Default options
-override named options; a recognized default render value overrides a named `render`. React uses
-`isValidElement` to recognize elements without exposing that dependency to Vanilla or the common runtime.
-For React UI, pass a React element or component function. Component functions are invoked by React
-and may use hooks. Every adapter also renders the framework-independent values the same way: a
-nonempty string or a number becomes text through `textContent` and is never parsed as HTML, and a DOM
-element is appended as is. Markup comes from elements or from the UI framework. Empty strings,
-booleans, `null`, and `undefined` render nothing.
+override named options; a recognized default render value overrides a named `render`. React recognizes its
+nodes through `isReactRenderValue()` in `src/entry/core/react.ts`, which only the React adapters import, so
+neither Vanilla nor the common runtime depends on React. For React UI, pass any React node (an element,
+fragment, array or other iterable, portal or `bigint`) or a component function; a portal renders into its
+own target. React nodes reach React as is, so a `bigint` renders only with React 19; React 18 does not
+render it. Component functions are invoked by React and may use hooks. Every adapter also renders the
+framework-independent values the same way: a nonempty string or a number becomes text through `textContent`
+and is never parsed as HTML, and a DOM element is appended as is. Markup comes from elements or from the UI
+framework. Empty strings, booleans, `null`, and `undefined` render nothing.
 `mergeDefinition` combines exports using the selected resolver's interpretation of default
 values. The common `resolveDefinition` accepts configuration without recognizing framework
 components; adapters provide their own definition resolvers. The common builder accepts absent rendering

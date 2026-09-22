@@ -59,9 +59,9 @@ module exports using the selected adapter's interpretation of the default export
 - any other default value leaves the named exports as they are.
 
 Each adapter exposes `resolveDefinition` from its `index.ts`. Vanilla recognizes functions and the
-framework-independent values below; React also recognizes React elements through `isValidElement`, so no
-common code checks `$$typeof`. For offscreen and sandbox the default export is the transport `init`, resolved
-by the transport resolver, never a render.
+framework-independent values below; React also recognizes every React node through `isReactRenderValue()`
+in [`src/entry/core/react.ts`](../core/react.ts), which only the React adapters import. For offscreen and
+sandbox the default export is the transport `init`, resolved by the transport resolver, never a render.
 
 ## Building and rendering
 
@@ -82,20 +82,21 @@ adapter implements only what depends on its framework:
 - `resolveRender()` decides what the render input means and drops values the adapter cannot render. Vanilla
   calls a function and uses its (awaited) result; React treats a function as a component invoked by React,
   so it may use hooks.
-- `mount()` puts the value into the container. React creates a root for React elements; `unmount()` unmounts
-  it.
+- `mount()` puts the value into the container. React creates a root for a React node; `unmount()` unmounts it.
 
 Every adapter renders the framework-independent values the same way, shared with the content adapters
 through [`src/entry/core/render.ts`](../core/render.ts):
 
-| Render value                                    | Result                                                       |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| Nonempty string, number                         | Text through `textContent`; a string is never parsed as HTML |
-| DOM element                                     | Appended as is, including elements created in another realm  |
-| React element or component (React adapter only) | Rendered by React                                            |
-| Empty string, boolean, `null`, `undefined`      | Nothing; no container is created                             |
+| Render value                                                                                                          | Result                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Nonempty string, number                                                                                               | Text through `textContent`; a string is never parsed as HTML                                           |
+| DOM element                                                                                                           | Appended as is, including elements created in another realm                                            |
+| React node or component (React adapter only): element, fragment, array or other iterable, portal, `bigint` (React 19) | Rendered by React; a portal renders into its own target; an empty array is a node that renders nothing |
+| Empty string, boolean, `null`, `undefined`                                                                            | Nothing; no container is created                                                                       |
 
-Markup comes from elements or from the UI framework, never from a string.
+Markup comes from elements or from the UI framework, never from a string. The React adapter passes a React node
+to React as is, so what renders depends on the installed React version: React 18 does not render a `bigint`,
+React 19 renders it as text.
 
 ## Types
 
@@ -124,7 +125,8 @@ belongs to the CLI (`Framework` and `inferEntrypointFramework`); the package alr
 - `resolvers/definition.test.ts` and `adapters/*/definition.test.ts` cover merging and each adapter's render
   recognition; `adapters/*/Builder.test.ts` cover the container lifecycle, props, text and element values
   through the public `build()` and `destroy()`.
-- [`src/entry/core/render.test.ts`](../core/render.test.ts) covers the shared value contract.
+- [`src/entry/core/render.test.ts`](../core/render.test.ts) covers the shared value contract, and
+  [`src/entry/core/react.test.ts`](../core/react.test.ts) the React nodes recognized by the React adapters.
 - `src/entry/offscreen/index.test.ts` and `src/entry/sandbox/index.test.ts` cover the transport and view
   composition.
 - [`src/cli/virtual/virtual.test.ts`](../../cli/virtual/virtual.test.ts) checks the generated modules and that

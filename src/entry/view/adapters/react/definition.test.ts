@@ -1,4 +1,5 @@
 import {createElement} from "react";
+import {createPortal} from "react-dom";
 
 import {resolveDefinition} from "./definition";
 
@@ -23,6 +24,14 @@ describe("React view definitions", () => {
             title: "Default",
             render,
         });
+    });
+
+    test.each([
+        ["an array of nodes", [createElement("p", {key: "p"}), "text"]],
+        ["a portal", createPortal(createElement("p"), document.createElement("div"))],
+        ["a bigint", 42n],
+    ])("uses %s as the default render", (_, value) => {
+        expect(resolveDefinition({default: value, title: "Named"})).toEqual({title: "Named", render: value});
     });
 
     test("a property named $$typeof alone does not identify a React element", () => {

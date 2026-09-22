@@ -1,5 +1,6 @@
 import {act} from "@testing-library/react";
-import {createElement, useEffect} from "react";
+import {createElement, Fragment, useEffect} from "react";
+import {createPortal} from "react-dom";
 
 import Builder from "./Builder";
 
@@ -75,6 +76,36 @@ describe("React view Builder", () => {
         await act(() => new Builder<ViewConfig>({render: element}).build());
 
         expect(document.body.firstElementChild?.firstElementChild).toBe(element);
+    });
+
+    test.each([
+        ["an array of nodes", [createElement("strong", {key: "strong"}, "a"), "b"], "<strong>a</strong>b"],
+        ["a fragment", createElement(Fragment, null, createElement("em", null, "a"), "b"), "<em>a</em>b"],
+        ["a bigint as text", 42n, "42"],
+    ])("renders %s through React", async (_, value, html) => {
+        const builder = new Builder<ViewConfig>({render: value});
+
+        await act(() => builder.build());
+
+        expect(document.body.firstElementChild?.innerHTML).toBe(html);
+
+        await act(() => builder.destroy());
+    });
+
+    test("renders a portal into its own target", async () => {
+        const target = document.createElement("aside");
+
+        document.body.append(target);
+
+        const builder = new Builder<ViewConfig>({render: createPortal(createElement("p", null, "portal"), target)});
+
+        await act(() => builder.build());
+
+        expect(target.innerHTML).toBe("<p>portal</p>");
+
+        await act(() => builder.destroy());
+
+        expect(target.innerHTML).toBe("");
     });
 
     test("creates no container for an unsupported value", async () => {

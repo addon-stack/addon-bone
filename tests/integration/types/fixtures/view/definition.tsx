@@ -1,3 +1,4 @@
+import {createPortal} from "react-dom";
 import {defineOffscreen, definePopup, defineSandbox} from "adnbn";
 
 import type {
@@ -23,7 +24,14 @@ const vanillaValues: ViewVanillaRenderValue[] = [
     undefined,
 ];
 
-const reactValues: ViewReactRenderValue<Props>[] = [Panel, <Panel title="Popup" />, [<span />, "text"]];
+const reactValues: ViewReactRenderValue<Props>[] = [
+    Panel,
+    <Panel title="Popup" />,
+    <>fragment</>,
+    [<span key="span" />, "text"],
+    createPortal(<span />, document.body),
+    42n,
+];
 
 const values: ViewRenderValue<Props>[] = [...vanillaValues, ...reactValues];
 
