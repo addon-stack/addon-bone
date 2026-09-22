@@ -1,34 +1,6 @@
-declare module "virtual:background-entrypoint" {
-    type BackgroundDefinition = import("@typing/background").BackgroundDefinition;
-
-    interface ModuleType extends BackgroundDefinition {
-        default: BackgroundDefinition | BackgroundDefinition["main"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:command-entrypoint" {
-    type CommandDefinition = import("@typing/command").CommandDefinition;
-
-    interface ModuleType extends CommandDefinition {
-        default: CommandDefinition | CommandDefinition["execute"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:content-entrypoint" {
-    type ContentScriptDefinition = import("@typing/content").ContentScriptDefinition;
-
-    interface ModuleType {
-        [name: string]: unknown;
-        default: ContentScriptDefinition | ContentScriptDefinition["render"] | undefined;
-    }
-
-    const module: ModuleType;
+/** Generated modules import the entrypoint as a namespace and pass it to their runtime resolveDefinition(). */
+declare module "virtual:*-entrypoint" {
+    const module: {readonly [name: string]: unknown};
     export = module;
 }
 
@@ -47,84 +19,6 @@ declare module "virtual:content-builder" {
     export default content;
 }
 
-declare module "virtual:offscreen-entrypoint" {
-    type OffscreenDefinition = import("@typing/offscreen").OffscreenDefinition<
-        import("@typing/transport").TransportType
-    >;
-
-    interface ModuleType extends OffscreenDefinition {
-        default: OffscreenDefinition | OffscreenDefinition["init"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:relay-entrypoint" {
-    type RelayDefinition = import("@typing/relay").RelayDefinition<import("@typing/transport").TransportType>;
-
-    export const {
-        init,
-        main,
-        name,
-        method,
-        isolation,
-        allFrames,
-        matches,
-        excludeMatches,
-        includeGlobs,
-        excludeGlobs,
-        runAt,
-        world,
-        matchAboutBlank,
-        matchOriginAsFallback,
-        declarative,
-        marker,
-        anchor,
-        mount,
-        prepare,
-        render,
-        container,
-        boundary,
-        target,
-        watch,
-        includeBrowser,
-        excludeBrowser,
-        includeApp,
-        excludeApp,
-        mode,
-        manifestVersion,
-        debug,
-    }: Partial<RelayDefinition>;
-
-    const definition: RelayDefinition | RelayDefinition["init"] | undefined;
-    export default definition;
-}
-
-declare module "virtual:sandbox-entrypoint" {
-    type SandboxDefinition = import("@typing/sandbox").SandboxDefinition<any>;
-
-    interface ModuleType extends SandboxDefinition {
-        default: SandboxDefinition | SandboxDefinition["init"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:view-entrypoint" {
-    import {ViewOptions} from "@typing/view";
-
-    type ViewDefinition = import("@typing/view").ViewDefinition<ViewOptions>;
-
-    interface ModuleType extends ViewDefinition {
-        default: ViewDefinition | ViewDefinition["render"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
 declare module "virtual:view-builder" {
     export const resolveDefinition: (
         module: object
@@ -138,15 +32,4 @@ declare module "virtual:view-builder" {
         | typeof import("@entry/view/adapters/vanilla").default
         | typeof import("@entry/view/adapters/react").default;
     export default view;
-}
-
-declare module "virtual:service-entrypoint" {
-    type ServiceDefinition = import("@typing/service").ServiceDefinition<import("@typing/transport").TransportType>;
-
-    interface ModuleType extends ServiceDefinition {
-        default: ServiceDefinition | ServiceDefinition["init"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
 }

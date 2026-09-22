@@ -1,4 +1,4 @@
-import {RelayAllFrames, type ContentScriptDefinition, type RelayDefinition} from "adnbn";
+import {RelayAllFrames, type ContentScriptDefinition} from "adnbn";
 import relay, {Builder as RelayBuilder, resolveDefinition, type RelayUnresolvedDefinition} from "adnbn/entry/relay";
 import type {TransportType} from "adnbn/transport";
 import {Builder as ContentScriptBuilder} from "virtual:content-builder";
@@ -10,15 +10,6 @@ type Expect<T extends true> = T;
 type ContentOptions = Expect<Equal<ConstructorParameters<typeof ContentScriptBuilder>[0], ContentScriptDefinition>>;
 type RelayOptions = Expect<
     Equal<ConstructorParameters<typeof RelayBuilder>[0], RelayUnresolvedDefinition<TransportType>>
->;
-type NamedExports = Expect<
-    Equal<Partial<Omit<typeof definition, "default">>, Readonly<RelayUnresolvedDefinition<TransportType>>>
->;
-type DefaultExport = Expect<
-    Equal<
-        typeof definition.default,
-        RelayDefinition<TransportType> | RelayDefinition<TransportType>["init"] | undefined
-    >
 >;
 
 new RelayBuilder({allFrames: RelayAllFrames.All}, ContentScriptBuilder);
