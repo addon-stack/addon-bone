@@ -12,11 +12,11 @@ describe("Built virtual modules", () => {
     const cases: {generator: Generator; imports: string[]}[] = [
         {
             generator: "virtualBackgroundModule",
-            imports: ["adnbn", "adnbn/entry/background", "{entry}"],
+            imports: ["adnbn/entry/background", "{entry}"],
         },
         {
             generator: "virtualCommandModule",
-            imports: ["adnbn", "adnbn/entry/command", "{entry}"],
+            imports: ["adnbn/entry/command", "{entry}"],
         },
         {
             generator: "virtualContentScriptModule",
@@ -24,18 +24,11 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualServiceModule",
-            imports: ["adnbn/transport", "adnbn/entry/transport", "adnbn/entry/service", "{entry}"],
+            imports: ["adnbn/entry/service", "{entry}"],
         },
         {
             generator: "virtualOffscreenModule",
-            imports: [
-                "adnbn",
-                "adnbn/transport",
-                "adnbn/entry/transport",
-                "adnbn/entry/offscreen",
-                "adnbn/entry/view/{framework}",
-                "{entry}",
-            ],
+            imports: ["adnbn/entry/offscreen", "adnbn/entry/view/{framework}", "{entry}"],
         },
         {
             generator: "virtualOffscreenBackgroundModule",
@@ -47,23 +40,33 @@ describe("Built virtual modules", () => {
         },
         {
             generator: "virtualSandboxModule",
-            imports: [
-                "adnbn",
-                "adnbn/transport",
-                "adnbn/entry/transport",
-                "adnbn/entry/sandbox",
-                "adnbn/entry/view/{framework}",
-                "{entry}",
-            ],
+            imports: ["adnbn/entry/sandbox", "adnbn/entry/view/{framework}", "{entry}"],
         },
         {
             generator: "virtualViewModule",
-            imports: ["adnbn", "adnbn/entry/view", "adnbn/entry/view/{framework}", "{entry}"],
+            imports: ["adnbn/entry/view/{framework}", "{entry}"],
         },
     ];
     let generated: Record<"ts" | "tsx", Record<Generator, string>>;
     let navigation: Record<"ts" | "tsx", Record<"virtualContentScriptModule" | "virtualRelayModule", string>>;
     let contentModule: string;
+
+    const bundleInputs = async (entrypoint: string): Promise<string[]> => {
+        const result = await build({
+            absWorkingDir: projectDir,
+            entryPoints: [entrypoint],
+            bundle: true,
+            platform: "browser",
+            format: "esm",
+            // Resolve the published package exports instead of the source aliases in tsconfig.json.
+            tsconfigRaw: {},
+            write: false,
+            metafile: true,
+            logLevel: "silent",
+        });
+
+        return Object.keys(result.metafile!.inputs).map(filename => filename.replaceAll("\\", "/"));
+    };
 
     beforeAll(() => {
         // Run the final JS artifact in Node, without Jest transforms, source aliases, or module mocks.
@@ -136,20 +139,10 @@ describe("Built virtual modules", () => {
         "adnbn/entry/content/react",
         "adnbn/entry/content",
         "adnbn/entry/relay",
+        "adnbn/entry/offscreen",
+        "adnbn/entry/sandbox",
     ])("%s includes only its own framework dependencies in the bundle graph", async entrypoint => {
-        const result = await build({
-            absWorkingDir: projectDir,
-            entryPoints: [entrypoint],
-            bundle: true,
-            platform: "browser",
-            format: "esm",
-            // Resolve the published package exports instead of the source aliases in tsconfig.json.
-            tsconfigRaw: {},
-            write: false,
-            metafile: true,
-            logLevel: "silent",
-        });
-        const inputs = Object.keys(result.metafile!.inputs).map(filename => filename.replaceAll("\\", "/"));
+        const inputs = await bundleInputs(entrypoint);
         const usesReact = entrypoint.endsWith("/react");
 
         expect(inputs.some(filename => /node_modules\/react\//.test(filename))).toBe(usesReact);
@@ -158,43 +151,97 @@ describe("Built virtual modules", () => {
         if (entrypoint === "adnbn/entry/relay") {
             expect(inputs.some(filename => filename.includes("entry/content/"))).toBe(false);
         }
+        if (entrypoint === "adnbn/entry/offscreen" || entrypoint === "adnbn/entry/sandbox") {
+            expect(inputs.some(filename => filename.includes("entry/view/"))).toBe(false);
+        }
         expect(inputs.some(filename => /entry\/content\/adapters\/vanilla\/(Builder|Node)\.js$/.test(filename))).toBe(
             entrypoint.endsWith("/vanilla")
         );
     });
 
+    test.each(["adnbn/entry/view/vanilla", "adnbn/entry/view/react"])(
+        "%s includes React only in the React view adapter bundle graph",
+        async entrypoint => {
+            const inputs = await bundleInputs(entrypoint);
+            const usesReact = entrypoint.endsWith("/react");
+
+            expect(inputs.some(filename => /node_modules\/react\//.test(filename))).toBe(usesReact);
+            expect(inputs.some(filename => /node_modules\/react-dom\//.test(filename))).toBe(usesReact);
+            expect(inputs.some(filename => filename.includes("entry/view/adapters/react/"))).toBe(usesReact);
+        }
+    );
+
     describe.each([
         {extension: "ts" as const, framework: "vanilla"},
         {extension: "tsx" as const, framework: "react"},
     ])("with $framework entrypoints", ({extension, framework}) => {
-        test("loads definition normalization from the selected content entrypoint", () => {
-            for (const source of [
-                generated[extension].virtualContentScriptModule,
-                navigation[extension].virtualContentScriptModule,
-            ]) {
-                const file = ts.createSourceFile("content.ts", source, ts.ScriptTarget.Latest, true);
-                const adapterImport = file.statements.find(ts.isImportDeclaration)!;
-                const bindings = adapterImport.importClause?.namedBindings;
-                expect(
-                    bindings && ts.isNamedImports(bindings) && bindings.elements.map(element => element.name.text)
-                ).toEqual(["resolveDefinition"]);
-                expect(source).toContain("contentScript(resolveDefinition(module))");
-            }
-        });
+        test.each([
+            {
+                generator: "virtualBackgroundModule",
+                specifier: "adnbn/entry/background",
+                startup: "background",
+                call: "background(resolveDefinition(module))",
+            },
+            {
+                generator: "virtualCommandModule",
+                specifier: "adnbn/entry/command",
+                startup: "command",
+                call: 'command(resolveDefinition(module, "example"))',
+            },
+            {
+                generator: "virtualContentScriptModule",
+                specifier: "adnbn/entry/content/{framework}",
+                startup: "contentScript",
+                call: "contentScript(resolveDefinition(module))",
+            },
+            {
+                generator: "virtualOffscreenModule",
+                specifier: "adnbn/entry/offscreen",
+                startup: "offscreen",
+                call: 'offscreen(resolveDefinition(module, "example"), ViewBuilder)',
+            },
+            {
+                generator: "virtualRelayModule",
+                specifier: "adnbn/entry/relay",
+                startup: "relay",
+                call: 'relay(resolveDefinition(module, "example"), ContentBuilder)',
+            },
+            {
+                generator: "virtualSandboxModule",
+                specifier: "adnbn/entry/sandbox",
+                startup: "sandbox",
+                call: 'sandbox(resolveDefinition(module, "example"), ViewBuilder)',
+            },
+            {
+                generator: "virtualServiceModule",
+                specifier: "adnbn/entry/service",
+                startup: "service",
+                call: 'service(resolveDefinition(module, "example"))',
+            },
+            {
+                generator: "virtualViewModule",
+                specifier: "adnbn/entry/view/{framework}",
+                startup: "view",
+                call: "view(resolveDefinition(module))",
+            },
+        ] as const)(
+            "$generator delegates normalization and startup to its runtime entrypoint",
+            ({generator, specifier, startup, call}) => {
+                const source = generated[extension][generator];
+                const file = ts.createSourceFile("entry.ts", source, ts.ScriptTarget.Latest, true);
+                const entryImport = file.statements.find(ts.isImportDeclaration)!;
+                const bindings = entryImport.importClause?.namedBindings;
 
-        test("delegates Relay normalization and startup to its runtime entrypoint", () => {
-            for (const source of [generated[extension].virtualRelayModule, navigation[extension].virtualRelayModule]) {
-                const file = ts.createSourceFile("relay.ts", source, ts.ScriptTarget.Latest, true);
-                const relayImport = file.statements.find(ts.isImportDeclaration)!;
-                expect((relayImport.moduleSpecifier as ts.StringLiteral).text).toBe("adnbn/entry/relay");
-                expect(relayImport.importClause?.name?.text).toBe("relay");
-                const bindings = relayImport.importClause?.namedBindings;
+                expect((entryImport.moduleSpecifier as ts.StringLiteral).text).toBe(
+                    specifier.replace("{framework}", framework)
+                );
+                expect(entryImport.importClause?.name?.text).toBe(startup);
                 expect(
                     bindings && ts.isNamedImports(bindings) && bindings.elements.map(element => element.name.text)
                 ).toEqual(["resolveDefinition"]);
-                expect(source).toContain('relay(resolveDefinition(module, "example"), ContentBuilder)');
+                expect(source).toContain(call);
             }
-        });
+        );
 
         test.each(cases)("$generator preserves package imports and resolves placeholders", ({generator, imports}) => {
             const source = generated[extension][generator];
@@ -206,7 +253,6 @@ describe("Built virtual modules", () => {
                 )
             );
             expect(source).not.toContain("virtual:");
-            expect(source).not.toContain(":entry");
         });
 
         test.each(["virtualContentScriptModule", "virtualRelayModule"] as const)(

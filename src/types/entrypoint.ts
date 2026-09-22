@@ -19,6 +19,9 @@ export enum EntrypointType {
     Sidebar = "sidebar",
     Offscreen = "offscreen",
     Sandbox = "sandbox",
+    Newtab = "newtab",
+    Bookmarks = "bookmarks",
+    History = "history",
 }
 
 export interface EntrypointOptions {
@@ -145,6 +148,8 @@ export interface EntrypointNameGenerator {
     name(name: string): string;
 
     file(file: EntrypointFile): string;
+
+    derive(file: EntrypointFile): string;
 
     likely(name?: string): boolean;
 

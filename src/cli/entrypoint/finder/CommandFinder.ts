@@ -5,7 +5,7 @@ import {CommandParser} from "../parser";
 import {InlineNameGenerator} from "../name";
 
 import {ReadonlyConfig} from "@typing/config";
-import {CommandEntrypointOptions, CommandOptions} from "@typing/command";
+import {CommandEntrypointOptions, CommandExecuteActionName, CommandOptions} from "@typing/command";
 import {EntrypointFile, EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
 export default class extends AbstractPluginFinder<CommandEntrypointOptions> {
@@ -31,16 +31,32 @@ export default class extends AbstractPluginFinder<CommandEntrypointOptions> {
         return new PluginFinder(this.config, "command", this);
     }
 
+    /**
+     * A command name is its identity in the manifest and in the browser's shortcut settings,
+     * so a collision fails the build instead of renaming one of the commands.
+     */
     protected async getCommands(): Promise<Map<EntrypointFile, CommandOptions>> {
         const commands = new Map<EntrypointFile, CommandOptions>();
+        const owners = new Map<string, EntrypointFile>();
 
         for (const [file, option] of await this.plugin().options()) {
-            const {name, ...definition} = option;
+            const {name = this.names.derive(file), ...definition} = option;
+            const owner = owners.get(name);
 
-            commands.set(file, {
-                name: name ? this.names.name(name) : this.names.file(file),
-                ...definition,
-            });
+            if (owner && name === CommandExecuteActionName) {
+                throw new Error(
+                    `Invalid command options in "${file.file}": An action command is already defined in "${owner.file}". Only one action command is allowed`
+                );
+            }
+
+            if (owner) {
+                throw new Error(
+                    `Invalid command options in "${file.file}": Command name "${name}" is already used by "${owner.file}". Command names must be unique, set a distinct "name"`
+                );
+            }
+
+            owners.set(name, file);
+            commands.set(file, {name, ...definition});
         }
 
         return commands;
@@ -55,8 +71,6 @@ export default class extends AbstractPluginFinder<CommandEntrypointOptions> {
     }
 
     public clear(): this {
-        this.names.reset();
-
         this._commands = undefined;
 
         return super.clear();

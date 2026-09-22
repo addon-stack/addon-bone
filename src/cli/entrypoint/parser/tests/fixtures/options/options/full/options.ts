@@ -22,6 +22,10 @@ export default defineOptions({
             style: [CspSource.Self, CspSource.UnsafeInline],
         },
     },
+    permissions: ["storage", "tabs"],
+    optionalPermissions: ["topSites"],
+    hostPermissions: ["https://*.example.com/*"],
+    optionalHostPermissions: ["https://other.test/*"],
     scripts: "extra.js",
     links: "extra.css",
     metas: {

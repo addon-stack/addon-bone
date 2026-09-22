@@ -99,6 +99,25 @@ export default abstract class<O extends ViewEntrypointOptions> extends AbstractP
         return true;
     }
 
+    /**
+     * Parsed options of the entrypoints that became views.
+     * Candidates that lost the selection are excluded, and the options keep manifest-only settings.
+     */
+    public async selectedOptions(): Promise<O[]> {
+        const options = await this.plugin().options();
+        const selected: O[] = [];
+
+        for (const {file} of (await this.views()).values()) {
+            const option = options.get(file);
+
+            if (option) {
+                selected.push(option);
+            }
+        }
+
+        return selected;
+    }
+
     public async getAliasToFilename(): Promise<ViewAliasToFilename> {
         return Array.from(await this.views()).reduce((aliases, [_, item]) => {
             return {

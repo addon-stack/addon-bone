@@ -1,5 +1,7 @@
-import {isValidElement} from "react";
 import {createRoot, type Root} from "react-dom/client";
+
+import {isDomRenderValue, renderDomValue} from "@entry/core/render";
+import {isReactRenderValue} from "@entry/core/react";
 
 import {RenderNode} from "../../lifecycle/nodes";
 
@@ -9,14 +11,21 @@ export default class Node<Data = unknown> extends RenderNode<Data> {
     private root?: Root;
 
     protected render(value: ContentScriptRenderValue<Data> | undefined, target: Element): boolean {
-        if (!isValidElement(value)) {
-            return false;
+        // Text is also iterable, so framework-independent values are checked before React nodes.
+        if (isDomRenderValue(value)) {
+            renderDomValue(target, value);
+
+            return true;
         }
 
-        this.root = createRoot(target);
-        this.root.render(value);
+        if (isReactRenderValue(value)) {
+            this.root = createRoot(target);
+            this.root.render(value);
 
-        return true;
+            return true;
+        }
+
+        return false;
     }
 
     protected clear(): void {

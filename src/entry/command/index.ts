@@ -1,5 +1,5 @@
 import Builder from "./Builder";
 
-export * from "./resolvers";
+export {resolveDefinition} from "./resolvers/definition";
 
 export default Builder.resolver();

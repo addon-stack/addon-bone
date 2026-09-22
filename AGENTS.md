@@ -12,6 +12,15 @@
 - Wait for the expected compilation or observable output with a descriptive timeout. Do not rely on fixed sleeps or assume that emitted files mean the watcher has finished reconnecting. Preserve exact filename casing and account for platform line endings when they are not part of the tested contract.
 - A local pass on one operating system does not establish cross-platform compatibility. For platform-specific failures, reproduce the relevant filesystem or process behavior when possible and distinguish that simulation from validation on the actual CI runner. Do not hide the failure by skipping the platform or only increasing timeouts.
 
+## Entrypoint parsing tests
+
+- `src/cli/entrypoint/file` reads source files without knowing entrypoints: a parser only supplies a definition name and its schema keys through `AbstractParser.optionFile()`. Organize its tests and fixtures by what the reader can read, not by entrypoint: export shapes in `tests/fixtures/export-shapes`, static value resolution in `static-options`, and expression kinds in `expression`. Cover every way a file may declare options there once; do not repeat that matrix per entrypoint.
+- `src/cli/entrypoint/parser` tests are organized by entrypoint: one `<Name>Parser.test.ts` per parser, or one kebab-case file using `describe.each` for a family whose parsers differ only in the definition they recognise. Keep fixtures in `tests/fixtures/<entrypoint>/options/<scenario>/`, `invalid/`, and `contracts/`. Use real entrypoint files rather than mocked readers or generated source strings.
+- A parser test proves what the parser owns: its definition is recognised and a sibling's is ignored; a `full` scenario reads every accepted key through its own definition; defaults; invalid values of its own keys; entrypoint-specific interpretation; and `contract()` when the parser declares an agreement. The `full` scenario is also how an entrypoint proves that it adopted a shared schema fragment.
+- Test a shared schema fragment once at its owner: the common filters in `AbstractParser.test.ts`; view and CSP options belong beside `ViewParser` and `ViewCspParser`; a mixin schema beside its module in `parser/schemas`. Do not add a cross-cutting test file with one row per adopting entrypoint.
+- A schema fragment that unrelated parsers opt into, such as `PermissionsSchema`, is a mixin: keep it as a module in `src/cli/entrypoint/parser/schemas` and merge it explicitly in each adopting parser. Do not put it on `AbstractParser`, which holds only what every entrypoint shares, and do not add an intermediate parser class for it: independent mixins cannot be combined through single inheritance.
+- Do not re-test export shapes such as named exports, default objects, `as`, or `satisfies` in a parser test. Add a parser-level shape scenario only when the entrypoint gives that shape a meaning, for example the Content default render or the Relay init.
+
 ## Responsibility boundaries
 
 ### Layer ownership
@@ -71,6 +80,8 @@
 - Import internal TypeScript modules through configured aliases or relative paths without a file extension. Do not write the future `.js` output path into a TypeScript source import.
 - Output extensions and external-module paths belong to the build configuration. When a bundled entry needs an external dependency, resolve its source import to the emitted ESM path during the build.
 - Imports of actual JavaScript files, package subpaths, and loader-specific resources such as `.ts?raw` keep the syntax required by their owner. This rule does not rewrite raw template contents or generated JavaScript imports.
+- A directory of functions inside an entrypoint runtime, such as `src/entry/<name>/resolvers`, has no `index.ts`. Import the owning file, for example `./resolvers/definition`, so the path shows where the logic lives. Directories of classes follow the class export rules below.
+- An entrypoint runtime's `index.ts` is its package subpath `adnbn/entry/<name>`. List its exports explicitly and do not use `export *`, so an internal helper never becomes public by accident.
 - Apply this convention to new and changed imports; do not mass-rewrite unrelated files.
 
 ## Code layout
@@ -109,6 +120,16 @@ return node;
 - Suffixes must describe the actual role or shape: `Map` for a keyed collection, `MapEntry` for its value, `Options` for configuration, and `Handler` for a callable handler. Do not use the same name for different data shapes.
 - Name classes after their responsibility and role, such as `LocaleFinder` or `ContentParser`. Avoid names tied only to a temporary implementation detail or former file location.
 - Keep private helpers and local variables concise when their surrounding scope already supplies the domain. Do not mechanically repeat a long public prefix everywhere.
+
+## Type declarations and reuse
+
+- Apply these conventions to every type the project owns: shared contracts, runtime APIs, entrypoints, CLI, bundler plugins, and tests.
+- Refer to a type by its name wherever it appears in class and function code: return types, parameters, properties, generic arguments, and local annotations. Do not reach into another type with an indexed access such as `ReadonlyConfig["homepage"]` or `ViewItem<O>["options"]`. The reader has to open the other declaration to learn what the member is, and the signature silently changes when that declaration does.
+- Reuse before declaring. Look for the named type that already describes the value, starting in `src/types`, and use it instead of describing the same shape again inline. For example, use `ManifestHostPermissions` rather than `Set<string>`, `EntrypointFile` rather than `{file: string; import: string}`, and `ViewItems<O>` rather than `Map<string, ViewItem<O>>`. One concept has one name across types, parsers, finders, plugins, and builders.
+- When no name exists, declare one where the concept is owned: a shared contract in `src/types`, a type private to one module beside its only consumer. Follow the symbol naming rules above, and do not keep two names for the same shape.
+- For a third-party type that exposes only a nested member, add a local alias in the owning contract, as `types/manifest.ts` does for `chrome.runtime.ManifestPermission`, instead of indexing it inside a class.
+- Build a contract by composing named contracts rather than copying their fields, for example `PopupConfig & PermissionsOptions & CspOptions & ViewOptions`. A contract that only part of the entrypoints adopt stays a separate named mixin.
+- Indexed access remains appropriate inside type-level utilities that are generic over the key, such as `PluginHandlerOptions<K>`, where no single named type can replace it.
 
 ## Class exports
 

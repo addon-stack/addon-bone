@@ -41,6 +41,11 @@ export default class implements EntrypointNameGenerator {
     }
 
     public file(file: EntrypointFile): string {
+        return this.name(this.derive(file));
+    }
+
+    /** Derive a name from a file without claiming it; `file()` claims the derived name. */
+    public derive(file: EntrypointFile): string {
         const key = "." + this.entrypoint;
 
         let {name, dir} = path.parse(file.file);
@@ -53,7 +58,7 @@ export default class implements EntrypointNameGenerator {
             name = name.split(key)[0];
         }
 
-        return this.name(name);
+        return name;
     }
 
     public reset(): this {

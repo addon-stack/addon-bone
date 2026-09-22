@@ -19,6 +19,7 @@ import {
     ManifestIncognito,
     ManifestOptionalPermissions,
     ManifestOptions,
+    ManifestOverride,
     ManifestPermissions,
     ManifestPopup,
     ManifestSandbox,
@@ -64,6 +65,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected popup?: ManifestPopup;
     protected sidebar?: ManifestSidebar;
     protected options?: ManifestOptions;
+    protected urlOverride?: ManifestOverride;
     protected sandboxes: ManifestSandboxes = new Set();
     protected sandboxCsp: CspBuilder<SandboxCspConfig> = new SandboxCsp();
     protected csp: CspBuilder<CspConfig> = new Csp();
@@ -273,6 +275,12 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return this;
     }
 
+    public setOverride(override?: ManifestOverride): this {
+        this.urlOverride = override;
+
+        return this;
+    }
+
     public addSandbox(sandbox: ManifestSandbox): this {
         this.sandboxes.add(sandbox);
 
@@ -445,6 +453,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.buildAction(),
             this.buildSidebar(),
             this.buildOptions(),
+            this.buildOverride(),
             this.buildContentScripts(),
             this.buildPermissions(),
             this.buildOptionalPermissions(),
@@ -678,6 +687,16 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
         return _.pick(this.combinedRaws, ["options_ui", "options_page"]);
     }
 
+    protected buildOverride(): Partial<CoreManifest> {
+        if (this.urlOverride) {
+            const {page, path} = this.urlOverride;
+
+            return {chrome_url_overrides: {[page]: path}};
+        }
+
+        return _.pick(this.combinedRaws, ["chrome_url_overrides"]);
+    }
+
     protected buildBrowserSpecificSettings(): Partial<Manifest> | undefined {
         const optionalSettings = this.combinedRaws.browser_specific_settings;
         const {safari, gecko, geckoAndroid} = this.specific || {};
@@ -757,6 +776,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             sidebar,
             options_ui,
             options_page,
+            chrome_url_overrides,
             content_scripts,
             permissions,
             optional_permissions,

@@ -1,6 +1,9 @@
 export {default as BackgroundParser} from "./BackgroundParser";
+export {default as BookmarksParser} from "./BookmarksParser";
 export {default as CommandParser} from "./CommandParser";
 export {default as ContentParser} from "./ContentParser";
+export {default as HistoryParser} from "./HistoryParser";
+export {default as NewtabParser} from "./NewtabParser";
 export {default as OptionsParser} from "./OptionsParser";
 export {default as PageParser} from "./PageParser";
 export {default as PopupParser} from "./PopupParser";
@@ -9,3 +12,4 @@ export {default as SandboxParser} from "./SandboxParser";
 export {default as ServiceParser} from "./ServiceParser";
 export {default as SidebarParser} from "./SidebarParser";
 export {default as OffscreenParser} from "./OffscreenParser";
+export {HtmlOptionKeys} from "./schemas/html";

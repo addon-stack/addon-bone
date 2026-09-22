@@ -3,7 +3,7 @@ import AbstractViewFinder, {ViewItems} from "./AbstractViewFinder";
 import type {CspConfig} from "@typing/csp";
 import type {ViewEntrypointOptions} from "@typing/view";
 
-type CspEntrypointOptions = ViewEntrypointOptions & {csp?: unknown};
+export type CspEntrypointOptions = ViewEntrypointOptions & {csp?: unknown};
 
 export default abstract class<O extends CspEntrypointOptions, Csp = CspConfig> extends AbstractViewFinder<O> {
     protected _csp?: Csp[];

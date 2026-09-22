@@ -1,6 +1,6 @@
 import Builder from "@entry/core/Builder";
 
-import {isValidTransportInitFunction, isValidTransportMainFunction, isValidTransportName} from "./resolvers";
+import {isValidTransportInitFunction, isValidTransportMainFunction, isValidTransportName} from "./resolvers/definition";
 
 import {
     TransportOptions,

@@ -1,26 +1,32 @@
+import EntrypointBuilder from "@entry/core/Builder";
+
 import TransportBuilder from "./TransportBuilder";
 
-import Builder from "../core/Builder";
-
-import {OffscreenBridgeReadyMessageType, OffscreenGlobalAccess, OffscreenUnresolvedDefinition} from "@typing/offscreen";
+import {
+    OffscreenBridgeReadyMessageType,
+    OffscreenEntrypointOptions,
+    OffscreenGlobalAccess,
+    OffscreenUnresolvedDefinition,
+} from "@typing/offscreen";
 import {TransportType} from "@typing/transport";
-import {ViewBuilder} from "@typing/view";
+import {ViewBuilder, ViewBuilderConstructor} from "@typing/view";
 
-export default class<T extends TransportType = TransportType> extends Builder {
+export default class Builder<T extends TransportType = TransportType> extends EntrypointBuilder {
     protected readonly _transport: TransportBuilder<T>;
 
-    protected _view?: ViewBuilder;
+    protected readonly _view: ViewBuilder;
 
-    constructor(definition: OffscreenUnresolvedDefinition<T>) {
+    constructor(
+        definition: OffscreenUnresolvedDefinition<T>,
+        viewBuilder: ViewBuilderConstructor<OffscreenEntrypointOptions>
+    ) {
         super();
 
         this._transport = new TransportBuilder(definition);
-    }
 
-    public view(view: ViewBuilder): this {
-        this._view = view;
+        const {init, main, name, ...viewOptions} = definition;
 
-        return this;
+        this._view = new viewBuilder(viewOptions);
     }
 
     public async build(): Promise<void> {
@@ -29,14 +35,14 @@ export default class<T extends TransportType = TransportType> extends Builder {
         globalThis[OffscreenGlobalAccess] = true;
 
         await this._transport.build();
-        await this._view?.build();
+        await this._view.build();
 
         this.ready();
     }
 
     public async destroy(): Promise<void> {
         await this._transport.destroy();
-        await this._view?.destroy();
+        await this._view.destroy();
     }
 
     private ready(): void {

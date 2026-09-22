@@ -116,6 +116,7 @@ jobs:
           type: now
           from_branch: main
           target_branch: develop
+          message: "chore(sync): merge main into develop"
           github_token: ${{ secrets.GITHUB_TOKEN }}
         env:
           HUSKY: 0

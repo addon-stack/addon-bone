@@ -1,1 +1,9 @@
-export type {ViewDefinition, ViewOptions} from "@typing/view";
+export type {
+    ViewDefinition,
+    ViewOptions,
+    ViewReactRenderValue,
+    ViewRenderHandler,
+    ViewRenderReactComponent,
+    ViewRenderValue,
+    ViewVanillaRenderValue,
+} from "@typing/view";

@@ -2,7 +2,7 @@ import {onActionClicked, onSpecificCommand} from "@addon-core/browser";
 
 import Builder from "@entry/core/Builder";
 
-import {isValidCommandExecuteFunction, isValidCommandName} from "./resolvers";
+import {isValidCommandExecuteFunction, isValidCommandName} from "./resolvers/definition";
 
 import {
     CommandBuilder,

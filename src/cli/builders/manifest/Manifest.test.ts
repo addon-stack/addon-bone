@@ -342,6 +342,62 @@ describe.each([
     });
 });
 
+describe.each([
+    ["ManifestV2", ManifestV2],
+    ["ManifestV3", ManifestV3],
+] as const)("%s override page", (_, Builder) => {
+    describe.each([Browser.Chrome, Browser.Edge, Browser.Opera, Browser.Safari, Browser.Firefox])("%s", browser => {
+        const rawOverrides = {bookmarks: "raw-bookmarks.html", history: "raw-history.html"};
+
+        it.each(["newtab", "bookmarks", "history"] as const)("writes the generated %s override under its key", page => {
+            const manifest = new Builder(browser).setOverride({page, path: `${page}.html`}).build();
+
+            expect(manifest.chrome_url_overrides).toStrictEqual({[page]: `${page}.html`});
+        });
+
+        it("preserves raw chrome_url_overrides without an override entrypoint", () => {
+            const manifest = new Builder(browser).raw({chrome_url_overrides: rawOverrides}).build();
+
+            expect(manifest.chrome_url_overrides).toStrictEqual(rawOverrides);
+        });
+
+        it("replaces raw chrome_url_overrides with only the generated page", () => {
+            const manifest = new Builder(browser)
+                .setOverride({page: "newtab", path: "newtab.html"})
+                .raw({chrome_url_overrides: rawOverrides})
+                .build();
+
+            expect(manifest.chrome_url_overrides).toStrictEqual({newtab: "newtab.html"});
+        });
+
+        it("restores raw chrome_url_overrides after clearing a generated override", () => {
+            const builder = new Builder(browser)
+                .raw({chrome_url_overrides: rawOverrides})
+                .setOverride({page: "newtab", path: "newtab.html"});
+
+            builder.build();
+            const manifest = builder.setOverride(undefined).build();
+
+            expect(manifest.chrome_url_overrides).toStrictEqual(rawOverrides);
+        });
+
+        it("omits chrome_url_overrides when there is no override page", () => {
+            const manifest = new Builder(browser).build();
+
+            expect(manifest).not.toHaveProperty("chrome_url_overrides");
+        });
+
+        it("omits chrome_url_overrides after clearing an override without raw fallback", () => {
+            const builder = new Builder(browser).setOverride({page: "history", path: "history.html"});
+
+            builder.build();
+            const manifest = builder.setOverride(undefined).build();
+
+            expect(manifest).not.toHaveProperty("chrome_url_overrides");
+        });
+    });
+});
+
 describe("Manifest browser specific settings", () => {
     it("sets and merges Firefox browser specific settings", () => {
         const builder = new ManifestV3(Browser.Firefox);

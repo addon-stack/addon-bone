@@ -1,34 +1,6 @@
-declare module "virtual:background-entrypoint" {
-    type BackgroundDefinition = import("@typing/background").BackgroundDefinition;
-
-    interface ModuleType extends BackgroundDefinition {
-        default: BackgroundDefinition | BackgroundDefinition["main"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:command-entrypoint" {
-    type CommandDefinition = import("@typing/command").CommandDefinition;
-
-    interface ModuleType extends CommandDefinition {
-        default: CommandDefinition | CommandDefinition["execute"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:content-entrypoint" {
-    type ContentScriptDefinition = import("@typing/content").ContentScriptDefinition;
-
-    interface ModuleType {
-        [name: string]: unknown;
-        default: ContentScriptDefinition | ContentScriptDefinition["render"] | undefined;
-    }
-
-    const module: ModuleType;
+/** Generated modules import the entrypoint as a namespace and pass it to their runtime resolveDefinition(). */
+declare module "virtual:*-entrypoint" {
+    const module: {readonly [name: string]: unknown};
     export = module;
 }
 
@@ -47,85 +19,11 @@ declare module "virtual:content-builder" {
     export default content;
 }
 
-declare module "virtual:offscreen-entrypoint" {
-    type OffscreenDefinition = import("@typing/offscreen").OffscreenDefinition<
-        import("@typing/transport").TransportType
-    >;
+declare module "virtual:view-builder" {
+    export const resolveDefinition: (
+        module: object
+    ) => import("@typing/view").ViewDefinition<import("@typing/view").ViewConfig>;
 
-    interface ModuleType extends OffscreenDefinition {
-        default: OffscreenDefinition | OffscreenDefinition["init"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:relay-entrypoint" {
-    type RelayDefinition = import("@typing/relay").RelayDefinition<import("@typing/transport").TransportType>;
-
-    export const {
-        init,
-        main,
-        name,
-        method,
-        isolation,
-        allFrames,
-        matches,
-        excludeMatches,
-        includeGlobs,
-        excludeGlobs,
-        runAt,
-        world,
-        matchAboutBlank,
-        matchOriginAsFallback,
-        declarative,
-        marker,
-        anchor,
-        mount,
-        prepare,
-        render,
-        container,
-        boundary,
-        target,
-        watch,
-        includeBrowser,
-        excludeBrowser,
-        includeApp,
-        excludeApp,
-        mode,
-        manifestVersion,
-        debug,
-    }: Partial<RelayDefinition>;
-
-    const definition: RelayDefinition | RelayDefinition["init"] | undefined;
-    export default definition;
-}
-
-declare module "virtual:sandbox-entrypoint" {
-    type SandboxDefinition = import("@typing/sandbox").SandboxDefinition<any>;
-
-    interface ModuleType extends SandboxDefinition {
-        default: SandboxDefinition | SandboxDefinition["init"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:view-entrypoint" {
-    import {ViewOptions} from "@typing/view";
-
-    type ViewDefinition = import("@typing/view").ViewDefinition<ViewOptions>;
-
-    interface ModuleType extends ViewDefinition {
-        default: ViewDefinition | ViewDefinition["render"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "virtual:view-framework" {
     export const Builder:
         | typeof import("@entry/view/adapters/vanilla").Builder
         | typeof import("@entry/view/adapters/react").Builder;
@@ -134,22 +32,4 @@ declare module "virtual:view-framework" {
         | typeof import("@entry/view/adapters/vanilla").default
         | typeof import("@entry/view/adapters/react").default;
     export default view;
-}
-
-declare module "virtual:transport-entrypoint" {
-    type TransportDefinition = import("@typing/transport").TransportDefinition<any, any>;
-
-    interface ModuleType extends TransportDefinition {
-        default: TransportDefinition | TransportDefinition["init"] | undefined;
-    }
-
-    const module: ModuleType;
-    export = module;
-}
-
-declare module "adnbn/entry/:entry" {
-    import type {TransportUnresolvedDefinition, TransportOptions, TransportType} from "@typing/transport";
-
-    const transport: (definition: TransportUnresolvedDefinition<TransportOptions, TransportType>) => void;
-    export default transport;
 }

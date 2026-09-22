@@ -1,6 +1,6 @@
 import Builder from "@entry/core/Builder";
 
-import {isValidBackgroundMainHandler} from "./resolvers";
+import {isValidBackgroundMainHandler} from "./resolvers/definition";
 
 import {BackgroundBuilder, BackgroundDefinition} from "@typing/background";
 

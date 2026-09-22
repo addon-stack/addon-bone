@@ -1,6 +1,7 @@
+import {isDomRenderValue} from "@entry/core/render";
+
 import MountBuilder from "../../lifecycle/MountBuilder";
 import VanillaNode from "./Node";
-import {isValidRenderValue} from "./utils";
 import type {ContentScriptRenderOptions} from "../../lifecycle/types";
 
 import type {
@@ -25,7 +26,7 @@ export default class Builder<
         return props => {
             const resolvedRender = typeof render === "function" ? render(props) : render;
 
-            if (!isValidRenderValue(resolvedRender)) {
+            if (!isDomRenderValue(resolvedRender)) {
                 return;
             }
 

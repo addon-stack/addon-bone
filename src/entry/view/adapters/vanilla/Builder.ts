@@ -1,44 +1,29 @@
-import Builder from "../../core/Builder";
+import {isDomRenderValue, renderDomValue} from "@entry/core/render";
 
-import {ViewConfig, ViewDefinition} from "@typing/view";
+import ViewBuilder from "../../Builder";
 
-export default class<T extends ViewConfig> extends Builder<T> {
-    protected container?: Element;
+import {ViewConfig, ViewDefinition, ViewRenderHandler, ViewRenderValue} from "@typing/view";
 
+export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
     public constructor(definition: ViewDefinition<T>) {
         super(definition);
     }
 
-    public async build(): Promise<void> {
-        await super.build();
-
-        const props = this.getProps();
-
-        const content = await this.definition.render(props);
-
-        if (!content) {
+    protected resolveRender(render?: ViewRenderValue<T> | ViewRenderHandler<T>): ViewRenderHandler<T> | undefined {
+        if (render === undefined) {
             return;
         }
 
-        this.container = await this.definition.container(props);
+        return async props => {
+            const value = typeof render === "function" ? await render(props) : render;
 
-        if (!this.container) {
-            return;
-        }
-
-        if (content instanceof Element) {
-            this.container.appendChild(content);
-        } else if (typeof content === "string" || typeof content === "number") {
-            this.container.innerHTML = content.toString();
-        } else {
-            return;
-        }
-
-        document.body.prepend(this.container);
+            return isDomRenderValue(value) ? value : undefined;
+        };
     }
 
-    public async destroy(): Promise<void> {
-        this.container?.remove();
-        this.container = undefined;
+    protected mount(container: Element, value: ViewRenderValue<T>): void {
+        if (isDomRenderValue(value)) {
+            renderDomValue(container, value);
+        }
     }
 }

@@ -1,4 +1,4 @@
-import ViewCspFinder from "./ViewCspFinder";
+import ViewPermissionsFinder from "./ViewPermissionsFinder";
 import PluginFinder from "./PluginFinder";
 
 import {OptionsParser} from "../parser";
@@ -8,7 +8,7 @@ import type {ReadonlyConfig} from "@typing/config";
 import type {OptionsEntrypointOptions} from "@typing/options";
 import {EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class extends ViewCspFinder<OptionsEntrypointOptions> {
+export default class extends ViewPermissionsFinder<OptionsEntrypointOptions> {
     public constructor(config: ReadonlyConfig) {
         super(config);
     }

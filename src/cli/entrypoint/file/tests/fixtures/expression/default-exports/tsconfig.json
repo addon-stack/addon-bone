@@ -3,6 +3,7 @@
     "baseUrl": ".",
     "paths": {"@export/*": ["./*"]},
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "jsx": "react"
   }
 }

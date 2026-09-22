@@ -78,9 +78,12 @@ interface PluginName {
 
 export interface Plugin extends PluginName {
     background?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
+    bookmarks?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     bundler?: PluginHandler<PluginBundlerOptions, RspackConfig>;
     command?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     content?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
+    history?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
+    newtab?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     options?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     page?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
     popup?: PluginHandler<PluginConfigOptions, PluginEntrypointResult>;
@@ -104,8 +107,11 @@ export type PluginHandlerKeys = keyof Omit<Plugin, "name">;
 export type PluginEntrypointKeys = keyof Pick<
     Plugin,
     | "background"
+    | "bookmarks"
     | "command"
     | "content"
+    | "history"
+    | "newtab"
     | "options"
     | "page"
     | "popup"
