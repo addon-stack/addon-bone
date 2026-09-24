@@ -144,9 +144,9 @@
     "test:run": "node scripts/test-run.mjs"
   },
   "dependencies": {
-    "@addon-core/browser": "^0.7.2",
+    "@addon-core/browser": "^0.9.0",
     "@addon-core/inject-script": "^0.5.0",
-    "@addon-core/storage": "^0.7.0",
+    "@addon-core/storage": "^0.8.0",
     "@rsdoctor/rspack-plugin": "^1.5.1",
     "@rspack/cli": "^1.7.5",
     "@rspack/core": "^1.7.5",
