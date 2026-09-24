@@ -2,7 +2,6 @@
   "legacyFiles": [
     "src/relay/providers/Relay.test.ts",
     "src/relay/discovery/RelayDiscovery.test.ts",
-    "src/relay/RelayPermission.test.ts",
     "src/entry/relay/index.test.ts",
     "src/entry/relay/Builder.test.ts",
     "src/message/providers/Message.test.ts",

@@ -1,4 +1,10 @@
-import {containsPermissions, onPermissionsAdded, onPermissionsRemoved, requestPermissions} from "@addon-core/browser";
+import {
+    containsPermissions,
+    getManifestVersion,
+    onPermissionsAdded,
+    onPermissionsRemoved,
+    requestPermissions,
+} from "@addon-core/browser";
 
 import {RelayMethod, RelayOptionsMap} from "@typing/relay";
 import {ContentScriptDeclarative} from "@typing/content";
@@ -38,7 +44,7 @@ export default class RelayPermission {
                     ? undefined
                     : {
                           origins: !declarative || declarative === ContentScriptDeclarative.Optional ? matches : [],
-                          permissions: ["scripting"],
+                          permissions: getManifestVersion() === 3 ? ["scripting"] : [],
                       };
 
             this.set(name, {allow, permissions});
