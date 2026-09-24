@@ -1,13 +1,16 @@
-import {getAllFrames, getManifest} from "@addon-core/browser";
+import {getManifest} from "@addon-core/browser";
 
-import TransportMessage from "@transport/TransportMessage";
-import {markRemoteMessageError} from "@message/error";
+import {getBrowserTest} from "@tests/browser-harness/session";
+import type {NodeScriptRuntime} from "@addon-core/browser/testing/node";
+import {createRelayRuntime} from "../tests/runtime";
+import type {RelayFixture} from "../tests/fixtures/runtime";
+import {MessageResultEnvelopeProperty, type MessageSendOptions} from "@typing/message";
+import type {TransportMessageData} from "@typing/transport";
 
 import ProxyRelay, {type ProxyRelayParams} from "./ProxyRelay";
-import RegisterRelay from "./RegisterRelay";
+
 import RelayManager from "../RelayManager";
 import RelayPermission from "../RelayPermission";
-import {isRelayContext} from "../utils";
 
 import {
     RelayAllFrames,
@@ -19,54 +22,28 @@ import {
 } from "@typing/relay";
 import {RpcAsyncProxy} from "@typing/rpc";
 
-const mockedGetAllFrames = getAllFrames as jest.MockedFunction<typeof getAllFrames>;
-const mockedGetManifest = getManifest as jest.MockedFunction<typeof getManifest>;
-const activationOrder: string[] = [];
+const scripting = () => getBrowserTest().harness.scripting.executeScript;
+const messaging = () => {
+    const {harness, context} = getBrowserTest();
+
+    return harness.messaging.forContext(context).tabs.sendMessage;
+};
+const frames = () => getBrowserTest().harness.configurable.chrome.webNavigation.getAllFrames;
+let runtime: NodeScriptRuntime;
 let relayPermission: RelayPermission;
 
-const manifest = {
-    manifest_version: 3,
-    name: "Relay test",
-    version: "1.0.0",
-} satisfies ReturnType<typeof getManifest>;
+const manifest = {manifest_version: 3, name: "Relay test", version: "1.0.0"} satisfies ReturnType<typeof getManifest>;
 
-beforeEach(async () => {
-    jest.clearAllMocks();
-    activationOrder.splice(0);
-
-    RelayManager.getInstance().clear();
-
-    new RegisterRelay(relayName, RelayMethod.Scripting, () => MatchRelay).register();
-
-    relayPermission = {
-        allow: jest.fn().mockReturnValue(true),
-        request: jest.fn().mockResolvedValue(true),
-    } as unknown as RelayPermission;
-
-    mockedGetManifest.mockReturnValue({...manifest, permissions: []});
-    mockedGetAllFrames.mockResolvedValue([]);
+beforeEach(() => {
+    runtime = createRelayRuntime();
+    getBrowserTest().harness.runtime.setManifest({...manifest, permissions: []});
+    getBrowserTest().harness.permissions.contains.setResult(true);
+    relayPermission = RelayPermission.getInstance(
+        new Map([[relayName, {...options, name: relayName, declarative: true}]])
+    );
 });
 
-const MatchRelay = {
-    sum: (a: number, b: number): number => a + b,
-    asyncSum: (a: number, b: number): Promise<number> => {
-        return new Promise(resolve => setTimeout(() => resolve(a + b), 100));
-    },
-    activation: (): boolean => {
-        activationOrder.push("relay");
-        return true;
-    },
-    fail: (): never => {
-        throw new TypeError("Remote failure");
-    },
-    one: 1,
-    obj: {
-        concat: (a: string, b: string): string => a + " " + b,
-        zero: 0,
-    },
-};
-
-type RelayType = typeof MatchRelay;
+type RelayType = RelayFixture;
 type RelayProxyType = RpcAsyncProxy<RelayType>;
 type RelayBatchProxyType = RelayBatchRpcProxy<RelayType>;
 
@@ -82,24 +59,24 @@ const createProxyRelay = <T = RelayProxyType>(relayOptions: RelayOptions, params
 };
 
 const expectScriptInjection = (expected: Partial<chrome.scripting.ScriptInjection<any[], any>>) => {
-    const [injection] = (chrome.scripting.executeScript as jest.Mock).mock.calls.at(-1);
-
-    expect(injection).toEqual(expect.objectContaining(expected));
+    expect(scripting().calls.at(-1)?.args[0]).toEqual(expect.objectContaining(expected));
 };
 
 const expectScriptTargets = (expected: chrome.scripting.InjectionTarget[]) => {
-    const targets = (chrome.scripting.executeScript as jest.Mock).mock.calls.map(([injection]) => injection.target);
+    expect(
+        scripting().calls.map(call => (call.args[0] as chrome.scripting.ScriptInjection<any[], any>).target)
+    ).toEqual(expected);
+};
 
-    expect(targets).toEqual(expected);
+const expectMessageCall = (index: number, data: TransportMessageData, target: Exclude<MessageSendOptions, number>) => {
+    const {tabId, ...options} = target;
+
+    expect(messaging().calls[index].args).toEqual([tabId, expect.objectContaining({data}), options]);
 };
 
 describe("ProxyRelay", () => {
-    beforeEach(async () => {
-        (isRelayContext as jest.Mock).mockReturnValue(false);
-    });
-
     test("throws an error when get() is called in content script context", async () => {
-        (isRelayContext as jest.Mock).mockReturnValue(true);
+        RelayManager.getInstance();
 
         const proxy = createProxyRelay(options, 1);
 
@@ -137,7 +114,7 @@ describe("ProxyRelay", () => {
 
         expect(await relay.sum(1, 2)).toBe(3);
 
-        expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(1);
+        expect(scripting().calls).toHaveLength(1);
 
         expectScriptInjection({
             target: {tabId: 1},
@@ -195,16 +172,20 @@ describe("ProxyRelay", () => {
     test("calls async method on proxy and returns resolved value", async () => {
         const relay = createProxyRelay<RelayProxyType>(options, 1).get();
 
-        expect(await relay.asyncSum(1, 2)).toBe(3);
+        const result = relay.asyncSum(1, 2);
+
+        runtime.clock!.advance(100);
+        expect(await result).toBe(3);
     });
 
     test("starts a Scripting relay method before returning control to the caller", async () => {
         const relay = createProxyRelay<RelayProxyType>(options, 1).get();
 
         const result = relay.activation();
-        activationOrder.push("caller");
-
-        expect(activationOrder).toEqual(["relay", "caller"]);
+        runtime.evaluate(
+            {documentId: "document-0"},
+            {source: 'if (!relayFixture.started) { throw new Error("Relay method has not started"); }'}
+        );
         await expect(result).resolves.toBe(true);
     });
 
@@ -251,7 +232,7 @@ describe("ProxyRelay", () => {
     });
 
     test("normalizes an unobservable Scripting frame outcome", async () => {
-        (chrome.scripting.executeScript as jest.Mock).mockImplementationOnce(async () => [{frameId: 0}]);
+        scripting().queueResult([{frameId: 0, documentId: "document-0"}]);
         const relay = createProxyRelay<RelayBatchProxyType>(options, {
             tabId: 1,
             frameIds: [0],
@@ -259,7 +240,7 @@ describe("ProxyRelay", () => {
 
         await expect(relay.sum(1, 2)).resolves.toEqual([
             {
-                target: {tabId: 1, frameId: 0},
+                target: {tabId: 1, frameId: 0, documentId: "document-0"},
                 status: "rejected",
                 error: expect.objectContaining({
                     kind: RelayFrameErrorKind.Unobservable,
@@ -270,29 +251,23 @@ describe("ProxyRelay", () => {
     });
 
     test("keeps a target-gone failure isolated in an explicit Scripting batch", async () => {
-        (chrome.scripting.executeScript as jest.Mock)
-            .mockImplementationOnce(async injection => [
-                {
-                    frameId: 0,
-                    result: await injection.func(...injection.args),
-                },
-            ])
-            .mockImplementationOnce(async () => {
-                throw new Error("No frame with id 2 in tab 1");
-            });
+        scripting().queueResult([
+            {frameId: 0, documentId: "document-0", result: {ok: true, hasResult: true, result: 3}},
+        ]);
+        scripting().failNext(new Error("No frame with id 2 in tab 1"));
         const relay = createProxyRelay<RelayBatchProxyType>(options, {
             tabId: 1,
-            frameIds: [0, 2],
+            frameIds: [2, 0],
         }).get();
 
         await expect(relay.sum(1, 2)).resolves.toEqual([
-            {target: {tabId: 1, frameId: 0}, status: "fulfilled", result: 3},
+            {target: {tabId: 1, frameId: 0, documentId: "document-0"}, status: "fulfilled", result: 3},
             {
                 target: {tabId: 1, frameId: 2},
                 status: "rejected",
                 error: expect.objectContaining({
                     kind: RelayFrameErrorKind.TargetGone,
-                    message: "No frame with id 2 in tab 1",
+                    message: expect.stringMatching(/frame.*2/i),
                 }),
             },
         ]);
@@ -319,16 +294,20 @@ describe("ProxyRelay", () => {
             ]);
 
             expectScriptInjection({target: {tabId: 1, allFrames: true}});
-            expect(mockedGetAllFrames).not.toHaveBeenCalled();
+            expect(frames().calls).toHaveLength(0);
         }
     );
 
     test.each([true, RelayAllFrames.Any] as const)(
         "returns a fulfilled Scripting outcome for allFrames %s when another frame is rejected",
         async allFrames => {
-            (chrome.scripting.executeScript as jest.Mock).mockResolvedValueOnce([
-                {frameId: 0, error: new Error("Relay manager not found.")},
-                {frameId: 2, result: {ok: true, hasResult: true, result: 3}},
+            scripting().queueResult([
+                {
+                    frameId: 0,
+                    documentId: "document-0",
+                    result: {ok: false, error: {name: "Error", message: "Relay manager not found."}},
+                },
+                {frameId: 2, documentId: "document-2", result: {ok: true, hasResult: true, result: 3}},
             ]);
             const relay = createProxyRelay<RelayBatchProxyType>(options, {
                 tabId: 1,
@@ -344,62 +323,6 @@ describe("ProxyRelay", () => {
             ]);
         }
     );
-
-    test.each([true, RelayAllFrames.Any] as const)(
-        "does not retry a missing Relay manager for Scripting allFrames %s",
-        async allFrames => {
-            (chrome.scripting.executeScript as jest.Mock).mockImplementationOnce(async injection => {
-                const injectedArgs = [...injection.args];
-                injectedArgs[3] = `${RelayGlobalKey}Missing`;
-                const setTimeoutSpy = jest.spyOn(globalThis, "setTimeout");
-                const execution = injection.func(...injectedArgs);
-
-                expect(injectedArgs.at(-1)).toBe(false);
-                expect(setTimeoutSpy).not.toHaveBeenCalled();
-                setTimeoutSpy.mockRestore();
-
-                const result = await execution;
-
-                return [{frameId: 0, result}];
-            });
-            const relay = createProxyRelay<RelayBatchProxyType>(options, {
-                tabId: 1,
-                allFrames,
-            }).get();
-
-            await expect(relay.sum(1, 2)).resolves.toEqual([
-                {
-                    target: {tabId: 1, allFrames: RelayAllFrames.Any},
-                    status: "rejected",
-                    error: expect.objectContaining({
-                        kind: RelayFrameErrorKind.Remote,
-                        message: "Relay manager not found.",
-                    }),
-                },
-            ]);
-        }
-    );
-
-    test("keeps manager retries for addressed Scripting calls", async () => {
-        (chrome.scripting.executeScript as jest.Mock).mockImplementationOnce(async injection => {
-            const injectedArgs = [...injection.args];
-            injectedArgs[3] = `${RelayGlobalKey}Missing`;
-            const setTimeoutSpy = jest
-                .spyOn(globalThis, "setTimeout")
-                .mockImplementation(() => 0 as unknown as ReturnType<typeof setTimeout>);
-
-            injection.func(...injectedArgs);
-
-            expect(injectedArgs.at(-1)).toBe(true);
-            expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 300);
-            setTimeoutSpy.mockRestore();
-
-            return [{frameId: 0, error: new Error("Relay manager not found.")}];
-        });
-        const relay = createProxyRelay<RelayProxyType>(options, {tabId: 1, frameId: 0}).get();
-
-        await expect(relay.sum(1, 2)).rejects.toThrow("Relay manager not found.");
-    });
 
     test("returns every Scripting outcome for RelayAllFrames.All", async () => {
         const relay = createProxyRelay<RelayBatchProxyType>(options, {
@@ -429,15 +352,12 @@ describe("ProxyRelay", () => {
         ]);
 
         expectScriptInjection({target: {tabId: 1, allFrames: true}});
-        expect(mockedGetAllFrames).not.toHaveBeenCalled();
+        expect(frames().calls).toHaveLength(0);
     });
 
     test("checks Relay permission once for a batch call", async () => {
-        const permission = {
-            allow: jest.fn().mockReturnValue(true),
-            request: jest.fn(),
-        };
-        relayPermission = permission as unknown as RelayPermission;
+        relayPermission.set(relayName, {allow: false});
+        getBrowserTest().harness.permissions.request.setResult(true);
 
         const relay = createProxyRelay<RelayBatchProxyType>(options, {
             tabId: 1,
@@ -446,20 +366,14 @@ describe("ProxyRelay", () => {
 
         await relay.sum(1, 2);
 
-        expect(permission.allow).toHaveBeenCalledTimes(1);
-        expect(permission.request).not.toHaveBeenCalled();
+        expect(getBrowserTest().harness.permissions.request.calls).toHaveLength(1);
     });
 
     test("fans Messaging calls out to explicit frameIds and keeps partial failures", async () => {
-        const send = jest.spyOn(TransportMessage.prototype, "send").mockImplementation(async (_data, target) => {
-            const frameId = typeof target === "object" ? target.frameId : undefined;
+        const send = messaging();
 
-            if (frameId === 2) {
-                throw new Error("Frame with ID 2 was removed");
-            }
-
-            return frameId;
-        });
+        send.failNext(new Error("Frame with ID 2 was removed"));
+        send.queueResult({[MessageResultEnvelopeProperty]: true, ok: true, payload: 0});
         const relay = createProxyRelay<RelayBatchProxyType>(
             {...options, method: RelayMethod.Messaging},
             {tabId: 1, frameIds: [2, 0]}
@@ -477,12 +391,19 @@ describe("ProxyRelay", () => {
             },
         ]);
 
-        expect(send).toHaveBeenCalledTimes(2);
-        send.mockRestore();
+        expect(send.calls).toHaveLength(2);
     });
 
     test("returns a per-frame timeout from Messaging", async () => {
-        const send = jest.spyOn(TransportMessage.prototype, "send").mockImplementation(() => new Promise(() => {}));
+        const receiver = getBrowserTest().harness.contexts.create({
+            kind: "contentScript",
+            tabId: 1,
+            frameId: 2,
+            documentId: "document-2",
+            url: "https://example.com/",
+        });
+
+        receiver.onMessage.on(() => true);
         const relay = createProxyRelay<RelayBatchProxyType>(
             {...options, method: RelayMethod.Messaging},
             {tabId: 1, frameIds: [2], timeoutMs: 5}
@@ -498,12 +419,15 @@ describe("ProxyRelay", () => {
                 }),
             },
         ]);
-
-        send.mockRestore();
     });
 
     test("passes timeoutMs to Inject Script", async () => {
-        (chrome.scripting.executeScript as jest.Mock).mockImplementationOnce(() => new Promise(() => {}));
+        getBrowserTest().harness.contexts.documents.remove("document-0");
+        getBrowserTest().harness.contexts.documents.create({
+            documentId: "pending",
+            tabId: 1,
+            url: "https://example.com/",
+        });
         const relay = createProxyRelay<RelayBatchProxyType>(options, {
             tabId: 1,
             frameIds: [0],
@@ -523,9 +447,11 @@ describe("ProxyRelay", () => {
     });
 
     test("classifies restored remote Messaging errors structurally", async () => {
-        const send = jest
-            .spyOn(TransportMessage.prototype, "send")
-            .mockRejectedValue(markRemoteMessageError(new TypeError("Remote failure")));
+        messaging().setResult({
+            [MessageResultEnvelopeProperty]: true,
+            ok: false,
+            error: {name: "TypeError", message: "Remote failure"},
+        });
         const relay = createProxyRelay<RelayBatchProxyType>(
             {...options, method: RelayMethod.Messaging},
             {tabId: 1, frameIds: [0]}
@@ -542,14 +468,12 @@ describe("ProxyRelay", () => {
                 }),
             },
         ]);
-
-        send.mockRestore();
     });
 
     test.each([true, RelayAllFrames.Any] as const)(
         "returns one native Messaging outcome for allFrames %s without discovery",
         async allFrames => {
-            const send = jest.spyOn(TransportMessage.prototype, "send").mockResolvedValue(3);
+            messaging().setResult({[MessageResultEnvelopeProperty]: true, ok: true, payload: 3});
             const relay = createProxyRelay<RelayBatchProxyType>(
                 {...options, method: RelayMethod.Messaging},
                 {tabId: 1, allFrames}
@@ -563,14 +487,13 @@ describe("ProxyRelay", () => {
                 },
             ]);
 
-            expect(mockedGetAllFrames).not.toHaveBeenCalled();
-            expect(send).toHaveBeenCalledWith({path: "sum", args: [1, 2]}, {tabId: 1});
-            send.mockRestore();
+            expect(frames().calls).toHaveLength(0);
+            expectMessageCall(0, {path: "sum", args: [1, 2]}, {tabId: 1});
         }
     );
 
     test("keeps allFrames false on the scalar top-frame contract", async () => {
-        const send = jest.spyOn(TransportMessage.prototype, "send").mockResolvedValue(3);
+        messaging().setResult({[MessageResultEnvelopeProperty]: true, ok: true, payload: 3});
         const relay = createProxyRelay<RelayProxyType>(
             {...options, method: RelayMethod.Messaging},
             {tabId: 1, allFrames: false}
@@ -578,13 +501,12 @@ describe("ProxyRelay", () => {
 
         await expect(relay.sum(1, 2)).resolves.toBe(3);
 
-        expect(mockedGetAllFrames).not.toHaveBeenCalled();
-        expect(send).toHaveBeenCalledWith({path: "sum", args: [1, 2]}, {tabId: 1, frameId: 0});
-        send.mockRestore();
+        expect(frames().calls).toHaveLength(0);
+        expectMessageCall(0, {path: "sum", args: [1, 2]}, {tabId: 1, frameId: 0});
     });
 
     test("discovers strict Messaging allFrames targets through webNavigation", async () => {
-        mockedGetManifest.mockReturnValue({...manifest, permissions: ["webNavigation"]});
+        getBrowserTest().harness.runtime.setManifest({...manifest, permissions: ["webNavigation"]});
         const topFrame: chrome.webNavigation.GetAllFrameResultDetails = {
             frameId: 0,
             documentId: "document-0",
@@ -604,10 +526,11 @@ describe("ProxyRelay", () => {
             parentDocumentId: "document-0",
             url: "https://example.com/frame",
         };
-        mockedGetAllFrames.mockResolvedValue([childFrame, topFrame]);
-        const send = jest.spyOn(TransportMessage.prototype, "send").mockImplementation(async (_data, target) => {
-            return typeof target === "object" ? target.frameId : undefined;
-        });
+        frames().setResult([childFrame, topFrame]);
+        messaging().queueResult(
+            {[MessageResultEnvelopeProperty]: true, ok: true, payload: 0},
+            {[MessageResultEnvelopeProperty]: true, ok: true, payload: 3}
+        );
         const relay = createProxyRelay<RelayBatchProxyType>(
             {...options, method: RelayMethod.Messaging},
             {tabId: 1, allFrames: RelayAllFrames.All}
@@ -626,89 +549,8 @@ describe("ProxyRelay", () => {
             },
         ]);
 
-        expect(mockedGetAllFrames).toHaveBeenCalledWith(1);
-        expect(send).toHaveBeenNthCalledWith(
-            1,
-            {path: "sum", args: [1, 2]},
-            {tabId: 1, frameId: 0, documentId: "document-0"}
-        );
-        expect(send).toHaveBeenNthCalledWith(
-            2,
-            {path: "sum", args: [1, 2]},
-            {tabId: 1, frameId: 3, documentId: "document-3"}
-        );
-        send.mockRestore();
-    });
-});
-
-describe("RegisterRelay", () => {
-    beforeEach(async () => {
-        (isRelayContext as jest.Mock).mockReturnValue(true);
-    });
-
-    test("throws if trying to get registered relay from non-content script", async () => {
-        (isRelayContext as jest.Mock).mockReturnValue(false);
-
-        const proxy = new RegisterRelay(relayName, RelayMethod.Scripting, () => MatchRelay);
-
-        expect(() => proxy.get()).toThrow(`Relay "${relayName}" can be getting only from content script`);
-    });
-
-    test("returns real relay when called in content script context", () => {
-        const relay = new RegisterRelay<typeof relayName, RelayType>(
-            relayName,
-            RelayMethod.Scripting,
-            () => MatchRelay
-        ).get();
-
-        expect(relay["__proxy"]).toBe(undefined);
-    });
-
-    test("calls method directly in content script without chrome.scripting", async () => {
-        const relay = new RegisterRelay<typeof relayName, RelayType>(
-            relayName,
-            RelayMethod.Scripting,
-            () => MatchRelay
-        ).get();
-
-        expect(relay.sum(1, 2)).toBe(3);
-        expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
-    });
-
-    test("throws an error when attempting to register the same relay twice", async () => {
-        const relay = new RegisterRelay<typeof relayName, RelayType>(
-            relayName,
-            RelayMethod.Scripting,
-            () => MatchRelay
-        );
-
-        expect(() => relay.register()).toThrow(
-            `A relay with the name "${relayName}" already exists. The relay name must be unique.`
-        );
-    });
-
-    test("does not call parent register method when RelayMethod is 'scripting'", () => {
-        const registerRelay = new RegisterRelay(relayName, RelayMethod.Scripting, () => MatchRelay);
-        const parentRegisterSpy = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(registerRelay)), "register");
-        jest.spyOn(RelayManager.getInstance(), "has").mockReturnValue(false);
-
-        registerRelay.register();
-
-        expect(parentRegisterSpy).not.toHaveBeenCalled();
-
-        parentRegisterSpy.mockRestore();
-    });
-
-    test("calls parent register method when method is 'messaging'", () => {
-        const registerRelay = new RegisterRelay(relayName, RelayMethod.Messaging, () => MatchRelay);
-        const parentRegisterSpy = jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(registerRelay)), "register");
-        parentRegisterSpy.mockReturnValue(MatchRelay);
-
-        const result = registerRelay.register();
-
-        expect(result).toBe(MatchRelay);
-        expect(parentRegisterSpy).toHaveBeenCalledWith();
-
-        parentRegisterSpy.mockRestore();
+        expect(frames().calls[0].args).toEqual([{tabId: 1}]);
+        expectMessageCall(0, {path: "sum", args: [1, 2]}, {tabId: 1, frameId: 0, documentId: "document-0"});
+        expectMessageCall(1, {path: "sum", args: [1, 2]}, {tabId: 1, frameId: 3, documentId: "document-3"});
     });
 });

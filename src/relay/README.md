@@ -316,7 +316,7 @@ npm run test:run -- --selectProjects unit-node unit-dom --testPathPatterns="src/
 npm test -- --runInBand --testPathIgnorePatterns=tests/integration/browser
 ```
 
-Important coverage lives in [`Relay.test.ts`](./providers/Relay.test.ts), [`RelayScriptingAdapter.test.ts`](./adapters/RelayScriptingAdapter.test.ts), [`RelayDiscovery.test.ts`](./discovery/RelayDiscovery.test.ts), [`RelayPermission.test.ts`](./RelayPermission.test.ts), [`RelayParser.test.ts`](../cli/entrypoint/parser/RelayParser.test.ts), [`RelayDriver.test.ts`](../cli/plugins/content/RelayDriver.test.ts), [`RelayDeclaration.test.ts`](../cli/plugins/content/RelayDeclaration.test.ts), and [`ContentManager.test.ts`](../cli/plugins/content/ContentManager.test.ts).
+Important coverage lives in [`ProxyRelay.test.ts`](./providers/ProxyRelay.test.ts), [`RegisterRelay.test.ts`](./providers/RegisterRelay.test.ts), [`RelayScriptingAdapter.test.ts`](./adapters/RelayScriptingAdapter.test.ts), [`RelayDiscovery.test.ts`](./discovery/RelayDiscovery.test.ts), [`RelayPermission.test.ts`](./RelayPermission.test.ts), [`RelayParser.test.ts`](../cli/entrypoint/parser/RelayParser.test.ts), [`RelayDriver.test.ts`](../cli/plugins/content/RelayDriver.test.ts), [`RelayDeclaration.test.ts`](../cli/plugins/content/RelayDeclaration.test.ts), and [`ContentManager.test.ts`](../cli/plugins/content/ContentManager.test.ts).
 
 Keep regression cases for a rejected top frame plus successful iframe in Scripting `Any`, no manager retries in `Any`, partial explicit-batch failures, remote Messaging errors, document capability rejection, and permission precedence. Native frame enumeration, injection rejection semantics, and user activation require verification in a real extension context; browser mocks cannot establish those guarantees.
 
@@ -334,7 +334,7 @@ objects become `RelayProtocolError` outcomes with the existing `execution` kind.
 Scalar calls throw the public `RelayProtocolError` class exported by `adnbn`, so callers can use `instanceof`.
 Remote errors with the same name retain their remote origin and do not become instances of this class.
 
-Scripting adapter tests use the shared Browser harness. A physical test fixture bundles the real RegisterRelay/RelayManager
+Relay unit tests use the shared Browser harness. A physical test fixture bundles the real RegisterRelay/RelayManager
 into isolated guest realms; virtual guest time drives registration retries and asynchronous methods. This bundle is
 independent of `dist`. Its esbuild configuration lives in `tests/runtime.ts`; adding non-JavaScript imports to the
 guest module graph requires matching loaders there. Only the injected function module is excluded from Babel coverage, because serialized functions

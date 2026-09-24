@@ -1,9 +1,7 @@
-import {getAllFrames, getManifest} from "@addon-core/browser";
+import {getManifest} from "@addon-core/browser";
+import {getBrowserTest} from "@tests/browser-harness/session";
 
 import RelayDiscovery, {RelayDiscoveryError} from "./RelayDiscovery";
-
-const mockedGetAllFrames = getAllFrames as jest.MockedFunction<typeof getAllFrames>;
-const mockedGetManifest = getManifest as jest.MockedFunction<typeof getManifest>;
 
 const manifest = {
     manifest_version: 3,
@@ -12,11 +10,10 @@ const manifest = {
 } satisfies ReturnType<typeof getManifest>;
 
 describe("RelayDiscovery", () => {
+    const frames = () => getBrowserTest().harness.configurable.chrome.webNavigation.getAllFrames;
+
     beforeEach(() => {
-        jest.clearAllMocks();
-        mockedGetAllFrames.mockReset();
-        mockedGetManifest.mockReset();
-        mockedGetManifest.mockReturnValue({...manifest, permissions: []});
+        getBrowserTest().harness.runtime.setManifest({...manifest, permissions: []});
     });
 
     test("requires webNavigation for strict Messaging allFrames discovery", async () => {
@@ -28,11 +25,11 @@ describe("RelayDiscovery", () => {
                 message: expect.stringContaining('requires the "webNavigation" permission'),
             })
         );
-        expect(mockedGetAllFrames).not.toHaveBeenCalled();
+        expect(frames().calls).toHaveLength(0);
     });
 
     test("reports an unavailable manifest instead of silently degrading discovery", async () => {
-        mockedGetManifest.mockImplementation(() => {
+        getBrowserTest().harness.runtime.getManifest.setImplementation(() => {
             throw new Error("runtime.getManifest is unavailable");
         });
         const discovery = new RelayDiscovery();
@@ -44,11 +41,11 @@ describe("RelayDiscovery", () => {
                 cause: expect.objectContaining({message: "runtime.getManifest is unavailable"}),
             })
         );
-        expect(mockedGetAllFrames).not.toHaveBeenCalled();
+        expect(frames().calls).toHaveLength(0);
     });
 
     test("returns deterministic unique targets through webNavigation", async () => {
-        mockedGetManifest.mockReturnValue({...manifest, permissions: ["webNavigation"]});
+        getBrowserTest().harness.runtime.setManifest({...manifest, permissions: ["webNavigation"]});
         const topFrame: chrome.webNavigation.GetAllFrameResultDetails = {
             frameId: 0,
             documentId: "document-0",
@@ -68,19 +65,19 @@ describe("RelayDiscovery", () => {
             parentDocumentId: "document-0",
             url: "https://example.com/frame",
         };
-        mockedGetAllFrames.mockResolvedValue([childFrame, topFrame, childFrame]);
+        frames().setResult([childFrame, topFrame, childFrame]);
         const discovery = new RelayDiscovery();
 
         await expect(discovery.discover(5)).resolves.toEqual([
             {tabId: 5, frameId: 0, documentId: "document-0"},
             {tabId: 5, frameId: 2, documentId: "document-2"},
         ]);
-        expect(mockedGetAllFrames).toHaveBeenCalledWith(5);
+        expect(frames().calls[0].args).toEqual([{tabId: 5}]);
     });
 
     test("reports webNavigation discovery failures", async () => {
-        mockedGetManifest.mockReturnValue({...manifest, permissions: ["webNavigation"]});
-        mockedGetAllFrames.mockRejectedValue(new Error("No tab with id 5"));
+        getBrowserTest().harness.runtime.setManifest({...manifest, permissions: ["webNavigation"]});
+        frames().failNext(new Error("No tab with id 5"));
         const discovery = new RelayDiscovery();
 
         await expect(discovery.discover(5)).rejects.toEqual(
