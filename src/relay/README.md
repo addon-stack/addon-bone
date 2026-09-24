@@ -78,7 +78,7 @@ The local accessor is not a way to address another frame. The remote accessor re
 
 ### Export ownership
 
-- [`adnbn`](../main/relay.ts) exports `defineRelay`, the remote `getRelay`, and the public definition, call-target, proxy, result, and error contracts. Import `RelayAllFrames`, `RelayMethod`, `RelayFrameErrorKind`, and `RelayDiscoveryError` here.
+- [`adnbn`](../main/relay.ts) exports `defineRelay`, the remote `getRelay`, and the public definition, call-target, proxy, result, and error contracts. Import `RelayAllFrames`, `RelayMethod`, `RelayFrameErrorKind`, `RelayDiscoveryError`, and `RelayProtocolError` here.
 - [`adnbn/relay`](./index.ts) exports only the local `getRelay` and `RelayRegistry`, `RelayName`, and `RelayTarget` types. The generated `.adnbn/relay.d.ts` augments this registry; both accessors derive their types from it. It does not redeclare accessor overloads.
 - [`adnbn/entry/relay`](../entry/relay/index.ts) is the internal bootstrap interface: `Builder`, `resolveDefinition`, the default `relay(definition, contentBuilder)` startup function, and `RelayUnresolvedDefinition`. The unresolved type represents merged runtime input, not the public `defineRelay` contract.
 
@@ -296,13 +296,18 @@ Permission prompts, frame discovery, startup retries, and work inside the remote
 
 ### Verification
 
-Run from the framework repository root. Build first so targeted tests can resolve the package's public exports:
+Run from the framework repository root. `test:relay` builds the package and runs Relay unit, build, type and browser tests; it requires local Chrome and Firefox:
 
 ```bash
-npm run build
 npm run typecheck
 npm run test:relay -- --runInBand
 npm run test:message -- --runInBand
+```
+
+For Relay runtime unit tests without a build or browsers:
+
+```bash
+npm run test:run -- --selectProjects unit-node unit-dom --testPathPatterns="src/relay/|src/entry/relay/" --runInBand
 ```
 
 `typecheck` checks both source and test files; passing Jest alone does not prove test files are type-correct. For the full non-browser regression suite, including shared transport and content aggregation tests:
@@ -311,6 +316,27 @@ npm run test:message -- --runInBand
 npm test -- --runInBand --testPathIgnorePatterns=tests/integration/browser
 ```
 
-Important coverage lives in [`Relay.test.ts`](./providers/Relay.test.ts), [`RelayDiscovery.test.ts`](./discovery/RelayDiscovery.test.ts), [`RelayPermission.test.ts`](./RelayPermission.test.ts), [`RelayParser.test.ts`](../cli/entrypoint/parser/RelayParser.test.ts), [`RelayDriver.test.ts`](../cli/plugins/content/RelayDriver.test.ts), [`RelayDeclaration.test.ts`](../cli/plugins/content/RelayDeclaration.test.ts), and [`ContentManager.test.ts`](../cli/plugins/content/ContentManager.test.ts).
+Important coverage lives in [`Relay.test.ts`](./providers/Relay.test.ts), [`RelayScriptingAdapter.test.ts`](./adapters/RelayScriptingAdapter.test.ts), [`RelayDiscovery.test.ts`](./discovery/RelayDiscovery.test.ts), [`RelayPermission.test.ts`](./RelayPermission.test.ts), [`RelayParser.test.ts`](../cli/entrypoint/parser/RelayParser.test.ts), [`RelayDriver.test.ts`](../cli/plugins/content/RelayDriver.test.ts), [`RelayDeclaration.test.ts`](../cli/plugins/content/RelayDeclaration.test.ts), and [`ContentManager.test.ts`](../cli/plugins/content/ContentManager.test.ts).
 
 Keep regression cases for a rejected top frame plus successful iframe in Scripting `Any`, no manager retries in `Any`, partial explicit-batch failures, remote Messaging errors, document capability rejection, and permission precedence. Native frame enumeration, injection rejection semantics, and user activation require verification in a real extension context; browser mocks cannot establish those guarantees.
+
+### Scripting response protocol
+
+The injected `invoke-relay.ts` function envelopes successful values (including an explicit no-result marker), thrown
+errors, rejected promises and both missing-manager failures. `Any` fails immediately when no manager is present;
+addressed calls and `All` perform ten lookups at 0, 300, …, 2700 ms. A manager registered before the final lookup can
+still fulfill the call. A host `timeoutMs` is independent of this retry schedule. MV2 checks the configured host permissions for the
+`tabs.executeScript` path; MV3 also checks `scripting`.
+
+The host adapter validates every envelope before reading its fields. Null, primitives and malformed success/error
+objects become `RelayProtocolError` outcomes with the existing `execution` kind. Valid remote errors retain the
+`remote` kind. A malformed frame cannot discard another frame's success in a batch or in `Any`.
+Scalar calls throw the public `RelayProtocolError` class exported by `adnbn`, so callers can use `instanceof`.
+Remote errors with the same name retain their remote origin and do not become instances of this class.
+
+Scripting adapter tests use the shared Browser harness. A physical test fixture bundles the real RegisterRelay/RelayManager
+into isolated guest realms; virtual guest time drives registration retries and asynchronous methods. This bundle is
+independent of `dist`. Its esbuild configuration lives in `tests/runtime.ts`; adding non-JavaScript imports to the
+guest module graph requires matching loaders there. Only the injected function module is excluded from Babel coverage, because serialized functions
+cannot reference host Istanbul counters. The host adapter remains covered. Real Chrome MV3 and Firefox MV2/MV3
+regressions in `tests/integration/browser/relay` verify values and missing-manager errors across the browser boundary.

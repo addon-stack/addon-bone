@@ -106,8 +106,9 @@ not prove that every reset implementation is correct, so session lifecycle tests
 ### Remaining test-kit boundaries
 
 - `hasListeners` is not modeled. Check subscriptions through the context event's `listenerCount()`.
-- VM scenarios require uninstrumented injected code. During Relay migration, isolate the injected function and exclude
-  only that module from Babel coverage; retain coverage for its host adapter and real-browser checks for the guest code.
+- VM scenarios require uninstrumented injected code. Only `src/relay/adapters/invoke-relay.ts` is excluded from Babel
+  coverage in every Jest project. Its host adapter remains instrumented; VM tests run the real bundled Relay manager,
+  and Chrome MV3 plus Firefox MV2/MV3 integrations check the injected function in actual extensions.
 - The session does not emulate Web Locks, DOM inside the guest, or extension HTML execution. Keep explicit external
   adapters where needed and real-browser checks for DOM, execution worlds, browser lifecycle and vendor behavior.
 - Consult the kit's `RAW_CAPABILITY_COVERAGE` before using another browser API. Extend the kit when a required capability

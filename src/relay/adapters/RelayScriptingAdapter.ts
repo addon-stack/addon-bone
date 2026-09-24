@@ -9,7 +9,6 @@ import injectScriptFactory, {
 
 import {restoreError} from "@message/error";
 
-import type {MessageError} from "@typing/message";
 import {
     RelayAllFrames,
     RelayFrameErrorKind,
@@ -22,23 +21,16 @@ import {
     type RelayScalarOptions,
 } from "@typing/relay";
 
-import {fulfilledRelayFrame, injectScriptErrorKind, rejectedRelayFrame, sortRelayFrameResults} from "../result";
+import {
+    RelayProtocolError,
+    fulfilledRelayFrame,
+    injectScriptErrorKind,
+    rejectedRelayFrame,
+    sortRelayFrameResults,
+} from "../result";
 import RelayAdapter from "./RelayAdapter";
-
-type RelayInvocationResult =
-    | {
-          ok: true;
-          hasResult: false;
-      }
-    | {
-          ok: true;
-          hasResult: true;
-          result: any;
-      }
-    | {
-          ok: false;
-          error: MessageError;
-      };
+import {invokeRelay} from "./invoke-relay";
+import type {RelayInvocationResult} from "./scripting-response";
 
 export default class RelayScriptingAdapter extends RelayAdapter {
     private _injectScript?: InjectScriptContract;
@@ -52,96 +44,6 @@ export default class RelayScriptingAdapter extends RelayAdapter {
     }
 
     public async invoke(args: any[], path?: string): Promise<any> {
-        const func = (
-            name: string,
-            path: string | null,
-            args: JsonValue[],
-            key: string,
-            retryManager: boolean
-        ): Promise<RelayInvocationResult> => {
-            const serialize = (error: unknown): MessageError => {
-                if (error instanceof Error) {
-                    return {
-                        name: error.name,
-                        message: error.message,
-                        ...(error.stack ? {stack: error.stack} : {}),
-                    };
-                }
-
-                if (typeof error === "object" && error !== null) {
-                    const record = error as Record<string, unknown>;
-
-                    return {
-                        name: typeof record.name === "string" ? record.name : "Error",
-                        message:
-                            typeof record.message === "string"
-                                ? record.message
-                                : (() => {
-                                      try {
-                                          return JSON.stringify(error) ?? String(error);
-                                      } catch {
-                                          return String(error);
-                                      }
-                                  })(),
-                        ...(typeof record.stack === "string" ? {stack: record.stack} : {}),
-                    };
-                }
-
-                return {name: "Error", message: String(error)};
-            };
-
-            const invoke = (manager: any): Promise<RelayInvocationResult> => {
-                try {
-                    return Promise.resolve(manager.property(name, {path, args})).then(
-                        result =>
-                            result === undefined
-                                ? {ok: true as const, hasResult: false as const}
-                                : {ok: true as const, hasResult: true as const, result},
-                        error => ({ok: false as const, error: serialize(error)})
-                    );
-                } catch (error) {
-                    return Promise.resolve({ok: false as const, error: serialize(error)});
-                }
-            };
-
-            const manager = globalThis[key];
-
-            if (manager) {
-                // Keep the normal Scripting path synchronous until the remote method starts.
-                return invoke(manager);
-            }
-
-            if (!retryManager) {
-                return Promise.reject(new Error("Relay manager not found."));
-            }
-
-            return new Promise<RelayInvocationResult>((resolve, reject) => {
-                const maxAttempts = 10;
-                const delay = 300;
-                let attempts = 0;
-
-                const findManager = () => {
-                    const delayedManager = globalThis[key];
-
-                    if (delayedManager) {
-                        resolve(invoke(delayedManager));
-                        return;
-                    }
-
-                    attempts++;
-
-                    if (attempts >= maxAttempts) {
-                        reject(new Error(`Relay manager not found after ${maxAttempts} attempts.`));
-                        return;
-                    }
-
-                    setTimeout(findManager, delay);
-                };
-
-                findManager();
-            });
-        };
-
         const scriptArgs: [string, string | null, JsonValue[], string, boolean] = [
             this.name,
             path ?? null,
@@ -149,7 +51,7 @@ export default class RelayScriptingAdapter extends RelayAdapter {
             RelayGlobalKey,
             !this.isAnyFramesTarget(),
         ];
-        const outcomes = await this.injectScript.run(func, scriptArgs);
+        const outcomes = await this.injectScript.run(invokeRelay, scriptArgs);
         const results = this.normalize(outcomes);
 
         if (this.isAnyFramesTarget()) {
@@ -172,7 +74,7 @@ export default class RelayScriptingAdapter extends RelayAdapter {
         return this.unwrap(results);
     }
 
-    private normalize(outcomes: readonly InjectScriptResult<RelayInvocationResult>[]): RelayFramesResult<any> {
+    private normalize(outcomes: readonly InjectScriptResult<unknown>[]): RelayFramesResult<any> {
         return sortRelayFrameResults(
             outcomes.map(outcome => {
                 const target = this.resultTarget(outcome.target);
@@ -181,12 +83,53 @@ export default class RelayScriptingAdapter extends RelayAdapter {
                     return rejectedRelayFrame(target, outcome.error, injectScriptErrorKind(outcome.error.kind));
                 }
 
+                if (!this.isResponse(outcome.value)) {
+                    const error = new RelayProtocolError(this.name);
+
+                    if (!this.isBatchTarget(this.target)) {
+                        throw error;
+                    }
+
+                    return rejectedRelayFrame(target, error, RelayFrameErrorKind.Execution);
+                }
+
                 if (!outcome.value.ok) {
                     return rejectedRelayFrame(target, outcome.value.error, RelayFrameErrorKind.Remote);
                 }
 
                 return fulfilledRelayFrame(target, outcome.value.hasResult ? outcome.value.result : undefined);
             })
+        );
+    }
+
+    private isResponse(value: unknown): value is RelayInvocationResult {
+        if (typeof value !== "object" || value === null || Array.isArray(value)) {
+            return false;
+        }
+
+        const response = value as Record<string, unknown>;
+
+        if (response.ok === true) {
+            return response.hasResult === false
+                ? !Object.hasOwn(response, "result")
+                : response.hasResult === true && Object.hasOwn(response, "result");
+        }
+
+        if (
+            response.ok !== false ||
+            typeof response.error !== "object" ||
+            response.error === null ||
+            Array.isArray(response.error)
+        ) {
+            return false;
+        }
+
+        const error = response.error as Record<string, unknown>;
+
+        return (
+            typeof error.name === "string" &&
+            typeof error.message === "string" &&
+            (error.stack === undefined || typeof error.stack === "string")
         );
     }
 

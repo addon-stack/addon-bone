@@ -129,7 +129,7 @@
     "test:firefox": "npm run build && node scripts/test-run.mjs --selectProjects firefox",
     "test:message": "node scripts/test-run.mjs --testPathPatterns=src/message",
     "test:service": "node scripts/test-run.mjs --testPathPatterns=Service",
-    "test:relay": "npm run test -- --testPathPatterns=Relay",
+    "test:relay": "npm run test -- --testPathPatterns=\"Relay|src/entry/relay|browser/relay\"",
     "test:locale": "npm run test -- --testPathPatterns=Locale",
     "test:manifest": "node scripts/test-run.mjs --testPathPatterns=src/cli/builders/manifest",
     "test:entrypoint": "node scripts/test-run.mjs --testPathPatterns=src/cli/entrypoint",

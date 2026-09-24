@@ -32,6 +32,11 @@ tests/integration/
 │   │   └── views/
 │   └── …
 ├── browser/
+│   ├── relay/
+│   │   ├── scripting.integration.test.ts
+│   │   ├── scripting.firefox.integration.test.ts
+│   │   ├── scripting-utils.ts
+│   │   └── scripting/
 │   ├── content/
 │   │   ├── entrypoint-assets.integration.test.ts
 │   │   ├── entrypoint-assets.firefox.integration.test.ts
@@ -150,3 +155,5 @@ Browser execution covers the installed Chrome in MV3 and Firefox in MV2/MV3. It 
 `browser/content/entrypoint-assets/site` is the ordinary website receiving the content scripts, not an extension entrypoint. A local HTTP server serves `top.html`, `frames.html`, and `child.html` with a restrictive CSP: `default-src 'none'; frame-src 'self'; img-src 'self'`. Same-origin image requests allow the browser's automatic favicon request, which receives an empty 204 response; scripts and styles remain restricted by `default-src`. The frame pages exercise `allFrames` and independent execution in the top document and its child iframe.
 
 Keep these HTML files outside the application's `src` directory. They need no separate package or build tool. The server uses an ephemeral loopback port and stops after the test.
+
+- `browser/relay/scripting`: Chrome MV3 and Firefox MV2/MV3 check real Relay scripting success, undefined/null results, remote errors, immediate missing-manager errors and exhausted retries (#109).

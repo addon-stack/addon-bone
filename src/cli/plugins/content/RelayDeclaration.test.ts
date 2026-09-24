@@ -143,6 +143,7 @@ describe("Relay declarations", () => {
                 "RelayFramesResult",
                 "RelayMethod",
                 "RelayNonEmptyReadonlyArray",
+                "RelayProtocolError",
                 "RelayProxyTarget",
                 "RelayResultTarget",
                 "RelayScalarOptions",

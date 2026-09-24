@@ -4,6 +4,9 @@ import {availableParallelism} from "node:os";
 const shared: Config = {
     rootDir: import.meta.dirname,
     testEnvironment: "node",
+    // This function is serialized into browser/VM realms; Istanbul closures cannot cross that boundary.
+    coveragePathIgnorePatterns: ["/node_modules/", "<rootDir>/src/relay/adapters/invoke-relay\\.ts$"],
+
     globals: {ADNBN_TEST_ROOT: import.meta.dirname},
     setupFilesAfterEnv: ["<rootDir>/tests/jest.setup.ts"],
     transformIgnorePatterns: ["/node_modules/(?!(@addon-core/storage|nanoid)/)"],

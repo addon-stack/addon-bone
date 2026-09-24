@@ -16,6 +16,13 @@ export class RelayFrameTimeoutError extends Error {
     }
 }
 
+export class RelayProtocolError extends Error {
+    public constructor(relayName: string) {
+        super(`Relay "${relayName}" returned an invalid scripting response envelope.`);
+        this.name = "RelayProtocolError";
+    }
+}
+
 export const fulfilledRelayFrame = <T>(target: RelayResultTarget, result: T): RelayFrameResult<T> => ({
     target,
     status: "fulfilled",

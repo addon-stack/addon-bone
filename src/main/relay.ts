@@ -20,6 +20,7 @@ import {
 
 export {RelayAllFrames, RelayFrameErrorKind, RelayMethod};
 export {RelayDiscoveryError} from "@relay/discovery/RelayDiscovery";
+export {RelayProtocolError} from "@relay/result";
 
 export type {
     RelayAllFramesOptions,

@@ -358,9 +358,9 @@ describe("ProxyRelay", () => {
                 expect(setTimeoutSpy).not.toHaveBeenCalled();
                 setTimeoutSpy.mockRestore();
 
-                const error = await execution.catch((error: unknown) => error);
+                const result = await execution;
 
-                return [{frameId: 0, error}];
+                return [{frameId: 0, result}];
             });
             const relay = createProxyRelay<RelayBatchProxyType>(options, {
                 tabId: 1,
@@ -372,7 +372,7 @@ describe("ProxyRelay", () => {
                     target: {tabId: 1, allFrames: RelayAllFrames.Any},
                     status: "rejected",
                     error: expect.objectContaining({
-                        kind: RelayFrameErrorKind.Execution,
+                        kind: RelayFrameErrorKind.Remote,
                         message: "Relay manager not found.",
                     }),
                 },
