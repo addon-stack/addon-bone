@@ -1,9 +1,6 @@
-jest.mock("@addon-core/browser", () => ({
-    getI18nMessage: jest.fn(),
-}));
 jest.mock("#adnbn/locale", () => ({keys: ["demo.empty", "demo.title"], languages: ["en", "fr", "ru"]}));
 
-import {getI18nMessage} from "@addon-core/browser";
+import {getBrowserTest} from "@tests/browser-harness/session";
 import NativeLocale from "./NativeLocale";
 
 interface Structure {
@@ -17,21 +14,18 @@ describe("NativeLocale", () => {
     let error: jest.SpyInstance;
 
     beforeEach(() => {
-        jest.mocked(getI18nMessage)
-            .mockReset()
-            .mockImplementation(key => (key === "locale" ? "ru" : ""));
+        getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(key =>
+            key === "locale" ? "ru" : ""
+        );
+
         warn = jest.spyOn(console, "warn").mockImplementation();
         error = jest.spyOn(console, "error").mockImplementation();
         locale = new NativeLocale<Structure>();
     });
 
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
     test("preserves an empty message for a known build key without warning", () => {
         expect(locale.trans("demo.empty")).toBe("");
-        expect(getI18nMessage).toHaveBeenLastCalledWith("demo_empty");
+        expect(getBrowserTest().harness.configurable.chrome.i18n.getMessage.calls.at(-1)?.args[0]).toBe("demo_empty");
         expect(warn).not.toHaveBeenCalled();
         expect(error).not.toHaveBeenCalled();
     });
@@ -43,7 +37,7 @@ describe("NativeLocale", () => {
     });
 
     test.each(["Translated title", "0"])("preserves the nonempty message %j without consulting build keys", value => {
-        jest.mocked(getI18nMessage).mockReturnValue(value);
+        getBrowserTest().harness.configurable.chrome.i18n.getMessage.setResult(value);
         const keys = jest.spyOn(locale, "keys");
 
         expect(locale.trans("demo.title")).toBe(value);
@@ -53,14 +47,17 @@ describe("NativeLocale", () => {
     });
 
     test("preserves nonempty messages outside the default build contract", () => {
-        jest.mocked(getI18nMessage).mockReturnValue("Extra translation");
+        getBrowserTest().harness.configurable.chrome.i18n.getMessage.setResult("Extra translation");
 
         expect(locale.get("demo.extra" as never)).toBe("Extra translation");
         expect(warn).not.toHaveBeenCalled();
     });
 
     test("can translate a known message even when the language marker is missing", () => {
-        jest.mocked(getI18nMessage).mockImplementation(key => (key === "locale" ? "" : "Hello {{name}}"));
+        getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(key =>
+            key === "locale" ? "" : "Hello {{name}}"
+        );
+
         const withoutMarker = new NativeLocale<Structure>();
 
         expect(withoutMarker.trans("demo.title")).toBe("Hello {{name}}");
@@ -68,7 +65,9 @@ describe("NativeLocale", () => {
     });
 
     test("does not treat an undefined API result as a valid empty translation", () => {
-        jest.mocked(getI18nMessage).mockReturnValue(undefined);
+        getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(
+            () => undefined as unknown as string
+        );
 
         expect(locale.trans("demo.empty")).toBe("demo.empty");
         expect(warn).toHaveBeenCalledWith('Locale key "demo.empty" not found in "ru" language.');
@@ -95,6 +94,7 @@ describe("NativeLocale", () => {
             ["fr", "Français"],
             ["ru", "Русский"],
         ]);
+
         expect(error).not.toHaveBeenCalled();
     });
 });

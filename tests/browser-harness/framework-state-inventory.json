@@ -1,0 +1,82 @@
+{
+  "TsResolver": {
+    "file": "src/cli/entrypoint/file/resolvers/TsResolver.ts",
+    "fields": ["instances"],
+    "getInstance": false,
+    "retained": "CLI TypeScript resolution cache; outside browser-session ownership."
+  },
+  "BackgroundEntry": {
+    "file": "src/cli/plugins/background/BackgroundEntry.ts",
+    "fields": ["name"],
+    "getInstance": false,
+    "retained": "Static entrypoint name, not mutable session state."
+  },
+  "NativeLocale": {
+    "file": "src/locale/providers/NativeLocale.ts",
+    "fields": ["instance"],
+    "getInstance": true
+  },
+  "ObservableLocale": {
+    "file": "src/locale/providers/ObservableLocale.ts",
+    "fields": [
+      "defaultInstance",
+      "memoryInstance",
+      "drivers"
+    ],
+    "getInstance": true
+  },
+  "MessageManager": {
+    "file": "src/message/MessageManager.ts",
+    "fields": [],
+    "getInstance": true
+  },
+  "Message": {
+    "file": "src/message/providers/Message.ts",
+    "fields": [
+      "FirefoxDocumentIdMinVersion",
+      "instance"
+    ],
+    "getInstance": true
+  },
+  "OffscreenBridge": {
+    "file": "src/offscreen/OffscreenBridge.ts",
+    "fields": ["instance"],
+    "getInstance": true
+  },
+  "OffscreenManager": {
+    "file": "src/offscreen/OffscreenManager.ts",
+    "fields": [],
+    "getInstance": true
+  },
+  "RelayManager": {
+    "file": "src/relay/RelayManager.ts",
+    "fields": [],
+    "getInstance": true
+  },
+  "RelayPermission": {
+    "file": "src/relay/RelayPermission.ts",
+    "fields": [],
+    "getInstance": true
+  },
+  "ProxyRelay": {
+    "file": "src/relay/providers/ProxyRelay.ts",
+    "fields": ["SelectorKeys"],
+    "getInstance": false,
+    "retained": "Static selector key list, not mutable session state."
+  },
+  "SandboxManager": {
+    "file": "src/sandbox/SandboxManager.ts",
+    "fields": [],
+    "getInstance": true
+  },
+  "SandboxMessage": {
+    "file": "src/sandbox/SandboxMessage.ts",
+    "fields": ["hosts"],
+    "getInstance": false
+  },
+  "ServiceManager": {
+    "file": "src/service/ServiceManager.ts",
+    "fields": [],
+    "getInstance": true
+  }
+}

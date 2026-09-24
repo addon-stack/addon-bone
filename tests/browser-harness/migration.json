@@ -1,0 +1,52 @@
+{
+  "legacyFiles": [
+    "src/relay/providers/Relay.test.ts",
+    "src/relay/discovery/RelayDiscovery.test.ts",
+    "src/relay/RelayPermission.test.ts",
+    "src/entry/relay/index.test.ts",
+    "src/entry/relay/Builder.test.ts",
+    "src/message/providers/Message.test.ts",
+    "src/message/adapters/react/useMessageHandler.test.ts",
+    "src/offscreen/providers/Offscreen.test.ts",
+    "src/offscreen/OffscreenBridge.test.ts",
+    "src/locale/providers/ObservableLocale.test.ts",
+    "src/service/providers/Service.test.ts",
+    "src/sandbox/SandboxMessage.test.ts"
+  ],
+  "localMocks": {
+    "src/service/providers/Service.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/locale/helpers.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/locale/adapters/react/hooks/use-native-locale.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/locale/providers/DynamicLocale.test.ts": [
+      "@addon-core/browser",
+      "@addon-core/storage"
+    ],
+    "src/locale/providers/ObservableLocale.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/locale/adapters/react/hooks/use-locale.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/locale/adapters/react/hooks/use-locale-attributes.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/locale/storage/LocaleStorage.test.ts": [
+      "@addon-core/storage"
+    ],
+    "src/entry/content/lifecycle/nodes/isolated-styles.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/entry/content/lifecycle/nodes/FrameNode.test.ts": [
+      "@addon-core/browser"
+    ],
+    "src/offscreen/providers/Offscreen.test.ts": [
+      "@main/env"
+    ]
+  }
+}

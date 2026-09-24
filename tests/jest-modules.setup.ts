@@ -62,43 +62,43 @@ jest.mock("nanoid/non-secure", () => ({
     nanoid: jest.fn(() => "mocked-id"),
 }));
 
-jest.mock(
-    "@addon-core/storage",
-    () => {
-        type Unsubscribe = () => void;
-        type WatchMap = Record<string, (value: any) => void>;
+jest.mock("@addon-core/storage", () => {
+    type Unsubscribe = () => void;
+    type WatchMap = Record<string, (value: any) => void>;
 
-        const createMockStorage = () => {
-            const store = new Map<string, any>();
-            let watchers: WatchMap = {};
+    const createMockStorage = () => {
+        const store = new Map<string, any>();
+        let watchers: WatchMap = {};
 
-            const get = jest.fn(async (key: string) => store.get(key));
-            const set = jest.fn(async (key: string, value: any) => {
-                store.set(key, value);
-                const cb = watchers[key];
-                if (cb) cb(value);
-            });
-            const watch = jest.fn((map: WatchMap): Unsubscribe => {
-                watchers = map;
-                return () => {
-                    watchers = {};
-                };
-            });
+        const get = jest.fn(async (key: string) => store.get(key));
+        const set = jest.fn(async (key: string, value: any) => {
+            store.set(key, value);
+            const cb = watchers[key];
 
-            return {get, set, watch};
-        };
+            if (cb) {
+                cb(value);
+            }
+        });
+        const watch = jest.fn((map: WatchMap): Unsubscribe => {
+            watchers = map;
 
-        return {
-            __esModule: true,
-            Storage: {
-                Local: () => createMockStorage(),
-                Sync: () => createMockStorage(),
-                Session: () => createMockStorage(),
-            },
-        };
-    },
-    {virtual: true}
-);
+            return () => {
+                watchers = {};
+            };
+        });
+
+        return {get, set, watch};
+    };
+
+    return {
+        __esModule: true,
+        Storage: {
+            Local: () => createMockStorage(),
+            Sync: () => createMockStorage(),
+            Session: () => createMockStorage(),
+        },
+    };
+});
 
 jest.mock("@main/env", () => ({
     ...jest.requireActual("@main/env"),

@@ -15,7 +15,7 @@ The observed Node 24 crashes contain `Builtins_BaselineOutOfLinePrologue` and `C
 | `npm run test:firefox`   | Real Firefox MV2/MV3 scenarios                                        | Once               |
 | `npm test`               | Every Jest project, including both browsers                           | Once               |
 | `npm run test:pre-push`  | Framework typecheck, all non-browser tests and all fixture typechecks | Once               |
-| `npm run test:inventory` | Every test file belongs to exactly one project                        | No                 |
+| `npm run test:inventory` | Test ownership, migration exceptions and framework reset inventory    | No                 |
 
 `npm run typecheck` checks framework and test-runner types. `npm run typecheck:integration` builds the package, prepares every fixture application and checks it with its own `tsconfig.json`. Declaration consumers without an application config belong to the Jest `types` project.
 
@@ -38,6 +38,80 @@ The trailing `--verbose=false` in `test:unit` terminates Jest's variadic `--sele
 Preparation and fixture typechecks use a bounded queue of up to four processes. Set `ADNBN_TEST_WORKERS` to a positive integer to override it. Each application keeps its own configuration and TypeScript process. Queued builds and typechecks allow up to 120 seconds per command. Builds inside Jest scenarios retain the 30-second limit so a hung CLI does not outlive its enclosing test deadline. A failure is reported after all running work has finished, with the child process diagnostics preserved.
 
 See [integration/README.md](integration/README.md) for browser requirements and fixture layout. Browser tests use separate profiles, ports and application copies. Tests that edit or watch a fixture must retain their own copy and build; generated outputs must not be shared between mutable scenarios.
+
+## Browser harness migration
+
+`tests/jest.setup.ts` selects one setup per file before importing the test module. The harness is the default for
+unit, build and types projects. Only the 12 files in `browser-harness/migration.json` use `jest-legacy.setup.ts`.
+Remove exceptions as their tests migrate; new tests use the harness without registration or per-file `jest.unmock`.
+Real Chrome/Firefox integrations load neither setup.
+
+The same inventory records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule` calls for
+`@addon-core/*` and `@main/env`. Eight additional files still use these local mocks, making 20 files to review in total.
+Passing under harness setup does not prove that a locally mocked dependency was exercised. For each remaining mock,
+decide whether to replace it with Browser/Storage controls or retain an explicit dependency boundary.
+`npm run test:inventory` rejects missing files, duplicate legacy entries and unrecorded or removed module mocks.
+Update the inventory alongside each migration so stale exceptions cannot remain unnoticed.
+
+The harness setup creates a fresh `BrowserTestSession` before every test. Use `getBrowserTest()` from
+`@tests/browser-harness/session` inside tests and hooks, not at module scope. The `@tests/*` alias maps to the root `tests/`
+directory in TypeScript and Jest. Browser and Storage imports are real unless the file declares a recorded local mock;
+build-time virtual modules can still supply explicit test fixtures. `NativeLocale.test.ts` demonstrates API controls
+and call history instead of function mocks.
+
+```ts
+import {getBrowserTest} from "@tests/browser-harness/session";
+
+const session = getBrowserTest();
+session.harness.configurable.chrome.i18n.getMessage.setResult("en");
+session.addCleanup(unsubscribe);
+```
+
+The default messaging context is an extension page with the Chrome profile. The session sets `BROWSER=chrome`,
+`APP=test` and `MANIFEST_VERSION` from its manifest. Constructor options `profile`, `app` and `manifest` select alternatives.
+Teardown restores the previous environment values, including previously absent variables. Framework environment
+getters read these values when called.
+
+Create other contexts through `session.harness.contexts.create()` and install them with `session.useContext(context)`.
+Use `session.useContext(context, "firefox")` to switch both browser globals and `BROWSER`; configure the reported browser
+version through `harness.runtime.getBrowserInfo.setResult()`. The returned restore function and nested installations
+follow reverse order; teardown restores remaining installations automatically. Use context-bound facades from
+`harness.messaging.forContext()` for the other endpoints of a conversation. Global context changes are not async-local:
+do not use `test.concurrent` or assume that global Browser wrappers remember the context of an earlier callback.
+`environment: "preserve"` retains jsdom's window, document, location and navigator; it does not simulate a background DOM.
+
+`session.createScriptRuntime({clock: true})` binds a persistent guest runtime to the session's document registry and
+registers disposal. Create the target tabs/documents first. Advance the guest clock explicitly; host timers and
+consumer deadlines remain separate. Runtime and tab message delivery continue under Jest host fake timers without
+advancing them. `harness.delays.downloadValidation` uses a host timer: advance it explicitly in tests using fake timers.
+Shared teardown restores real host timers even when cleanup fails. Guest-clock checks use real timers inside the guest;
+Jest fake timers affect only the host.
+
+Register consumer subscriptions, observers and other resources with `session.addCleanup()`. Async cleanup is awaited
+in reverse order, and a failure does not prevent remaining cleanup, harness reset or global/environment restoration.
+Teardown clears Message/Relay/Offscreen/Service/Sandbox managers and Relay permission registration. It resets
+NativeLocale, Message, ObservableLocale (default, memory and driver caches), and OffscreenBridge singleton references,
+and disposes cached SandboxMessage hosts. Clearing a cache does not dispose every previously returned provider or DOM
+bridge: subscriptions, pending DOM work and manually created instances still need explicit cleanup callbacks.
+Do not reset the harness underneath a live session; that invalidates contexts and detaches the scripting executor.
+Jest mock history and spies are reset centrally.
+
+`framework-state-inventory.json` records source classes with static fields or `getInstance`, including retained constants
+and the CLI TypeScript resolver cache. `test:inventory` compares the source fields with that inventory, checks registration
+of the 11 runtime reset owners, and checks all six exported `*GlobalKey` declarations against the reset implementation.
+New fields or owners require a reviewed reset policy. After runtime cleanup, any remaining own global property starting
+with `adnbn` fails teardown rather than being silently deleted. This source inventory detects missing policies; it does
+not prove that every reset implementation is correct, so session lifecycle tests verify the actual behavior too.
+
+### Remaining test-kit boundaries
+
+- `hasListeners` is not modeled. Check subscriptions through the context event's `listenerCount()`.
+- VM scenarios require uninstrumented injected code. During Relay migration, isolate the injected function and exclude
+  only that module from Babel coverage; retain coverage for its host adapter and real-browser checks for the guest code.
+- The session does not emulate Web Locks, DOM inside the guest, or extension HTML execution. Keep explicit external
+  adapters where needed and real-browser checks for DOM, execution worlds, browser lifecycle and vendor behavior.
+- Consult the kit's `RAW_CAPABILITY_COVERAGE` before using another browser API. Extend the kit when a required capability
+  is missing; an existing modeled capability needs no new global mock.
 
 ## Hooks
 
