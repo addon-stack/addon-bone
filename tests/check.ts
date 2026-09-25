@@ -4,7 +4,9 @@ import {runQueue} from "./integration/utils/queue";
 
 const root = path.resolve(import.meta.dirname, "..");
 const npm = process.env.npm_execpath;
-if (!npm) throw new Error("Run this check with npm run test:pre-push");
+if (!npm) {
+    throw new Error("Run this check with npm run check");
+}
 
 const phase = (tasks: {name: string; args: string[]; stdio?: "inherit"}[]) =>
     runQueue(tasks, tasks.length, async ({name, args, stdio}) => {

@@ -296,24 +296,24 @@ Permission prompts, frame discovery, startup retries, and work inside the remote
 
 ### Verification
 
-Run from the framework repository root. `test:relay` builds the package and runs Relay unit, build, type and browser tests; it requires local Chrome and Firefox:
+Run from the framework repository root. The filtered `npm test` command builds the package and runs Relay unit, build, type and browser tests; it requires local Chrome and Firefox:
 
 ```bash
 npm run typecheck
-npm run test:relay -- --runInBand
-npm run test:message -- --runInBand
+npm test -- --testPathPatterns="Relay|src/entry/relay|browser/relay" --runInBand
+npm run test:unit -- --testPathPatterns=src/message --runInBand
 ```
 
 For Relay runtime unit tests without a build or browsers:
 
 ```bash
-npm run test:run -- --selectProjects unit-node unit-dom --testPathPatterns="src/relay/|src/entry/relay/" --runInBand
+npm run test:unit -- --testPathPatterns="src/relay/|src/entry/relay/" --runInBand
 ```
 
 `typecheck` checks both source and test files; passing Jest alone does not prove test files are type-correct. For the full non-browser regression suite, including shared transport and content aggregation tests:
 
 ```bash
-npm test -- --runInBand --testPathIgnorePatterns=tests/integration/browser
+npm run check
 ```
 
 Important coverage lives in [`ProxyRelay.test.ts`](./providers/ProxyRelay.test.ts), [`RegisterRelay.test.ts`](./providers/RegisterRelay.test.ts), [`RelayScriptingAdapter.test.ts`](./adapters/RelayScriptingAdapter.test.ts), [`RelayDiscovery.test.ts`](./discovery/RelayDiscovery.test.ts), [`RelayPermission.test.ts`](./RelayPermission.test.ts), [`RelayParser.test.ts`](../cli/entrypoint/parser/RelayParser.test.ts), [`RelayDriver.test.ts`](../cli/plugins/content/RelayDriver.test.ts), [`RelayDeclaration.test.ts`](../cli/plugins/content/RelayDeclaration.test.ts), and [`ContentManager.test.ts`](../cli/plugins/content/ContentManager.test.ts).

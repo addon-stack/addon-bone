@@ -126,7 +126,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build package, prepare and typecheck every application
-        run: npm run typecheck:integration
+        run: npm run typecheck:fixtures
 
   browser:
     name: Browser (${{ matrix.browser }}, Node ${{ matrix.node }})

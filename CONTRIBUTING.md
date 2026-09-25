@@ -83,16 +83,10 @@ Releases and versioning:
 3. Make changes and ensure commits follow Conventional Commits.
 4. Before opening a PR, run local checks:
     - Formatting: `npm run format`
-    - Tests: `npm test` (the full suite includes a Chrome MV3 integration test; use `ADNBN_CHROME_BIN=/path/to/chrome` to override automatic Chrome discovery)
-    - By area (if needed):
-        - `npm run test:relay`
-        - `npm run test:service`
-        - `npm run test:storage`
-        - `npm run test:message`
-        - `npm run test:locale`
-        - `npm run test:manifest`
-        - `npm run test:entrypoint`
-        - `npm run test:plugins`
+    - Non-browser checks: `npm run check` (framework types, package build, non-browser tests and fixture typechecks).
+    - Full tests: `npm test` (includes Chrome and Firefox; use `ADNBN_CHROME_BIN` and `ADNBN_FIREFOX_BIN` to override discovery).
+    - Focused units: `npm run test:unit -- --testPathPatterns=src/locale` or `npm run test:unit -- --runTestsByPath src/sandbox/SandboxMessage.test.ts`.
+    - See [tests/README.md](tests/README.md) for test groups, watch mode, coverage and fixture commands.
 5. Open a PR to the appropriate branch (usually `develop`) and include:
     - motivation and solution;
     - alternatives and trade-offs (if any);

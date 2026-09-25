@@ -6,18 +6,41 @@ Use the npm test commands below, or `npm run test:run --` to pass arguments dire
 
 The observed Node 24 crashes contain `Builtins_BaselineOutOfLinePrologue` and `ClearStaleLeftTrimmedPointerVisitor`, matching the Sparkplug report in [nodejs/node#62393](https://github.com/nodejs/node/issues/62393). The earlier `--no-maglev` workaround did not prevent the crash. Successful repetitions measure observed stability; they do not prove a rare native fault impossible. Keep the workaround scoped to the reproduced environment and reassess it when the upstream fix is verified. Jest workers inherit the flag through `execArgv`; CLI fixture child processes and real browsers keep their normal settings. Tests are never automatically retried or skipped to hide a native crash.
 
-| Command                  | Checks                                                                | Builds the package |
-| ------------------------ | --------------------------------------------------------------------- | ------------------ |
-| `npm run test:unit`      | Node and DOM unit tests                                               | No                 |
-| `npm run test:build`     | Compiler plugins, the built CLI and build integrations                | Once               |
-| `npm run test:types`     | All fixture applications and declaration consumer tests               | Once               |
-| `npm run test:chrome`    | Real Chrome scenarios                                                 | Once               |
-| `npm run test:firefox`   | Real Firefox MV2/MV3 scenarios                                        | Once               |
-| `npm test`               | Every Jest project, including both browsers                           | Once               |
-| `npm run test:pre-push`  | Framework typecheck, all non-browser tests and all fixture typechecks | Once               |
-| `npm run test:inventory` | Test ownership, local mocks and framework reset inventory             | No                 |
+| Command                        | Checks                                                         | Builds the package |
+| ------------------------------ | -------------------------------------------------------------- | ------------------ |
+| `npm test`                     | Every Jest project, including both browsers                    | Once               |
+| `npm run test:unit`            | Node and DOM unit tests                                        | No                 |
+| `npm run test:watch`           | Node and DOM unit tests in watch mode                          | No                 |
+| `npm run test:build`           | Compiler plugins, the built CLI and build integrations         | Once               |
+| `npm run test:types`           | Jest declaration consumer tests                                | Once               |
+| `npm run test:browser`         | Chrome and Firefox scenarios                                   | Once               |
+| `npm run test:browser:chrome`  | Chrome scenarios                                               | Once               |
+| `npm run test:browser:firefox` | Firefox scenarios                                              | Once               |
+| `npm run test:inventory`       | Test ownership, local mocks and framework reset inventory      | No                 |
+| `npm run test:run -- …`        | Direct Jest arguments; caller selects groups and prepares dist | No                 |
 
-`npm run typecheck` checks framework and test-runner types. `npm run typecheck:integration` builds the package, prepares every fixture application and checks it with its own `tsconfig.json`. Declaration consumers without an application config belong to the Jest `types` project.
+`npm run typecheck` checks framework and test-runner types. `npm run fixtures:prepare` builds the package and prepares
+fixture applications for editor/manual use. `npm run typecheck:fixtures` builds the package, prepares every fixture
+application and checks it with its own `tsconfig.json`. Declaration consumers without an application config belong to
+the Jest `types` project and run through `test:types`; they are separate from fixture application typechecks.
+
+`npm run check` runs framework typechecking, one package build, all non-browser Jest projects and fixture preparation/typechecks.
+Husky pre-push uses this same command. It does not launch browsers or collect coverage.
+
+Select a feature by path instead of adding a script for each module:
+
+```sh
+npm run test:unit -- --testPathPatterns=src/locale
+npm run test:unit -- --testPathPatterns=src/relay
+npm run test:unit -- --runTestsByPath src/sandbox/SandboxMessage.test.ts
+npm run test:watch -- --testPathPatterns=src/message
+npm run test:unit -- --coverage
+```
+
+The selected group remains the boundary: `test:unit` never includes build or browser tests even when their paths match.
+Commands that launch Jest forward arguments after `--` to Jest. Fixture preparation, fixture typechecking and `check` are separate
+workflows, not Jest argument forwarders. Public build-dependent test commands always build first. CI and `check` reuse
+one explicit build and invoke `test:run` (or its underlying wrapper) directly, avoiding nested build commands.
 
 ## Groups and workers
 
@@ -33,7 +56,7 @@ npm run test:run -- --selectProjects chrome --maxWorkers=4
 
 Jest uses up to eight workers, leaving one CPU available on smaller machines. Override the pool with `-- --maxWorkers=N`, or use `-- --runInBand` for a serial diagnostic run. The limit applies to the whole Jest invocation; do not pass both flags together. CI sets explicit smaller pools for compiler and browser jobs.
 
-The trailing `--verbose=false` in `test:unit` terminates Jest's variadic `--selectProjects` option so an appended test filename is treated as a filename, not another project name.
+The trailing `--verbose=false` in group commands terminates Jest's variadic `--selectProjects` option so an appended test filename is treated as a filename, not another project name. `test:watch` terminates it with `--watch`.
 
 Preparation and fixture typechecks use a bounded queue of up to four processes. Set `ADNBN_TEST_WORKERS` to a positive integer to override it. Each application keeps its own configuration and TypeScript process. Queued builds and typechecks allow up to 120 seconds per command. Builds inside Jest scenarios retain the 30-second limit so a hung CLI does not outlive its enclosing test deadline. A failure is reported after all running work has finished, with the child process diagnostics preserved.
 
@@ -134,7 +157,7 @@ not prove that every reset implementation is correct, so session lifecycle tests
 
 Pre-commit checks only formatting of the **staged contents**, without changing the index or unstaged work. Format reported files and stage them before retrying. Tests, typechecking and builds run at pre-push and in CI. During development, run `test:unit` or `test:watch` explicitly for earlier feedback. Tests execute the working tree, so CI remains the full validation of the committed revision.
 
-Pre-push runs `test:pre-push`, without browser launches or coverage. It includes both framework and fixture typechecks, compiler and CLI checks, and declaration consumers. Framework typechecking runs alongside the package build; after the build, Jest runs alongside the fixture queue. Jest inherits the terminal and streams its output live; fixture diagnostics remain buffered per command. Each fixture is typechecked as soon as its own build finishes. All tasks finish before failures are reported. Each task has a five-minute deadline; timeout or interruption terminates its complete process tree, including wrappers, Jest workers and child CLI processes. This uses a separate process group on macOS/Linux and `taskkill /T /F` on Windows. Browser checks run in CI and are also available through the explicit commands above.
+Pre-push runs `npm run check`, without browser launches or coverage. It includes both framework and fixture typechecks, compiler and CLI checks, and declaration consumers. Framework typechecking runs alongside the package build; after the build, Jest runs alongside the fixture queue. Jest inherits the terminal and streams its output live; fixture diagnostics remain buffered per command. Each fixture is typechecked as soon as its own build finishes. All tasks finish before failures are reported. Each task has a five-minute deadline; timeout or interruption terminates its complete process tree, including wrappers, Jest workers and child CLI processes. This uses a separate process group on macOS/Linux and `taskkill /T /F` on Windows. Browser checks run in CI and are also available through the explicit commands above.
 
 ## CI and coverage
 

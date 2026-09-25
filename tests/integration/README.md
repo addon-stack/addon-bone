@@ -94,7 +94,7 @@ Each application retains its own `package.json`, `adnbn.config.ts`, and `tsconfi
 Install dependencies once at the repository root, then run:
 
 ```bash
-npm run prepare:integration
+npm run fixtures:prepare
 ```
 
 This builds the framework, links each fixture's declared dependencies to the local framework or root `node_modules`, and builds all fixture applications. The generated `.adnbn` configuration and declarations remain beside their sources, so the editor can resolve `adnbn`, virtual imports such as `adnbn/browser`, CSS/SVG modules, and generated transport contracts.
@@ -106,25 +106,26 @@ The generated `.adnbn`, `node_modules`, and `dist` directories are ignored by Gi
 To prepare and typecheck every fixture, including its configuration:
 
 ```bash
-npm run typecheck:integration
+npm run typecheck:fixtures
 ```
 
-The root `typecheck` checks framework and test-runner code; `typecheck:integration` additionally checks the fixture applications against their generated declarations. CI runs both.
+The root `typecheck` checks framework and test-runner code; `typecheck:fixtures` additionally checks the fixture applications against their generated declarations. CI runs both.
 
-The fixtures in `types` are checked by their Jest tests with isolated TypeScript programs against source and built package APIs. They do not have application configs and are not part of `prepare:integration` or `typecheck:integration`.
+The fixtures in `types` are checked by their Jest tests with isolated TypeScript programs against source and built package APIs. They do not have application configs and are not part of `fixtures:prepare` or `typecheck:fixtures`.
 
 ## Run tests
 
 Run these commands from the repository root:
 
 ```bash
-npm run test:integration
-npm run test:integration:build
-npm run test:chrome
-npm run test:firefox
+npm run test:build
+npm run test:types
+npm run test:browser
+npm run test:browser:chrome
+npm run test:browser:firefox
 ```
 
-They run all integration tests, only build checks, only Chrome checks, or only Firefox checks respectively. Each command builds the framework first. Browser tests require Chrome with `Extensions.loadUnpacked` support and Firefox with WebDriver BiDi `webExtension.install` support. Set `ADNBN_CHROME_BIN` or `ADNBN_FIREFOX_BIN` to the browser's absolute executable path if automatic discovery selects the wrong browser. Node must provide the built-in `WebSocket` API. CI installs both browsers on Linux; Windows runs the non-browser suite.
+These commands run build integrations, declaration tests, both browsers, or an individual browser respectively. Each command builds the framework first. Browser tests require Chrome with `Extensions.loadUnpacked` support and Firefox with WebDriver BiDi `webExtension.install` support. Set `ADNBN_CHROME_BIN` or `ADNBN_FIREFOX_BIN` to the browser's absolute executable path if automatic discovery selects the wrong browser. Node must provide the built-in `WebSocket` API. CI installs both browsers on Linux; Windows runs the non-browser suite.
 
 These groups run test files in parallel, with up to eight workers by default (one fewer than the available CPUs on smaller machines). Pass `-- --maxWorkers=N` to tune the pool. Preparation and fixture typechecks run up to four independent applications concurrently; `ADNBN_TEST_WORKERS` overrides that limit. See [the test guide](../README.md) for project selection, hooks, coverage and the complete validation commands.
 
