@@ -46,6 +46,10 @@ one explicit build and invoke `test:run` (or its underlying wrapper) directly, a
 
 `jest.config.ts` defines six projects: `unit-node`, `unit-dom`, `build`, `types`, `chrome` and `firefox`. Put DOM tests in the `unit-dom` patterns. Tests that execute the built CLI, consume package declarations or compile imports from the built package belong to `build` or `types`. Keep unit tests runnable with no `dist` directory. Each browser file contains scenarios for one browser only.
 
+Relay declaration tests keep the source/package × POSIX/Windows matrix for the generated registry, selectors and exports.
+Constructor, prepared-data and bootstrap contracts live in `integration/types/relay.integration.test.ts`, checked against
+both source aliases and the built package. Only its source case also checks the generated virtual entry module.
+
 After a package build, direct Jest invocations can reuse that build:
 
 ```sh

@@ -70,10 +70,12 @@ tests/integration/
 ├── types/
 │   ├── content.integration.test.ts
 │   ├── registries.integration.test.ts
+│   ├── relay.integration.test.ts
 │   ├── view.integration.test.ts
 │   └── fixtures/
 │       ├── content/
 │       ├── registries/
+│       ├── relay/
 │       └── view/
 ├── utils/
 │   ├── fixture.ts

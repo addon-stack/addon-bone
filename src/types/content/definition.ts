@@ -4,6 +4,7 @@ import type {ContentScriptBoundaryHandler} from "./boundary";
 import type {
     ContentScriptAnchor,
     ContentScriptAnchorGetter,
+    ContentScriptBuilder,
     ContentScriptAppend,
     ContentScriptContainerCreator,
     ContentScriptContainerFactory,
@@ -96,6 +97,11 @@ export type ContentScriptDefinition<
     Data = unknown,
     Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
 > = ContentScriptDefinitionBase<Data> & ContentScriptRenderDefinition<Data, Isolation>;
+
+export type ContentScriptBuilderConstructor<
+    Data = unknown,
+    Isolation extends `${ContentScriptIsolation}` = `${ContentScriptIsolation}`,
+> = new (definition: ContentScriptDefinition<Data, NoInfer<Isolation>>) => ContentScriptBuilder;
 
 export interface ContentScriptResolvedDefinition<Data = unknown> extends Omit<
     ContentScriptDefinitionBase<Data>,
