@@ -22,7 +22,9 @@ export default class SingleHandler<T extends MessageDictionary> extends Abstract
         sender: MessageSender
     ): MessageResponse<T, MessageType<T>> | undefined | null {
         if (type === this.messageType) {
-            return this.handler(data, sender) || null;
+            const result = this.handler(data, sender);
+
+            return result === undefined ? null : result;
         }
     }
 }

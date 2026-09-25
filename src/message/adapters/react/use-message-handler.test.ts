@@ -14,6 +14,7 @@ type MessageMap = {
 type TextMessageType = "getStringLength" | "toUpperCase";
 type TextMessageHandler = MessageTargetHandler<MessageMap, TextMessageType>;
 type TextHandlerProps = {type: TextMessageType; handler: TextMessageHandler};
+type BooleanMessages = {isEnabled: () => boolean};
 
 let caller: BrowserContextMessaging;
 let addListener: jest.SpyInstance;
@@ -52,6 +53,15 @@ test("registers a handler and responds to another browser context", async () => 
 
     expect(listenerCount()).toBe(1);
     await expect(send("getStringLength", "test")).resolves.toMatchObject({ok: true, payload: 4});
+});
+
+test("preserves a synchronous false response through the hook", async () => {
+    renderHook(() => useMessageHandler<"isEnabled", BooleanMessages>("isEnabled", () => false));
+
+    await expect(caller.chrome.runtime.sendMessage({type: "isEnabled"})).resolves.toMatchObject({
+        ok: true,
+        payload: false,
+    });
 });
 
 test("adds and removes the listener on mount and unmount", async () => {

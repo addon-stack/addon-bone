@@ -28,21 +28,6 @@ describe.each(["runtime", "tab"] as const)("Message response over %s messaging",
         options = target === "runtime" ? undefined : {tabId: 7, frameId: 0};
     });
 
-    const send = (handler: ResponseHandler): Promise<unknown> => {
-        message.watch("probe", handler);
-        restoreContext();
-
-        return message.send("probe", undefined, options);
-    };
-
-    test("returns undefined when an async handler has no return value", async () => {
-        await expect(send(async () => {})).resolves.toBeUndefined();
-    });
-
-    test("preserves the null response of a sync handler with no return value", async () => {
-        await expect(send(() => {})).resolves.toBeNull();
-    });
-
     test("preserves the channel error when a general handler sends no response", async () => {
         message.watch(() => {});
         restoreContext();
@@ -53,24 +38,50 @@ describe.each(["runtime", "tab"] as const)("Message response over %s messaging",
         expect(isRemoteMessageError(await result.catch(error => error))).toBe(false);
     });
 
-    test.each([null, false, 0, ""])("preserves the async result %p", async value => {
-        await expect(send(async () => value)).resolves.toBe(value);
-    });
+    describe.each(["single", "map"] as const)("with %s registration", registration => {
+        const send = (handler: ResponseHandler): Promise<unknown> => {
+            if (registration === "single") {
+                message.watch("probe", handler);
+            } else {
+                message.watch({probe: handler});
+            }
 
-    test("unwraps only the outer envelope when the payload resembles a response", async () => {
-        const payload = {[MessageResultEnvelopeProperty]: true, ok: true};
+            restoreContext();
 
-        await expect(send(async () => payload)).resolves.toEqual(payload);
-    });
-
-    test.each([false, true])("preserves remote errors from an async=%s handler", async asynchronous => {
-        const fail = () => {
-            throw new TypeError("Response failed");
+            return message.send("probe", undefined, options);
         };
-        const result = send(asynchronous ? async () => fail() : fail);
 
-        await expect(result).rejects.toBeInstanceOf(TypeError);
-        await expect(result).rejects.toThrow("Response failed");
-        expect(isRemoteMessageError(await result.catch(error => error))).toBe(true);
+        test("returns undefined when an async handler has no return value", async () => {
+            await expect(send(async () => {})).resolves.toBeUndefined();
+        });
+
+        test("preserves the null response of a sync handler with no return value", async () => {
+            await expect(send(() => {})).resolves.toBeNull();
+        });
+
+        test.each([null, false, 0, ""])("preserves the sync result %p", async value => {
+            await expect(send(() => value)).resolves.toBe(value);
+        });
+
+        test.each([null, false, 0, ""])("preserves the async result %p", async value => {
+            await expect(send(async () => value)).resolves.toBe(value);
+        });
+
+        test("unwraps only the outer envelope when the payload resembles a response", async () => {
+            const payload = {[MessageResultEnvelopeProperty]: true, ok: true};
+
+            await expect(send(async () => payload)).resolves.toEqual(payload);
+        });
+
+        test.each([false, true])("preserves remote errors from an async=%s handler", async asynchronous => {
+            const fail = () => {
+                throw new TypeError("Response failed");
+            };
+            const result = send(asynchronous ? async () => fail() : fail);
+
+            await expect(result).rejects.toBeInstanceOf(TypeError);
+            await expect(result).rejects.toThrow("Response failed");
+            expect(isRemoteMessageError(await result.catch(error => error))).toBe(true);
+        });
     });
 });
