@@ -1,11 +1,13 @@
-import path from "node:path";
-import {legacyFiles} from "./browser-harness/migration.json";
+import {startBrowserTest, stopBrowserTest} from "./browser-harness/session";
 
-// Temporary migration boundary. A file uses exactly one browser implementation.
-const testFile = path.relative(path.resolve(__dirname, ".."), expect.getState().testPath!).split(path.sep).join("/");
+beforeEach(startBrowserTest);
 
-if (legacyFiles.includes(testFile)) {
-    require("./jest-legacy.setup");
-} else {
-    require("./jest-browser.setup");
-}
+afterEach(async () => {
+    try {
+        await stopBrowserTest();
+    } finally {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+        jest.useRealTimers();
+    }
+});

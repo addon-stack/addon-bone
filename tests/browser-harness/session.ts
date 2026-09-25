@@ -12,7 +12,7 @@ export function startBrowserTest(): void {
 
 export function getBrowserTest(): BrowserTestSession {
     if (!session) {
-        throw new Error("Browser harness is unavailable. Use it inside a test or hook outside the legacy exceptions.");
+        throw new Error("Browser harness is unavailable. Use it inside a test or hook.");
     }
 
     return session;

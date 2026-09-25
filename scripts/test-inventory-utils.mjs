@@ -61,11 +61,9 @@ export function findStaticState(source, file) {
 
 export function verifyMigrationInventory(root, testFiles, sourceFiles) {
     const read = file => readFileSync(path.join(root, file), "utf8");
-    const {legacyFiles, localMocks} = JSON.parse(read("tests/browser-harness/migration.json"));
+    const {localMocks} = JSON.parse(read("tests/browser-harness/migration.json"));
 
-    assert.equal(new Set(legacyFiles).size, legacyFiles.length, "Duplicate legacy exceptions");
-
-    for (const file of [...legacyFiles, ...Object.keys(localMocks)]) {
+    for (const file of Object.keys(localMocks)) {
         assert(testFiles.has(file), `Stale migration entry: ${file}`);
     }
 
@@ -84,17 +82,10 @@ export function verifyMigrationInventory(root, testFiles, sourceFiles) {
         localMocks,
         "Module-mock inventory changed; migrate mocks or explicitly review exceptions"
     );
-    const additional = Object.keys(actualMocks).filter(file => !legacyFiles.includes(file));
-    const remaining = new Set([...legacyFiles, ...Object.keys(actualMocks)]);
+    console.info(`Migration: ${Object.keys(actualMocks).length} local-mock files remaining`);
 
-    console.info(
-        `Migration: ${legacyFiles.length} legacy files, ${additional.length} additional local-mock files, ${remaining.size} files remaining`
-    );
-
-    for (const file of sorted(remaining)) {
-        console.info(
-            `  ${file}: ${[...(legacyFiles.includes(file) ? ["legacy"] : []), ...(actualMocks[file] ?? [])].join(", ")}`
-        );
+    for (const file of sorted(Object.keys(actualMocks))) {
+        console.info(`  ${file}: ${actualMocks[file].join(", ")}`);
     }
 
     const declared = JSON.parse(read("tests/browser-harness/framework-state-inventory.json"));

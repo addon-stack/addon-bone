@@ -15,7 +15,7 @@ The observed Node 24 crashes contain `Builtins_BaselineOutOfLinePrologue` and `C
 | `npm run test:firefox`   | Real Firefox MV2/MV3 scenarios                                        | Once               |
 | `npm test`               | Every Jest project, including both browsers                           | Once               |
 | `npm run test:pre-push`  | Framework typecheck, all non-browser tests and all fixture typechecks | Once               |
-| `npm run test:inventory` | Test ownership, migration exceptions and framework reset inventory    | No                 |
+| `npm run test:inventory` | Test ownership, local mocks and framework reset inventory             | No                 |
 
 `npm run typecheck` checks framework and test-runner types. `npm run typecheck:integration` builds the package, prepares every fixture application and checks it with its own `tsconfig.json`. Declaration consumers without an application config belong to the Jest `types` project.
 
@@ -41,16 +41,15 @@ See [integration/README.md](integration/README.md) for browser requirements and 
 
 ## Browser harness migration
 
-`tests/jest.setup.ts` selects one setup per file before importing the test module. The harness is the default for
-unit, build and types projects. Only `SandboxMessage.test.ts`, listed in `browser-harness/migration.json`, still uses `jest-legacy.setup.ts`.
-Remove exceptions as their tests migrate; new tests use the harness without registration or per-file `jest.unmock`.
-Real Chrome/Firefox integrations load neither setup.
+`tests/jest.setup.ts` installs the browser harness for every unit, build and types test. Real Chrome/Firefox
+integrations load no setup. Each test gets real Browser/Storage modules unless it declares an inventoried local mock.
+There is no global module mock or per-file setup selection.
 
-The same inventory records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule` calls for
-`@addon-core/*` and `@main/env`. Eight additional files still use these local mocks, making 9 files to review in total.
+`browser-harness/migration.json` records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule`
+calls for `@addon-core/*` and `@main/env`. Eight files still use these local mocks.
 Passing under harness setup does not prove that a locally mocked dependency was exercised. For each remaining mock,
 decide whether to replace it with Browser/Storage controls or retain an explicit dependency boundary.
-`npm run test:inventory` rejects missing files, duplicate legacy entries and unrecorded or removed module mocks.
+`npm run test:inventory` rejects missing files and unrecorded or removed module mocks.
 Update the inventory alongside each migration so stale exceptions cannot remain unnoticed.
 
 The harness setup creates a fresh `BrowserTestSession` before every test. Use `getBrowserTest()` from
@@ -117,6 +116,9 @@ not prove that every reset implementation is correct, so session lifecycle tests
   dispose it with that context. The kit owns creation, closure and messaging; it does not execute the extension HTML.
   `tests/offscreen/MockLockManager.ts` models the Web Locks boundary for scheduling tests. Firefox/MV2 bridge tests use
   jsdom frames and explicit ready/error events; real-browser integrations remain the lifecycle check.
+- Sandbox messaging uses `postMessage`, not WebExtension runtime messaging. `SandboxMessage.test.ts` uses the real
+  `SandboxMemory` port pair and real request IDs, with channels registered for session cleanup. Fake-timer tests cover
+  request deadlines, disposal and responses arriving out of order; DOM/provider and real-browser tests cover frame wiring.
 - The session does not emulate Web Locks, DOM inside the guest, or extension HTML execution. Keep explicit external
   adapters where needed and real-browser checks for DOM, execution worlds, browser lifecycle and vendor behavior.
 - Consult the kit's `RAW_CAPABILITY_COVERAGE` before using another browser API. Extend the kit when a required capability

@@ -1,7 +1,4 @@
 {
-  "legacyFiles": [
-    "src/sandbox/SandboxMessage.test.ts"
-  ],
   "localMocks": {
     "src/locale/helpers.test.ts": [
       "@addon-core/browser"
