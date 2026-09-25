@@ -1,0 +1,2561 @@
+{
+  "baselineRef": "5fe410b9",
+  "environment": {
+    "node": "24.5.0",
+    "platform": "macOS arm64",
+    "logicalCpus": 16,
+    "jestFlag": "--no-sparkplug"
+  },
+  "overrideScenarios": [
+    "bookmarks override chrome MV2 build replaces the browser page",
+    "bookmarks override chrome MV3 build replaces the browser page",
+    "bookmarks override edge MV2 build replaces the browser page",
+    "bookmarks override edge MV3 build replaces the browser page",
+    "bookmarks override firefox MV2 build skips the unsupported page",
+    "bookmarks override firefox MV3 build skips the unsupported page",
+    "bookmarks override opera MV2 build skips the unsupported page",
+    "bookmarks override opera MV3 build skips the unsupported page",
+    "bookmarks override safari MV2 build skips the unsupported page",
+    "bookmarks override safari MV3 build skips the unsupported page",
+    "competing overrides chrome build fails and names both entrypoints",
+    "competing overrides edge build fails and names both entrypoints",
+    "competing overrides firefox build keeps the new tab and its permission without the unsupported history page",
+    "history override chrome MV2 build replaces the browser page",
+    "history override chrome MV3 build replaces the browser page",
+    "history override edge MV2 build replaces the browser page",
+    "history override edge MV3 build replaces the browser page",
+    "history override firefox MV2 build skips the unsupported page",
+    "history override firefox MV3 build skips the unsupported page",
+    "history override opera MV2 build skips the unsupported page",
+    "history override opera MV3 build skips the unsupported page",
+    "history override safari MV2 build skips the unsupported page",
+    "history override safari MV3 build skips the unsupported page",
+    "newtab override chrome MV2 build replaces the browser page",
+    "newtab override chrome MV3 build replaces the browser page",
+    "newtab override edge MV2 build replaces the browser page",
+    "newtab override edge MV3 build replaces the browser page",
+    "newtab override firefox MV2 build replaces the browser page",
+    "newtab override firefox MV3 build replaces the browser page",
+    "newtab override opera MV2 build skips the unsupported page",
+    "newtab override opera MV3 build skips the unsupported page",
+    "newtab override safari MV2 build replaces the browser page",
+    "newtab override safari MV3 build replaces the browser page"
+  ],
+  "summary": {
+    "before-8": {
+      "median": 22.506157167023048,
+      "min": 22.25215541711077,
+      "max": 22.71305362507701
+    },
+    "before-2": {
+      "median": 52.397480624960735,
+      "min": 51.31795075000264,
+      "max": 53.63272133283317
+    },
+    "after-8": {
+      "median": 16.5209129168652,
+      "min": 16.205771875102073,
+      "max": 17.61266070790589
+    },
+    "after-2": {
+      "median": 53.16435362491757,
+      "min": 52.022176374914125,
+      "max": 54.29423633287661
+    }
+  },
+  "runs": [
+    {
+      "phase": "before",
+      "workers": 8,
+      "warmup": true,
+      "run": 0,
+      "wallSeconds": 26.11322008399293,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-8-0.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 6.242
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 6.298
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 6.407
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 9.189
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 4.256
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 10.802
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 10.976
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 12.289
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 2.077
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 7.656
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.907
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 8.181
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.697
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.422
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 6.72
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.434
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.027
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.985
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.598
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.879
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.978
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.967
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.264
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.137
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.154
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.047
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.127
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.255
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.055
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.055
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.042
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.067
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.036
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.363
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.551
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.177
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 25.153
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "workers": 8,
+      "warmup": false,
+      "run": 1,
+      "wallSeconds": 22.71305362507701,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-8-1.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.729
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 6.236
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 6.322
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 7.026
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 7.16
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 8.03
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 9.55
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 3.415
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.935
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.82
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.782
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 4.072
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.863
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.387
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 2.058
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.669
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.551
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.537
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.779
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 3.318
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.871
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.262
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.645
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.138
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.148
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.612
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.043
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.061
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.053
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.323
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.038
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.032
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.054
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.423
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.164
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.512
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 21.935
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "workers": 8,
+      "warmup": false,
+      "run": 2,
+      "wallSeconds": 22.506157167023048,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-8-2.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.786
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 5.88
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.023
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.694
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.77
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.552
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 10.04
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 4.283
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 5.228
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 4.504
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 5.584
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 4.173
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 6.535
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.71
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.908
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.47
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 3.16
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.587
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.506
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.846
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.106
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.304
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.943
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.217
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.122
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.165
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.132
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.063
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.055
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.059
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.059
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.033
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.045
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 3.124
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.583
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.341
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 21.911
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "workers": 8,
+      "warmup": false,
+      "run": 3,
+      "wallSeconds": 22.25215541711077,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-8-3.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.848
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.264
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 6.434
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 7.244
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 7.365
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.99
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 9.841
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.521
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.688
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.76
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.684
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.393
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 6.086
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.827
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.448
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 3.02
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.762
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.524
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.586
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.863
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.915
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.296
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.125
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.114
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.07
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 3.134
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.055
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.578
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.163
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.044
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.047
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.245
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.352
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.04
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.031
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.173
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 21.669
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "workers": 2,
+      "warmup": false,
+      "run": 1,
+      "wallSeconds": 51.31795075000264,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=2",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-2-1.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 8.631
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 6.774
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 19.463
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 5.91
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.247
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 5.221
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.448
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.07
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.321
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 4.841
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.16
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.043
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.0
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 2.726
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 2.65
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.518
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.433
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 1.846
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.279
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.524
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.036
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 0.979
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.728
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.706
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.326
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.519
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.181
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.102
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.271
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.093
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.108
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.049
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.035
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.054
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.036
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.043
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.024
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 8,
+      "warmup": true,
+      "run": 0,
+      "wallSeconds": 15.487127125030383,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-8-0.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.949
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 6.625
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 6.625
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.694
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 6.725
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.81
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.415
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 9.211
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.625
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.397
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.561
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.805
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 6.036
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.465
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.437
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 6.098
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 2.245
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.195
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.942
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 3.215
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 2.193
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.663
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.733
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.313
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.626
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 1.075
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 3.235
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.477
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.16
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.068
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.876
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.063
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.037
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.121
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.043
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.033
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.205
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.073
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.445
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.465
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 8,
+      "warmup": false,
+      "run": 1,
+      "wallSeconds": 16.5209129168652,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-8-1.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.803
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 6.64
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 6.643
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 6.706
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.732
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.759
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.501
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 9.45
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.706
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.363
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.623
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.939
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 6.269
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.623
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.497
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 4.115
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 3.96
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 2.861
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 2.429
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 3.928
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 2.924
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.763
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 2.016
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.737
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.657
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.473
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.973
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.186
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.316
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.06
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.436
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.066
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.076
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.893
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.03
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.05
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.132
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.049
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.174
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.447
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 8,
+      "warmup": false,
+      "run": 2,
+      "wallSeconds": 16.205771875102073,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-8-2.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.07
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 6.534
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 6.534
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.653
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 6.661
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.729
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.473
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 9.557
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 2.737
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.564
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.759
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 5.066
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 6.048
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 6.791
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 3.706
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 6.777
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.596
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.959
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 2.552
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.851
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 2.215
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.531
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.678
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.672
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.925
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.604
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.128
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 1.154
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.066
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.511
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.051
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.371
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.644
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.045
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.164
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.03
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.037
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.712
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.055
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.798
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 8,
+      "warmup": false,
+      "run": 3,
+      "wallSeconds": 17.61266070790589,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=8",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-8-3.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 7.642
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 7.786
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 7.826
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 8.734
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 8.835
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 8.921
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 9.229
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 10.635
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.994
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.651
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.749
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.876
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.914
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.513
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.634
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 7.205
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 3.113
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 2.106
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 2.252
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.938
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.684
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.697
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.256
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.752
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.531
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.923
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.361
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.153
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.192
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.086
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 3.259
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.265
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.068
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.06
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.061
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.045
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.631
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.033
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.913
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.605
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 2,
+      "warmup": false,
+      "run": 1,
+      "wallSeconds": 54.29423633287661,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=2",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-2-1.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.551
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 8.765
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.062
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 5.986
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 5.677
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.138
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 5.484
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.356
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 6.314
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.912
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.128
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.372
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.094
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.361
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.514
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 3.269
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 2.483
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 2.901
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.703
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 1.893
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.565
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.592
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.198
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.179
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.564
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.33
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.77
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.544
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.332
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.107
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.258
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.123
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.203
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.052
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.038
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.128
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.037
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.039
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.03
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.026
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "workers": 2,
+      "warmup": false,
+      "run": 2,
+      "wallSeconds": 52.397480624960735,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=2",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-2-2.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 8.74
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 6.877
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 19.988
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.112
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.292
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.444
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 5.278
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.192
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 4.961
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.244
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.076
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.259
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 2.852
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 2.987
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 2.658
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.557
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 2.007
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.547
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.454
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.278
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.026
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.076
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.751
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.567
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.532
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.386
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.378
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.217
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.118
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.151
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.065
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.109
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.06
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.037
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.031
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.058
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.029
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 2,
+      "warmup": false,
+      "run": 2,
+      "wallSeconds": 52.022176374914125,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=2",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-2-2.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.067
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 8.787
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 5.905
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.101
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.329
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 6.011
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 5.964
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.275
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 5.314
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.38
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 3.869
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 4.924
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.321
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.182
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 2.981
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 2.796
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 2.68
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.514
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 2.064
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 1.87
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.577
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.374
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 0.931
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.305
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 0.896
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.732
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.627
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.516
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.232
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.339
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.102
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.113
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.276
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.05
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.04
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.111
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.037
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.042
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.026
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.033
+        }
+      ]
+    },
+    {
+      "phase": "before",
+      "workers": 2,
+      "warmup": false,
+      "run": 3,
+      "wallSeconds": 53.63272133283317,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=2",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/before-2-3.json"
+      ],
+      "suites": 37,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 8.849
+        },
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 6.912
+        },
+        {
+          "path": "tests/integration/build/override/override.integration.test.ts",
+          "seconds": 19.621
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.272
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 6.481
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.492
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 6.03
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 6.002
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 4.959
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.269
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.162
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.318
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.098
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 2.967
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 2.739
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.597
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.574
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 2.006
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.404
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.308
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.016
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 1.042
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.743
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.753
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.536
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.434
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.227
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.118
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.259
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.12
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.116
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.068
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.044
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.04
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.06
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.029
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.038
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "workers": 2,
+      "warmup": false,
+      "run": 3,
+      "wallSeconds": 53.16435362491757,
+      "exitCode": 0,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--maxWorkers=2",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/after-2-3.json"
+      ],
+      "suites": 40,
+      "tests": 285,
+      "files": [
+        {
+          "path": "tests/integration/build/locale/dynamic.integration.test.ts",
+          "seconds": 7.136
+        },
+        {
+          "path": "tests/integration/build/isolation/isolation-watch.integration.test.ts",
+          "seconds": 8.768
+        },
+        {
+          "path": "tests/integration/build/options/options.integration.test.ts",
+          "seconds": 5.947
+        },
+        {
+          "path": "tests/integration/build/locale/locale.integration.test.ts",
+          "seconds": 6.295
+        },
+        {
+          "path": "tests/integration/build/locale/chunks.integration.test.ts",
+          "seconds": 5.284
+        },
+        {
+          "path": "tests/integration/build/override/newtab.integration.test.ts",
+          "seconds": 6.212
+        },
+        {
+          "path": "tests/integration/types/registries.integration.test.ts",
+          "seconds": 5.288
+        },
+        {
+          "path": "tests/integration/build/override/history.integration.test.ts",
+          "seconds": 5.885
+        },
+        {
+          "path": "tests/integration/build/override/bookmarks.integration.test.ts",
+          "seconds": 5.82
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-threshold.integration.test.ts",
+          "seconds": 5.053
+        },
+        {
+          "path": "tests/integration/build/relay-runtime/relay-runtime.integration.test.ts",
+          "seconds": 5.027
+        },
+        {
+          "path": "tests/integration/types/relay.integration.test.ts",
+          "seconds": 4.478
+        },
+        {
+          "path": "tests/integration/types/content.integration.test.ts",
+          "seconds": 4.526
+        },
+        {
+          "path": "src/cli/plugins/content/RelayDeclaration.test.ts",
+          "seconds": 3.258
+        },
+        {
+          "path": "src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
+          "seconds": 3.162
+        },
+        {
+          "path": "tests/integration/types/view.integration.test.ts",
+          "seconds": 2.985
+        },
+        {
+          "path": "src/cli/index.test.ts",
+          "seconds": 2.762
+        },
+        {
+          "path": "tests/integration/build/permissions/permissions.integration.test.ts",
+          "seconds": 2.661
+        },
+        {
+          "path": "src/cli/bundler/plugins/build-assets-map/BuildAssetsMapPlugin.test.ts",
+          "seconds": 1.913
+        },
+        {
+          "path": "tests/integration/build/override/competing.integration.test.ts",
+          "seconds": 1.921
+        },
+        {
+          "path": "tests/integration/types/locale.integration.test.ts",
+          "seconds": 1.725
+        },
+        {
+          "path": "tests/integration/build/style-routing/delivery-spike.integration.test.ts",
+          "seconds": 1.539
+        },
+        {
+          "path": "tests/integration/build/virtual-modules/virtual-modules.integration.test.ts",
+          "seconds": 1.377
+        },
+        {
+          "path": "src/cli/bundler/plugins/isolated-styles/IsolatedStylesPlugin.test.ts",
+          "seconds": 0.952
+        },
+        {
+          "path": "tests/integration/build/style-routing/selective-split.integration.test.ts",
+          "seconds": 0.692
+        },
+        {
+          "path": "tests/integration/build/style-routing/style-routing.integration.test.ts",
+          "seconds": 1.237
+        },
+        {
+          "path": "tests/integration/build/locale/chunks-disabled.integration.test.ts",
+          "seconds": 0.844
+        },
+        {
+          "path": "src/cli/virtual/virtual.test.ts",
+          "seconds": 0.604
+        },
+        {
+          "path": "tests/integration/build/style-routing/routing-spike.integration.test.ts",
+          "seconds": 0.416
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-module/GenerateModulePlugin.test.ts",
+          "seconds": 0.267
+        },
+        {
+          "path": "tests/integration/build/style-routing/content-chunks.integration.test.ts",
+          "seconds": 0.21
+        },
+        {
+          "path": "src/cli/bundler/plugins/manifest/ManifestPlugin.test.ts",
+          "seconds": 0.121
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/ResourceAccessPlugin.test.ts",
+          "seconds": 0.109
+        },
+        {
+          "path": "tests/integration/build/content/content-api.integration.test.ts",
+          "seconds": 0.049
+        },
+        {
+          "path": "src/cli/bundler/plugins/generate-json/GenerateJsonPlugin.test.ts",
+          "seconds": 0.109
+        },
+        {
+          "path": "src/cli/bundler/plugins/entrypoint/EntrypointPlugin.test.ts",
+          "seconds": 0.041
+        },
+        {
+          "path": "src/cli/bundler/plugins/chunk-loader/ChunkLoaderPlugin.test.ts",
+          "seconds": 0.044
+        },
+        {
+          "path": "src/cli/bundler/plugins/utils/runtime-template.test.ts",
+          "seconds": 0.026
+        },
+        {
+          "path": "tests/build-output.test.ts",
+          "seconds": 0.036
+        },
+        {
+          "path": "src/cli/bundler/plugins/resource-access/utils.test.ts",
+          "seconds": 0.033
+        }
+      ]
+    }
+  ],
+  "validation": [
+    {
+      "name": "check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "wallSeconds": 31.93171454197727,
+      "exitCode": 0
+    },
+    {
+      "name": "full",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--json",
+        "--outputFile=/tmp/override-benchmark/full-after.json"
+      ],
+      "wallSeconds": 58.474541374947876,
+      "exitCode": 0
+    }
+  ],
+  "fullResult": {
+    "success": true,
+    "suites": 206,
+    "tests": 2003
+  }
+}

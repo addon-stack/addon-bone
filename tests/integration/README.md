@@ -23,7 +23,11 @@ tests/integration/
 │   │   ├── options.integration.test.ts
 │   │   └── embedded/
 │   ├── override/
-│   │   ├── override.integration.test.ts
+│   │   ├── newtab.integration.test.ts
+│   │   ├── bookmarks.integration.test.ts
+│   │   ├── history.integration.test.ts
+│   │   ├── competing.integration.test.ts
+│   │   ├── override-utils.ts
 │   │   ├── newtab/
 │   │   ├── bookmarks/
 │   │   └── history/
@@ -141,7 +145,7 @@ Tests copy application inputs to unique directories under `.cache/integration`. 
 - `build/options/embedded`: ten manifest checks covering explicit `openInTab: false` across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. No browser is launched.
 - `browser/view`: one Chrome MV3 case covering React offscreen and sandbox views rendered by the injected builder with their props and titles, a headless offscreen without a view container, and strings rendered as text by the React view, Vanilla view and React content adapters.
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
-- `build/override`: thirty manifest checks covering the New Tab, Bookmarks, and History applications across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. Supporting browsers receive `chrome_url_overrides`, the page HTML, its CSP, and the permission declared by the entrypoint; the others receive none of them. Three more cases add the History entrypoint to a copy of the New Tab application: Chrome and Edge builds fail naming both entrypoints, while Firefox keeps the New Tab with its own permission and without the History one. No browser is launched.
+- `build/override`: separate New Tab, Bookmarks, History and competing-entrypoint files let Jest schedule the scenarios across workers. The files share assertions, while each case keeps its own application copy and build. Thirty manifest checks cover the New Tab, Bookmarks, and History applications across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. Supporting browsers receive `chrome_url_overrides`, the page HTML, its CSP, and the permission declared by the entrypoint; the others receive none of them. Three more cases add the History entrypoint to a copy of the New Tab application: Chrome and Edge builds fail naming both entrypoints, while Firefox keeps the New Tab with its own permission and without the History one. No browser is launched.
 - `build/permissions/views`: four manifest checks of one application with two popups, two sidebars, and an options page that each declare permissions. Every built view contributes, including a popup and a sidebar that are not applied by default; Chrome MV2 has no sidebar, so its permissions are not requested; Firefox builds the sidebar action without `sidePanel`; MV2 declares hosts as permissions. No browser is launched.
 - `browser/override`: three Chrome MV3 cases opening `chrome://newtab`, `chrome://bookmarks`, and `chrome://history`. They verify that Chrome serves the extension page, React and Vanilla rendering, CSS, state/events, custom `as` and `htmlDir` naming, and a View chunk shared with a Page.
 - `browser/offscreen/service`: one Chrome MV3 round trip from background through Offscreen to a registered background service.

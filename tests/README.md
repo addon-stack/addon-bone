@@ -44,6 +44,7 @@ one explicit build and invoke `test:run` (or its underlying wrapper) directly, a
 
 The [2026-09-25 benchmark](benchmarks/2026-09-25.md) records final migration timings, raw runs and comparison limits.
 The [Relay type-checking follow-up](benchmarks/2026-09-25-relay-types.md) records the subsequent constructor inference fix.
+The [override scheduling follow-up](benchmarks/2026-09-25-override.md) compares the unchanged build matrix at eight and two workers.
 
 ## Groups and workers
 

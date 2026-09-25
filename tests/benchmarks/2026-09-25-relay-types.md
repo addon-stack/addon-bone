@@ -4,6 +4,9 @@ This follows the [migration benchmark](2026-09-25.md). Measurements use the same
 macOS arm64, Node 24.5.0 and TypeScript 5.9.3. Jest retains eight workers and `--no-sparkplug`.
 All reported test runs passed. These are local measurements, not Linux/Windows or Node 22 CI results.
 
+The subsequent [override scheduling follow-up](2026-09-25-override.md) records the split of the remaining long build file.
+The measurements here describe the state before that split.
+
 ## Diagnosis and change
 
 An independent compiler-host probe confirmed that narrowing `ContentScriptContainerTag` to `"div"` in memory reduces
