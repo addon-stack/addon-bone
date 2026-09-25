@@ -42,6 +42,9 @@ Commands that launch Jest forward arguments after `--` to Jest. Fixture preparat
 workflows, not Jest argument forwarders. Public build-dependent test commands always build first. CI and `check` reuse
 one explicit build and invoke `test:run` (or its underlying wrapper) directly, avoiding nested build commands.
 
+The [2026-09-25 benchmark](benchmarks/2026-09-25.md) records final migration timings, raw runs and comparison limits.
+The [Relay type-checking follow-up](benchmarks/2026-09-25-relay-types.md) records the subsequent constructor inference fix.
+
 ## Groups and workers
 
 `jest.config.ts` defines six projects: `unit-node`, `unit-dom`, `build`, `types`, `chrome` and `firefox`. Put DOM tests in the `unit-dom` patterns. Tests that execute the built CLI, consume package declarations or compile imports from the built package belong to `build` or `types`. Keep unit tests runnable with no `dist` directory. Each browser file contains scenarios for one browser only.
