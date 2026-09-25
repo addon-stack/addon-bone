@@ -1,4 +1,5 @@
-jest.mock("@addon-core/browser", () => ({getI18nMessage: jest.fn(() => "en")}));
+import {getBrowserTest} from "@tests/browser-harness/session";
+
 jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic-locale"));
 
 import {createElement, StrictMode} from "react";
@@ -17,12 +18,15 @@ const arabic: Pick<LocaleReactContract, "lang" | "dir"> = {
     dir: LocaleDir.RightToLeft,
 };
 
+beforeEach(() => {
+    getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(() => "en");
+});
+
 afterEach(() => {
     cleanup();
     document.documentElement.removeAttribute("lang");
     document.documentElement.removeAttribute("dir");
     document.body.replaceChildren();
-    jest.restoreAllMocks();
 });
 
 test("defaults to html and restores existing and absent attributes in StrictMode", () => {

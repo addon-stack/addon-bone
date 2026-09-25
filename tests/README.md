@@ -39,24 +39,30 @@ Preparation and fixture typechecks use a bounded queue of up to four processes. 
 
 See [integration/README.md](integration/README.md) for browser requirements and fixture layout. Browser tests use separate profiles, ports and application copies. Tests that edit or watch a fixture must retain their own copy and build; generated outputs must not be shared between mutable scenarios.
 
-## Browser harness migration
+## Browser harness
 
 `tests/jest.setup.ts` installs the browser harness for every unit, build and types test. Real Chrome/Firefox
 integrations load no setup. Each test gets real Browser/Storage modules unless it declares an inventoried local mock.
 There is no global module mock or per-file setup selection.
 
-`browser-harness/migration.json` records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule`
-calls for `@addon-core/*` and `@main/env`. Eight files still use these local mocks.
-Passing under harness setup does not prove that a locally mocked dependency was exercised. For each remaining mock,
-decide whether to replace it with Browser/Storage controls or retain an explicit dependency boundary.
+`browser-harness/local-mocks.json` records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule`
+calls for `@addon-core/*` and `@main/env`. The list is currently empty. Any future package mock requires an explicit inventory entry and review.
+Passing under harness setup does not prove that a locally mocked dependency was exercised. Review any future exception
+against the available Browser/Storage controls and document the dependency boundary it represents.
 `npm run test:inventory` rejects missing files and unrecorded or removed module mocks.
-Update the inventory alongside each migration so stale exceptions cannot remain unnoticed.
+Update the inventory alongside test changes so stale exceptions cannot remain unnoticed.
 
 The harness setup creates a fresh `BrowserTestSession` before every test. Use `getBrowserTest()` from
 `@tests/browser-harness/session` inside tests and hooks, not at module scope. The `@tests/*` alias maps to the root `tests/`
 directory in TypeScript and Jest. Browser and Storage imports are real unless the file declares a recorded local mock;
 build-time virtual modules can still supply explicit test fixtures. `NativeLocale.test.ts` demonstrates API controls
 and call history instead of function mocks.
+
+Locale tests configure the raw i18n API and exercise the real Storage package over harness storage, including namespaced
+keys, external changes and failures. `MemoryLocaleStorage` remains a custom-driver fixture for controlled pending
+writes and driver-sharing contracts. Build-generated `#adnbn/locale`, `#adnbn/page` and `#adnbn/runtime` retain explicit
+fixtures; they are not Browser/Storage replacements. Content node tests inject the styles runtime through that generated
+facade and use the real Browser URL helper.
 
 ```ts
 import {getBrowserTest} from "@tests/browser-harness/session";

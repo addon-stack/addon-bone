@@ -3,7 +3,7 @@ import {execFile} from "node:child_process";
 import {existsSync} from "node:fs";
 import path from "node:path";
 import {promisify} from "node:util";
-import {verifyMigrationInventory} from "./test-inventory-utils.mjs";
+import {verifyTestInfrastructure} from "./test-inventory-utils.mjs";
 
 const execute = promisify(execFile);
 const root = path.resolve(import.meta.dirname, "..");
@@ -37,7 +37,7 @@ for (const project of projects) {
 }
 assert.deepEqual(new Set(owners.keys()), expected, "Every test file must belong to exactly one Jest project");
 console.info(`${expected.size} test files, each in exactly one project`);
-verifyMigrationInventory(
+verifyTestInfrastructure(
     root,
     expected,
     tracked.split("\0").filter(file => file && existsSync(path.join(root, file)))

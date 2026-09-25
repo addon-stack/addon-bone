@@ -59,12 +59,12 @@ export function findStaticState(source, file) {
     return classes;
 }
 
-export function verifyMigrationInventory(root, testFiles, sourceFiles) {
+export function verifyTestInfrastructure(root, testFiles, sourceFiles) {
     const read = file => readFileSync(path.join(root, file), "utf8");
-    const {localMocks} = JSON.parse(read("tests/browser-harness/migration.json"));
+    const {localMocks} = JSON.parse(read("tests/browser-harness/local-mocks.json"));
 
     for (const file of Object.keys(localMocks)) {
-        assert(testFiles.has(file), `Stale migration entry: ${file}`);
+        assert(testFiles.has(file), `Stale local-mock entry: ${file}`);
     }
 
     const actualMocks = {};
@@ -82,7 +82,7 @@ export function verifyMigrationInventory(root, testFiles, sourceFiles) {
         localMocks,
         "Module-mock inventory changed; migrate mocks or explicitly review exceptions"
     );
-    console.info(`Migration: ${Object.keys(actualMocks).length} local-mock files remaining`);
+    console.info(`Local module mocks: ${Object.keys(actualMocks).length} files`);
 
     for (const file of sorted(Object.keys(actualMocks))) {
         console.info(`  ${file}: ${actualMocks[file].join(", ")}`);

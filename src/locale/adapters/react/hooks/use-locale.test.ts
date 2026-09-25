@@ -1,6 +1,5 @@
-jest.mock("@addon-core/browser", () => ({
-    getI18nMessage: jest.fn((key: string) => (key === "locale" ? "en" : "Native {{name}}")),
-}));
+import {getBrowserTest} from "@tests/browser-harness/session";
+
 jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic-locale"));
 
 import {createElement, StrictMode, useState} from "react";
@@ -17,9 +16,14 @@ import type {Structure} from "./tests/fixtures/dynamic-locale";
 const useFixtureLocale = (storage?: LocaleStorageDriver | false) =>
     useLocale(storage) as LocaleReactDynamicContract<Structure>;
 
+beforeEach(() => {
+    getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(key =>
+        key === "locale" ? "en" : "Native {{name}}"
+    );
+});
+
 afterEach(() => {
     cleanup();
-    jest.restoreAllMocks();
 });
 
 test("two roots share an instance, update immediately and keep previous render functions consistent", async () => {
