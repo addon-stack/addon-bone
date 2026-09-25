@@ -1,5 +1,5 @@
 import React from "react";
-import {act, cleanup, renderHook} from "@testing-library/react";
+import {act, cleanup, render, renderHook} from "@testing-library/react";
 import type {BrowserContextMessaging} from "@addon-core/browser/testing";
 import {getBrowserTest} from "@tests/browser-harness/session";
 import type {MessageData, MessageTargetHandler, MessageType} from "@typing/message";
@@ -14,6 +14,7 @@ type MessageMap = {
 type TextMessageType = "getStringLength" | "toUpperCase";
 type TextMessageHandler = MessageTargetHandler<MessageMap, TextMessageType>;
 type TextHandlerProps = {type: TextMessageType; handler: TextMessageHandler};
+type SuspendedHandlerProps = {value: string};
 type BooleanMessages = {isEnabled: () => boolean};
 
 let caller: BrowserContextMessaging;
@@ -63,6 +64,68 @@ test("preserves a synchronous false response through the hook", async () => {
         payload: false,
     });
 });
+
+test.each(["commit", "replace"] as const)(
+    "keeps the committed handler during a suspended render until its %s",
+    async completion => {
+        let ready = false;
+        let release!: () => void;
+        let update!: React.Dispatch<React.SetStateAction<string>>;
+        const pending = new Promise<void>(resolve => {
+            release = resolve;
+        });
+
+        function SuspendedHandler({value}: SuspendedHandlerProps) {
+            useMessageHandler<"sayHello", MessageMap>("sayHello", () => value);
+
+            if (value === "pending" && !ready) {
+                throw pending;
+            }
+
+            return React.createElement("div", null, value);
+        }
+
+        function Parent() {
+            const [value, setValue] = React.useState("committed");
+
+            update = setValue;
+
+            return React.createElement(
+                React.Suspense,
+                {fallback: "loading"},
+                React.createElement(SuspendedHandler, {value})
+            );
+        }
+
+        const view = render(React.createElement(Parent));
+
+        await act(async () => {
+            React.startTransition(() => update("pending"));
+        });
+
+        expect(view.container.textContent).toBe("committed");
+        await expect(send("sayHello", undefined)).resolves.toMatchObject({payload: "committed"});
+        expect(addListener).toHaveBeenCalledTimes(1);
+        expect(removeListener).not.toHaveBeenCalled();
+
+        await act(async () => {
+            if (completion === "replace") {
+                update("replacement");
+            } else {
+                ready = true;
+                release();
+                await pending;
+            }
+        });
+
+        const expected = completion === "replace" ? "replacement" : "pending";
+
+        expect(view.container.textContent).toBe(expected);
+        await expect(send("sayHello", undefined)).resolves.toMatchObject({payload: expected});
+        expect(addListener).toHaveBeenCalledTimes(1);
+        expect(removeListener).not.toHaveBeenCalled();
+    }
+);
 
 test("adds and removes the listener on mount and unmount", async () => {
     const {unmount} = renderHook(() =>

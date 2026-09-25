@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef} from "react";
+import {useCallback, useLayoutEffect, useRef} from "react";
 import {MessageDictionary, MessageTargetHandler, MessageType} from "@typing/message";
 
 import {Message} from "@message/providers";
@@ -14,13 +14,17 @@ export default function useMessageHandler<K extends MessageType<T>, T extends Me
     }
 
     const handlerRef = useRef(handler);
-    handlerRef.current = handler;
+
+    useLayoutEffect(() => {
+        // A suspended or abandoned render must not replace the active handler.
+        handlerRef.current = handler;
+    }, [handler]);
 
     const stableWrapper = useCallback<MessageTargetHandler<T, K>>((data, sender) => {
         return handlerRef.current(data, sender);
     }, []);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         return messageRef.current!.watch(type, stableWrapper);
     }, [type, stableWrapper]);
 }
