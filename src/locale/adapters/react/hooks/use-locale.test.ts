@@ -7,7 +7,7 @@ import {createElement, StrictMode, useState} from "react";
 import {renderToString} from "react-dom/server";
 import {act, cleanup, fireEvent, render, renderHook, waitFor} from "@testing-library/react";
 import {useLocale, useNativeLocale, type LocaleReactDynamicContract} from "../index";
-import {ObservableLocale} from "@locale/providers";
+import {ObservableLocale} from "@locale/observers";
 import {MemoryLocaleStorage} from "@locale/tests/fixtures";
 import {Language, LocaleDir, type LocaleStorageDriver} from "@typing/locale";
 

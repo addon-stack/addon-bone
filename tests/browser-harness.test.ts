@@ -5,7 +5,7 @@ import {createTabFixture} from "@addon-core/browser/testing";
 import {Storage} from "@addon-core/storage";
 
 import NativeLocale from "@locale/providers/NativeLocale";
-import ObservableLocale from "@locale/providers/ObservableLocale";
+import {ObservableLocale} from "@locale/observers";
 import {MemoryLocaleStorage} from "@locale/tests/fixtures";
 import OffscreenBridge from "@offscreen/OffscreenBridge";
 import SandboxMessage from "@sandbox/SandboxMessage";

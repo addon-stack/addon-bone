@@ -43,8 +43,8 @@ export const frameworkStateResetters = {
         Reflect.deleteProperty(Message, "instance");
     },
     ObservableLocale: () => {
-        const {default: ObservableLocale} = jest.requireActual<typeof import("@locale/providers/ObservableLocale")>(
-            "@locale/providers/ObservableLocale"
+        const {default: ObservableLocale} = jest.requireActual<typeof import("@locale/observers/ObservableLocale")>(
+            "@locale/observers/ObservableLocale"
         );
 
         Reflect.deleteProperty(ObservableLocale, "defaultInstance");

@@ -1,12 +1,12 @@
 jest.mock("@addon-core/browser", () => ({getI18nMessage: jest.fn(() => "en")}));
-jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic"));
+jest.mock("#adnbn/locale", () => require("@locale/providers/tests/fixtures/dynamic"));
 
 import {getI18nMessage} from "@addon-core/browser";
-import {ObservableLocale} from "@locale/providers";
+import {ObservableLocale} from "@locale/observers";
 import {MemoryLocaleStorage} from "../tests/fixtures";
 import {Language, type LocaleDynamicProvider, type LocaleStorageDriver} from "@typing/locale";
 
-import type {Structure} from "./tests/fixtures/dynamic";
+import type {Structure} from "@locale/providers/tests/fixtures/dynamic";
 
 afterEach(() => jest.restoreAllMocks());
 

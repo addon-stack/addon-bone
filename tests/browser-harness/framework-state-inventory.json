@@ -17,7 +17,7 @@
     "getInstance": true
   },
   "ObservableLocale": {
-    "file": "src/locale/providers/ObservableLocale.ts",
+    "file": "src/locale/observers/ObservableLocale.ts",
     "fields": [
       "defaultInstance",
       "memoryInstance",

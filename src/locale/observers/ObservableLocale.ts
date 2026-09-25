@@ -1,5 +1,5 @@
-import DynamicLocale from "./DynamicLocale";
-import CustomLocale from "./CustomLocale";
+import {DynamicLocale} from "../providers";
+import CustomLocale from "../providers/CustomLocale";
 
 import {LocaleStorage} from "../storage";
 
@@ -119,6 +119,7 @@ export default class ObservableLocale<T extends object = LocaleRegistry> impleme
 
         if (!storage) {
             this.publish();
+
             return lang;
         }
 

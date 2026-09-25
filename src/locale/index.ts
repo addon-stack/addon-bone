@@ -1,4 +1,5 @@
 export * from "./providers";
+export {ObservableLocale} from "./observers";
 export * from "./helpers";
 export * from "./storage";
 
