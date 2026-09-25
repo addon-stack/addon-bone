@@ -42,12 +42,12 @@ See [integration/README.md](integration/README.md) for browser requirements and 
 ## Browser harness migration
 
 `tests/jest.setup.ts` selects one setup per file before importing the test module. The harness is the default for
-unit, build and types projects. Only the 5 files in `browser-harness/migration.json` use `jest-legacy.setup.ts`.
+unit, build and types projects. Only the 3 files in `browser-harness/migration.json` use `jest-legacy.setup.ts`.
 Remove exceptions as their tests migrate; new tests use the harness without registration or per-file `jest.unmock`.
 Real Chrome/Firefox integrations load neither setup.
 
 The same inventory records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule` calls for
-`@addon-core/*` and `@main/env`. Eight additional files still use these local mocks, making 13 files to review in total.
+`@addon-core/*` and `@main/env`. Eight additional files still use these local mocks, making 11 files to review in total.
 Passing under harness setup does not prove that a locally mocked dependency was exercised. For each remaining mock,
 decide whether to replace it with Browser/Storage controls or retain an explicit dependency boundary.
 `npm run test:inventory` rejects missing files, duplicate legacy entries and unrecorded or removed module mocks.
@@ -106,9 +106,17 @@ not prove that every reset implementation is correct, so session lifecycle tests
 ### Remaining test-kit boundaries
 
 - `hasListeners` is not modeled. Check subscriptions through the context event's `listenerCount()`.
+- Offscreen has no post-creation hook. `ProxyOffscreen.test.ts` temporarily intercepts `contexts.create` with a
+  passthrough spy to register the real transport before the first message is sent. Replace this interception when
+  the kit provides a hook such as `offscreen.onCreated(context)` that completes before `createDocument` resolves.
+  `beforeCreate` cannot serve this purpose because the receiving context does not exist yet.
 - VM scenarios require uninstrumented injected code. Only `src/relay/adapters/invoke-relay.ts` is excluded from Babel
   coverage in every Jest project. Its host adapter remains instrumented; VM tests run the real bundled Relay manager,
   and Chrome MV3 plus Firefox MV2/MV3 integrations check the injected function in actual extensions.
+- Native Offscreen unit tests attach the real `RegisterOffscreen` transport when the harness creates its context and
+  dispose it with that context. The kit owns creation, closure and messaging; it does not execute the extension HTML.
+  `tests/offscreen/MockLockManager.ts` models the Web Locks boundary for scheduling tests. Firefox/MV2 bridge tests use
+  jsdom frames and explicit ready/error events; real-browser integrations remain the lifecycle check.
 - The session does not emulate Web Locks, DOM inside the guest, or extension HTML execution. Keep explicit external
   adapters where needed and real-browser checks for DOM, execution worlds, browser lifecycle and vendor behavior.
 - Consult the kit's `RAW_CAPABILITY_COVERAGE` before using another browser API. Extend the kit when a required capability

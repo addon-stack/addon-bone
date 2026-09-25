@@ -1,7 +1,5 @@
 {
   "legacyFiles": [
-    "src/offscreen/providers/Offscreen.test.ts",
-    "src/offscreen/OffscreenBridge.test.ts",
     "src/locale/providers/ObservableLocale.test.ts",
     "src/service/providers/Service.test.ts",
     "src/sandbox/SandboxMessage.test.ts"
@@ -37,9 +35,6 @@
     ],
     "src/entry/content/lifecycle/nodes/FrameNode.test.ts": [
       "@addon-core/browser"
-    ],
-    "src/offscreen/providers/Offscreen.test.ts": [
-      "@main/env"
     ]
   }
 }
