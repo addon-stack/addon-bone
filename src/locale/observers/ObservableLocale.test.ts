@@ -1,14 +1,17 @@
-jest.mock("@addon-core/browser", () => ({getI18nMessage: jest.fn(() => "en")}));
 jest.mock("#adnbn/locale", () => require("@locale/providers/tests/fixtures/dynamic"));
 
-import {getI18nMessage} from "@addon-core/browser";
-import {ObservableLocale} from "@locale/observers";
+import {Storage} from "@addon-core/storage";
+import {PackageName} from "@typing/app";
+import {getBrowserTest} from "@tests/browser-harness/session";
+import {ObservableLocale} from "./index";
 import {MemoryLocaleStorage} from "../tests/fixtures";
 import {Language, type LocaleDynamicProvider, type LocaleStorageDriver} from "@typing/locale";
 
 import type {Structure} from "@locale/providers/tests/fixtures/dynamic";
 
-afterEach(() => jest.restoreAllMocks());
+beforeEach(() => {
+    getBrowserTest().harness.configurable.chrome.i18n.getMessage.setResult("en");
+});
 
 test("provides current translations while snapshots retain their original language", async () => {
     const storage = new MemoryLocaleStorage();
@@ -113,6 +116,7 @@ test("serializes writes, saves equal selections and ignores old storage echoes",
         await blocked.promise;
         await originalSet(lang);
     });
+
     const first = locale.change(Language.French);
     const second = locale.change(Language.EnglishGreatBritain);
     await Promise.resolve();
@@ -200,6 +204,7 @@ test("a failed subscription does not leave a listener behind", async () => {
     jest.spyOn(storage, "watch").mockImplementationOnce(() => {
         throw new Error("cannot subscribe");
     });
+
     const locale = new ObservableLocale(storage);
     const failed = jest.fn();
     expect(() => locale.subscribe(failed)).toThrow("cannot subscribe");
@@ -218,8 +223,11 @@ test("a subscriber can select another language without reordering persistence", 
     const locale = new ObservableLocale(storage);
     let next: Promise<Language> | undefined;
     const stop = locale.subscribe(() => {
-        if (locale.lang() === Language.French) next = locale.change(Language.EnglishGreatBritain);
+        if (locale.lang() === Language.French) {
+            next = locale.change(Language.EnglishGreatBritain);
+        }
     });
+
     const first = locale.change(Language.French);
     expect(locale.lang()).toBe(Language.EnglishGreatBritain);
     expect(locale.snapshot().lang()).toBe(Language.EnglishGreatBritain);
@@ -301,9 +309,7 @@ test("reports background synchronization errors and still releases the listener"
 });
 
 test("custom storage and memory mode work when browser i18n is unavailable", async () => {
-    jest.mocked(getI18nMessage).mockImplementation(() => {
-        throw new Error("No i18n");
-    });
+    getBrowserTest().harness.capabilities.set("i18n.getMessage", false);
     const locale = new ObservableLocale(new MemoryLocaleStorage(Language.English));
     expect(locale.lang()).toBe(Language.French);
     await locale.sync();
@@ -312,5 +318,71 @@ test("custom storage and memory mode work when browser i18n is unavailable", asy
     await memory.change(Language.English);
     expect(memory.lang()).toBe(Language.English);
     await expect(memory.sync()).rejects.toThrow("Language is not saving in storage");
-    jest.mocked(getI18nMessage).mockReturnValue("en");
+});
+
+test("restores, persists and observes the selected language through real browser storage", async () => {
+    const session = getBrowserTest();
+    const storage = Storage.Local<{locale: Language}>({namespace: PackageName});
+    const locale = new ObservableLocale<Structure>();
+    const restored = Promise.withResolvers<void>();
+    const externalChange = Promise.withResolvers<void>();
+    const listenersBefore = session.harness.storage.onChanged.listenerCount();
+
+    await storage.set("locale", Language.French);
+    await session.harness.storage.flushChanges();
+
+    const stop = locale.subscribe(() => {
+        if (locale.lang() === Language.French) {
+            restored.resolve();
+        }
+
+        if (locale.lang() === Language.English) {
+            externalChange.resolve();
+        }
+    });
+
+    session.addCleanup(stop);
+    await restored.promise;
+    expect(locale.trans("app.title")).toBe("Catalogue français");
+    expect(session.harness.storage.onChanged.listenerCount()).toBe(listenersBefore + 1);
+
+    const previous = locale.snapshot();
+
+    await locale.change(Language.EnglishGreatBritain);
+    await expect(storage.get("locale")).resolves.toBe(Language.EnglishGreatBritain);
+    expect(previous.lang()).toBe(Language.French);
+    await storage.set("locale", Language.English);
+    await session.harness.storage.flushChanges();
+    await externalChange.promise;
+    expect(locale.lang()).toBe(Language.English);
+    expect(session.harness.storage.local.set.calls).toHaveLength(3);
+    stop();
+    expect(session.harness.storage.onChanged.listenerCount()).toBe(listenersBefore);
+});
+
+test("preserves browser storage read errors and allows a later synchronization", async () => {
+    const session = getBrowserTest();
+    const storage = Storage.Local<{locale: Language}>({namespace: PackageName});
+    const locale = new ObservableLocale();
+
+    session.harness.storage.local.get.failNext(new Error("Browser read denied"));
+
+    await expect(locale.sync()).rejects.toThrow("Browser read denied");
+    expect(locale.lang()).toBe(Language.English);
+    await storage.set("locale", Language.French);
+    await expect(locale.sync()).resolves.toBe(Language.French);
+});
+
+test("continues persistence after a browser storage write error", async () => {
+    const session = getBrowserTest();
+    const storage = Storage.Local<{locale: Language}>({namespace: PackageName});
+    const locale = new ObservableLocale();
+
+    session.harness.storage.local.set.failNext(new Error("Browser write denied"));
+
+    await expect(locale.change(Language.French)).rejects.toThrow("Browser write denied");
+    expect(locale.lang()).toBe(Language.French);
+    await expect(storage.get("locale")).resolves.toBeUndefined();
+    await expect(locale.change(Language.EnglishGreatBritain)).resolves.toBe(Language.EnglishGreatBritain);
+    await expect(storage.get("locale")).resolves.toBe(Language.EnglishGreatBritain);
 });

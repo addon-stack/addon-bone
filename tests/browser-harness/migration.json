@@ -1,6 +1,5 @@
 {
   "legacyFiles": [
-    "src/locale/observers/ObservableLocale.test.ts",
     "src/service/providers/Service.test.ts",
     "src/sandbox/SandboxMessage.test.ts"
   ],
@@ -17,9 +16,6 @@
     "src/locale/providers/DynamicLocale.test.ts": [
       "@addon-core/browser",
       "@addon-core/storage"
-    ],
-    "src/locale/observers/ObservableLocale.test.ts": [
-      "@addon-core/browser"
     ],
     "src/locale/adapters/react/hooks/use-locale.test.ts": [
       "@addon-core/browser"
