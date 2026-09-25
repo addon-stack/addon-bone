@@ -42,12 +42,12 @@ See [integration/README.md](integration/README.md) for browser requirements and 
 ## Browser harness migration
 
 `tests/jest.setup.ts` selects one setup per file before importing the test module. The harness is the default for
-unit, build and types projects. Only the 2 files in `browser-harness/migration.json` use `jest-legacy.setup.ts`.
+unit, build and types projects. Only `SandboxMessage.test.ts`, listed in `browser-harness/migration.json`, still uses `jest-legacy.setup.ts`.
 Remove exceptions as their tests migrate; new tests use the harness without registration or per-file `jest.unmock`.
 Real Chrome/Firefox integrations load neither setup.
 
 The same inventory records local `jest.mock`, `jest.doMock`, `jest.setMock` and `jest.unstable_mockModule` calls for
-`@addon-core/*` and `@main/env`. Eight additional files still use these local mocks, making 10 files to review in total.
+`@addon-core/*` and `@main/env`. Eight additional files still use these local mocks, making 9 files to review in total.
 Passing under harness setup does not prove that a locally mocked dependency was exercised. For each remaining mock,
 decide whether to replace it with Browser/Storage controls or retain an explicit dependency boundary.
 `npm run test:inventory` rejects missing files, duplicate legacy entries and unrecorded or removed module mocks.

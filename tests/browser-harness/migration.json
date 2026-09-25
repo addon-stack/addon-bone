@@ -1,12 +1,8 @@
 {
   "legacyFiles": [
-    "src/service/providers/Service.test.ts",
     "src/sandbox/SandboxMessage.test.ts"
   ],
   "localMocks": {
-    "src/service/providers/Service.test.ts": [
-      "@addon-core/browser"
-    ],
     "src/locale/helpers.test.ts": [
       "@addon-core/browser"
     ],
