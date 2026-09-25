@@ -1,7 +1,5 @@
 {
   "legacyFiles": [
-    "src/message/providers/Message.test.ts",
-    "src/message/adapters/react/useMessageHandler.test.ts",
     "src/offscreen/providers/Offscreen.test.ts",
     "src/offscreen/OffscreenBridge.test.ts",
     "src/locale/providers/ObservableLocale.test.ts",
