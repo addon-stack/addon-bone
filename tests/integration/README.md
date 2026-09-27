@@ -162,6 +162,17 @@ a larger timeout or one green local run does not establish stability.
 
 ## Coverage
 
+The one-shot build lifecycle is checked with real Rspack compilers in `src/cli/builders/app/build.test.ts`.
+`build` returns `Stats` only after compiler shutdown and attempts `close` after compilation errors too.
+`BuildError` retains available statistics and the original cause; simultaneous compilation and close failures
+are both retained in an `AggregateError` cause. A close failure is reported, not treated as successful cleanup.
+The CLI owns statistics formatting, colors and the exit code. Its subprocess tests additionally verify exit codes,
+shutdown before success output, and awaiting the internal app build. Watch still has a separate lifecycle and
+remains covered through the CLI, including `isolation-watch`.
+
+This does not yet make app builds safe to run concurrently in one process: configuration resolution and user
+plugins still share `process.env`. Fixture builds continue to use child processes until that contract is addressed.
+
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
 - `types/view`: shared View and adapter render types through the public source and built package APIs, render and container props inference, the render contract adopted by Offscreen and Sandbox, and the rejection of Promise and plain-object render values.
 - `types/registries`: generated registry augmentation, empty fallbacks, public and internal type agreement, and message contracts against source and built package APIs. Compiler-host path checks cover both slash styles.

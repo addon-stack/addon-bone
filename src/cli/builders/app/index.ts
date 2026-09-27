@@ -1,6 +1,7 @@
-import {rspack} from "@rspack/core";
+import {rspack, type Stats} from "@rspack/core";
 
-import {build, watch} from "./command";
+import {build} from "./build";
+import {watch} from "./watch";
 
 import configResolver from "@cli/resolvers/config";
 import bundlerResolver from "@cli/resolvers/bundler";
@@ -9,12 +10,18 @@ import {processPluginHandler} from "@cli/resolvers/plugin";
 import {OptionalConfig, ReadonlyConfig} from "@typing/config";
 import {Command} from "@typing/app";
 
+export {BuildError} from "./build";
+
 const startup = async (config: ReadonlyConfig): Promise<void> => {
     await Array.fromAsync(processPluginHandler(config.plugins, "startup", {config}));
 };
 
-export default async (config: OptionalConfig): Promise<void> => {
+export default async (config: OptionalConfig): Promise<Stats | undefined> => {
     const resolverConfig = await configResolver(config);
+
+    if (resolverConfig.command !== Command.Build && resolverConfig.command !== Command.Watch) {
+        throw new Error("Unknown command");
+    }
 
     await startup(resolverConfig);
 
@@ -22,17 +29,9 @@ export default async (config: OptionalConfig): Promise<void> => {
 
     const compiler = rspack(rspackConfig);
 
-    switch (resolverConfig.command) {
-        case Command.Build:
-            build(compiler);
-            break;
-
-        case Command.Watch:
-            watch(compiler);
-            break;
-
-        default:
-            console.error("Unknown command");
-            process.exit(1);
+    if (resolverConfig.command === Command.Build) {
+        return await build(compiler);
     }
+
+    watch(compiler);
 };

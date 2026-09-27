@@ -2,7 +2,7 @@ import cac from "cac";
 import {consola} from "consola";
 import fs from "fs";
 
-import app from "./builders/app";
+import app, {BuildError} from "./builders/app";
 
 import {Command} from "@typing/app";
 import {Browser} from "@typing/browser";
@@ -51,7 +51,7 @@ cli.command("build [root]", "Build for production")
     .option("--analyze", "Visualize extension bundle")
     .action(async (root, options) => {
         try {
-            await app({
+            const stats = await app({
                 command: Command.Build,
                 mode: options.mode,
                 debug: options.debug,
@@ -62,8 +62,25 @@ cli.command("build [root]", "Build for production")
                 configFile: options.config,
                 analyze: options.analyze,
             });
+
+            if (stats) {
+                console.log(stats.toString({colors: true}));
+            }
         } catch (e) {
-            consola.error(e);
+            if (e instanceof BuildError) {
+                console.error(e.message);
+
+                if (e.stats) {
+                    console.error(e.stats.toString({colors: true, errors: true}));
+                }
+
+                if (e.cause !== undefined) {
+                    console.error(e.cause);
+                }
+            } else {
+                consola.error(e);
+            }
+
             process.exitCode = 1;
         }
     });

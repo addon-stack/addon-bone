@@ -4,6 +4,7 @@ import {spawnSync} from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
+import {stripVTControlCharacters} from "util";
 
 const cli = path.resolve(__dirname, "../../bin/adnbn.js");
 const fixtures = path.join(__dirname, "tests/fixtures/exit-code");
@@ -21,7 +22,7 @@ describe("CLI exit codes", () => {
         fs.rmSync(root, {recursive: true, force: true});
     });
 
-    const run = (command: "build" | "watch", fixture: string) => {
+    const run = (command: "build" | "watch", fixture: string, failure?: string) => {
         fs.cpSync(path.join(fixtures, fixture), root, {recursive: true});
 
         const result = spawnSync(process.execPath, [cli, command, root, "-a", "exit-code", "-b", "chrome"], {
@@ -29,6 +30,7 @@ describe("CLI exit codes", () => {
             encoding: "utf8",
             timeout: 30_000,
             maxBuffer: 4 * 1024 * 1024,
+            env: {...process.env, ADNBN_TEST_BUILD_FAILURE: failure ?? ""},
         });
 
         if (result.error) {
@@ -37,7 +39,7 @@ describe("CLI exit codes", () => {
 
         expect(result.signal).toBeNull();
 
-        return {status: result.status, output: `${result.stdout}\n${result.stderr}`};
+        return {status: result.status, output: stripVTControlCharacters(`${result.stdout}\n${result.stderr}`)};
     };
 
     test("build exits with 0 and emits an extension on success", () => {
@@ -71,5 +73,58 @@ describe("CLI exit codes", () => {
         expect(result.output).toContain('Invalid language "unsupported" provided by config');
         expect(result.status).toBe(1);
         expect(fs.existsSync(path.join(artifact, "manifest.json"))).toBe(false);
+    });
+
+    test("prints successful build statistics only after compiler shutdown", () => {
+        const result = run("build", "lifecycle");
+
+        expect(result.status).toBe(0);
+        expect(fs.readFileSync(path.join(artifact, "compiler-closed.txt"), "utf8")).toBe("closed");
+        expect(result.output).toContain("Lifecycle fixture shutdown finished");
+        expect(result.output).toContain("compiled successfully");
+        expect(result.output.indexOf("Lifecycle fixture shutdown finished")).toBeLessThan(
+            result.output.indexOf("compiled successfully")
+        );
+    });
+
+    test.each([
+        {failure: "compilation", messages: ["Lifecycle fixture compilation failure"]},
+        {failure: "run", messages: ["Lifecycle fixture run failure"]},
+        {failure: "close", messages: ["Lifecycle fixture close failure"]},
+        {failure: "both", messages: ["Lifecycle fixture run failure", "Lifecycle fixture close failure"]},
+    ])("build exits with 1 after shutdown for $failure failure", ({failure, messages}) => {
+        const result = run("build", "lifecycle", failure);
+
+        expect(result.status).toBe(1);
+        expect(fs.readFileSync(path.join(artifact, "compiler-closed.txt"), "utf8")).toBe("closed");
+
+        for (const message of messages) {
+            expect(result.output).toContain(message);
+        }
+    });
+
+    test("the internal app build returns Stats after shutdown without printing them", () => {
+        fs.cpSync(path.join(fixtures, "lifecycle"), root, {recursive: true});
+        const result = spawnSync(
+            process.execPath,
+            [
+                path.join(__dirname, "tests/fixtures/build-api.mjs"),
+                path.resolve(__dirname, "../../dist/cli/builders/app/index.js"),
+                root,
+                artifact,
+            ],
+            {
+                cwd: root,
+                encoding: "utf8",
+                timeout: 30_000,
+                env: {...process.env, ADNBN_TEST_BUILD_FAILURE: ""},
+            }
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(result.signal).toBeNull();
+        expect(result.status).toBe(0);
+        expect(result.stdout).toContain("Build API resolved after shutdown");
+        expect(stripVTControlCharacters(result.stdout)).not.toContain("compiled successfully");
     });
 });
