@@ -1,13 +1,11 @@
-/** @jest-environment node */
-
 import {spawnSync} from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
 import {stripVTControlCharacters} from "util";
 
-const cli = path.resolve(__dirname, "../../bin/adnbn.js");
-const fixtures = path.join(__dirname, "tests/fixtures/exit-code");
+const cli = path.resolve(__dirname, "../../../../bin/adnbn.js");
+const fixtures = path.join(__dirname, "fixtures/exit-code");
 
 describe("CLI exit codes", () => {
     let root: string;
@@ -22,16 +20,20 @@ describe("CLI exit codes", () => {
         fs.rmSync(root, {recursive: true, force: true});
     });
 
-    const run = (command: "build" | "watch", fixture: string, failure?: string) => {
+    const run = (command: "build" | "watch", fixture: string, failure?: string, configFile = "adnbn.config.ts") => {
         fs.cpSync(path.join(fixtures, fixture), root, {recursive: true});
 
-        const result = spawnSync(process.execPath, [cli, command, root, "-a", "exit-code", "-b", "chrome"], {
-            cwd: root,
-            encoding: "utf8",
-            timeout: 30_000,
-            maxBuffer: 4 * 1024 * 1024,
-            env: {...process.env, ADNBN_TEST_BUILD_FAILURE: failure ?? ""},
-        });
+        const result = spawnSync(
+            process.execPath,
+            [cli, command, root, "-a", "exit-code", "-b", "chrome", "--config", configFile],
+            {
+                cwd: root,
+                encoding: "utf8",
+                timeout: 30_000,
+                maxBuffer: 4 * 1024 * 1024,
+                env: {...process.env, ADNBN_TEST_BUILD_FAILURE: failure ?? ""},
+            }
+        );
 
         if (result.error) {
             throw result.error;
@@ -54,6 +56,15 @@ describe("CLI exit codes", () => {
         expect(JSON.parse(fs.readFileSync(path.join(artifact, "_locales/fr/messages.json"), "utf8"))).toMatchObject({
             cart_items: {message: "article|articles"},
             locale: {message: "fr"},
+        });
+    });
+
+    test("keeps native JavaScript configs supported by the ordinary CLI", () => {
+        const result = run("build", "javascript", undefined, "adnbn.config.mjs");
+
+        expect(result.status).toBe(0);
+        expect(JSON.parse(fs.readFileSync(path.join(artifact, "manifest.json"), "utf8"))).toMatchObject({
+            version: "1.0.0",
         });
     });
 
@@ -101,30 +112,5 @@ describe("CLI exit codes", () => {
         for (const message of messages) {
             expect(result.output).toContain(message);
         }
-    });
-
-    test("the internal app build returns Stats after shutdown without printing them", () => {
-        fs.cpSync(path.join(fixtures, "lifecycle"), root, {recursive: true});
-        const result = spawnSync(
-            process.execPath,
-            [
-                path.join(__dirname, "tests/fixtures/build-api.mjs"),
-                path.resolve(__dirname, "../../dist/cli/builders/app/index.js"),
-                root,
-                artifact,
-            ],
-            {
-                cwd: root,
-                encoding: "utf8",
-                timeout: 30_000,
-                env: {...process.env, ADNBN_TEST_BUILD_FAILURE: ""},
-            }
-        );
-
-        expect(result.error).toBeUndefined();
-        expect(result.signal).toBeNull();
-        expect(result.status).toBe(0);
-        expect(result.stdout).toContain("Build API resolved after shutdown");
-        expect(stripVTControlCharacters(result.stdout)).not.toContain("compiled successfully");
     });
 });

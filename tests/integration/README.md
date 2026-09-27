@@ -1,6 +1,6 @@
 # Integration tests
 
-These tests cover application builds, browser execution, and generated TypeScript contracts. Build checks through the public CLI live in `build`; tests that launch Chrome or Firefox live in `browser`; declaration and consumer type checks live in `types`. Each area keeps its tests beside their fixtures.
+These tests cover application builds, browser execution, and generated TypeScript contracts. Build checks through the CLI and the built package live in `build`; tests that launch Chrome or Firefox live in `browser`; declaration and consumer type checks live in `types`. Each area keeps its tests beside their fixtures.
 
 ## Layout
 
@@ -9,6 +9,15 @@ Selected scenario files and shared infrastructure:
 ```text
 tests/integration/
 ├── build/
+│   ├── cli/
+│   │   ├── cli.integration.test.ts
+│   │   ├── build-api.integration.test.ts
+│   │   ├── dotenv.integration.test.ts
+│   │   ├── fixtures/
+│   │   │   ├── exit-code/
+│   │   │   ├── environment/
+│   │   │   └── dotenv/
+│   │   └── scripts/
 │   ├── locale/
 │   │   ├── locale.integration.test.ts
 │   │   ├── dynamic.integration.test.ts
@@ -166,12 +175,32 @@ The one-shot build lifecycle is checked with real Rspack compilers in `src/cli/b
 `build` returns `Stats` only after compiler shutdown and attempts `close` after compilation errors too.
 `BuildError` retains available statistics and the original cause; simultaneous compilation and close failures
 are both retained in an `AggregateError` cause. A close failure is reported, not treated as successful cleanup.
-The CLI owns statistics formatting, colors and the exit code. Its subprocess tests additionally verify exit codes,
-shutdown before success output, and awaiting the internal app build. Watch still has a separate lifecycle and
+The CLI owns statistics formatting, colors and the exit code. `build/cli/cli.integration.test.ts` launches the
+real CLI to check exit codes, diagnostics and shutdown before success output. `build-api.integration.test.ts`
+checks the built app API, including awaiting shutdown without printing statistics. Their application fixtures
+live in `build/cli/fixtures`; Node subprocess drivers live in `build/cli/scripts`. These tests deliberately load
+`dist` to exercise Node's real module/config loader. The source-level `build.test.ts` above imports `./build`
+directly and has no dependency on `dist`. Watch still has a separate lifecycle and
 remains covered through the CLI, including `isolation-watch`.
 
-This does not yet make app builds safe to run concurrently in one process: configuration resolution and user
-plugins still share `process.env`. Fixture builds continue to use child processes until that contract is addressed.
+The internal `buildApp(config): Promise<Stats>` entry in `src/cli/builders/app/index.ts` is a sequential
+one-shot pilot. It snapshots the existing `process.env` object before config resolution and restores its values
+and identity in `finally`, including added, changed and deleted keys. Config, startup, bundler, compilation and
+shutdown hooks see the build environment until compiler shutdown settles. A second `buildApp` call rejects
+before reading config or modifying the active build's environment, including while shutdown is pending.
+
+This is a transitional environment transaction, not process isolation. Do not mix it with watch, direct calls
+to the config resolver, or unrelated asynchronous work that writes `process.env`. Plugins must await their own
+work; detached tasks, module caches and other global state are not restored. The CLI and integration fixtures
+continue to use their existing process boundary; watch is outside the pilot.
+
+`build/cli/build-api.integration.test.ts` exercises real builds with TypeScript configs: A → B → A after a dotenv change, observations
+inside config and plugin hooks, concurrent-call rejection at startup and shutdown, and recovery after config,
+startup, bundler, run, compilation and close failures. The pilot accepts only `.ts`, `.mts` and `.cts` configs;
+other formats reject before config execution. Native JS configs may retain evaluated exports in Node's module
+cache across builds; environment restoration alone does not refresh them. Use the ordinary CLI for those
+projects. This restriction belongs only to `buildApp`, not the CLI. Repeated builds are checked for all three
+TypeScript extensions; imported native modules still retain their normal Node cache semantics.
 
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
 - `types/view`: shared View and adapter render types through the public source and built package APIs, render and container props inference, the render contract adopted by Offscreen and Sandbox, and the rejection of Promise and plain-object render values.
@@ -212,7 +241,7 @@ Loading happens before the user config executes and again after its overrides ar
 pass, existing host variables remain, but newly selected file values replace earlier values for the bundled
 `process.env` substitution. The bundle receives filtered file values and the four reserved values, not a copy
 of the host environment. `${VAR}` references remain literal; the framework does not interpolate dotenv values.
-`src/cli/resolvers/dotenv.test.ts` verifies both host values and actual Rspack substitution.
+`build/cli/dotenv.integration.test.ts` verifies both host values and actual Rspack substitution.
 
 The extra dotenv pass in `c12` is disabled. **Behavior change:** running the CLI from a directory outside the
 project no longer reads that directory's `.env`, and its interpolated values no longer reach user config or

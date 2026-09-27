@@ -14,7 +14,7 @@ await build(
     rspack({
         mode: "development",
         target: "node",
-        entry: path.join(import.meta.dirname, "environment.cjs"),
+        entry: path.join(import.meta.dirname, "../fixtures/dotenv/environment.cjs"),
         output: {path: output, filename: "environment.cjs", library: {type: "commonjs2"}},
         plugins: bundler.plugins,
     })

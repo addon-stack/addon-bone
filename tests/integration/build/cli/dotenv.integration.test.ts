@@ -3,8 +3,8 @@ import {cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const fixtures = path.join(__dirname, "tests/fixtures/dotenv");
-const resolver = path.resolve(__dirname, "../../../dist/cli/resolvers/config.js");
+const fixtures = path.join(__dirname, "fixtures/dotenv");
+const resolver = path.resolve(__dirname, "../../../../dist/cli/resolvers/config.js");
 const filenames = [
     ".env.development.chrome.local",
     ".env.development.chrome",
@@ -37,12 +37,16 @@ describe("dotenv resolution through the built config loader", () => {
         const inherited = Object.fromEntries(
             Object.entries(process.env).filter(([key]) => !key.startsWith("ADNBN_ENV_"))
         );
-        const result = spawnSync(process.execPath, [path.join(fixtures, "inspect.mjs"), resolver, root, configFile], {
-            cwd,
-            env: {...inherited, ...env},
-            encoding: "utf8",
-            timeout: 30_000,
-        });
+        const result = spawnSync(
+            process.execPath,
+            [path.join(__dirname, "scripts/inspect-dotenv.mjs"), resolver, root, configFile],
+            {
+                cwd,
+                env: {...inherited, ...env},
+                encoding: "utf8",
+                timeout: 30_000,
+            }
+        );
 
         expect(result.error).toBeUndefined();
         expect({status: result.status, stderr: result.stderr}).toEqual({status: 0, stderr: ""});
