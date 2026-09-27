@@ -198,3 +198,22 @@ Browser execution covers the installed Chrome in MV3 and Firefox in MV2/MV3. It 
 Keep these HTML files outside the application's `src` directory. They need no separate package or build tool. The server uses an ephemeral loopback port and stops after the test.
 
 - `browser/relay/scripting`: Chrome MV3 and Firefox MV2/MV3 check real Relay scripting success, undefined/null results, remote errors, immediate missing-manager errors and exhausted retries (#109).
+
+## Build environment contract
+
+Only the framework loads dotenv files. Within each directory it reads, in order:
+`.env.<mode>.<browser>.local`, `.env.<mode>.<browser>`, `.env.<browser>.local`, `.env.<browser>`,
+`.env.<mode>.local`, `.env.<mode>`, `.env.local`, `.env`. It reads all eight names in the app source
+directory first, then the app directory, then the project root. The first file value wins.
+Existing process variables take precedence in the host process; `APP`, `BROWSER`, `MODE`, and
+`MANIFEST_VERSION` are always replaced with the current build target.
+
+Loading happens before the user config executes and again after its overrides are applied. On the second
+pass, existing host variables remain, but newly selected file values replace earlier values for the bundled
+`process.env` substitution. The bundle receives filtered file values and the four reserved values, not a copy
+of the host environment. `${VAR}` references remain literal; the framework does not interpolate dotenv values.
+`src/cli/resolvers/dotenv.test.ts` verifies both host values and actual Rspack substitution.
+
+The extra dotenv pass in `c12` is disabled. **Behavior change:** running the CLI from a directory outside the
+project no longer reads that directory's `.env`, and its interpolated values no longer reach user config or
+plugins. Put build variables in the app/project dotenv files or export them explicitly in the calling process.

@@ -51,6 +51,7 @@ const shared: Config = {
 const buildTests = [
     "<rootDir>/src/cli/bundler/plugins/**/*.test.ts",
     "<rootDir>/src/cli/index.test.ts",
+    "<rootDir>/src/cli/resolvers/dotenv.test.ts",
     "<rootDir>/src/cli/builders/app/**/*.test.ts",
     "<rootDir>/src/cli/virtual/virtual.test.ts",
     "<rootDir>/src/cli/plugins/content/RelayDeclaration.test.ts",
