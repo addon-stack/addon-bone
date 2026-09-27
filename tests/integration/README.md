@@ -137,6 +137,29 @@ These groups run test files in parallel, with up to eight workers by default (on
 
 Tests copy application inputs to unique directories under `.cache/integration`. Prepared dependencies and generated files are excluded from the copy and recreated there. Cleanup removes only the run's copy and temporary Chrome profile; it does not remove the editor environment in the source fixture or change the `addon` playground.
 
+### Browser startup
+
+Every browser integration uses `startBrowserSession` in `browser/utils/session.ts`. It owns the browser process,
+protocol connection and profile cleanup, including failed startup. The default `startupTimeout` is 30 seconds:
+one budget from spawning the process through Chrome's `Browser.getVersion` or Firefox's `session.new` response.
+The Chrome HTTP probe is limited to the smaller of five seconds and the remaining budget; protocol connection
+attempts and readiness requests also use the remaining budget. Extension installation and page readiness are
+separate operations. Scenario `waitFor` calls retain their 15-second default and test deadlines are unchanged.
+
+Tests that manage multiple targets use `{createPage: false}` and the session's `chrome` or `firefox` client,
+`port` and `extensionId`. Firefox subscriptions needed before extension installation go in `firefoxEvents`.
+Always close the session in `finally`; its `output` getter supplies browser stderr for failure diagnostics.
+
+The Jest reporter writes `.cache/integration/browser-startup.json` after each run. It contains per-start test
+names, files, durations and failures, plus successful-start median, nearest-rank p95 and maximum per browser.
+Durations exclude binary discovery, profile allocation, extension installation and cleanup. A successful startup
+does not imply that extension installation or the test passed. CI uploads this report even when browser tests fail.
+For comparison runs, set `ADNBN_BROWSER_STARTUP_REPORT` to distinct output paths; the default file describes only
+the latest completed Jest invocation, including an empty report when it starts no browsers. Collection uses
+buffered console diagnostics, so keep the default `--verbose=false` and do not pass Jest `--silent` when measuring startup. An interrupted/killed Jest
+worker may not deliver its diagnostics. Use repeated CI reports to assess distributions and failure frequency;
+a larger timeout or one green local run does not establish stability.
+
 ## Coverage
 
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.

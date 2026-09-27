@@ -1,53 +1,27 @@
-import {spawn, type ChildProcess} from "child_process";
-import {mkdtemp, readFile, rm} from "fs/promises";
-import os from "os";
+import {readFile} from "fs/promises";
 import path from "path";
 
 import {createIntegrationFixture} from "../../utils/fixture";
-import {browserVersion, findChromeBinary} from "../utils/chrome";
+import {startBrowserSession, type BrowserSession} from "../utils/session";
 import CdpClient from "../utils/CdpClient";
-import {getFreePort, stop, waitFor} from "../utils/browser";
+import {waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {changeLanguage, expectPanels, localeFixtureDirectory, readPanels} from "./utils";
 
 jest.setTimeout(90_000);
 
 test("Chrome shares locale with views and ISOLATED, and loads the MAIN catalogue through common content", async () => {
-    const binary = findChromeBinary(ADNBN_TEST_ROOT);
-
-    if (!binary) {
-        throw new Error("Install Chrome for Testing or set ADNBN_CHROME_BIN");
-    }
-
     const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, localeFixtureDirectory);
-    const profile = await mkdtemp(path.join(os.tmpdir(), "adnbn-locale-chrome-"));
-    let process: ChildProcess | undefined;
+    let session: BrowserSession | undefined;
     let client: CdpClient | undefined;
     let site: IntegrationSite | undefined;
 
     try {
         const directory = await fixture.build();
         const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));
-        const port = await getFreePort();
-
-        process = spawn(
-            binary,
-            [
-                "--headless=new",
-                "--no-sandbox",
-                "--no-first-run",
-                "--no-default-browser-check",
-                `--user-data-dir=${profile}`,
-                `--remote-debugging-port=${port}`,
-                "about:blank",
-            ],
-            {stdio: "ignore"}
-        );
-
-        const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(port));
-        client = await CdpClient.connect(webSocketDebuggerUrl);
-        const extension = await client.send("Extensions.loadUnpacked", {path: directory});
-        const origin = `chrome-extension://${extension.id}`;
+        session = await startBrowserSession("chrome", ADNBN_TEST_ROOT, directory, {createPage: false});
+        client = session.chrome!;
+        const origin = `chrome-extension://${session.extensionId}`;
 
         const attach = async (targetId: string): Promise<string> => {
             const {sessionId} = await client!.send("Target.attachToTarget", {targetId, flatten: true});
@@ -114,14 +88,9 @@ test("Chrome shares locale with views and ISOLATED, and loads the MAIN catalogue
 
         expect(client.runtimeErrors).toEqual([]);
     } finally {
-        await client?.close();
-
-        if (process) {
-            await stop(process);
-        }
+        await session?.close();
 
         await site?.close();
         await fixture.dispose();
-        await rm(profile, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 });

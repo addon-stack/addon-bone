@@ -1,58 +1,29 @@
-import {mkdtemp, rm} from "fs/promises";
-import os from "os";
 import path from "path";
-import {spawn, type ChildProcess} from "child_process";
 
-import {browserVersion, type CdpTarget, findChromeBinary, targets} from "../utils/chrome";
+import {type CdpTarget, targets} from "../utils/chrome";
+import {startBrowserSession, type BrowserSession} from "../utils/session";
 import CdpClient from "../utils/CdpClient";
-import {getFreePort, stop, waitFor} from "../utils/browser";
+import {waitFor} from "../utils/browser";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
 const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
 const fixtureDir = path.join(__dirname, "service");
-const chromeBinary = findChromeBinary(rootDir);
 
 jest.setTimeout(60_000);
 
 test("Chrome MV3 offscreen calls the registered background service", async () => {
-    if (!chromeBinary || !path.isAbsolute(chromeBinary)) {
-        throw new Error(
-            "Chrome is not installed or could not be found. Install Chrome or set ADNBN_CHROME_BIN to its absolute executable path."
-        );
-    }
-
-    const userDataDir = await mkdtemp(path.join(os.tmpdir(), "adnbn-offscreen-service-"));
-    const debuggingPort = await getFreePort();
-    let chrome: ChildProcess | undefined;
+    let session: BrowserSession | undefined;
     let browser: CdpClient | undefined;
     let fixture: IntegrationFixture | undefined;
-    let chromeOutput = "";
 
     try {
         fixture = await createIntegrationFixture(rootDir, fixtureDir);
         const extensionDir = await fixture.build();
 
-        chrome = spawn(
-            chromeBinary,
-            [
-                "--headless=new",
-                "--no-sandbox",
-                "--no-first-run",
-                "--no-default-browser-check",
-                "--enable-logging=stderr",
-                "--v=0",
-                `--remote-debugging-port=${debuggingPort}`,
-                `--user-data-dir=${userDataDir}`,
-                "about:blank",
-            ],
-            {stdio: ["ignore", "ignore", "pipe"]}
-        );
-        chrome.stderr?.on("data", chunk => (chromeOutput += chunk));
-
-        const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(debuggingPort));
-        browser = await CdpClient.connect(webSocketDebuggerUrl);
-        const extension = await browser.send("Extensions.loadUnpacked", {path: extensionDir});
-        const extensionId = extension.id as string | undefined;
+        session = await startBrowserSession("chrome", rootDir, extensionDir, {createPage: false});
+        browser = session.chrome!;
+        const debuggingPort = session.port;
+        const extensionId = session.extensionId;
 
         if (!extensionId) {
             throw new Error("Chrome did not return an extension ID after loading the MV3 fixture");
@@ -75,7 +46,7 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
             throw new Error(
                 `${error instanceof Error ? error.message : String(error)}; CDP targets: ${JSON.stringify(
                     chromeTargets.map(target => ({type: target.type, url: target.url}))
-                )}; Chrome output: ${chromeOutput}`
+                )}; Chrome output: ${session?.output ?? ""}`
             );
         }
 
@@ -123,13 +94,8 @@ test("Chrome MV3 offscreen calls the registered background service", async () =>
         expect(result.exceptionDetails).toBeUndefined();
         expect(result.result.value).toBe("background:ping");
     } finally {
-        await browser?.close();
-
-        if (chrome) {
-            await stop(chrome);
-        }
+        await session?.close();
 
         await fixture?.dispose();
-        await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 });

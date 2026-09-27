@@ -71,6 +71,7 @@ const exclude = (patterns: string[]) =>
 
 const config: Config = {
     verbose: false,
+    reporters: ["default", "<rootDir>/tests/BrowserStartupReporter.cjs"],
     maxWorkers: Math.max(1, Math.min(8, availableParallelism() - 1)),
     coverageProvider: "babel",
     projects: [

@@ -168,6 +168,15 @@ jobs:
         env:
           ADNBN_CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
           ADNBN_FIREFOX_BIN: ${{ steps.firefox.outputs.firefox-path }}
+      - name: Upload browser startup timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-startup-${{ matrix.browser }}-node-${{ matrix.node }}
+          path: .cache/integration/browser-startup.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
 
   coverage:
     name: Coverage (ubuntu-latest, Node 22)
