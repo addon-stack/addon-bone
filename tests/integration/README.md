@@ -13,10 +13,13 @@ tests/integration/
 │   │   ├── cli.integration.test.ts
 │   │   ├── build-api.integration.test.ts
 │   │   ├── dotenv.integration.test.ts
+│   │   ├── root-dir.integration.test.ts
 │   │   ├── fixtures/
 │   │   │   ├── exit-code/
 │   │   │   ├── environment/
-│   │   │   └── dotenv/
+│   │   │   ├── dotenv/
+│   │   │   ├── root-dir/
+│   │   │   └── root-dir-b/
 │   │   └── scripts/
 │   ├── locale/
 │   │   ├── locale.integration.test.ts
@@ -201,6 +204,17 @@ other formats reject before config execution. Native JS configs may retain evalu
 cache across builds; environment restoration alone does not refresh them. Use the ordinary CLI for those
 projects. This restriction belongs only to `buildApp`, not the CLI. Repeated builds are checked for all three
 TypeScript extensions; imported native modules still retain their normal Node cache semantics.
+
+`build/cli/root-dir.integration.test.ts` builds two projects in the sequence A → B → A through both the CLI
+and `buildApp`, from an unrelated working directory. Absolute roots, paths containing spaces, relative
+imports and the generated `@/` alias are covered. Compiler context, source aliases and fallback package
+resolution use the project root; the caller's working directory is unchanged. The external virtual-module
+plugin still creates temporary files under the caller's `node_modules` and removes its module directory on
+compiler shutdown; these builds therefore require a writable working directory. Entrypoint and offscreen
+module directories are keyed by project root so independent workers do not remove each other's files.
+An IPC-controlled regression pauses two compilers after module creation, closes one, then runs the other.
+The sequence includes Chrome and Firefox with Offscreen, including its generated background module.
+Temporary directory creation is recursive, avoiding the external plugin's check-then-create race in a fresh cwd.
 
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
 - `types/view`: shared View and adapter render types through the public source and built package APIs, render and container props inference, the render contract adopted by Offscreen and Sandbox, and the rejection of Promise and plain-object render values.
