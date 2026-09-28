@@ -1,5 +1,9 @@
 # Override in-process pilot — 2026-09-28
 
+This is a historical report for the superseded in-process backend. The current helper and benchmark runner
+use [file-owned child sessions](2026-09-28-override-session.md). The project-hashed virtual-directory workaround
+described here has been removed; the independent absolute-root fixes remain.
+
 ## Decision
 
 Keep CLI builds as the default. The opt-in in-process path is faster at both worker limits, but repeated
