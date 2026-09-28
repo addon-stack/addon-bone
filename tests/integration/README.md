@@ -13,8 +13,10 @@ tests/integration/
 │   │   ├── cli.integration.test.ts
 │   │   ├── build-api.integration.test.ts
 │   │   ├── dotenv.integration.test.ts
+│   │   ├── BuildSession.integration.test.ts
 │   │   ├── root-dir.integration.test.ts
 │   │   ├── fixtures/
+│   │   │   ├── build-session/
 │   │   │   ├── exit-code/
 │   │   │   ├── environment/
 │   │   │   ├── dotenv/
@@ -267,24 +269,34 @@ The extra dotenv pass in `c12` is disabled. **Behavior change:** running the CLI
 project no longer reads that directory's `.env`, and its interpolated values no longer reach user config or
 plugins. Put build variables in the app/project dotenv files or export them explicitly in the calling process.
 
-## Override in-process pilot
+## Override build-session pilot
 
-Override page tests can select `ADNBN_OVERRIDE_BUILD_MODE=in-process`; the default is `cli`.
-The fixture helper owns the alternative build path, while application copies, scenario names and assertions
-are identical. Thirty page builds use `buildApp`; the three competing-entrypoint scenarios always use the CLI.
+Override page tests can select `ADNBN_OVERRIDE_BUILD_MODE=session`; the default is `cli`.
+Each page test file owns one child Node process through `BuildSession`. The process loads the built package
+once and handles its ten builds sequentially. Application copies, scenario names and assertions are unchanged;
+the three competing-entrypoint scenarios always use the CLI.
 
-The in-process helper uses Node's native loader inside the Jest worker. Jest substitutes its own loader and
-`process.env`, so the helper temporarily lends the native process the test environment and restores it in
-`finally`. It passes an absolute fixture root without changing the worker's cwd. No concurrent tests
-or background builds are allowed. This is a test-only execution adapter, not a change to ordinary CLI behavior.
+The session has a private, fixed cwd and receives absolute fixture roots. Its environment is copied for each
+request and restored inside the child. Jest's environment, cwd and loader are never replaced. Neither concurrent
+requests nor automatic retries are supported. Errors preserve their message, cause chain and compiler diagnostics.
+The parent owns the deadline, kills a timed-out process, and waits for `close` before rejecting the request.
+Normal disposal asks the child to exit, waits for `close`, and removes the session directory. If the owner dies,
+the child's IPC `disconnect` handler exits immediately, even during a pending build. An abrupt owner death may
+leave a temporary directory, but must not leave a running build process.
 
 ```bash
-npx cross-env ADNBN_OVERRIDE_BUILD_MODE=in-process npm run test:run -- --selectProjects build --testPathPatterns=tests/integration/build/override --maxWorkers=2
 npm run build
+npx cross-env ADNBN_OVERRIDE_BUILD_MODE=session npm run test:run -- --selectProjects build --testPathPatterns=tests/integration/build/override --maxWorkers=2
 node tests/benchmarks/override-pilot.mjs
 ```
 
-The pilot is opt-in: it is faster locally, but repeated builds retain memory even after GC. The benchmark runner
-records worker heap/RSS, verifies environment/cwd restoration and cleanup, and compares both worker counts.
-Its 90-build diagnostic creates a temporary test file and removes it in `finally`; run benchmarks exclusively.
-See [the pilot report](../benchmarks/2026-09-28-override-pilot.md) for measurements, limitations and the decision.
+The child exits after each file, bounding compiler retention to that file's builds. This does not fix Rspack's
+retention or establish a peak-memory bound. The benchmark compares two/eight workers, records child PID,
+heap/RSS and peak RSS after each build, checks the same 33 scenario names, and verifies process and directory
+cleanup. With three session-backed files there are at most three build children, even with eight Jest workers.
+Run benchmarks exclusively, without another build or test run.
+
+See the [session measurements](../benchmarks/2026-09-28-override-session.md) for timings and child memory.
+The [earlier in-process report](../benchmarks/2026-09-28-override-pilot.md) describes the superseded experiment;
+its timings do not apply to the session backend. The session pilot remains opt-in pending fresh measurements
+and the Linux/Windows Node 22/24 CI matrix.

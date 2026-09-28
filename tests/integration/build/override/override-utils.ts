@@ -1,6 +1,8 @@
 import {readdir, readFile} from "fs/promises";
 import path from "path";
 
+import BuildSession from "../../utils/BuildSession";
+
 import {createIntegrationFixture} from "../../utils/fixture";
 
 interface OverridePageScenario {
@@ -12,7 +14,7 @@ interface OverridePageScenario {
 
 const buildMode = process.env.ADNBN_OVERRIDE_BUILD_MODE ?? "cli";
 
-if (buildMode !== "cli" && buildMode !== "in-process") {
+if (buildMode !== "cli" && buildMode !== "session") {
     throw new Error(`Unknown override build mode: ${buildMode}`);
 }
 
@@ -26,10 +28,21 @@ export const testOverridePage = ({page, permission, supported, unsupported}: Ove
     describe(`${page} override`, () => {
         const fixtureDir = path.join(__dirname, page);
         const source = `https://${page}.example.com`;
+        let session: BuildSession | undefined;
+
+        beforeAll(async () => {
+            if (buildMode === "session") {
+                session = await BuildSession.create(rootDir);
+            }
+        });
+
+        afterAll(async () => {
+            await session?.dispose();
+        });
 
         describe.each(supported)("%s", browser => {
             test.each([2, 3] as const)("MV%s build replaces the browser page", async manifestVersion => {
-                const fixture = await createIntegrationFixture(rootDir, fixtureDir, buildMode);
+                const fixture = await createIntegrationFixture(rootDir, fixtureDir, session);
 
                 try {
                     const extensionDir = await fixture.build({browser, manifestVersion});
@@ -50,7 +63,7 @@ export const testOverridePage = ({page, permission, supported, unsupported}: Ove
 
         describe.each(unsupported)("%s", browser => {
             test.each([2, 3] as const)("MV%s build skips the unsupported page", async manifestVersion => {
-                const fixture = await createIntegrationFixture(rootDir, fixtureDir, buildMode);
+                const fixture = await createIntegrationFixture(rootDir, fixtureDir, session);
 
                 try {
                     const extensionDir = await fixture.build({browser, manifestVersion});

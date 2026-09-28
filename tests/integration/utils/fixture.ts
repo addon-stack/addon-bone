@@ -1,19 +1,11 @@
 import {cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink} from "fs/promises";
 import path from "path";
-import type {buildApp} from "@cli/builders/app";
-import {Browser} from "@typing/browser";
-import {Mode} from "@typing/app";
+import type BuildSession from "./BuildSession";
 
 import {run} from "./process";
 
-interface AppBuildModule {
-    buildApp: typeof buildApp;
-}
-
-export type IntegrationFixtureBuildMode = "cli" | "in-process";
-
 export interface IntegrationFixtureBuildOptions {
-    buildMode?: IntegrationFixtureBuildMode;
+    session?: BuildSession;
     browser?: string;
     manifestVersion?: 2 | 3;
 }
@@ -51,7 +43,7 @@ const linkDependency = async (source: string, destination: string): Promise<void
 export const prepareIntegrationFixture = async (
     projectRoot: string,
     directory: string,
-    {browser = "chrome", manifestVersion = 3, buildMode = "cli"}: IntegrationFixtureBuildOptions = {},
+    {browser = "chrome", manifestVersion = 3, session}: IntegrationFixtureBuildOptions = {},
     timeout?: number
 ): Promise<string> => {
     const manifest = JSON.parse(await readFile(path.join(directory, "package.json"), "utf8")) as {
@@ -65,25 +57,8 @@ export const prepareIntegrationFixture = async (
         );
     }
 
-    if (buildMode === "in-process") {
-        // Jest replaces createRequire and process.env. Use Node's loader in this same worker,
-        // lending it the test environment only for the awaited build.
-        const nodeProcess = process.getBuiltinModule("process");
-        const require = process.getBuiltinModule("module").createRequire(path.join(projectRoot, "package.json"));
-        const environment = nodeProcess.env;
-        nodeProcess.env = process.env;
-
-        try {
-            const app = require(path.join(projectRoot, "dist/cli/builders/app/index.js")) as AppBuildModule;
-            await app.buildApp({
-                rootDir: path.resolve(directory),
-                browser: browser as Browser,
-                manifestVersion,
-                mode: Mode.Production,
-            });
-        } finally {
-            nodeProcess.env = environment;
-        }
+    if (session) {
+        await session.build(directory, browser, manifestVersion, timeout);
     } else {
         await run(
             process.execPath,
@@ -106,7 +81,7 @@ export const prepareIntegrationFixture = async (
 export const createIntegrationFixture = async (
     projectRoot: string,
     sourceDirectory: string,
-    buildMode: IntegrationFixtureBuildMode = "cli"
+    session?: BuildSession
 ): Promise<IntegrationFixture> => {
     const cacheDirectory = path.join(projectRoot, ".cache", "integration");
 
@@ -127,7 +102,7 @@ export const createIntegrationFixture = async (
 
     return {
         directory,
-        build: options => prepareIntegrationFixture(projectRoot, directory, {buildMode, ...options}),
+        build: options => prepareIntegrationFixture(projectRoot, directory, {session, ...options}),
         dispose,
     };
 };
