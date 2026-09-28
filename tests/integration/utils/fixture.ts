@@ -1,9 +1,19 @@
 import {cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink} from "fs/promises";
 import path from "path";
+import type {buildApp} from "@cli/builders/app";
+import {Browser} from "@typing/browser";
+import {Mode} from "@typing/app";
 
 import {run} from "./process";
 
+interface AppBuildModule {
+    buildApp: typeof buildApp;
+}
+
+export type IntegrationFixtureBuildMode = "cli" | "in-process";
+
 export interface IntegrationFixtureBuildOptions {
+    buildMode?: IntegrationFixtureBuildMode;
     browser?: string;
     manifestVersion?: 2 | 3;
 }
@@ -41,7 +51,7 @@ const linkDependency = async (source: string, destination: string): Promise<void
 export const prepareIntegrationFixture = async (
     projectRoot: string,
     directory: string,
-    {browser = "chrome", manifestVersion = 3}: IntegrationFixtureBuildOptions = {},
+    {browser = "chrome", manifestVersion = 3, buildMode = "cli"}: IntegrationFixtureBuildOptions = {},
     timeout?: number
 ): Promise<string> => {
     const manifest = JSON.parse(await readFile(path.join(directory, "package.json"), "utf8")) as {
@@ -55,26 +65,48 @@ export const prepareIntegrationFixture = async (
         );
     }
 
-    await run(
-        process.execPath,
-        [
-            path.join(projectRoot, "bin", "adnbn.js"),
-            "build",
-            ".",
-            "-b",
-            browser,
-            ...(manifestVersion === 2 ? ["--mv2"] : []),
-        ],
-        directory,
-        timeout
-    );
+    if (buildMode === "in-process") {
+        // Jest replaces createRequire and process.env. Use Node's loader in this same worker,
+        // lending it the test environment only for the awaited build.
+        const nodeProcess = process.getBuiltinModule("process");
+        const require = process.getBuiltinModule("module").createRequire(path.join(projectRoot, "package.json"));
+        const environment = nodeProcess.env;
+        nodeProcess.env = process.env;
+
+        try {
+            const app = require(path.join(projectRoot, "dist/cli/builders/app/index.js")) as AppBuildModule;
+            await app.buildApp({
+                rootDir: path.resolve(directory),
+                browser: browser as Browser,
+                manifestVersion,
+                mode: Mode.Production,
+            });
+        } finally {
+            nodeProcess.env = environment;
+        }
+    } else {
+        await run(
+            process.execPath,
+            [
+                path.join(projectRoot, "bin", "adnbn.js"),
+                "build",
+                ".",
+                "-b",
+                browser,
+                ...(manifestVersion === 2 ? ["--mv2"] : []),
+            ],
+            directory,
+            timeout
+        );
+    }
 
     return path.join(directory, "dist", `myapp-${browser}-mv${manifestVersion}`);
 };
 
 export const createIntegrationFixture = async (
     projectRoot: string,
-    sourceDirectory: string
+    sourceDirectory: string,
+    buildMode: IntegrationFixtureBuildMode = "cli"
 ): Promise<IntegrationFixture> => {
     const cacheDirectory = path.join(projectRoot, ".cache", "integration");
 
@@ -95,7 +127,7 @@ export const createIntegrationFixture = async (
 
     return {
         directory,
-        build: options => prepareIntegrationFixture(projectRoot, directory, options),
+        build: options => prepareIntegrationFixture(projectRoot, directory, {buildMode, ...options}),
         dispose,
     };
 };
@@ -103,7 +135,10 @@ export const createIntegrationFixture = async (
 export const findIntegrationFixtures = async (directory: string): Promise<string[]> => {
     const entries = await readdir(directory, {withFileTypes: true});
 
-    if (entries.some(entry => entry.isFile() && entry.name === "adnbn.config.ts")) {
+    const hasConfig = entries.some(entry => entry.isFile() && entry.name === "adnbn.config.ts");
+    const hasPackage = entries.some(entry => entry.isFile() && entry.name === "package.json");
+
+    if (hasConfig && hasPackage) {
         return [directory];
     }
 

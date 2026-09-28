@@ -10,6 +10,12 @@ interface OverridePageScenario {
     unsupported: readonly string[];
 }
 
+const buildMode = process.env.ADNBN_OVERRIDE_BUILD_MODE ?? "cli";
+
+if (buildMode !== "cli" && buildMode !== "in-process") {
+    throw new Error(`Unknown override build mode: ${buildMode}`);
+}
+
 const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
 
 export const readOverrideManifest = async (extensionDir: string) => {
@@ -23,7 +29,7 @@ export const testOverridePage = ({page, permission, supported, unsupported}: Ove
 
         describe.each(supported)("%s", browser => {
             test.each([2, 3] as const)("MV%s build replaces the browser page", async manifestVersion => {
-                const fixture = await createIntegrationFixture(rootDir, fixtureDir);
+                const fixture = await createIntegrationFixture(rootDir, fixtureDir, buildMode);
 
                 try {
                     const extensionDir = await fixture.build({browser, manifestVersion});
@@ -44,7 +50,7 @@ export const testOverridePage = ({page, permission, supported, unsupported}: Ove
 
         describe.each(unsupported)("%s", browser => {
             test.each([2, 3] as const)("MV%s build skips the unsupported page", async manifestVersion => {
-                const fixture = await createIntegrationFixture(rootDir, fixtureDir);
+                const fixture = await createIntegrationFixture(rootDir, fixtureDir, buildMode);
 
                 try {
                     const extensionDir = await fixture.build({browser, manifestVersion});

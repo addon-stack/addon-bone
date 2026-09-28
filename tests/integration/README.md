@@ -95,6 +95,7 @@ tests/integration/
 │       └── view/
 ├── utils/
 │   ├── fixture.ts
+│   ├── fixture.test.ts
 │   ├── process.ts
 │   ├── process.test.ts
 │   ├── queue.ts
@@ -105,7 +106,9 @@ tests/integration/
 
 Use kebab-case for directory names and for filenames containing multiple words, including helpers and scenario tests. Files whose primary export is a class or React component use PascalCase matching that export. Tests for a specific class also preserve its name, for example `ContentManager.test.ts`. Keep framework entrypoint suffixes such as `.content.ts` and `.page.ts`. Put an entrypoint or component with its own styles in one directory; standalone entrypoints can remain single files.
 
-Each application retains its own `package.json`, `adnbn.config.ts`, and `tsconfig.json`. The package boundary prevents the framework package's `sideEffects: false` setting from discarding fixture CSS imports.
+The preparation/typecheck inventory recognizes standalone applications by both `adnbn.config.ts` and
+`package.json`. Internal CLI configuration fixtures are exercised by their owning tests and are not prepared
+as consumer applications. Each application retains its own `package.json`, `adnbn.config.ts`, and `tsconfig.json`. The package boundary prevents the framework package's `sideEffects: false` setting from discarding fixture CSS imports.
 
 ## Prepare the editor environment
 
@@ -260,3 +263,25 @@ of the host environment. `${VAR}` references remain literal; the framework does 
 The extra dotenv pass in `c12` is disabled. **Behavior change:** running the CLI from a directory outside the
 project no longer reads that directory's `.env`, and its interpolated values no longer reach user config or
 plugins. Put build variables in the app/project dotenv files or export them explicitly in the calling process.
+
+## Override in-process pilot
+
+Override page tests can select `ADNBN_OVERRIDE_BUILD_MODE=in-process`; the default is `cli`.
+The fixture helper owns the alternative build path, while application copies, scenario names and assertions
+are identical. Thirty page builds use `buildApp`; the three competing-entrypoint scenarios always use the CLI.
+
+The in-process helper uses Node's native loader inside the Jest worker. Jest substitutes its own loader and
+`process.env`, so the helper temporarily lends the native process the test environment and restores it in
+`finally`. It passes an absolute fixture root without changing the worker's cwd. No concurrent tests
+or background builds are allowed. This is a test-only execution adapter, not a change to ordinary CLI behavior.
+
+```bash
+npx cross-env ADNBN_OVERRIDE_BUILD_MODE=in-process npm run test:run -- --selectProjects build --testPathPatterns=tests/integration/build/override --maxWorkers=2
+npm run build
+node tests/benchmarks/override-pilot.mjs
+```
+
+The pilot is opt-in: it is faster locally, but repeated builds retain memory even after GC. The benchmark runner
+records worker heap/RSS, verifies environment/cwd restoration and cleanup, and compares both worker counts.
+Its 90-build diagnostic creates a temporary test file and removes it in `finally`; run benchmarks exclusively.
+See [the pilot report](../benchmarks/2026-09-28-override-pilot.md) for measurements, limitations and the decision.
