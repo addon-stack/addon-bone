@@ -1,0 +1,12 @@
+@use "sass:math";
+@use "@tokens" as aliasTokens;
+@use "fixture-theme" as packageTokens;
+@use "../theme/tokens" as sharedTokens;
+
+.badge {
+  color: sharedTokens.$accent;
+  width: math.div(4px, 2);
+  --alias: #{aliasTokens.$value};
+  --package: #{packageTokens.$value};
+  --order: shared;
+}

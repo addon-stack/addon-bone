@@ -1,0 +1,5 @@
+@use "./theme/tokens";
+
+.badge {
+  background: tokens.$accent;
+}

@@ -48,6 +48,12 @@ tests/integration/
 │   ├── permissions/
 │   │   ├── permissions.integration.test.ts
 │   │   └── views/
+│   ├── style/
+│   │   ├── style-merge.integration.test.ts
+│   │   ├── compiler.ts
+│   │   └── fixtures/
+│   │       ├── multi-app/
+│   │       └── multi-app-updates/
 │   └── …
 ├── browser/
 │   ├── relay/
@@ -232,6 +238,7 @@ Parallel test sessions use distinct working directories; production directory na
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
 - `build/override`: separate New Tab, Bookmarks, History and competing-entrypoint files let Jest schedule the scenarios across workers. The files share assertions, while each case keeps its own application copy and build. Thirty manifest checks cover the New Tab, Bookmarks, and History applications across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. Supporting browsers receive `chrome_url_overrides`, the page HTML, its CSP, and the permission declared by the entrypoint; the others receive none of them. Three more cases add the History entrypoint to a copy of the New Tab application: Chrome and Edge builds fail naming both entrypoints, while Firefox keeps the New Tab with its own permission and without the History one. No browser is launched.
 - `build/permissions/views`: four manifest checks of one application with two popups, two sidebars, and an options page that each declare permissions. Every built view contributes, including a popup and a sidebar that are not applied by default; Chrome MV2 has no sidebar, so its permissions are not requested; Firefox builds the sidebar action without `sidePanel`; MV2 declares hosts as permissions. No browser is launched.
+- `build/style`: shared and app stylesheet merging with `mergeStyles` through the production style and asset rules. Two applications with the same layout and different fonts each receive one CSS module per destination, the same class identifier in ordinary and `?unisolated` output, and their own font. App overrides with a namespace conflict, a missing module, or invalid SCSS fail the build. Watch mode tracks override creation, edits, imported partials, resources, removal, and recreation. No browser is launched.
 - `browser/override`: three Chrome MV3 cases opening `chrome://newtab`, `chrome://bookmarks`, and `chrome://history`. They verify that Chrome serves the extension page, React and Vanilla rendering, CSS, state/events, custom `as` and `htmlDir` naming, and a View chunk shared with a Page.
 - `browser/offscreen/service`: one Chrome MV3 round trip from background through Offscreen to a registered background service.
 - `browser/content/entrypoint-assets`: one Chrome MV3 case and two Firefox cases (MV2 and MV3) using the same application and probe assertions. They cover current asset getters, rejecting the full-map getter outside background, common chunks, dynamic imports, CSS/SVG resource URLs, world separation, and top/child frames. The Chrome case also reads the full-map readiness flag in background.

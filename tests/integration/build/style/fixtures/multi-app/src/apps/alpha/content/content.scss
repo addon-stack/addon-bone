@@ -1,0 +1,10 @@
+@use "sass:math";
+@use "../theme/tokens" as appTokens;
+@use "../theme/fonts" with (
+  $inter-latin: url("../theme/fonts/Inter-Latin.woff2?browser&v=1#face")
+);
+
+.badge {
+  color: appTokens.$accent;
+  --order: app;
+}

@@ -449,7 +449,10 @@ export interface Config {
 
     /**
      * Flag indicating whether to merge styles from App and Shared directories.
-     * When `true`, styles from both directories will be combined.
+     * When `true`, importing a shared stylesheet also compiles the app stylesheet at the same
+     * relative path into the same CSS module, with shared rules before app rules. Relative `@use`
+     * and `@forward` requests and literal `url(...)` values in the merged sources resolve from the
+     * file that declares them.
      *
      * @default true
      */

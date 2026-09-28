@@ -1,6 +1,13 @@
 import {ChildNode} from "postcss";
 import * as scss from "postcss-scss";
 
+import {rebaseModuleRequest, rebaseUrlFunctions} from "./rebase";
+
+export type StyleSource = {
+    filename: string;
+    content: string;
+};
+
 type StyleSourceParts = {
     charsets: string[];
     sassPrelude: string[];
@@ -8,9 +15,9 @@ type StyleSourceParts = {
     body: string[];
 };
 
-export const mergeStyleSources = (sharedStyle: string, appStyle: string): string => {
-    const shared = splitStyleSource(sharedStyle);
-    const app = splitStyleSource(appStyle);
+export const mergeStyleSources = (sharedStyle: StyleSource, appStyle: StyleSource): string => {
+    const shared = splitStyleSource(sharedStyle, sharedStyle.filename);
+    const app = splitStyleSource(appStyle, sharedStyle.filename);
 
     return [
         ...dedupePrelude([...shared.charsets, ...app.charsets]),
@@ -41,8 +48,29 @@ const dedupePrelude = (parts: string[]): string[] => {
     });
 };
 
-const splitStyleSource = (source: string): StyleSourceParts => {
-    const root = scss.parse(source);
+const splitStyleSource = (source: StyleSource, target: string): StyleSourceParts => {
+    const root = scss.parse(source.content, {from: source.filename});
+    // Only a source compiled under another filename needs its resources rebased.
+    const relocated = source.filename !== target;
+
+    root.walkAtRules(node => {
+        if (isModuleRuleNode(node)) {
+            // Shared requests pass through the same normalization, so equivalent prepared
+            // imports from both sources match when the prelude is deduplicated.
+            node.params = rebaseModuleRequest(node.params, source.filename, target);
+        }
+
+        if (relocated) {
+            // Module configuration such as `with ($font: url(...))` carries app resources as well.
+            node.params = rebaseUrlFunctions(node.params, source.filename, target);
+        }
+    });
+
+    if (relocated) {
+        root.walkDecls(node => {
+            node.value = rebaseUrlFunctions(node.value, source.filename, target);
+        });
+    }
 
     const parts: StyleSourceParts = {
         charsets: [],
@@ -57,22 +85,26 @@ const splitStyleSource = (source: string): StyleSourceParts => {
     root.nodes?.forEach(node => {
         if (!bodyStarted && isCharsetNode(node)) {
             parts.charsets.push(stringifyNode(node));
+
             return;
         }
 
         if (!bodyStarted && node.type === "comment") {
             parts[preludeType === "sass" ? "sassPrelude" : "cssPrelude"].push(stringifyNode(node));
+
             return;
         }
 
         if (!bodyStarted && isSassPreludeNode(node)) {
             parts.sassPrelude.push(stringifyNode(node));
+
             return;
         }
 
         if (!bodyStarted && isCssPreludeNode(node)) {
             preludeType = "css";
             parts.cssPrelude.push(stringifyNode(node));
+
             return;
         }
 
@@ -95,16 +127,14 @@ const stringifyNode = (node: ChildNode): string => {
 
 const isCharsetNode = (node: ChildNode): boolean => node.type === "atrule" && node.name === "charset";
 
+const isModuleRuleNode = (node: ChildNode): boolean => node.type === "atrule" && ["forward", "use"].includes(node.name);
+
 const isSassPreludeNode = (node: ChildNode): boolean => {
     if (node.type === "decl") {
         return node.prop.startsWith("$");
     }
 
-    if (node.type !== "atrule") {
-        return false;
-    }
-
-    return ["forward", "use"].includes(node.name);
+    return isModuleRuleNode(node);
 };
 
 const isCssPreludeNode = (node: ChildNode): boolean => {
