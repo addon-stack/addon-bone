@@ -2,7 +2,7 @@ import {useMemo, useSyncExternalStore} from "react";
 
 import ReactLocale from "../ReactLocale";
 
-import {ObservableLocale} from "@locale/providers";
+import {ObservableLocale} from "@locale/observers";
 
 import type {LocaleReactDynamicContract} from "../types";
 import type {LocaleRegistry, LocaleStorageDriver} from "@typing/locale";

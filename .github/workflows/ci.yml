@@ -99,6 +99,10 @@ jobs:
       - name: Compiler, CLI and declaration integrations
         if: matrix.os != 'ubuntu-latest' || matrix.node != 22
         run: npm run test:run -- --selectProjects build types --ci --maxWorkers=2
+      - name: Override builds in isolated sessions
+        run: npm run test:run -- --selectProjects build --testPathPatterns=tests/integration/build/override --ci --maxWorkers=2
+        env:
+          ADNBN_OVERRIDE_BUILD_MODE: session
       - name: Upload build coverage
         if: matrix.os == 'ubuntu-latest' && matrix.node == 22
         uses: actions/upload-artifact@v4
@@ -126,7 +130,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build package, prepare and typecheck every application
-        run: npm run typecheck:integration
+        run: npm run typecheck:fixtures
 
   browser:
     name: Browser (${{ matrix.browser }}, Node ${{ matrix.node }})
@@ -168,6 +172,15 @@ jobs:
         env:
           ADNBN_CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
           ADNBN_FIREFOX_BIN: ${{ steps.firefox.outputs.firefox-path }}
+      - name: Upload browser startup timings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-startup-${{ matrix.browser }}-node-${{ matrix.node }}
+          path: .cache/integration/browser-startup.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
 
   coverage:
     name: Coverage (ubuntu-latest, Node 22)

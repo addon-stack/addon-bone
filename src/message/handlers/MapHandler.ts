@@ -22,7 +22,9 @@ export default class MapHandler<T extends MessageDictionary> extends AbstractHan
 
         if (handler) {
             if (typeof handler === "function") {
-                return handler(data, sender) || null;
+                const result = handler(data, sender);
+
+                return result === undefined ? null : result;
             } else {
                 throw new Error(`Handler for type "${type}" in object of handlers must be a function`);
             }

@@ -6,7 +6,6 @@ import type {ContentScriptStylesRuntime} from "@typing/content";
 import {getContentScriptStylesRuntime} from "./isolated-styles";
 
 jest.mock("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
-jest.mock("@addon-core/browser", () => ({getUrl: jest.fn()}));
 
 beforeEach(() => {
     jest.resetAllMocks();
@@ -31,5 +30,6 @@ test("initializes and returns the styles runtime supplied by the facade", () => 
 
     expect(getContentScriptStylesRuntime()).toBe(runtime);
     expect(runtime.initialize).toHaveBeenCalledWith(getUrl);
+    expect(getUrl("style.css")).toBe(`chrome-extension://${chrome.runtime.id}/style.css`);
     expect(runtime.add).not.toHaveBeenCalled();
 });

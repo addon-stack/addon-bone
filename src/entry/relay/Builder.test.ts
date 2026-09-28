@@ -2,23 +2,17 @@ import Builder from "./Builder";
 import VanillaBuilder from "../content/adapters/vanilla/Builder";
 import MountBuilder from "../content/lifecycle/MountBuilder";
 import RelayManager from "@relay/RelayManager";
-import {isRelayContext} from "@relay/utils";
 import {RelayAllFrames, RelayMethod, type RelayOptions} from "@typing/relay";
 import type {ContentScriptDefinition} from "@typing/content";
 
-// Extend the shared random-ID mock for content marker attributes.
+// Keep content marker IDs deterministic for lifecycle assertions.
 jest.mock("nanoid", () => ({nanoid: jest.fn(() => "mocked-id"), customAlphabet: () => () => "relaymarker"}));
 
 describe("Relay Builder", () => {
-    const manager = RelayManager.getInstance();
+    let manager: ReturnType<typeof RelayManager.getInstance>;
 
     beforeEach(() => {
-        // The shared harness mocks context detection; exercise its actual predicate here.
-        jest.mocked(isRelayContext).mockImplementation(
-            jest.requireActual<typeof import("@relay/utils")>("@relay/utils").isRelayContext
-        );
-
-        manager.clear();
+        manager = RelayManager.getInstance();
     });
 
     afterEach(() => {

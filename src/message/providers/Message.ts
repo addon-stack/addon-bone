@@ -130,7 +130,8 @@ export default class Message<T extends MessageDictionary> extends AbstractMessag
         }
 
         if (response.ok) {
-            return "payload" in response;
+            // JSON serialization omits payload when a successful handler returns undefined.
+            return true;
         }
 
         return this.isSerializedError(response.error);

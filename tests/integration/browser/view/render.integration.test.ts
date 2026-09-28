@@ -1,33 +1,21 @@
-import {mkdtemp, readFile, rm} from "fs/promises";
-import os from "os";
+import {readFile} from "fs/promises";
 import path from "path";
-import {spawn, type ChildProcess} from "child_process";
 
-import {browserVersion, findChromeBinary} from "../utils/chrome";
+import {startBrowserSession, type BrowserSession} from "../utils/session";
 import CdpClient from "../utils/CdpClient";
-import {getFreePort, stop, waitFor} from "../utils/browser";
+import {waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
 const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
-const chromeBinary = findChromeBinary(rootDir);
 
 jest.setTimeout(90_000);
 
 test("Chrome MV3 renders offscreen, sandbox, page and content views through the injected builders", async () => {
-    if (!chromeBinary || !path.isAbsolute(chromeBinary)) {
-        throw new Error(
-            "Chrome is not installed or could not be found. Install Chrome or set ADNBN_CHROME_BIN to its absolute executable path."
-        );
-    }
-
-    const userDataDir = await mkdtemp(path.join(os.tmpdir(), "adnbn-view-render-"));
-    const debuggingPort = await getFreePort();
-    let chrome: ChildProcess | undefined;
+    let session: BrowserSession | undefined;
     let browser: CdpClient | undefined;
     let fixture: IntegrationFixture | undefined;
     let site: IntegrationSite | undefined;
-    let chromeOutput = "";
 
     try {
         fixture = await createIntegrationFixture(rootDir, path.join(__dirname, "render"));
@@ -39,26 +27,9 @@ test("Chrome MV3 renders offscreen, sandbox, page and content views through the 
         expect(manifest.manifest_version).toBe(3);
         expect(manifest.permissions).toEqual(["offscreen"]);
 
-        chrome = spawn(
-            chromeBinary,
-            [
-                "--headless=new",
-                "--no-sandbox",
-                "--no-first-run",
-                "--no-default-browser-check",
-                `--remote-debugging-port=${debuggingPort}`,
-                `--user-data-dir=${userDataDir}`,
-                "about:blank",
-            ],
-            {stdio: ["ignore", "ignore", "pipe"]}
-        );
-        chrome.stderr?.on("data", chunk => (chromeOutput += chunk));
-
-        const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(debuggingPort));
-        browser = await CdpClient.connect(webSocketDebuggerUrl);
-
-        const extension = await browser.send("Extensions.loadUnpacked", {path: extensionDir});
-        const extensionId = extension.id as string | undefined;
+        session = await startBrowserSession("chrome", rootDir, extensionDir, {createPage: false});
+        browser = session.chrome!;
+        const extensionId = session.extensionId;
 
         if (!extensionId) {
             throw new Error("Chrome did not return an extension ID after loading the view fixture");
@@ -97,6 +68,7 @@ test("Chrome MV3 renders offscreen, sandbox, page and content views through the 
         };
 
         const popup = await open(`chrome-extension://${extensionId}/popup.html`);
+
         const result = JSON.parse(
             await waitFor(() => popup("document.getElementById('result')?.value || undefined"), 30_000, "view calls")
         );
@@ -120,6 +92,7 @@ test("Chrome MV3 renders offscreen, sandbox, page and content views through the 
         });
 
         const page = await open(`${site.origin}/top.html`);
+
         const note = await waitFor(() =>
             page(`(() => {
                 const note = [...document.body.children].find(element => element.textContent.includes("React content text"));
@@ -131,16 +104,11 @@ test("Chrome MV3 renders offscreen, sandbox, page and content views through the 
         expect(note).toEqual({text: "<b>React content text</b>", markup: false});
         expect(browser.runtimeErrors).toEqual([]);
     } catch (error) {
-        throw new Error(`${String(error)}; Chrome output: ${chromeOutput}`, {cause: error});
+        throw new Error(`${String(error)}; Chrome output: ${session?.output ?? ""}`, {cause: error});
     } finally {
-        await browser?.close();
-
-        if (chrome) {
-            await stop(chrome);
-        }
+        await session?.close();
 
         await site?.close();
         await fixture?.dispose();
-        await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 });

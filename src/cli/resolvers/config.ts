@@ -75,7 +75,7 @@ const getUserConfig = async (config: ReadonlyConfig): Promise<UserConfig> => {
     if (existsSync(configFilePath)) {
         const {config: userConfig} = await loadConfig<UserConfig>({
             configFile: configFilePath,
-            dotenv: true,
+            dotenv: false,
         });
 
         if (config.debug) {

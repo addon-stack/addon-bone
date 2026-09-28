@@ -1,4 +1,3 @@
-import path from "path";
 import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import {RspackVirtualModulePlugin} from "rspack-plugin-virtual-module";
 import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
@@ -17,7 +16,6 @@ import {Browser} from "@typing/browser";
 import {BackgroundEntryName} from "@typing/background";
 import type {OffscreenParametersMap} from "@typing/offscreen";
 
-const OffscreenTempDir = "virtual";
 const OffscreenBackgroundModule = "offscreen.background.ts";
 
 export default definePlugin(() => {
@@ -75,14 +73,14 @@ export default definePlugin(() => {
                             {
                                 [OffscreenBackgroundModule]: virtualOffscreenBackgroundModule(),
                             },
-                            OffscreenTempDir
+                            "virtual"
                         )
                     );
 
                     rspack = {
                         entry: {
                             [BackgroundEntryName]: {
-                                import: [path.join(OffscreenTempDir, OffscreenBackgroundModule)],
+                                import: [OffscreenBackgroundModule],
                             },
                         },
                     };

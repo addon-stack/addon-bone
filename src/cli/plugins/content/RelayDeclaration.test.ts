@@ -67,14 +67,6 @@ describe("Relay declarations", () => {
             };
             const rootNames = [consumerFile, generatedPath];
 
-            if (mode === "source") {
-                rootNames.push(
-                    path.join(fixtureDir, "virtual.ts"),
-                    path.join(projectDir, "src/cli/virtual/relay.ts"),
-                    path.join(projectDir, "src/cli/virtual/virtual.d.ts")
-                );
-            }
-
             // Give the real generated declaration a consumer-side location so package self-resolution works.
             // The package case deliberately has neither source aliases nor ambient virtual module declarations.
             const host = ts.createCompilerHost(options);
@@ -143,6 +135,7 @@ describe("Relay declarations", () => {
                 "RelayFramesResult",
                 "RelayMethod",
                 "RelayNonEmptyReadonlyArray",
+                "RelayProtocolError",
                 "RelayProxyTarget",
                 "RelayResultTarget",
                 "RelayScalarOptions",

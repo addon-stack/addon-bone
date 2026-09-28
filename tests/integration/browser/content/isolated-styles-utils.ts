@@ -1,13 +1,10 @@
-import {spawn, type ChildProcess} from "child_process";
-import {mkdtemp, readFile, rm, stat, writeFile} from "fs/promises";
-import os from "os";
+import {readFile, stat, writeFile} from "fs/promises";
 import path from "path";
 
-import {getFreePort, stop, waitFor} from "../utils/browser";
-import {browserVersion, findChromeBinary} from "../utils/chrome";
+import {waitFor} from "../utils/browser";
+import {startBrowserSession, type BrowserSession} from "../utils/session";
 import CdpClient from "../utils/CdpClient";
 import BidiClient from "../utils/BidiClient";
-import {findFirefoxBinary} from "../utils/firefox";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
@@ -142,19 +139,11 @@ export const runIsolatedStylesIntegration = async (
     fixtureName = "isolation-shadow"
 ): Promise<void> => {
     const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
-    const binary = name === "chrome" ? findChromeBinary(rootDir) : findFirefoxBinary();
-
-    if (!binary || !path.isAbsolute(binary)) {
-        throw new Error("Install " + name + " or set its ADNBN_*_BIN path");
-    }
-
-    const profile = await mkdtemp(path.join(os.tmpdir(), "adnbn-isolation-integration-"));
-    let browserProcess: ChildProcess | undefined;
+    let session: BrowserSession | undefined;
     let chrome: CdpClient | undefined;
     let firefox: BidiClient | undefined;
     let fixture: IntegrationFixture | undefined;
     let site: IntegrationSite | undefined;
-    let processOutput = "";
     let lastState: unknown;
 
     try {
@@ -203,80 +192,12 @@ export const runIsolatedStylesIntegration = async (
             await expect(stat(path.join(extensionDir, file))).resolves.toBeDefined();
         }
 
-        const port = await getFreePort();
-        let navigate: (url: string) => Promise<unknown>;
-        let evaluate: (expression: string) => Promise<any>;
-        let version: string;
+        session = await startBrowserSession(name, rootDir, extensionDir);
+        chrome = session.chrome;
+        firefox = session.firefox;
+        const {navigate, evaluate, version} = session;
 
-        if (name === "chrome") {
-            browserProcess = spawn(
-                binary,
-                [
-                    "--headless=new",
-                    "--no-sandbox",
-                    "--no-first-run",
-                    "--no-default-browser-check",
-                    "--remote-debugging-port=" + port,
-                    "--user-data-dir=" + profile,
-                    "about:blank",
-                ],
-                {stdio: ["ignore", "ignore", "pipe"]}
-            );
-
-            browserProcess.stderr?.on("data", chunk => (processOutput += chunk));
-            const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(port));
-            chrome = await CdpClient.connect(webSocketDebuggerUrl);
-            version = (await chrome.send("Browser.getVersion")).product;
-            const extension = await chrome.send("Extensions.loadUnpacked", {path: extensionDir});
-            expect(typeof extension.id).toBe("string");
-            const {targetId} = await chrome.send("Target.createTarget", {url: "about:blank"});
-            const {sessionId} = await chrome.send("Target.attachToTarget", {targetId, flatten: true});
-            await chrome.send("Runtime.enable", {}, sessionId);
-            await chrome.send("Page.enable", {}, sessionId);
-            navigate = url => chrome!.send("Page.navigate", {url}, sessionId);
-
-            evaluate = async expression => {
-                const result = await chrome!.send(
-                    "Runtime.evaluate",
-                    {expression, awaitPromise: true, returnByValue: true},
-                    sessionId
-                );
-
-                if (result.exceptionDetails) {
-                    throw new Error(JSON.stringify(result.exceptionDetails));
-                }
-
-                return result.result.value;
-            };
-        } else {
-            browserProcess = spawn(
-                binary,
-                [
-                    "--headless",
-                    "--no-remote",
-                    "--profile",
-                    profile,
-                    "--remote-debugging-port",
-                    String(port),
-                    "about:blank",
-                ],
-                {stdio: ["ignore", "ignore", "pipe"]}
-            );
-
-            browserProcess.stderr?.on("data", chunk => (processOutput += chunk));
-            firefox = await waitFor(() => BidiClient.connect("ws://127.0.0.1:" + port + "/session"));
-            const session = await firefox.send("session.new", {capabilities: {alwaysMatch: {}}});
-            version = "Firefox/" + session.capabilities.browserVersion;
-
-            const extension = await firefox.send("webExtension.install", {
-                extensionData: {path: extensionDir, type: "path"},
-            });
-
-            expect(typeof extension.extension).toBe("string");
-            const {context} = await firefox.send("browsingContext.create", {type: "tab"});
-            navigate = url => firefox!.send("browsingContext.navigate", {context, url, wait: "complete"});
-            evaluate = expression => firefox!.evaluate(context, expression);
-        }
+        expect(typeof session.extensionId).toBe("string");
 
         const measurements: Array<{policy: string; top: ShadowDocumentState; frames: FrameState}> = [];
 
@@ -472,28 +393,12 @@ export const runIsolatedStylesIntegration = async (
         expect(name === "chrome" ? chrome?.runtimeErrors : firefox?.runtimeErrors).toEqual([]);
     } catch (error) {
         throw new Error(
-            `${error instanceof Error ? error.message : String(error)}; last state: ${JSON.stringify(lastState)}; runtime errors: ${JSON.stringify(chrome?.runtimeErrors ?? firefox?.runtimeErrors ?? [])}; browser output: ${processOutput}`,
+            `${error instanceof Error ? error.message : String(error)}; last state: ${JSON.stringify(lastState)}; runtime errors: ${JSON.stringify(chrome?.runtimeErrors ?? firefox?.runtimeErrors ?? [])}; browser output: ${session?.output ?? ""}`,
             {cause: error}
         );
     } finally {
-        await chrome?.close();
-
-        if (firefox) {
-            try {
-                await firefox.send("session.end", {}, 2_000);
-            } catch {
-                // Firefox may close before replying.
-            }
-
-            await firefox.close();
-        }
-
-        if (browserProcess) {
-            await stop(browserProcess);
-        }
-
+        await session?.close();
         await site?.close();
         await fixture?.dispose();
-        await rm(profile, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 };

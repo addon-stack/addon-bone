@@ -1,11 +1,10 @@
-import {mkdtemp, readFile, rm, stat} from "fs/promises";
-import os from "os";
+import {readFile, stat} from "fs/promises";
 import path from "path";
-import {spawn, type ChildProcess} from "child_process";
 
-import {browserVersion, findChromeBinary, targets} from "../utils/chrome";
+import {targets} from "../utils/chrome";
+import {startBrowserSession, type BrowserSession} from "../utils/session";
 import CdpClient from "../utils/CdpClient";
-import {getFreePort, stop, waitFor} from "../utils/browser";
+import {waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
@@ -13,7 +12,6 @@ import {documentStateExpression, expectLoadedProbe, type DocumentState} from "./
 
 const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
 const fixtureDir = path.join(__dirname, "entrypoint-assets");
-const chromeBinary = findChromeBinary(rootDir);
 
 const evaluate = async (browser: CdpClient, sessionId: string, expression: string): Promise<any> => {
     const result = await browser.send(
@@ -54,19 +52,10 @@ const waitForLoadedDocument = async (browser: CdpClient, sessionId: string): Pro
 jest.setTimeout(90_000);
 
 test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in the initial graph", async () => {
-    if (!chromeBinary || !path.isAbsolute(chromeBinary)) {
-        throw new Error(
-            "Chrome is not installed or could not be found. Install Chrome or set ADNBN_CHROME_BIN to its absolute executable path."
-        );
-    }
-
-    const userDataDir = await mkdtemp(path.join(os.tmpdir(), "adnbn-content-entrypoint-assets-"));
-    const debuggingPort = await getFreePort();
-    let chrome: ChildProcess | undefined;
+    let session: BrowserSession | undefined;
     let browser: CdpClient | undefined;
     let site: IntegrationSite | undefined;
     let fixture: IntegrationFixture | undefined;
-    let chromeOutput = "";
 
     try {
         fixture = await createIntegrationFixture(rootDir, fixtureDir);
@@ -75,6 +64,7 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
         const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
         const contentScripts = manifest.content_scripts as Array<{css?: string[]; js: string[]; world?: string}>;
         const backgroundFile = manifest.background.service_worker as string;
+
         const resources = (manifest.web_accessible_resources ?? []).flatMap(
             (item: {resources?: string[]}) => item.resources ?? []
         );
@@ -85,6 +75,7 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
 
         const isolatedScripts = contentScripts.filter(script => script.world === "ISOLATED");
         const mainScripts = contentScripts.filter(script => script.world === "MAIN");
+
         const sharedFiles = (scripts: Array<{js: string[]}>): string[] => {
             return scripts[0].js.filter(file => scripts.slice(1).every(script => script.js.includes(file)));
         };
@@ -97,6 +88,7 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
                 expect(isolated.js.filter(file => main.js.includes(file))).toEqual([]);
             }
         }
+
         expect(resources.some((file: string) => /^assets\/probe-[a-f0-9]{4}\.svg$/.test(file))).toBe(true);
         expect(resources.some((file: string) => /^js\/.+\.js$/.test(file))).toBe(true);
         expect(resources.some((file: string) => /^css\/.+\.css$/.test(file))).toBe(true);
@@ -108,27 +100,10 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
         }
 
         site = await startIntegrationSite(path.join(fixture.directory, "site"));
-        chrome = spawn(
-            chromeBinary,
-            [
-                "--headless=new",
-                "--no-sandbox",
-                "--no-first-run",
-                "--no-default-browser-check",
-                "--enable-logging=stderr",
-                "--v=0",
-                `--remote-debugging-port=${debuggingPort}`,
-                `--user-data-dir=${userDataDir}`,
-                "about:blank",
-            ],
-            {stdio: ["ignore", "ignore", "pipe"]}
-        );
-        chrome.stderr?.on("data", chunk => (chromeOutput += chunk));
-
-        const {webSocketDebuggerUrl} = await waitFor(() => browserVersion(debuggingPort));
-        browser = await CdpClient.connect(webSocketDebuggerUrl);
-        const extension = await browser.send("Extensions.loadUnpacked", {path: extensionDir});
-        const extensionId = extension.id as string | undefined;
+        session = await startBrowserSession("chrome", rootDir, extensionDir, {createPage: false});
+        browser = session.chrome!;
+        const debuggingPort = session.port;
+        const extensionId = session.extensionId;
 
         if (!extensionId) {
             throw new Error("Chrome did not return an extension ID after loading the content fixture");
@@ -141,12 +116,14 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
                     target.url === `chrome-extension://${extensionId}/${backgroundFile}`
             );
         });
+
         const {sessionId: workerSessionId} = await browser.send("Target.attachToTarget", {
             targetId: worker.id,
             flatten: true,
         });
 
         await browser.send("Runtime.enable", {}, workerSessionId);
+
         await waitFor(async () => {
             return (await evaluate(
                 browser!,
@@ -191,6 +168,7 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
                     };
                 })()`
             );
+
             const statuses = [
                 state?.top?.isolated?.async,
                 state?.top?.main?.async,
@@ -218,18 +196,13 @@ test("Chrome MV3 loads ISOLATED chunks lazily and keeps MAIN dynamic imports in 
         throw new Error(
             `${error instanceof Error ? error.message : String(error)}; Runtime errors: ${JSON.stringify(
                 browser?.runtimeErrors ?? []
-            )}; Chrome output: ${chromeOutput}`,
+            )}; Chrome output: ${session?.output ?? ""}`,
             {cause: error}
         );
     } finally {
-        await browser?.close();
-
-        if (chrome) {
-            await stop(chrome);
-        }
+        await session?.close();
 
         await site?.close();
         await fixture?.dispose();
-        await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
     }
 });

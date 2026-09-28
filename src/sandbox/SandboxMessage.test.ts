@@ -1,15 +1,23 @@
-import {nanoid} from "nanoid";
+import {getBrowserTest} from "@tests/browser-harness/session";
 
 import SandboxMessage from "./SandboxMessage";
 import {SandboxMemory} from "./ports";
 
-import type {SandboxParameters} from "@typing/sandbox";
+import type {SandboxParameters, SandboxPort} from "@typing/sandbox";
+
+const createMessage = (port: SandboxPort, parameters: Partial<SandboxParameters> = {}): SandboxMessage => {
+    const message = new SandboxMessage("parser", port, parameters);
+
+    getBrowserTest().addCleanup(() => message.dispose());
+
+    return message;
+};
 
 describe("SandboxMessage", () => {
     test("round-trips a request to the sandbox handler and resolves the response", async () => {
         const [hostPort, guestPort] = SandboxMemory.pair();
-        const host = new SandboxMessage("parser", hostPort, {requestTimeout: 1000});
-        const guest = new SandboxMessage("parser", guestPort);
+        const host = createMessage(hostPort, {requestTimeout: 1000});
+        const guest = createMessage(guestPort);
 
         let receivedPath: string | undefined;
 
@@ -25,8 +33,8 @@ describe("SandboxMessage", () => {
 
     test("propagates handler errors back to the caller", async () => {
         const [hostPort, guestPort] = SandboxMemory.pair();
-        const host = new SandboxMessage("parser", hostPort, {requestTimeout: 1000});
-        const guest = new SandboxMessage("parser", guestPort);
+        const host = createMessage(hostPort, {requestTimeout: 1000});
+        const guest = createMessage(guestPort);
 
         guest.watch(() => {
             throw new TypeError("bad html");
@@ -39,31 +47,73 @@ describe("SandboxMessage", () => {
     });
 
     test("rejects when no response arrives before requestTimeout", async () => {
-        const [hostPort] = SandboxMemory.pair(); // nothing watches the guest end
-
-        const host = new SandboxMessage("parser", hostPort, {requestTimeout: 10});
-
-        await expect(host.send({path: "parse", args: []})).rejects.toThrow('Sandbox "parser" request');
-    });
-
-    test("concurrent requests share the channel and all resolve", async () => {
-        // nanoid is globally mocked to a constant in tests; give each request a unique id.
-        let counter = 0;
-        jest.mocked(nanoid).mockImplementation(() => `req-${++counter}`);
+        jest.useFakeTimers();
 
         const [hostPort, guestPort] = SandboxMemory.pair();
-        const host = new SandboxMessage("parser", hostPort, {requestTimeout: 1000});
-        const guest = new SandboxMessage("parser", guestPort);
+        const host = createMessage(hostPort, {requestTimeout: 10});
 
-        guest.watch(({args}) => args[0]);
+        createMessage(guestPort); // nothing watches the guest end
 
-        await expect(
-            Promise.all([
-                host.send({path: "echo", args: [1]}),
-                host.send({path: "echo", args: [2]}),
-                host.send({path: "echo", args: [3]}),
-            ])
-        ).resolves.toEqual([1, 2, 3]);
+        const result = expect(host.send({path: "parse", args: []})).rejects.toThrow('Sandbox "parser" request');
+
+        await jest.advanceTimersByTimeAsync(0);
+        expect(jest.getTimerCount()).toBe(1);
+        await jest.advanceTimersByTimeAsync(9);
+        expect(jest.getTimerCount()).toBe(1);
+        await jest.advanceTimersByTimeAsync(1);
+        await result;
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
+    test("correlates concurrent requests when responses arrive in reverse order", async () => {
+        jest.useFakeTimers();
+
+        const [hostPort, guestPort] = SandboxMemory.pair();
+        const host = createMessage(hostPort, {requestTimeout: 1000});
+        const guest = createMessage(guestPort);
+        const completed: number[] = [];
+
+        guest.watch(({args}) => {
+            const value = args[0] as number;
+
+            return new Promise<number>(resolve => {
+                setTimeout(
+                    () => {
+                        completed.push(value);
+                        resolve(value);
+                    },
+                    (4 - value) * 10
+                );
+            });
+        });
+
+        const result = Promise.all([
+            host.send({path: "echo", args: [1]}),
+            host.send({path: "echo", args: [2]}),
+            host.send({path: "echo", args: [3]}),
+        ]);
+
+        await jest.advanceTimersByTimeAsync(30);
+        await expect(result).resolves.toEqual([1, 2, 3]);
+        expect(completed).toEqual([3, 2, 1]);
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
+    test("rejects pending requests and clears their timers on dispose", async () => {
+        jest.useFakeTimers();
+
+        const [hostPort, guestPort] = SandboxMemory.pair();
+        const host = createMessage(hostPort, {requestTimeout: 1000});
+
+        createMessage(guestPort);
+
+        const result = expect(host.send({path: "parse", args: []})).rejects.toThrow('Sandbox "parser" was disposed.');
+
+        await jest.advanceTimersByTimeAsync(0);
+        expect(jest.getTimerCount()).toBe(1);
+        host.dispose();
+        await result;
+        expect(jest.getTimerCount()).toBe(0);
     });
 
     test("caches one host channel per name and re-creates after dispose", () => {

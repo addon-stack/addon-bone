@@ -1,14 +1,13 @@
 import relay, {resolveDefinition} from "./index";
 import VanillaBuilder from "../content/adapters/vanilla/Builder";
 import RelayManager from "@relay/RelayManager";
-import {isRelayContext} from "@relay/utils";
 import {RelayMethod} from "@typing/relay";
 import type {ContentScriptDefinition} from "@typing/content";
 
 jest.mock("nanoid", () => ({nanoid: jest.fn(() => "mocked-id"), customAlphabet: () => () => "relaymarker"}));
 
 describe("Relay startup", () => {
-    const manager = RelayManager.getInstance();
+    let manager: ReturnType<typeof RelayManager.getInstance>;
     let content: VanillaBuilder | undefined;
 
     class ContentBuilder extends VanillaBuilder {
@@ -19,11 +18,7 @@ describe("Relay startup", () => {
     }
 
     beforeEach(() => {
-        // Use the real predicate through the existing context mock in the shared harness.
-        jest.mocked(isRelayContext).mockImplementation(
-            jest.requireActual<typeof import("@relay/utils")>("@relay/utils").isRelayContext
-        );
-        manager.clear();
+        manager = RelayManager.getInstance();
         content = undefined;
     });
 
@@ -80,7 +75,10 @@ describe("Relay startup", () => {
             {
                 method: RelayMethod.Scripting,
                 init: () => {
-                    if (phase === "init") throw error;
+                    if (phase === "init") {
+                        throw error;
+                    }
+
                     return {ready: true};
                 },
                 main: async () => {

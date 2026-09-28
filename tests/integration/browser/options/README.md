@@ -15,4 +15,4 @@ Each Options entrypoint keeps its `styles.css` in the same directory. `backgroun
 
 Both cases open Options from the real background service worker in Chrome MV3. They check the exact `options_ui` object, the absence of `options_page`, a View chunk shared with the Help page, CSS application, state changes, and runtime errors. Expected pages are `options.html` and `ui/preferences.options.html`.
 
-The embedded Options manifest matrix lives separately in `tests/integration/build/options/embedded` and runs without Chrome through `npm run test:integration:build`. It does not verify embedded settings UI in a browser.
+The embedded Options manifest matrix lives separately in `tests/integration/build/options/embedded` and runs without Chrome through `npm run test:build`. It does not verify embedded settings UI in a browser.

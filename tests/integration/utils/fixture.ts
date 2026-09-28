@@ -1,9 +1,11 @@
 import {cp, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink} from "fs/promises";
 import path from "path";
+import type BuildSession from "./BuildSession";
 
 import {run} from "./process";
 
 export interface IntegrationFixtureBuildOptions {
+    session?: BuildSession;
     browser?: string;
     manifestVersion?: 2 | 3;
 }
@@ -41,7 +43,7 @@ const linkDependency = async (source: string, destination: string): Promise<void
 export const prepareIntegrationFixture = async (
     projectRoot: string,
     directory: string,
-    {browser = "chrome", manifestVersion = 3}: IntegrationFixtureBuildOptions = {},
+    {browser = "chrome", manifestVersion = 3, session}: IntegrationFixtureBuildOptions = {},
     timeout?: number
 ): Promise<string> => {
     const manifest = JSON.parse(await readFile(path.join(directory, "package.json"), "utf8")) as {
@@ -55,26 +57,31 @@ export const prepareIntegrationFixture = async (
         );
     }
 
-    await run(
-        process.execPath,
-        [
-            path.join(projectRoot, "bin", "adnbn.js"),
-            "build",
-            ".",
-            "-b",
-            browser,
-            ...(manifestVersion === 2 ? ["--mv2"] : []),
-        ],
-        directory,
-        timeout
-    );
+    if (session) {
+        await session.build(directory, browser, manifestVersion, timeout);
+    } else {
+        await run(
+            process.execPath,
+            [
+                path.join(projectRoot, "bin", "adnbn.js"),
+                "build",
+                ".",
+                "-b",
+                browser,
+                ...(manifestVersion === 2 ? ["--mv2"] : []),
+            ],
+            directory,
+            timeout
+        );
+    }
 
     return path.join(directory, "dist", `myapp-${browser}-mv${manifestVersion}`);
 };
 
 export const createIntegrationFixture = async (
     projectRoot: string,
-    sourceDirectory: string
+    sourceDirectory: string,
+    session?: BuildSession
 ): Promise<IntegrationFixture> => {
     const cacheDirectory = path.join(projectRoot, ".cache", "integration");
 
@@ -95,7 +102,7 @@ export const createIntegrationFixture = async (
 
     return {
         directory,
-        build: options => prepareIntegrationFixture(projectRoot, directory, options),
+        build: options => prepareIntegrationFixture(projectRoot, directory, {session, ...options}),
         dispose,
     };
 };
@@ -103,7 +110,10 @@ export const createIntegrationFixture = async (
 export const findIntegrationFixtures = async (directory: string): Promise<string[]> => {
     const entries = await readdir(directory, {withFileTypes: true});
 
-    if (entries.some(entry => entry.isFile() && entry.name === "adnbn.config.ts")) {
+    const hasConfig = entries.some(entry => entry.isFile() && entry.name === "adnbn.config.ts");
+    const hasPackage = entries.some(entry => entry.isFile() && entry.name === "package.json");
+
+    if (hasConfig && hasPackage) {
         return [directory];
     }
 

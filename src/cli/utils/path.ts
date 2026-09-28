@@ -2,7 +2,7 @@ import path from "path";
 import _ from "lodash";
 
 export const toPosix = (to: string): string => {
-    return path.posix.join(...to.split(path.sep));
+    return path.normalize(to).split(path.sep).join("/");
 };
 
 export const toPosixPath = (pathname: string): string => {

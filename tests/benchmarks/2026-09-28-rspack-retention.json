@@ -1,0 +1,105 @@
+{
+  "node": "v24.5.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "rspack": "1.7.11",
+  "iterations": 12,
+  "results": [
+    {
+      "variant": "baseline",
+      "alive": 0,
+      "heapUsed": 8744624,
+      "rss": 147259392,
+      "external": 2006085,
+      "arrayBuffers": 11656
+    },
+    {
+      "variant": "rule-test-regexp",
+      "alive": 0,
+      "heapUsed": 8922544,
+      "rss": 164577280,
+      "external": 2014277,
+      "arrayBuffers": 19848
+    },
+    {
+      "variant": "rule-test-function",
+      "alive": 12,
+      "heapUsed": 14572240,
+      "rss": 163151872,
+      "external": 2014277,
+      "arrayBuffers": 19848
+    },
+    {
+      "variant": "rule-include-function",
+      "alive": 0,
+      "heapUsed": 8763512,
+      "rss": 148520960,
+      "external": 2006085,
+      "arrayBuffers": 11656
+    },
+    {
+      "variant": "rule-use-function",
+      "alive": 12,
+      "heapUsed": 14569976,
+      "rss": 157761536,
+      "external": 2014277,
+      "arrayBuffers": 19848
+    },
+    {
+      "variant": "rule-query-function",
+      "alive": 12,
+      "heapUsed": 14571880,
+      "rss": 164724736,
+      "external": 2014277,
+      "arrayBuffers": 19848
+    },
+    {
+      "variant": "cache-group-regexp",
+      "alive": 0,
+      "heapUsed": 8746896,
+      "rss": 150061056,
+      "external": 2007212,
+      "arrayBuffers": 12783
+    },
+    {
+      "variant": "cache-group-function",
+      "alive": 12,
+      "heapUsed": 14248744,
+      "rss": 153731072,
+      "external": 2007213,
+      "arrayBuffers": 12784
+    },
+    {
+      "variant": "html-file",
+      "alive": 0,
+      "heapUsed": 8770376,
+      "rss": 152862720,
+      "external": 2006085,
+      "arrayBuffers": 11656
+    },
+    {
+      "variant": "html-string",
+      "alive": 0,
+      "heapUsed": 8768248,
+      "rss": 149749760,
+      "external": 2006085,
+      "arrayBuffers": 11656
+    },
+    {
+      "variant": "html-content-function",
+      "alive": 12,
+      "heapUsed": 11720416,
+      "rss": 151650304,
+      "external": 2006085,
+      "arrayBuffers": 11656
+    },
+    {
+      "variant": "html-parameters-function",
+      "alive": 12,
+      "heapUsed": 11718440,
+      "rss": 154468352,
+      "external": 2006085,
+      "arrayBuffers": 11656
+    }
+  ]
+}

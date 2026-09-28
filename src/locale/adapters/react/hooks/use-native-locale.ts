@@ -1,8 +1,12 @@
 import {useMemo} from "react";
-import NativeLocale from "@locale/providers/NativeLocale";
+
 import ReactLocale from "../ReactLocale";
-import type {LocaleRegistry} from "@typing/locale";
+
+import {NativeLocale} from "@locale/providers";
+
 import type {LocaleReactContract} from "../types";
+
+import type {LocaleRegistry} from "@typing/locale";
 
 /** Uses browser-selected translations with React substitutions. */
 export const useNativeLocale = (): LocaleReactContract => {
