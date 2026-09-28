@@ -73,6 +73,13 @@ Releases and versioning:
 - We use SemVer. Commit types help determine version bumps (`feat` → minor, `fix` → patch, `BREAKING CHANGE` → major).
 - Package version is updated by maintainers within release/hotfix branches.
 
+Run `npm run release:preview` to inspect the proposed version and changelog from a feature branch,
+even with a dirty working tree. This is a dry run: it does not update files, create commits or tags, push,
+or publish to GitHub/npm. Only committed changes contribute to the proposed release notes and version.
+The preview uses the read-only `--release-version` and `--changelog` modes, which exit before the version
+update stage. `--dry-run` alone is insufficient with the installed release-it version: its npm plugin still
+executes `npm version`. The preview's relaxed checks do not change the actual release restrictions.
+
 ## How to contribute
 
 1. Fork the repository and create a branch from `develop` (or `main` for `hotfix`):

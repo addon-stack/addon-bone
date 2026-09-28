@@ -31,9 +31,9 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "bin",
+    "bin/adnbn.js",
     "dist",
-    "scripts",
+    "scripts/check-node-version.js",
     "types"
   ],
   "engines": {
@@ -130,7 +130,7 @@
     "test:inventory": "node scripts/test-inventory.mjs",
     "test:run": "node scripts/test-run.mjs",
     "release": "release-it",
-    "release:preview": "release-it --no-github.release --no-npm.publish --no-git.tag --ci"
+    "release:preview": "release-it --release-version --dry-run --no-git.requireBranch --no-git.requireCleanWorkingDir --no-git.push --no-github.release --no-npm.publish --ci && release-it --changelog --dry-run --no-git.requireBranch --no-git.requireCleanWorkingDir --no-git.push --no-github.release --no-npm.publish --ci"
   },
   "dependencies": {
     "@addon-core/browser": "^0.9.0",
