@@ -4,7 +4,7 @@ import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
 
 import {definePlugin} from "@main/plugin";
 
-import {EntrypointPlugin, GenerateModulePlugin, prepareVirtualModuleDirectory} from "@cli/bundler";
+import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {virtualOffscreenBackgroundModule} from "@cli/virtual";
 
 import Offscreen from "./Offscreen";
@@ -68,14 +68,12 @@ export default definePlugin(() => {
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
 
                 if (config.manifestVersion === 2 || config.browser === Browser.Firefox) {
-                    const directory = prepareVirtualModuleDirectory(config.rootDir, "offscreen");
-
                     plugins.push(
                         new RspackVirtualModulePlugin(
                             {
                                 [OffscreenBackgroundModule]: virtualOffscreenBackgroundModule(),
                             },
-                            directory
+                            "virtual"
                         )
                     );
 

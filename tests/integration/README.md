@@ -213,11 +213,14 @@ and `buildApp`, from an unrelated working directory. Absolute roots, paths conta
 imports and the generated `@/` alias are covered. Compiler context, source aliases and fallback package
 resolution use the project root; the caller's working directory is unchanged. The external virtual-module
 plugin still creates temporary files under the caller's `node_modules` and removes its module directory on
-compiler shutdown; these builds therefore require a writable working directory. Entrypoint and offscreen
-module directories are keyed by project root so independent workers do not remove each other's files.
-An IPC-controlled regression pauses two compilers after module creation, closes one, then runs the other.
-The sequence includes Chrome and Firefox with Offscreen, including its generated background module.
-Temporary directory creation is recursive, avoiding the external plugin's check-then-create race in a fresh cwd.
+compiler shutdown; these builds therefore require a writable working directory. The sequence includes
+Chrome and Firefox with Offscreen, including its generated background module.
+
+The external plugin does not isolate overlapping builds sharing a cwd: closing one compiler can remove
+another compiler's virtual modules. This remains an upstream limitation, not a supported concurrency contract.
+After `npm run build`, run `node tests/benchmarks/virtual-module-conflict.mjs` to reproduce the controlled
+creation/close race. The diagnostic expects the second build to fail and is deliberately outside Jest.
+Parallel test sessions use distinct working directories; production directory naming is unchanged.
 
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
 - `types/view`: shared View and adapter render types through the public source and built package APIs, render and container props inference, the render contract adopted by Offscreen and Sandbox, and the rejection of Promise and plain-object render values.

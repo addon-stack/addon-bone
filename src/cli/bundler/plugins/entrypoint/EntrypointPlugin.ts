@@ -4,7 +4,6 @@ import {createHash} from "node:crypto";
 
 import {Compiler, DynamicEntryPlugin, type EntryDescription, EntryNormalized} from "@rspack/core";
 import {RspackVirtualModulePlugin as VirtualModulesPlugin} from "rspack-plugin-virtual-module";
-import {prepareVirtualModuleDirectory} from "../../utils/virtual-module";
 
 import {EntrypointEntries, EntrypointFile} from "@typing/entrypoint";
 
@@ -37,7 +36,6 @@ export default class EntrypointPlugin {
 
     private _plugin?: VirtualModulesPlugin;
     private _modules?: EntrypointPluginEntryModules;
-    private context?: string;
     private readonly _entryOptions: EntrypointPluginEntryOptionsResolver[] = [];
 
     protected template?: EntrypointPluginTemplate;
@@ -66,14 +64,7 @@ export default class EntrypointPlugin {
 
         const modules = Object.fromEntries(this.getModuleContents(this.modules));
 
-        if (!this.context) {
-            throw new Error("EntrypointPlugin must be applied before writing virtual modules");
-        }
-
-        return (this._plugin = new VirtualModulesPlugin(
-            modules,
-            prepareVirtualModuleDirectory(this.context, "entrypoint")
-        ));
+        return (this._plugin = new VirtualModulesPlugin(modules, "entrypoint"));
     }
 
     protected get modules(): EntrypointPluginEntryModules {
@@ -114,7 +105,6 @@ export default class EntrypointPlugin {
     }
 
     public apply(compiler: Compiler): void {
-        this.context = compiler.context;
         this.plugin.apply(compiler);
 
         compiler.hooks.entryOption.tap(this.pluginName, (_, entry) => {
