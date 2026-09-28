@@ -99,6 +99,10 @@ jobs:
       - name: Compiler, CLI and declaration integrations
         if: matrix.os != 'ubuntu-latest' || matrix.node != 22
         run: npm run test:run -- --selectProjects build types --ci --maxWorkers=2
+      - name: Override builds in isolated sessions
+        run: npm run test:run -- --selectProjects build --testPathPatterns=tests/integration/build/override --ci --maxWorkers=2
+        env:
+          ADNBN_OVERRIDE_BUILD_MODE: session
       - name: Upload build coverage
         if: matrix.os == 'ubuntu-latest' && matrix.node == 22
         uses: actions/upload-artifact@v4

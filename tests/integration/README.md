@@ -298,5 +298,7 @@ Run benchmarks exclusively, without another build or test run.
 
 See the [session measurements](../benchmarks/2026-09-28-override-session.md) for timings and child memory.
 The [earlier in-process report](../benchmarks/2026-09-28-override-pilot.md) describes the superseded experiment;
-its timings do not apply to the session backend. The session pilot remains opt-in pending fresh measurements
-and the Linux/Windows Node 22/24 CI matrix.
+its timings do not apply to the session backend. CI explicitly runs the session override suite on Linux and
+Windows with Node 22 and 24, after the ordinary CLI build integrations, using two workers. This reuses the
+existing package build and does not replace the CLI coverage run. The local default remains CLI; switching
+it requires successful CI results and fresh measurements on the target machines.
