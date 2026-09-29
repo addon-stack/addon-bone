@@ -8,6 +8,7 @@ import {Plugin} from "@typing/plugin";
 import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
 import {EnvFilterOptions, EnvFilterVariant} from "@typing/env";
+import {ActionOptions} from "@typing/action";
 
 /**
  * Configuration options for building a browser extension. This interface defines
@@ -150,6 +151,19 @@ export interface Config {
      * - "disable"
      */
     icon: string;
+
+    /**
+     * Default appearance of the toolbar button (`action` in MV3, `browser_action` in MV2).
+     * An explicit object, including `{}`, declares the button without requiring a popup or command.
+     * It does not register a click handler.
+     *
+     * The applied popup overrides each explicitly specified icon/title independently.
+     * Missing values fall back to these settings, then to `icon` and the extension name.
+     * When omitted, only an applied popup or execute-action command declares the button.
+     *
+     * @example {icon: "active", title: "@action.title"}
+     */
+    action?: ActionOptions;
 
     /**
      * Browser-specific settings (populate manifest.browser_specific_settings).

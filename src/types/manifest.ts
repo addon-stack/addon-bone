@@ -5,6 +5,7 @@ import {Language} from "@typing/locale";
 import {BrowserSpecific, DataCollectionPermission} from "@typing/browser";
 import {CspConfig} from "@typing/csp";
 import {SandboxCspConfig} from "@typing/sandbox";
+import {ActionOptions} from "@typing/action";
 
 export const ManifestMatchSchemes: ReadonlySet<string> = new Set<string>(["http", "https", "file", "ftp", "ws", "wss"]);
 
@@ -32,6 +33,8 @@ type ManifestBase = chrome.runtime.ManifestBase;
 export type ManifestPermission = chrome.runtime.ManifestPermission;
 
 export type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermission;
+
+export type ManifestAction = NonNullable<chrome.runtime.ManifestV3["action"]>;
 
 type ManifestFixed<T extends ManifestBase> = Omit<T, "manifest_version"> & {
     manifest_version: ManifestVersion;
@@ -119,6 +122,9 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
     setIcons(icons?: ManifestIcons): this;
 
     setIcon(icon?: string): this; // name of an icon set for manifest.icons
+
+    // Toolbar button
+    setAction(action?: ActionOptions): this;
 
     // Entry
     setBackground(background?: ManifestBackground): this;

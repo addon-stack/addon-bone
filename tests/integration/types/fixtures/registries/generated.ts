@@ -27,6 +27,17 @@ api.getPopups().get("popup");
 api.getSidebars().get("sidebar");
 api.getIcons().get("brand");
 
+api.defineConfig({action: {icon: "brand"}});
+api.definePopup({icon: "brand", render: "Popup"});
+api.defineSidebar({icon: "brand", render: "Sidebar"});
+
+// @ts-expect-error: Action defaults use the generated icon group names.
+api.defineConfig({action: {icon: "unknown"}});
+// @ts-expect-error: Popup icons use the generated icon group names.
+api.definePopup({icon: "unknown", render: "Popup"});
+// @ts-expect-error: Sidebar icons use the generated icon group names.
+api.defineSidebar({icon: "unknown", render: "Sidebar"});
+
 const worker = api.getService("worker");
 const document = api.getOffscreen("document");
 const frame = api.getSandbox("frame");
