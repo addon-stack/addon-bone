@@ -1,5 +1,128 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.15.0 (2026-09-29)
+
+### 💥 Breaking Changes
+
+* relative @use and @forward requests in app stylesheets
+now resolve from the app file instead of the shared file. To reuse a
+shared module intentionally, use an explicit path or configured alias
+to the shared directory.
+
+
+### ⚡️ Performance Improvements
+
+* **relay:** preserve named definitions during type inference ([71451b8](https://github.com/addon-stack/addon-bone/commit/71451b8fdd3b9cf6b5a075ef6e45870ff3ec53a2))
+
+  Match full Relay definitions before the partial bootstrap input and share the
+  content constructor contract. Emitted runtime JavaScript remains unchanged.
+
+  Keep registry and path checks in the declaration matrix; check constructors,
+  prepared data, adapters and virtual bootstrap in source/package type fixtures.
+  Validation: 203 suites and 2003 tests passed, including Chrome and Firefox.
+
+
+
+### ✨ Features
+
+* **action:** configure toolbar icon and title defaults ([2a49fa4](https://github.com/addon-stack/addon-bone/commit/2a49fa4f1e1162a9f7dfc6af389c9779777a2597))
+
+
+
+
+### 🐛 Bug Fixed
+
+* **cli:** await build completion and close failed compilers ([211adfe](https://github.com/addon-stack/addon-bone/commit/211adfe3deba64aef94d69c116435af2901dfaff))
+
+  Return Stats after compiler shutdown and preserve compilation and close failures.
+
+  Keep one-shot build output and exit codes in the CLI; leave watch behavior unchanged.
+
+  Cover real Rspack lifecycle and CLI failures with tests, fixtures, and documentation.
+
+* **cli:** load dotenv only from application and project paths ([a285791](https://github.com/addon-stack/addon-bone/commit/a285791378da03ddae21a96b6bde2f7355b8dc06))
+
+
+* **cli:** resolve builds from the project root ([ed60c4a](https://github.com/addon-stack/addon-bone/commit/ed60c4a25aac297487bf2fb79b2d0c68a4329ead))
+
+  Preserve absolute entrypoint imports and resolve source aliases, compiler
+  context and virtual-module package dependencies from the consumer root.
+  Use portable virtual names and separate temporary directories per project;
+  prepare them recursively to avoid creation and cleanup races across workers.
+  Resolve the offscreen background entry through its direct virtual alias.
+
+  Cover CLI and buildApp from an unrelated cwd with Chrome/Firefox builds,
+  relative imports, aliases, A-B-A state restoration and controlled overlap.
+
+* **message:** preserve synchronous falsy responses ([1eb9141](https://github.com/addon-stack/addon-bone/commit/1eb9141a55e772a2007880b7401f0c0ebd251fa5))
+
+
+* **message:** unwrap successful responses without payload ([938e9be](https://github.com/addon-stack/addon-bone/commit/938e9bef7401d9bbe6cf6c2fb12f82b4e50c4214))
+
+
+* **message:** update React handlers after render commits ([3aa1c4a](https://github.com/addon-stack/addon-bone/commit/3aa1c4a0e2a59ea487c1da66e157b98e085cb495))
+
+
+* **relay:** omit scripting permission for MV2 ([2903310](https://github.com/addon-stack/addon-bone/commit/2903310793fb4918b5a682ab037f8598be6f88b2))
+
+
+* **relay:** preserve scripting error envelopes ([8d035a8](https://github.com/addon-stack/addon-bone/commit/8d035a82fa5f218ef9a8709ff24675e075949f4a))
+
+  Resolve missing-manager failures through the RPC envelope and reject malformed
+  responses with RelayProtocolError. Preserve synchronous dispatch and the final
+  retry at 2700ms.
+
+  Add isolated-runtime and Chrome/Firefox regressions. Refs #109.
+
+* **release:** set sync merge message through github-script ([d9d6c22](https://github.com/addon-stack/addon-bone/commit/d9d6c22523624e125c69d482dab5c110160015a1))
+
+
+* **style:** resolve relative Sass requests from their source files ([72abf34](https://github.com/addon-stack/addon-bone/commit/72abf34c89da43f17d89ebab21052d526f67c103))
+
+  Rebase explicit ./ and ../ requests in @use and @forward before merging
+  shared and app styles, preserving as, show, hide and with. Rebase literal
+  app url(...) values, including module configuration, and preserve query
+  strings and fragments.
+
+  Keep shared and app styles in one CSS module with the existing class
+  identifiers, shared-to-app order and stylesheet routing.
+
+  Use sass-loader additionalData to register existing and missing app
+  overrides as watch dependencies. Emit preparation errors through the
+  loader context. Separate request rewriting from merge ordering and
+  deduplication.
+
+  Cover rewriting, merging, two-app builds and watch updates with tests.
+  Document supported cases, limitations and migration.
+
+
+
+### 🛠️ Refactoring
+
+* **cli:** isolate sequential internal app builds ([5c43c0a](https://github.com/addon-stack/addon-bone/commit/5c43c0ad0e0875b7e50da9e17c9dc72880e45b70))
+
+  Restore the environment after one-shot builds and reject overlapping calls.
+  Keep the pilot limited to TypeScript configs and place package-level tests in integrations.
+
+* **cli:** remove pilot virtual-directory workaround ([3017489](https://github.com/addon-stack/addon-bone/commit/30174892476e5020dc776c40d612568e9856e558))
+
+  Keep absolute-root resolution and portable entrypoint names.
+  Restore the external plugin's directory names. Preserve the shared-cwd
+  conflict as a standalone upstream diagnostic.
+
+* **locale:** import native provider through barrel ([d7c7157](https://github.com/addon-stack/addon-bone/commit/d7c7157c3cd30da818b53b8c61071f52efa54aa8))
+
+
+* **locale:** move observable state to observers ([e3133d5](https://github.com/addon-stack/addon-bone/commit/e3133d5dc19fa63a1a3ac2c0bae165880b31b88c))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 38
+
 ## 🚀 Release Addon Bone v0.14.0 (2026-09-22)
 
 ### 💥 Breaking Changes
