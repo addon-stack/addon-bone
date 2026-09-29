@@ -3,6 +3,7 @@ import {Browser} from "@typing/browser";
 import {CspOptions} from "@typing/csp";
 import {PermissionsOptions} from "@typing/permissions";
 import type {ManifestSidebar} from "@typing/manifest";
+import type {IconName} from "@typing/icon";
 
 export const SidebarAlternativeBrowsers: ReadonlySet<Browser> = new Set([Browser.Opera, Browser.Firefox]);
 
@@ -19,7 +20,7 @@ export type SidebarAlias = keyof SidebarAliasRegistry extends never
 export type SidebarMap = Map<SidebarAlias, ManifestSidebar>;
 
 export interface SidebarConfig {
-    icon?: string;
+    icon?: IconName;
     apply?: boolean;
 }
 

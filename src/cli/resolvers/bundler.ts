@@ -1,9 +1,11 @@
 import {Configuration as RspackConfig, RspackPluginInstance} from "@rspack/core";
 import {RsdoctorRspackPlugin} from "@rsdoctor/rspack-plugin";
 import {merge as mergeConfig} from "webpack-merge";
+import path from "node:path";
 
 import manifestFactory from "../builders/manifest";
 import {processPluginHandler} from "./plugin";
+import {resolveRootPath} from "./path";
 
 import ManifestPlugin from "@cli/bundler/plugins/manifest";
 import WatchPlugin from "@cli/bundler/plugins/watch";
@@ -53,9 +55,15 @@ const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfi
 
 export default async (config: ReadonlyConfig): Promise<RspackConfig> => {
     let rspack: RspackConfig = {
+        context: resolveRootPath(config),
         entry: {},
         mode: config.mode,
         cache: false,
+        resolve: {
+            // Virtual entry modules may live outside the application. Keep issuer-local
+            // lookup first, then resolve the consumer's packages from its project root.
+            modules: ["node_modules", path.join(resolveRootPath(config), "node_modules")],
+        },
     };
 
     // prettier-ignore

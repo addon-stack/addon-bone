@@ -4,8 +4,13 @@ import TransportBuilder from "./TransportBuilder";
 
 import EntrypointBuilder from "../core/Builder";
 
-import {RelayUnresolvedDefinition} from "@typing/relay";
-import {ContentScriptBuilder, ContentScriptDefinition, ContentScriptIsolation} from "@typing/content";
+import {RelayDefinition, RelayUnresolvedDefinition} from "@typing/relay";
+import {
+    ContentScriptBuilder,
+    ContentScriptBuilderConstructor,
+    ContentScriptDefinition,
+    ContentScriptIsolation,
+} from "@typing/content";
 import {TransportType} from "@typing/transport";
 
 export default class Builder<
@@ -18,9 +23,20 @@ export default class Builder<
     protected readonly _transport: TransportBuilder<T, Data, Isolation>;
     protected readonly _content: ContentScriptBuilder;
 
+    // Preserve the named definition during inference instead of expanding its DOM option unions.
+    constructor(
+        definition: RelayDefinition<T, Data, Isolation>,
+        contentBuilder: ContentScriptBuilderConstructor<Data, Isolation>
+    );
+
+    constructor(
+        definition: RelayUnresolvedDefinition<T, Data, Isolation>,
+        contentBuilder: ContentScriptBuilderConstructor<Data, Isolation>
+    );
+
     constructor(
         protected readonly definition: RelayUnresolvedDefinition<T, Data, Isolation>,
-        contentBuilder: new (definition: ContentScriptDefinition<Data, NoInfer<Isolation>>) => ContentScriptBuilder
+        contentBuilder: ContentScriptBuilderConstructor<Data, Isolation>
     ) {
         super();
 

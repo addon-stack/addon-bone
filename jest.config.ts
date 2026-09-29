@@ -4,8 +4,12 @@ import {availableParallelism} from "node:os";
 const shared: Config = {
     rootDir: import.meta.dirname,
     testEnvironment: "node",
+    // This function is serialized into browser/VM realms; Istanbul closures cannot cross that boundary.
+    coveragePathIgnorePatterns: ["/node_modules/", "<rootDir>/src/relay/adapters/invoke-relay\\.ts$"],
+
     globals: {ADNBN_TEST_ROOT: import.meta.dirname},
-    setupFiles: ["<rootDir>/tests/jest.setup.ts"],
+    setupFilesAfterEnv: ["<rootDir>/tests/jest.setup.ts"],
+    transformIgnorePatterns: ["/node_modules/(?!(@addon-core/storage|nanoid)/)"],
     modulePathIgnorePatterns: ["<rootDir>/.cache/"],
     resolver: "<rootDir>/tests/raw-module-resolver.cjs",
     moduleNameMapper: {
@@ -24,6 +28,7 @@ const shared: Config = {
         "^@transport/(.*)$": "<rootDir>/src/transport/$1",
         "^@main/(.*)$": "<rootDir>/src/main/$1",
         "^@typing/(.*)$": "<rootDir>/src/types/$1",
+        "^@tests/(.*)$": "<rootDir>/tests/$1",
     },
     extensionsToTreatAsEsm: [".ts", ".tsx"],
     transform: {
@@ -45,7 +50,7 @@ const shared: Config = {
 
 const buildTests = [
     "<rootDir>/src/cli/bundler/plugins/**/*.test.ts",
-    "<rootDir>/src/cli/index.test.ts",
+    "<rootDir>/src/cli/builders/app/**/*.test.ts",
     "<rootDir>/src/cli/virtual/virtual.test.ts",
     "<rootDir>/src/cli/plugins/content/RelayDeclaration.test.ts",
     "<rootDir>/src/cli/plugins/locale/declaration/LocaleDeclaration.test.ts",
@@ -53,6 +58,7 @@ const buildTests = [
     "<rootDir>/tests/integration/build/**/*.test.ts",
 ];
 const domTests = [
+    "<rootDir>/tests/browser-harness-dom.test.ts",
     "<rootDir>/src/entry/**/*.test.ts",
     "<rootDir>/src/frame/**/*.test.ts",
     "<rootDir>/src/sandbox/providers/**/*.test.ts",
@@ -65,6 +71,7 @@ const exclude = (patterns: string[]) =>
 
 const config: Config = {
     verbose: false,
+    reporters: ["default", "<rootDir>/tests/BrowserStartupReporter.cjs"],
     maxWorkers: Math.max(1, Math.min(8, availableParallelism() - 1)),
     coverageProvider: "babel",
     projects: [
@@ -91,7 +98,7 @@ const config: Config = {
         {
             ...shared,
             displayName: "chrome",
-            setupFiles: [],
+            setupFilesAfterEnv: [],
             testMatch: [
                 "<rootDir>/tests/integration/browser/**/*.integration.test.ts",
                 ...exclude(["<rootDir>/tests/integration/browser/**/*.firefox.integration.test.ts"]),
@@ -100,7 +107,7 @@ const config: Config = {
         {
             ...shared,
             displayName: "firefox",
-            setupFiles: [],
+            setupFilesAfterEnv: [],
             testMatch: ["<rootDir>/tests/integration/browser/**/*.firefox.integration.test.ts"],
         },
     ],

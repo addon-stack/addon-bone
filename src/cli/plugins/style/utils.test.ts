@@ -1,16 +1,28 @@
 import fs from "fs";
 import path from "path";
 import sass from "sass";
+import {pathToFileURL} from "url";
 
-import {mergeStyleSources} from "./utils";
+import {mergeStyleSources, type StyleSource} from "./utils";
 
 const fixtures = path.resolve(__dirname, "tests", "fixtures");
 
-const mergeFixture = (name: string): string => {
-    const fixture = (...parts: string[]): string => fs.readFileSync(path.join(fixtures, name, ...parts), "utf8");
+const readSource = (...parts: string[]): StyleSource => {
+    const filename = path.join(fixtures, ...parts);
 
-    return mergeStyleSources(fixture("shared.scss"), fixture("app.scss"));
+    return {filename, content: fs.readFileSync(filename, "utf8")};
 };
+
+const mergeFixture = (name: string): string =>
+    mergeStyleSources(readSource(name, "shared.scss"), readSource(name, "app.scss"));
+
+const mergeLocatedFixture = (name: string): string =>
+    mergeStyleSources(readSource(name, "shared", "content.scss"), readSource(name, "app", "content.scss"));
+
+const compileLocatedFixture = (name: string): string =>
+    sass.compileString(mergeLocatedFixture(name), {
+        url: pathToFileURL(path.join(fixtures, name, "shared", "content.scss")),
+    }).css;
 
 const normalizeStyle = (style: string): string => style.replace(/\s+/g, " ").trim();
 
@@ -133,6 +145,62 @@ describe("mergeStyleSources", () => {
         const merged = mergeFixture("duplicate-body");
 
         expect(normalizeStyle(merged).match(/\.badge \{ color: red; \}/g)).toHaveLength(2);
+    });
+
+    test("rebases module requests before merging and preserves Sass configuration and forwarding", () => {
+        const merged = mergeLocatedFixture("relative-modules");
+
+        expect(merged).toContain('@use "./theme/tokens" as sharedTokens;');
+        expect(merged).toContain('@use "../app/theme/tokens" as appTokens;');
+        expect(merged).toContain('@forward "../app/theme/tokens" as theme-* show $theme-accent with ($accent: blue);');
+        expect(merged).toContain('@forward "../app/theme/hidden" hide $private;');
+        expect(normalizeStyle(merged)).toContain(
+            '@use "../app/theme/fonts" with ( $font: url("../app/theme/Inter.woff2?browser&v=a/../b#face") );'
+        );
+
+        const css = compileLocatedFixture("relative-modules");
+
+        expect(css).toContain("color: red");
+        expect(css).toContain("background: blue");
+        expect(css).toContain("font-weight: 400");
+        expect(css).toContain('url("../app/theme/Inter.woff2?browser&v=a/../b#face")');
+    });
+
+    test("does not deduplicate identical requests to different files or hide their namespace conflict", () => {
+        const merged = mergeLocatedFixture("relative-conflict");
+
+        expect(merged).toContain('@use "./theme/tokens";');
+        expect(merged).toContain('@use "../app/theme/tokens";');
+        expect(() => compileLocatedFixture("relative-conflict")).toThrow(/already a module with namespace "tokens"/);
+    });
+
+    test("normalizes shared requests so equivalent relative requests to the same module deduplicate", () => {
+        const merged = mergeLocatedFixture("same-module");
+
+        expect(merged).not.toContain("./../common/tokens");
+        expect(merged.match(/@use "\.\.\/common\/tokens";/g)).toHaveLength(1);
+        expect(compileLocatedFixture("same-module").match(/color: red/g)).toHaveLength(2);
+    });
+
+    test("rebases app URLs in declarations and at-rule parameters and leaves shared values and comments as written", () => {
+        const merged = normalizeStyle(mergeLocatedFixture("url-values"));
+
+        for (const rebased of [
+            '$icon: url("../app/theme/icon.svg");',
+            'background: url("../app/theme/plain.svg");',
+            '@supports (background: url("../app/theme/support.svg"))',
+        ]) {
+            expect(merged).toContain(rebased);
+        }
+
+        for (const unchanged of [
+            "$logo: url(./logo.svg);",
+            'background: url("./shared.svg");',
+            'content: "url(./text.svg)";',
+            '/* url("./comment.svg") */',
+        ]) {
+            expect(merged).toContain(unchanged);
+        }
     });
 });
 

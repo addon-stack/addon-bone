@@ -4,6 +4,7 @@ import {loadConfig} from "c12";
 import _ from "lodash";
 
 import {
+    pluginAction,
     pluginAsset,
     pluginBackground,
     pluginBundler,
@@ -75,7 +76,7 @@ const getUserConfig = async (config: ReadonlyConfig): Promise<UserConfig> => {
     if (existsSync(configFilePath)) {
         const {config: userConfig} = await loadConfig<UserConfig>({
             configFile: configFilePath,
-            dotenv: true,
+            dotenv: false,
         });
 
         if (config.debug) {
@@ -205,6 +206,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         author = undefined,
         homepage = "HOMEPAGE",
         icon = DefaultIconGroupName,
+        action,
         lang = Language.English,
         incognito,
         specific,
@@ -279,6 +281,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         homepage,
         lang: resolveLanguage(lang),
         icon,
+        action,
         incognito,
         specific,
         manifest,
@@ -367,6 +370,7 @@ export default async (config: OptionalConfig): Promise<Config> => {
         pluginStyle(),
         pluginLocale(),
         pluginMeta(),
+        pluginAction(),
         pluginContent(),
         pluginBackground(),
         pluginOptions(),

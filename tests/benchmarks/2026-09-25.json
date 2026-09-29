@@ -1,0 +1,621 @@
+{
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "node": "v24.5.0",
+    "logicalCpus": 16,
+    "cpu": "Apple M3 Max",
+    "revision": "7c4e136ec013b979fa34310ba418fb0d2f596da5",
+    "dirty": true,
+    "workers": 8
+  },
+  "runs": [
+    {
+      "group": "build",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "seconds": 3.335339958081022,
+      "exitCode": 0
+    },
+    {
+      "group": "build",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "seconds": 3.304855166003108,
+      "exitCode": 0
+    },
+    {
+      "group": "build",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "seconds": 3.349509875057265,
+      "exitCode": 0
+    },
+    {
+      "group": "build",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "seconds": 3.2570682920049876,
+      "exitCode": 0
+    },
+    {
+      "group": "unit",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-0.jest.json"
+      ],
+      "seconds": 5.005515957949683,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 28.503999999999998,
+      "jestSeconds": 4.518
+    },
+    {
+      "group": "unit",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-1.jest.json"
+      ],
+      "seconds": 5.151686375029385,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 30.551,
+      "jestSeconds": 4.708
+    },
+    {
+      "group": "unit",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-2.jest.json"
+      ],
+      "seconds": 5.455427624983713,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 30.965,
+      "jestSeconds": 4.942
+    },
+    {
+      "group": "unit",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-3.jest.json"
+      ],
+      "seconds": 4.92035145778209,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 26.595,
+      "jestSeconds": 4.318
+    },
+    {
+      "group": "unit-coverage",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "unit-node",
+        "unit-dom",
+        "--coverage",
+        "--coverageProvider=babel",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-coverage-0.jest.json"
+      ],
+      "seconds": 8.700660167029127,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 34.702,
+      "jestSeconds": 8.131
+    },
+    {
+      "group": "unit-coverage",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "unit-node",
+        "unit-dom",
+        "--coverage",
+        "--coverageProvider=babel",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-coverage-1.jest.json"
+      ],
+      "seconds": 8.086944292066619,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 31.598,
+      "jestSeconds": 7.543
+    },
+    {
+      "group": "unit-coverage",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "unit-node",
+        "unit-dom",
+        "--coverage",
+        "--coverageProvider=babel",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-coverage-2.jest.json"
+      ],
+      "seconds": 8.519587750080973,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 32.342999999999996,
+      "jestSeconds": 7.938
+    },
+    {
+      "group": "unit-coverage",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "unit-node",
+        "unit-dom",
+        "--coverage",
+        "--coverageProvider=babel",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/unit-coverage-3.jest.json"
+      ],
+      "seconds": 11.017556832870468,
+      "exitCode": 0,
+      "suites": 135,
+      "tests": 1676,
+      "passed": 1676,
+      "sumFileSeconds": 45.572,
+      "jestSeconds": 10.32
+    },
+    {
+      "group": "build-types",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/build-types-0.jest.json"
+      ],
+      "seconds": 54.95127954194322,
+      "exitCode": 0,
+      "suites": 36,
+      "tests": 283,
+      "passed": 283,
+      "sumFileSeconds": 177.17000000000002,
+      "jestSeconds": 54.513
+    },
+    {
+      "group": "build-types",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/build-types-1.jest.json"
+      ],
+      "seconds": 52.88551312498748,
+      "exitCode": 0,
+      "suites": 36,
+      "tests": 283,
+      "passed": 283,
+      "sumFileSeconds": 167.33,
+      "jestSeconds": 52.486
+    },
+    {
+      "group": "build-types",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/build-types-2.jest.json"
+      ],
+      "seconds": 54.48285354208201,
+      "exitCode": 0,
+      "suites": 36,
+      "tests": 283,
+      "passed": 283,
+      "sumFileSeconds": 163.808,
+      "jestSeconds": 54.134
+    },
+    {
+      "group": "build-types",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "build",
+        "types",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/build-types-3.jest.json"
+      ],
+      "seconds": 54.48391433409415,
+      "exitCode": 0,
+      "suites": 36,
+      "tests": 283,
+      "passed": 283,
+      "sumFileSeconds": 166.48,
+      "jestSeconds": 54.129
+    },
+    {
+      "group": "chrome",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "chrome",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/chrome-0.jest.json"
+      ],
+      "seconds": 14.210940917022526,
+      "exitCode": 0,
+      "suites": 17,
+      "tests": 20,
+      "passed": 20,
+      "sumFileSeconds": 104.067,
+      "jestSeconds": 13.744
+    },
+    {
+      "group": "chrome",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "chrome",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/chrome-1.jest.json"
+      ],
+      "seconds": 8.6537630839739,
+      "exitCode": 0,
+      "suites": 17,
+      "tests": 20,
+      "passed": 20,
+      "sumFileSeconds": 60.949,
+      "jestSeconds": 8.259
+    },
+    {
+      "group": "chrome",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "chrome",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/chrome-2.jest.json"
+      ],
+      "seconds": 8.633810291998088,
+      "exitCode": 0,
+      "suites": 17,
+      "tests": 20,
+      "passed": 20,
+      "sumFileSeconds": 60.577,
+      "jestSeconds": 8.309
+    },
+    {
+      "group": "chrome",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "chrome",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/chrome-3.jest.json"
+      ],
+      "seconds": 8.815473000053316,
+      "exitCode": 0,
+      "suites": 17,
+      "tests": 20,
+      "passed": 20,
+      "sumFileSeconds": 61.57,
+      "jestSeconds": 8.363
+    },
+    {
+      "group": "firefox",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "firefox",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/firefox-0.jest.json"
+      ],
+      "seconds": 14.199823916889727,
+      "exitCode": 0,
+      "suites": 14,
+      "tests": 22,
+      "passed": 22,
+      "sumFileSeconds": 95.919,
+      "jestSeconds": 13.734
+    },
+    {
+      "group": "firefox",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "firefox",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/firefox-1.jest.json"
+      ],
+      "seconds": 12.811804458033293,
+      "exitCode": 0,
+      "suites": 14,
+      "tests": 22,
+      "passed": 22,
+      "sumFileSeconds": 91.847,
+      "jestSeconds": 12.407
+    },
+    {
+      "group": "firefox",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "firefox",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/firefox-2.jest.json"
+      ],
+      "seconds": 13.957261291798204,
+      "exitCode": 0,
+      "suites": 14,
+      "tests": 22,
+      "passed": 22,
+      "sumFileSeconds": 92.166,
+      "jestSeconds": 13.574
+    },
+    {
+      "group": "firefox",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "node",
+        "scripts/test-run.mjs",
+        "--selectProjects",
+        "firefox",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/firefox-3.jest.json"
+      ],
+      "seconds": 13.349818667164072,
+      "exitCode": 0,
+      "suites": 14,
+      "tests": 22,
+      "passed": 22,
+      "sumFileSeconds": 92.161,
+      "jestSeconds": 12.916
+    },
+    {
+      "group": "fixture-typecheck",
+      "run": 0,
+      "warmup": true,
+      "command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "tests/integration/typecheck.ts",
+        "--prepare"
+      ],
+      "seconds": 9.378492458024994,
+      "exitCode": 0
+    },
+    {
+      "group": "fixture-typecheck",
+      "run": 1,
+      "warmup": false,
+      "command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "tests/integration/typecheck.ts",
+        "--prepare"
+      ],
+      "seconds": 9.46627854090184,
+      "exitCode": 0
+    },
+    {
+      "group": "fixture-typecheck",
+      "run": 2,
+      "warmup": false,
+      "command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "tests/integration/typecheck.ts",
+        "--prepare"
+      ],
+      "seconds": 8.924615582916886,
+      "exitCode": 0
+    },
+    {
+      "group": "fixture-typecheck",
+      "run": 3,
+      "warmup": false,
+      "command": [
+        "node",
+        "node_modules/tsx/dist/cli.mjs",
+        "tests/integration/typecheck.ts",
+        "--prepare"
+      ],
+      "seconds": 8.819596541812643,
+      "exitCode": 0
+    },
+    {
+      "group": "full",
+      "run": 0,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "test",
+        "--",
+        "--json",
+        "--outputFile=/tmp/addon-bone-final-bench/full-0.jest.json"
+      ],
+      "seconds": 66.16412891703658,
+      "exitCode": 0,
+      "suites": 202,
+      "tests": 2001,
+      "passed": 2001,
+      "sumFileSeconds": 357.851,
+      "jestSeconds": 61.758
+    },
+    {
+      "group": "pre-push",
+      "run": 0,
+      "warmup": false,
+      "command": [
+        "npm",
+        "run",
+        "test:pre-push"
+      ],
+      "seconds": 64.03328733285889,
+      "exitCode": 0,
+      "jestSeconds": 58.354
+    }
+  ],
+  "matchedUnitComparison": {
+    "command": [
+      "npm",
+      "run",
+      "test:unit"
+    ],
+    "before": [
+      {
+        "run": 0,
+        "warmup": true,
+        "seconds": 4.9167931659612805,
+        "exitCode": 0
+      },
+      {
+        "run": 1,
+        "warmup": false,
+        "seconds": 4.4468214579392225,
+        "exitCode": 0
+      },
+      {
+        "run": 2,
+        "warmup": false,
+        "seconds": 4.580718582961708,
+        "exitCode": 0
+      },
+      {
+        "run": 3,
+        "warmup": false,
+        "seconds": 4.678294291952625,
+        "exitCode": 0
+      }
+    ],
+    "after": [
+      {
+        "run": 0,
+        "warmup": true,
+        "seconds": 4.722068292088807,
+        "exitCode": 0
+      },
+      {
+        "run": 1,
+        "warmup": false,
+        "seconds": 4.354938208125532,
+        "exitCode": 0
+      },
+      {
+        "run": 2,
+        "warmup": false,
+        "seconds": 4.3520949999801815,
+        "exitCode": 0
+      },
+      {
+        "run": 3,
+        "warmup": false,
+        "seconds": 4.317166750086471,
+        "exitCode": 0
+      }
+    ]
+  }
+}

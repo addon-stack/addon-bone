@@ -1,1 +1,1 @@
-export {default as useMessageHandler} from "./useMessageHandler";
+export {default as useMessageHandler} from "./use-message-handler";

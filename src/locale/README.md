@@ -13,13 +13,13 @@ description: Runtime translation providers, shared formatting, catalogue access,
 | `providers/AbstractLocale.ts`   | Common string rendering, missing-message diagnostics, and language names.                                                    |
 | `providers/NativeLocale.ts`     | Browser i18n message lookup and a singleton used by the public helpers.                                                      |
 | `providers/DynamicLocale.ts`    | Compiled translations, language state per instance, and optional storage synchronization.                                    |
-| `providers/ObservableLocale.ts` | Observable dynamic state, immutable snapshots, shared instances, and subscription lifetimes.                                 |
+| `observers/ObservableLocale.ts` | Observable dynamic state, immutable snapshots, shared instances, and subscription lifetimes.                                 |
 | `providers/CustomLocale.ts`     | Internal provider for an explicitly supplied language and flat message dictionary; not re-exported by the public entrypoint. |
 | `helpers.ts`                    | Native shortcuts: `t`, `choice`, `key` for browser message references, and `resolve` for strings prefixed with `@`.          |
 | `catalogue/`                    | Empty package fallback and typing for the generated data module.                                                             |
 | `storage/`                      | Built-in `LocaleStorage` implementation of the public `LocaleStorageDriver` contract.                                        |
 | `adapters/react/`               | React node rendering, native and dynamic locale hooks, and DOM language attributes through `useLocaleAttributes`.            |
-| `index.ts`                      | Public providers, helpers, and selected shared contracts.                                                                    |
+| `index.ts`                      | Public providers, observers, helpers, and selected shared contracts.                                                         |
 
 React hooks and their tests live in `adapters/react/hooks/`. The adapter's `index.ts` re-exports the hooks through `adnbn/locale/react`.
 
@@ -110,6 +110,8 @@ The renderer inserts nodes directly and keeps component state, handlers, and ref
 Construction does not read or watch storage. The first subscriber connects one storage listener and reads the saved language. The last unsubscribe disconnects it, and reconnecting reads storage again. Each `subscribe()` call returns its own cleanup function; subscriptions also work with `false`. Explicit `sync()` reads the saved language and requires enabled storage.
 
 `change()` publishes immediately and serializes persistence, including repeated selections of the current language. Old reads and storage echoes cannot overwrite a pending local selection. After successful writes, the provider reconciles with current storage. Save failures reject the returned promise without rolling back the selected language. Errors from automatic synchronization are logged; explicit `sync()` errors propagate to its caller.
+
+A rejected `change()` does not mean that the language stayed unchanged: subscribers have already seen the optimistic selection. Once pending writes finish, a later `sync()` or storage notification may replace that selection with the saved language.
 
 ## Dynamic translations in React
 

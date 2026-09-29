@@ -1,5 +1,13 @@
-import "jest-webextension-mock";
+import {startBrowserTest, stopBrowserTest} from "./browser-harness/session";
 
-import "./jest-message.setup";
-import "./jest-modules.setup";
-import "./jest-relay.setup";
+beforeEach(startBrowserTest);
+
+afterEach(async () => {
+    try {
+        await stopBrowserTest();
+    } finally {
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
+        jest.useRealTimers();
+    }
+});

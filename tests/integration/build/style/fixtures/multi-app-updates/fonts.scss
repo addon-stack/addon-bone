@@ -1,0 +1,9 @@
+@use "../metrics";
+
+$inter-latin: url("./Inter-Latin.woff2?browser") !default;
+
+@font-face {
+  font-family: ExampleUpdated;
+  font-weight: metrics.$weight;
+  src: $inter-latin format("woff2");
+}

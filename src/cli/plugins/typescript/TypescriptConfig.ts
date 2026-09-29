@@ -4,7 +4,7 @@ import {TsConfigJson} from "type-fest";
 
 import FileBuilder from "./FileBuilder";
 
-import {getResolvePath} from "@cli/resolvers/path";
+import {resolveRootPath} from "@cli/resolvers/path";
 
 import {ReadonlyConfig} from "@typing/config";
 import {PackageName} from "@typing/app";
@@ -50,7 +50,7 @@ export default class extends FileBuilder {
     public aliases(): Record<string, string> {
         return _.merge(
             this.vendorAliases,
-            _.mapValues(this.alias(), value => getResolvePath(value))
+            _.mapValues(this.alias(), value => path.resolve(resolveRootPath(this.config), value))
         );
     }
 

@@ -7,6 +7,7 @@ import {mergeWebAccessibleResources, normalizeDataCollectionPermissions} from ".
 import {
     CoreManifest,
     Manifest,
+    ManifestAction,
     ManifestAccessibleResource,
     ManifestAccessibleResources,
     ManifestBackground,
@@ -36,6 +37,7 @@ import {CommandExecuteActionName} from "@typing/command";
 import {DefaultIconGroupName} from "@typing/icon";
 import {SidebarAlternativeBrowsers} from "@typing/sidebar";
 import {ContentScriptMatches} from "@typing/content";
+import {ActionOptions} from "@typing/action";
 
 type ManifestV3 = chrome.runtime.ManifestV3;
 type ManifestPermission = chrome.runtime.ManifestPermission;
@@ -57,6 +59,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
     protected minimumVersion?: string;
     protected version?: string;
     protected icon?: string;
+    protected action?: ActionOptions;
     protected incognito?: ManifestIncognito;
     protected specific?: BrowserSpecific;
     protected locale?: Language;
@@ -259,6 +262,12 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public setPopup(popup?: ManifestPopup): this {
         this.popup = popup;
+
+        return this;
+    }
+
+    public setAction(action?: ActionOptions): this {
+        this.action = action;
 
         return this;
     }
@@ -814,6 +823,18 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             this.commands.size > 0 && Array.from(this.commands).some(({name}) => name === CommandExecuteActionName);
         const inOptionalCommands = optionalCommands && Object.keys(optionalCommands).includes(CommandExecuteActionName);
         return inInternalCommands || inOptionalCommands;
+    }
+
+    protected getAction(): ManifestAction | undefined {
+        if (!this.action && !this.popup && !this.hasExecuteActionCommand()) {
+            return;
+        }
+
+        return {
+            default_title: this.popup?.title ?? this.action?.title ?? this.name,
+            default_icon: this.getIconsByName(this.popup?.icon ?? this.action?.icon ?? this.icon),
+            ...(this.popup ? {default_popup: this.popup.path} : {}),
+        };
     }
 
     protected getIconsByName(name?: string): CoreManifestIcons | undefined {

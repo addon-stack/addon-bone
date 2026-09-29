@@ -1,8 +1,10 @@
 import ManifestV2 from "./ManifestV2";
 import ManifestV3 from "./ManifestV3";
 import {Browser, DataCollectionPermission} from "@typing/browser";
+import {CommandExecuteActionName} from "@typing/command";
+import type {ActionOptions} from "@typing/action";
 import {Language} from "@typing/locale";
-import {ManifestIncognito, type OptionalManifest} from "@typing/manifest";
+import {ManifestIncognito, type ManifestPopup, type OptionalManifest} from "@typing/manifest";
 
 describe("Manifest primitive properties", () => {
     it("name", () => {
@@ -262,6 +264,139 @@ describe("Manifest common builder methods", () => {
         expect(builder.getWebAccessibleResources()).not.toEqual(
             expect.arrayContaining([{resources: ["img/add.png"], matches: ["https://add.example.com/*"]}])
         );
+    });
+});
+
+describe.each([
+    {version: 2, Builder: ManifestV2, field: "browser_action"},
+    {version: 3, Builder: ManifestV3, field: "action"},
+] as const)("MV$version toolbar action", ({Builder, field}) => {
+    const createBuilder = () =>
+        new Builder(Browser.Chrome)
+            .setName("Extension")
+            .setIcon("extension")
+            .setIcons(
+                new Map([
+                    ["default", new Map([[16, "icons/default.png"]])],
+                    ["extension", new Map([[16, "icons/extension.png"]])],
+                    ["action", new Map([[16, "icons/action.png"]])],
+                    ["popup", new Map([[16, "icons/popup.png"]])],
+                ])
+            );
+
+    it("does not declare a button for extension metadata or ordinary commands alone", () => {
+        const manifest = createBuilder()
+            .setCommands(new Set([{name: "open-settings", description: "Open settings"}]))
+            .build();
+
+        expect(manifest).not.toHaveProperty(field);
+        expect(manifest.icons).toEqual({16: "icons/extension.png"});
+    });
+
+    it("declares configured appearance without a popup, command or background", () => {
+        const manifest = createBuilder().setAction({icon: "action", title: "Action"}).build();
+
+        expect(manifest).toHaveProperty(field, {
+            default_icon: {16: "icons/action.png"},
+            default_title: "Action",
+        });
+        expect(manifest).not.toHaveProperty(`${field}.default_popup`);
+        expect(manifest).not.toHaveProperty("commands");
+        expect(manifest).not.toHaveProperty("background");
+        expect(manifest.icons).toEqual({16: "icons/extension.png"});
+    });
+
+    it("uses extension defaults for an explicit empty action", () => {
+        expect(createBuilder().setAction({}).build()).toHaveProperty(field, {
+            default_icon: {16: "icons/extension.png"},
+            default_title: "Extension",
+        });
+    });
+
+    it("uses extension defaults for an execute-action command", () => {
+        const manifest = createBuilder()
+            .setCommands(new Set([{name: CommandExecuteActionName}]))
+            .build();
+
+        expect(manifest).toHaveProperty(field, {
+            default_icon: {16: "icons/extension.png"},
+            default_title: "Extension",
+        });
+    });
+
+    it("uses configured appearance with an execute-action command", () => {
+        const manifest = createBuilder()
+            .setCommands(new Set([{name: CommandExecuteActionName}]))
+            .setAction({icon: "action", title: "Action"})
+            .build();
+
+        expect(manifest).toHaveProperty(field, {
+            default_icon: {16: "icons/action.png"},
+            default_title: "Action",
+        });
+    });
+
+    it.each([
+        {options: {}, title: "Action", icon: "action"},
+        {options: {title: "Popup"}, title: "Popup", icon: "action"},
+        {options: {icon: "popup"}, title: "Action", icon: "popup"},
+        {options: {title: "Popup", icon: "popup"}, title: "Popup", icon: "popup"},
+    ])("overrides popup fields independently: $options", ({options, title, icon}) => {
+        const action: ActionOptions = {icon: "action", title: "Action"};
+        const popup: ManifestPopup = {path: "popup.html", ...options};
+
+        const before = createBuilder().setAction(action).setPopup(popup).build();
+        const after = createBuilder().setPopup(popup).setAction(action).build();
+
+        expect(before).toHaveProperty(field, {
+            default_icon: {16: `icons/${icon}.png`},
+            default_title: title,
+            default_popup: "popup.html",
+        });
+        expect(after).toEqual(before);
+    });
+
+    it("uses extension defaults when the popup has no appearance overrides", () => {
+        expect(createBuilder().setPopup({path: "popup.html"}).build()).toHaveProperty(field, {
+            default_icon: {16: "icons/extension.png"},
+            default_title: "Extension",
+            default_popup: "popup.html",
+        });
+    });
+
+    it("preserves an explicitly empty tooltip", () => {
+        expect(createBuilder().setAction({title: ""}).build()).toHaveProperty(`${field}.default_title`, "");
+    });
+
+    it("can declare a button without available icons", () => {
+        const manifest = new Builder(Browser.Chrome).setName("Extension").setAction({}).build();
+
+        expect(manifest).toHaveProperty(field, {default_title: "Extension"});
+    });
+
+    it("keeps the existing default-group fallback for unknown icon groups", () => {
+        const manifest = createBuilder().setAction({icon: "missing"}).build();
+
+        expect(manifest).toHaveProperty(`${field}.default_icon`, {16: "icons/default.png"});
+    });
+
+    it("clears popup overrides and explicit action settings without retaining stale data", () => {
+        const builder = createBuilder()
+            .setAction({icon: "action", title: "Action"})
+            .setPopup({path: "popup.html", icon: "popup", title: "Popup"});
+
+        expect(builder.build()).toHaveProperty(`${field}.default_title`, "Popup");
+
+        builder.setPopup(undefined);
+
+        expect(builder.build()).toHaveProperty(field, {
+            default_icon: {16: "icons/action.png"},
+            default_title: "Action",
+        });
+
+        builder.setAction(undefined);
+
+        expect(builder.build()).not.toHaveProperty(field);
     });
 });
 

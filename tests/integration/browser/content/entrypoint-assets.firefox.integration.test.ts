@@ -1,11 +1,9 @@
-import {mkdtemp, readFile, rm, stat} from "fs/promises";
-import os from "os";
+import {readFile, stat} from "fs/promises";
 import path from "path";
-import {spawn, type ChildProcess} from "child_process";
 
 import BidiClient from "../utils/BidiClient";
-import {findFirefoxBinary} from "../utils/firefox";
-import {getFreePort, stop, waitFor} from "../utils/browser";
+import {startBrowserSession, type BrowserSession} from "../utils/session";
+import {waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 import {documentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
@@ -23,20 +21,10 @@ jest.setTimeout(90_000);
 test.each([2, 3] as const)(
     "Firefox MV%s loads entrypoint assets in the effective execution world",
     async manifestVersion => {
-        const firefoxBinary = findFirefoxBinary();
-
-        if (!firefoxBinary || !path.isAbsolute(firefoxBinary)) {
-            throw new Error(
-                "Firefox is not installed. Install Firefox or set ADNBN_FIREFOX_BIN to its absolute executable path."
-            );
-        }
-
-        const userDataDir = await mkdtemp(path.join(os.tmpdir(), "adnbn-content-firefox-"));
-        let firefox: ChildProcess | undefined;
+        let session: BrowserSession | undefined;
         let browser: BidiClient | undefined;
         let fixture: IntegrationFixture | undefined;
         let site: IntegrationSite | undefined;
-        let output = "";
         let lastState: DocumentState | FrameState | undefined;
 
         const expectDocument = (state: DocumentState, frame: string): void => {
@@ -54,6 +42,7 @@ test.each([2, 3] as const)(
             const extensionDir = await fixture.build({browser: "firefox", manifestVersion});
             const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
             const scripts = manifest.content_scripts as Array<{js: string[]; css?: string[]; world?: string}>;
+
             const resources =
                 manifestVersion === 2
                     ? (manifest.web_accessible_resources as string[])
@@ -68,13 +57,16 @@ test.each([2, 3] as const)(
 
             if (manifestVersion === 2) {
                 expect(scripts.every(script => script.world === undefined)).toBe(true);
+
                 expect(
                     manifest.web_accessible_resources.every((resource: unknown) => typeof resource === "string")
                 ).toBe(true);
+
                 const common = scripts[0].js.filter(file => scripts.every(script => script.js.includes(file)));
                 expect(common).toEqual([expect.stringMatching(/^js\/common\.content\..+\.js$/)]);
             } else {
                 expect(scripts.map(script => script.world).sort()).toEqual(["ISOLATED", "ISOLATED", "MAIN", "MAIN"]);
+
                 expect(
                     manifest.web_accessible_resources.every(
                         (entry: {resources: string[]; matches: string[]}) =>
@@ -95,39 +87,27 @@ test.each([2, 3] as const)(
             }
 
             site = await startIntegrationSite(path.join(fixture.directory, "site"));
-            const port = await getFreePort();
-            firefox = spawn(
-                firefoxBinary,
-                [
-                    "--headless",
-                    "--no-remote",
-                    "--profile",
-                    userDataDir,
-                    "--remote-debugging-port",
-                    String(port),
-                    "about:blank",
-                ],
-                {stdio: ["ignore", "ignore", "pipe"]}
-            );
-            firefox.stderr?.on("data", chunk => (output += chunk));
 
-            browser = await waitFor(() => BidiClient.connect(`ws://127.0.0.1:${port}/session`));
-            const session = await browser.send("session.new", {capabilities: {alwaysMatch: {}}});
-            console.info(`Firefox ${session.capabilities.browserVersion}: testing Manifest V${manifestVersion}`);
-            await browser.send("session.subscribe", {events: ["log.entryAdded"]});
-            const extension = await browser.send("webExtension.install", {
-                extensionData: {path: extensionDir, type: "path"},
+            session = await startBrowserSession("firefox", rootDir, extensionDir, {
+                createPage: false,
+                firefoxEvents: ["log.entryAdded"],
             });
-            expect(typeof extension.extension).toBe("string");
+
+            browser = session.firefox!;
+            console.info(`${session.version}: testing Manifest V${manifestVersion}`);
+            expect(typeof session.extensionId).toBe("string");
             const {context} = await browser.send("browsingContext.create", {type: "tab"});
 
             await browser.send("browsingContext.navigate", {context, url: `${site.origin}/top.html`, wait: "complete"});
+
             const top = await waitFor(async () => {
                 const state = await browser!.evaluate<DocumentState>(context, `${documentStateExpression}(document)`);
                 lastState = state;
                 const statuses = [state?.isolated?.async, state?.main?.async];
+
                 return statuses.every(status => status !== undefined && status !== "pending") ? state : undefined;
             });
+
             expectDocument(top, "top");
 
             await browser.send("browsingContext.navigate", {
@@ -135,6 +115,7 @@ test.each([2, 3] as const)(
                 url: `${site.origin}/frames.html`,
                 wait: "complete",
             });
+
             const framed = await waitFor(async () => {
                 const state = await browser!.evaluate<FrameState>(
                     context,
@@ -144,36 +125,31 @@ test.each([2, 3] as const)(
                 return {top: ${documentStateExpression}(document), child: ${documentStateExpression}(child)};
             })()`
                 );
+
                 lastState = state;
+
                 const statuses = [
                     state?.top?.isolated?.async,
                     state?.top?.main?.async,
                     state?.child?.isolated?.async,
                     state?.child?.main?.async,
                 ];
+
                 return statuses.every(status => status !== undefined && status !== "pending") ? state : undefined;
             });
+
             expectDocument(framed.top, "top");
             expectDocument(framed.child, "child");
             expect(browser.runtimeErrors).toEqual([]);
         } catch (error) {
             throw new Error(
-                `${error instanceof Error ? error.message : String(error)}; last state: ${JSON.stringify(lastState)}; Runtime errors: ${JSON.stringify(browser?.runtimeErrors ?? [])}; Firefox output: ${output}`,
+                `${error instanceof Error ? error.message : String(error)}; last state: ${JSON.stringify(lastState)}; Runtime errors: ${JSON.stringify(browser?.runtimeErrors ?? [])}; Firefox output: ${session?.output ?? ""}`,
                 {cause: error}
             );
         } finally {
-            if (browser) {
-                try {
-                    await browser.send("session.end", {}, 2_000);
-                } catch {
-                    // Firefox may close the socket before returning the session.end response.
-                }
-                await browser.close();
-            }
-            if (firefox) await stop(firefox);
+            await session?.close();
             await site?.close();
             await fixture?.dispose();
-            await rm(userDataDir, {recursive: true, force: true, maxRetries: 5, retryDelay: 200});
         }
     }
 );

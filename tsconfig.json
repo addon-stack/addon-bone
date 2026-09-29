@@ -73,7 +73,8 @@
       "@shared/*": ["shared/*"],
       "@storage/*": ["storage/*"],
       "@transport/*": ["transport/*"],
-      "@typing/*": ["types/*"]
+      "@typing/*": ["types/*"],
+      "@tests/*": ["../tests/*"]
     },
     "isolatedModules": true,
     "allowJs": true,
@@ -87,7 +88,7 @@
     "./src/cli/virtual/virtual.d.ts",
     "node_modules/@types/node/*.d.ts",
     "tests/**/*.test.ts",
-    "tests/pre-push.ts",
+    "tests/check.ts",
     "tests/integration/*.ts",
     "tests/jest*.ts"
   ],

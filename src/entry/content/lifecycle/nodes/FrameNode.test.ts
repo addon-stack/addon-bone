@@ -9,11 +9,10 @@ import {ContentScriptEvent} from "@typing/content";
 import {FrameNode, Node, MountNode, EventNode} from "./index";
 import {ContainerRegistry, EventEmitter} from "../context";
 import IsolationSetup from "../IsolationSetup";
-import {getContentScriptStylesRuntime} from "./isolated-styles";
+import {readContentStyles} from "#adnbn/runtime";
 
-jest.mock("@addon-core/browser", () => ({getUrl: (file: string) => `chrome-extension://fixture/${file}`}));
 jest.mock("#adnbn/page", () => ({aliases: {panel: "panel.html"}}));
-jest.mock("./isolated-styles", () => ({getContentScriptStylesRuntime: jest.fn()}));
+jest.mock("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
 
 test("FrameNode explains a disconnected host and allows mounting again once the mounter connects it", () => {
     const runtime = {
@@ -23,7 +22,7 @@ test("FrameNode explains a disconnected host and allows mounting again once the 
         delete: jest.fn(),
         load: jest.fn(),
     };
-    jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
+    jest.mocked(readContentStyles).mockReturnValue(runtime);
     const anchor = document.createElement("section");
     const container = document.createElement("div");
     document.body.append(anchor);
@@ -158,7 +157,7 @@ test("FrameNode replaces lost targets, unregisters old styles and releases its l
         delete: jest.fn(),
         load: jest.fn(),
     };
-    jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
+    jest.mocked(readContentStyles).mockReturnValue(runtime);
     const anchor = document.createElement("section");
     document.body.append(anchor);
     const recover = jest.fn();
@@ -246,7 +245,7 @@ test.each(["throw", "unmount"])("FrameNode cleans up when target creation trigge
         delete: jest.fn(),
         load: jest.fn(),
     };
-    jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
+    jest.mocked(readContentStyles).mockReturnValue(runtime);
     const anchor = document.createElement("section");
     document.body.append(anchor);
 
@@ -306,7 +305,7 @@ const createBoundaryNode = (
         delete: jest.fn(),
         load: jest.fn(),
     };
-    jest.mocked(getContentScriptStylesRuntime).mockReturnValue(runtime);
+    jest.mocked(readContentStyles).mockReturnValue(runtime);
 
     const mountedNode = new MountNode(
         new Node(document.body, document.createElement("section")),
@@ -365,7 +364,7 @@ test.each<ContentScriptIsolationFrameOptions>([
         expect(frame.style.borderTopWidth).toBe("2px");
 
         expect(frame.getAttribute("src")).toBe(
-            options.page ? "chrome-extension://fixture/panel.html" : (options.src ?? null)
+            options.page ? `chrome-extension://${chrome.runtime.id}/panel.html` : (options.src ?? null)
         );
 
         frame.dispatchEvent(new Event("load"));

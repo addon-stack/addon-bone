@@ -1,5 +1,6 @@
 import _ from "lodash";
 import path from "path";
+import {createHash} from "node:crypto";
 
 import {Compiler, DynamicEntryPlugin, type EntryDescription, EntryNormalized} from "@rspack/core";
 import {RspackVirtualModulePlugin as VirtualModulesPlugin} from "rspack-plugin-virtual-module";
@@ -46,6 +47,11 @@ export default class EntrypointPlugin {
         if (file.external) {
             const {ext} = path.parse(name);
             name = file.import + ext;
+        } else if (path.isAbsolute(name)) {
+            // A drive or UNC root cannot be embedded inside the virtual directory.
+            // Keep distinct absolute files distinct without carrying their root into it.
+            const key = createHash("sha256").update(name).digest("hex");
+            name = path.join(key, path.basename(name));
         }
 
         return path.join("virtual", name);

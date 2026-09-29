@@ -1,4 +1,5 @@
-jest.mock("@addon-core/browser", () => ({getI18nMessage: jest.fn()}));
+import {getBrowserTest} from "@tests/browser-harness/session";
+
 jest.mock("#adnbn/locale", () => ({
     keys: Object.keys(require("./tests/fixtures/native-messages.json")).map(key => key.replaceAll("_", ".")),
     languages: ["en", "fr"],
@@ -7,7 +8,6 @@ jest.mock("#adnbn/locale", () => ({
 import {createElement, createRef, StrictMode, useState} from "react";
 import {createPortal} from "react-dom";
 import {cleanup, fireEvent, render, renderHook} from "@testing-library/react";
-import {getI18nMessage} from "@addon-core/browser";
 import {useNativeLocale, type LocaleReactContract} from "../index";
 import {NativeLocale} from "@locale/providers";
 import {Language, LocaleDir} from "@typing/locale";
@@ -28,12 +28,13 @@ const useFixtureLocale = () => useNativeLocale() as LocaleReactContract<Structur
 
 describe("useNativeLocale", () => {
     beforeEach(() => {
-        jest.mocked(getI18nMessage).mockImplementation(key => messages[key as keyof typeof messages] ?? "");
+        getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(
+            key => messages[key as keyof typeof messages] ?? ""
+        );
     });
 
     afterEach(() => {
         cleanup();
-        jest.restoreAllMocks();
     });
 
     test("works without a Provider and shares the existing native singleton across roots", () => {

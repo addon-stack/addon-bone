@@ -1,0 +1,9 @@
+@use "../metrics";
+
+$font: url("./default.woff2") !default;
+
+@font-face {
+  font-family: Inter;
+  font-weight: metrics.$weight;
+  src: $font;
+}

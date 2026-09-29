@@ -2,6 +2,7 @@ import {ViewDefinition, ViewOptions} from "@typing/view";
 import {CspOptions} from "@typing/csp";
 import {PermissionsOptions} from "@typing/permissions";
 import type {ManifestPopup} from "@typing/manifest";
+import type {IconName} from "@typing/icon";
 
 /**
  * Empty because popup aliases depend on the consuming application's entrypoints.
@@ -14,7 +15,7 @@ export type PopupAlias = keyof PopupAliasRegistry extends never ? string : Extra
 export type PopupMap = Map<PopupAlias, ManifestPopup>;
 
 export interface PopupConfig {
-    icon?: string;
+    icon?: IconName;
     apply?: boolean;
 }
 

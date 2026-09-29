@@ -1,0 +1,13 @@
+/* url("./comment.svg") */
+$icon: url("./theme/icon.svg");
+
+.badge {
+  background: url(theme/plain.svg);
+  content: "url(./text.svg)";
+}
+
+@supports (background: url("./theme/support.svg")) {
+  .badge {
+    color: blue;
+  }
+}

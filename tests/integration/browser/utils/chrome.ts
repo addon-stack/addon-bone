@@ -17,6 +17,7 @@ export const findChromeBinary = (rootDir: string): string | undefined => {
         [path.join(rootDir, "node_modules", "chrome-launcher", "bin", "print-chrome-path.cjs")],
         {encoding: "utf8"}
     );
+
     const chromePath = result.status === 0 ? result.stdout.trim() : "";
 
     return chromePath || undefined;
@@ -28,8 +29,8 @@ export const targets = async (port: number): Promise<CdpTarget[]> => {
     return response.json() as Promise<CdpTarget[]>;
 };
 
-export const browserVersion = async (port: number): Promise<{webSocketDebuggerUrl: string}> => {
-    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {signal: AbortSignal.timeout(5_000)});
+export const browserVersion = async (port: number, timeout = 5_000): Promise<{webSocketDebuggerUrl: string}> => {
+    const response = await fetch(`http://127.0.0.1:${port}/json/version`, {signal: AbortSignal.timeout(timeout)});
 
     return response.json() as Promise<{webSocketDebuggerUrl: string}>;
 };

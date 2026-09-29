@@ -2,6 +2,7 @@ jest.mock("../plugins", () => {
     const plugin = (name: string) => () => ({name});
 
     return {
+        pluginAction: plugin("action"),
         pluginAsset: plugin("asset"),
         pluginBackground: plugin("background"),
         pluginBundler: plugin("bundler"),
@@ -59,6 +60,27 @@ describe("config resolver", () => {
         const config = await resolveConfig({configFile: "package.json"});
 
         expect(config.lang).toBe(Language.English);
+    });
+
+    test("does not enable an action by default", async () => {
+        const config = await resolveConfig({configFile: "package.json"});
+
+        expect(config.action).toBeUndefined();
+    });
+
+    test("preserves explicit action options from build config", async () => {
+        const action = {icon: "active", title: "@action.title"};
+        const config = await resolveConfig({configFile: "package.json", action});
+
+        expect(config.action).toEqual(action);
+    });
+
+    test("preserves an explicit empty action from user config", async () => {
+        mockedLoadConfig.mockResolvedValue({config: {action: {}}});
+
+        const config = await resolveConfig({configFile: "package.json"});
+
+        expect(config.action).toEqual({});
     });
 
     test("normalizes language from user config", async () => {

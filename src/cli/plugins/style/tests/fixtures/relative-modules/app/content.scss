@@ -1,0 +1,10 @@
+@forward "./theme/tokens" as theme-* show $theme-accent with ($accent: blue);
+@forward "./theme/hidden" hide $private;
+@use "./theme/tokens" as appTokens;
+@use "./theme/fonts" with (
+  $font: url("./theme/Inter.woff2?browser&v=a/../b#face")
+);
+
+.badge {
+  background: appTokens.$accent;
+}

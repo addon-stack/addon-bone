@@ -1,3 +1,4 @@
+export {default as pluginAction} from "./action";
 export {default as pluginAsset} from "./asset";
 export {default as pluginBundler} from "./bundler";
 export {default as pluginBackground} from "./background";

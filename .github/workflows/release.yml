@@ -111,12 +111,13 @@ jobs:
         run: node .github/scripts/releaseAutomation.cjs run
 
       - name: Sync main → develop
-        uses: devmasx/merge-branch@v1.4.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
-          type: now
-          from_branch: main
-          target_branch: develop
-          message: "chore(sync): merge main into develop"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          HUSKY: 0
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.repos.merge({
+              ...context.repo,
+              base: "develop",
+              head: "main",
+              commit_message: "chore(sync): merge main into develop",
+            });

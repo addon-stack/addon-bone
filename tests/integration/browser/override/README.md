@@ -15,4 +15,4 @@ Each entrypoint keeps its `styles.css` in the same directory. Chromium accepts a
 
 The cases navigate a real Chrome MV3 tab to `chrome://newtab`, `chrome://bookmarks`, and `chrome://history`. They check the exact `chrome_url_overrides` object, that the loaded document is the extension page, CSS application, state changes, and runtime errors. Expected pages are `ui/dashboard.newtab.html`, `bookmarks.html`, and `history.html`.
 
-The browser support matrix and the competing-entrypoints failure live separately in `tests/integration/build/override` and run without Chrome through `npm run test:integration:build`.
+The browser support matrix and the competing-entrypoints failure live separately in `tests/integration/build/override` and run without Chrome through `npm run test:build`.

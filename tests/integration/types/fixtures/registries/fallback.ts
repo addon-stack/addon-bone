@@ -16,6 +16,10 @@ api.changeSidebar("custom");
 api.changeActionIcon("custom");
 api.changeSidebarIcon();
 
+api.defineConfig({action: {icon: "custom"}});
+api.definePopup({icon: "custom", render: "Popup"});
+api.defineSidebar({icon: "custom", render: "Sidebar"});
+
 // @ts-expect-error: Empty transport registries remain strict.
 api.getService("unknown");
 // @ts-expect-error: Empty transport registries remain strict.

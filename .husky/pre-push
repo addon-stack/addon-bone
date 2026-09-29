@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 
 # Browser scenarios and coverage run in CI; build the package only once here.
-npm run test:pre-push
+npm run check

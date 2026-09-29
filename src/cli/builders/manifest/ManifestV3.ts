@@ -53,22 +53,10 @@ export default class extends ManifestBase<ManifestV3> {
     }
 
     protected buildAction(): Partial<ManifestV3> | undefined {
-        if (this.popup) {
-            const {path, icon, title} = this.popup;
+        const action = this.getAction();
 
-            return {
-                action: {
-                    default_title: title || this.name,
-                    default_popup: path,
-                    default_icon: this.getIconsByName(icon),
-                },
-            };
-        } else if (this.hasExecuteActionCommand()) {
-            return {
-                action: {
-                    default_title: this.name,
-                },
-            };
+        if (action) {
+            return {action};
         }
     }
 

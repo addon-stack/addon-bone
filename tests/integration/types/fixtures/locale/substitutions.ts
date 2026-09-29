@@ -1,10 +1,25 @@
-import type {LocaleNonPluralKeys, LocalePluralKeys, LocaleSubstitutionArgs} from "adnbn/locale";
+import {
+    ObservableLocale,
+    Language,
+    type LocaleDynamicProvider,
+    type LocaleNonPluralKeys,
+    type LocalePluralKeys,
+    type LocaleSubstitutionArgs,
+} from "adnbn/locale";
 
 interface Structure {
     "app.name": {plural: false; substitutions: []};
     "app.greeting": {plural: false; substitutions: ["name"]};
     "app.cars": {plural: true; substitutions: ["count"]};
 }
+
+const observable = new ObservableLocale<Structure>(false);
+const provider: LocaleDynamicProvider<Structure> = observable;
+
+provider.trans("app.greeting", {name: "Alice"});
+provider.choice("app.cars", 2, {count: 2});
+void provider.change(Language.French);
+observable.snapshot().get("app.name");
 
 declare function trans<K extends LocaleNonPluralKeys<Structure>>(
     key: K,
