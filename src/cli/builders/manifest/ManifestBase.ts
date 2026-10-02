@@ -598,7 +598,9 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
         const commands = _.merge(this.combinedRaws.commands, internalCommands);
 
-        if (Object.keys(commands).length) return {commands};
+        if (Object.keys(commands).length) {
+            return {commands};
+        }
     }
 
     protected buildContentScripts(): Partial<CoreManifest> | undefined {

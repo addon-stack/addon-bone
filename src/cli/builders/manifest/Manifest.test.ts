@@ -268,6 +268,59 @@ describe("Manifest common builder methods", () => {
 });
 
 describe.each([
+    {version: 2, Builder: ManifestV2, actionCommand: "_execute_browser_action"},
+    {version: 3, Builder: ManifestV3, actionCommand: "_execute_action"},
+] as const)("MV$version commands", ({Builder, actionCommand}) => {
+    it("preserves command options and ordinary names without changing the internal action name", () => {
+        const command = Object.freeze({
+            name: CommandExecuteActionName,
+            defaultKey: "Ctrl+Shift+1",
+            windowsKey: "Ctrl+Shift+2",
+            macKey: "Ctrl+Shift+3",
+            chromeosKey: "Ctrl+Shift+4",
+            linuxKey: "Ctrl+Shift+5",
+            description: "Run the action",
+            global: true,
+        });
+
+        const manifest = new Builder(Browser.Chrome)
+            .setCommands(
+                new Set([
+                    command,
+                    {
+                        name: "open-settings",
+                        defaultKey: "Ctrl+Shift+S",
+                        macKey: "Command+Shift+S",
+                        description: "Open settings",
+                        global: false,
+                    },
+                ])
+            )
+            .build();
+
+        expect(manifest.commands).toEqual({
+            [actionCommand]: {
+                suggested_key: {
+                    default: "Ctrl+Shift+1",
+                    windows: "Ctrl+Shift+2",
+                    mac: "Ctrl+Shift+3",
+                    chromeos: "Ctrl+Shift+4",
+                    linux: "Ctrl+Shift+5",
+                },
+                description: "Run the action",
+                global: true,
+            },
+            "open-settings": {
+                suggested_key: {default: "Ctrl+Shift+S", mac: "Command+Shift+S"},
+                description: "Open settings",
+                global: false,
+            },
+        });
+        expect(command.name).toBe("_execute_action");
+    });
+});
+
+describe.each([
     {version: 2, Builder: ManifestV2, field: "browser_action"},
     {version: 3, Builder: ManifestV3, field: "action"},
 ] as const)("MV$version toolbar action", ({Builder, field}) => {

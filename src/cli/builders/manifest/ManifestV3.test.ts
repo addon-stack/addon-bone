@@ -56,6 +56,9 @@ describe("ManifestV3", () => {
             .build();
 
         expect(manifest.action).toEqual({default_title: "Command Addon"});
+        expect(manifest.commands).toHaveProperty("_execute_action");
+        expect(manifest.commands).not.toHaveProperty("_execute_browser_action");
+        expect(manifest.commands._execute_action.description).toBeUndefined();
     });
 
     it("builds side_panel for Chrome and sidebar_action for alternative browsers", () => {

@@ -25,6 +25,14 @@ describe.each([
             title: "action",
         },
         {
+            scenario: "execute action from named exports",
+            entry: "named-action.command.ts",
+            popup: false,
+            command: true,
+            icon: "active",
+            title: "action",
+        },
+        {
             scenario: "popup overrides",
             entry: "full.popup.ts",
             popup: true,
@@ -79,7 +87,9 @@ describe.each([
             expect((await stat(path.join(extensionDir, "icons", `${icon}-16.png`))).isFile()).toBe(true);
 
             if (command) {
-                expect(manifest.commands).toBeDefined();
+                const name = manifestVersion === 2 ? "_execute_browser_action" : "_execute_action";
+
+                expect(manifest.commands).toEqual({[name]: {suggested_key: {default: "Ctrl+Shift+Y"}}});
                 expect(manifest.background).toBeDefined();
             } else {
                 expect(manifest.commands).toBeUndefined();
