@@ -464,9 +464,10 @@ export interface Config {
     /**
      * Flag indicating whether to merge styles from App and Shared directories.
      * When `true`, importing a shared stylesheet also compiles the app stylesheet at the same
-     * relative path into the same CSS module, with shared rules before app rules. Relative `@use`
-     * and `@forward` requests and literal `url(...)` values in the merged sources resolve from the
-     * file that declares them.
+     * relative path into the same CSS module, with shared rules before app rules. Local Sass
+     * requests and literal `url(...)` values in the merged sources resolve from their source file.
+     * Resources declared in imported Sass partials are resolved using Sass source maps, even
+     * when merging is disabled. Full literal URLs passed through `with` remain supported.
      *
      * @default true
      */

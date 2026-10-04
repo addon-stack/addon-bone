@@ -35,7 +35,11 @@ export const createCompiler = async (
     const cssFilename = options.cssFilename ?? "css/[name].[contenthash:8].css";
     const cssChunkFilename = cssFilename;
     const config = {
-        rootDir: project,
+        rootDir: __dirname,
+        srcDir: "src",
+        sharedDir: ".",
+        appsDir: "apps",
+        appSrcDir: ".",
         app: "selective-split",
         mergeStyles: false,
         cssDir: "",

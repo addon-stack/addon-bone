@@ -157,6 +157,7 @@
     "postcss": "^8.5.15",
     "postcss-scss": "^4.0.9",
     "postcss-value-parser": "^4.2.0",
+    "resolve-url-loader": "^5.0.0",
     "rspack-plugin-virtual-module": "^1.0.1",
     "sass": "^1.83.4",
     "sass-loader": "^16.0.4",

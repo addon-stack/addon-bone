@@ -1,0 +1,14 @@
+@use "../src/apps/alpha/theme/fonts" with (
+  $font: url("../src/apps/alpha/theme/fonts/Virtual.woff2?browser&v=2#configured")
+);
+
+.badge {
+  color: red;
+  --order: shared;
+  background-image: url("../src/shared/theme/shared.svg?browser#shape");
+}
+
+.badge {
+  color: green;
+  --order: app-updated;
+}

@@ -1,0 +1,5 @@
+// The comment must not consume the next statement.
+@use "sass:math";
+$accent: blue;
+@use "./tokens" with ($color: $accent);
+.app { @include common; color: tokens.$color; }

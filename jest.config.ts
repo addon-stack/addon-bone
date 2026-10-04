@@ -13,6 +13,8 @@ const shared: Config = {
     modulePathIgnorePatterns: ["<rootDir>/.cache/"],
     resolver: "<rootDir>/tests/raw-module-resolver.cjs",
     moduleNameMapper: {
+        "^\\.\\./\\.\\./bundler/loaders/resolve-style-urls$":
+            "<rootDir>/tests/integration/build/style/resolve-style-urls-loader.cjs",
         "^#adnbn/(.*)$": "<rootDir>/src/virtual/$1.ts",
         "^@cli/(.*)$": "<rootDir>/src/cli/$1",
         "^@entry/(.*)$": "<rootDir>/src/entry/$1",

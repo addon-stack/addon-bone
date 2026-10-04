@@ -1,0 +1,6 @@
+@use "./fonts";
+
+.badge {
+  color: fonts.$accent;
+  --order: app;
+}

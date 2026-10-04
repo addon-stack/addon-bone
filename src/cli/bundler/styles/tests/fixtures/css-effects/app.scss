@@ -1,0 +1,4 @@
+@use "sass:math";
+@layer base, app;
+@import "https://example.com/theme.css";
+.app { color: blue; }

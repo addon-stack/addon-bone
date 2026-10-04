@@ -1,0 +1,7 @@
+@use "../theme/fonts";
+
+@include fonts.face;
+
+.badge {
+  color: blue;
+}

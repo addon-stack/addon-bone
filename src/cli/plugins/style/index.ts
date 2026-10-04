@@ -1,6 +1,7 @@
 import _ from "lodash";
 import path from "path";
 import fs from "fs";
+import {createRequire} from "module";
 import {
     Configuration as RspackConfig,
     CssExtractRspackPlugin,
@@ -9,7 +10,7 @@ import {
     RuleSetUseItem,
 } from "@rspack/core";
 
-import {mergeStyleSources} from "./utils";
+import {prepareStyleSources, joinStyleUrl, type StyleSource} from "@cli/bundler/styles";
 import {DocumentStylesLayer, DefaultStylesLayer} from "@cli/bundler/layers";
 
 import {definePlugin} from "@main/plugin";
@@ -31,26 +32,31 @@ const createStyleMerger = (config: ReadonlyConfig) => {
     return (content: string, context: LoaderContext): string => {
         const filename = context.resourcePath;
         const relative = path.relative(sharedDir, filename);
-
-        if (relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-            return content;
-        }
-
-        const appPath = path.join(appDir, relative);
-
-        if (!fs.existsSync(appPath)) {
-            context.addMissingDependency(appPath);
-
-            return content;
-        }
-
-        context.addDependency(appPath);
+        const sources: StyleSource[] = [{filename, content}];
+        const inShared = relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
 
         try {
-            return mergeStyleSources(
-                {filename, content},
-                {filename: appPath, content: fs.readFileSync(appPath, "utf8")}
-            );
+            if (config.mergeStyles && inShared) {
+                const appPath = path.join(appDir, relative);
+
+                if (appPath !== filename) {
+                    if (fs.existsSync(appPath)) {
+                        context.addDependency(appPath);
+                        sources.push({filename: appPath, content: fs.readFileSync(appPath, "utf8")});
+                    } else {
+                        context.addMissingDependency(appPath);
+                    }
+                }
+            }
+
+            // Even an unmerged source can configure a partial with a full relative url().
+            return prepareStyleSources(sources, filename, (dependency, exists) => {
+                if (exists) {
+                    context.addDependency(dependency);
+                } else {
+                    context.addMissingDependency(dependency);
+                }
+            });
         } catch (error) {
             // sass-loader prepares additionalData outside its error handler. Fail the compilation
             // explicitly and supply no stylesheet instead of compiling an incomplete shared fallback.
@@ -65,18 +71,24 @@ export default definePlugin(() => {
     return {
         name: "adnbn:styles",
         bundler: ({config}) => {
-            const {app, cssDir, cssFilename, cssIdentName, mergeStyles} = config;
+            const {app, cssDir, cssFilename, cssIdentName} = config;
 
             const filename = appFilenameResolver(app, cssFilename, cssDir);
             const kebabApp = _.kebabCase(app);
+
+            const urlLoader = createRequire(import.meta.url).resolve("../../bundler/loaders/resolve-style-urls");
 
             const createSassRuleSet = (rule: RuleSetUseItem): RuleSetUse => {
                 return [
                     CssExtractRspackPlugin.loader,
                     rule,
                     {
+                        loader: urlLoader,
+                        options: {join: joinStyleUrl},
+                    },
+                    {
                         loader: "sass-loader",
-                        options: mergeStyles ? {additionalData: createStyleMerger(config)} : {},
+                        options: {sourceMap: true, additionalData: createStyleMerger(config)},
                     },
                 ];
             };
