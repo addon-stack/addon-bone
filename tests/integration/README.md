@@ -23,6 +23,10 @@ tests/integration/
 │   │   │   ├── root-dir/
 │   │   │   └── root-dir-b/
 │   │   └── scripts/
+│   ├── html/
+│   │   ├── html.integration.test.ts
+│   │   ├── fixture/
+│   │   └── scenarios/
 │   ├── locale/
 │   │   ├── locale.integration.test.ts
 │   │   ├── dynamic.integration.test.ts
@@ -102,11 +106,13 @@ tests/integration/
 │       └── …
 ├── types/
 │   ├── content.integration.test.ts
+│   ├── html.integration.test.ts
 │   ├── registries.integration.test.ts
 │   ├── relay.integration.test.ts
 │   ├── view.integration.test.ts
 │   └── fixtures/
 │       ├── content/
+│       ├── html/
 │       ├── registries/
 │       ├── relay/
 │       └── view/
@@ -240,8 +246,10 @@ creation/close race. The diagnostic expects the second build to fail and is deli
 Parallel test sessions use distinct working directories; production directory naming is unchanged.
 
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
+- [types/html.integration.test.ts](types/html.integration.test.ts): static entrypoint options, configuration callbacks, object metadata, and rejected string metadata through both source and built declarations. Fixtures live in `types/fixtures/html`.
 - `types/view`: shared View and adapter render types through the public source and built package APIs, render and container props inference, the render contract adopted by Offscreen and Sandbox, and the rejection of Promise and plain-object render values.
 - `types/registries`: generated registry augmentation, empty fallbacks, public and internal type agreement, and message contracts against source and built package APIs. Compiler-host path checks cover both slash styles.
+- [build/html](build/html): emitted metadata and asset tags, all four `config.html` forms, page-specific tag selection, and representative failures from configuration, entrypoint parsing, and plugin validation. Invalid inputs live in its own `scenarios` directory. Parser field matrices belong beside `ViewParser`; validation rules owned by `@rspackjs/plugin-html-tags` belong in that package's tests. No browser is launched.
 - `build/options/embedded`: ten manifest checks covering explicit `openInTab: false` across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. No browser is launched.
 - `browser/view`: one Chrome MV3 case covering React offscreen and sandbox views rendered by the injected builder with their props and titles, a headless offscreen without a view container, and strings rendered as text by the React view, Vanilla view and React content adapters.
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.

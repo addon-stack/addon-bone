@@ -16,6 +16,14 @@ const parseOptions = (...parts: string[]) => {
 };
 
 describe("SidebarParser", () => {
+    test("ignores a sibling view definition", () => {
+        expect(parseOptions("options", "foreign-definition", "sidebar.ts")).toEqual({});
+    });
+
+    test("leaves omitted options for later defaults", () => {
+        expect(parseOptions("options", "defaults", "sidebar.ts")).toEqual({});
+    });
+
     test("parses defineSidebar with its icon, apply flag, permissions and inherited view and CSP options", () => {
         expect(parseOptions("options", "full", "sidebar.ts")).toEqual({
             as: "panel",
@@ -30,6 +38,15 @@ describe("SidebarParser", () => {
             hostPermissions: ["https://*.example.com/*"],
             optionalHostPermissions: ["https://other.test/*"],
             links: "extra.css",
+            append: false,
+            useHash: true,
+            usePublicPath: false,
+            prependExternals: false,
+            jsExtensions: [".js", ".module"],
+            cssExtensions: ".css",
+            tags: [{path: "runtime.module", type: "js"}],
+            scripts: "extra.js",
+            metas: {attributes: {name: "sidebar-test", content: "enabled"}},
         });
     });
 

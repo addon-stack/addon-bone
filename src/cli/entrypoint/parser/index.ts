@@ -12,4 +12,5 @@ export {default as SandboxParser} from "./SandboxParser";
 export {default as ServiceParser} from "./ServiceParser";
 export {default as SidebarParser} from "./SidebarParser";
 export {default as OffscreenParser} from "./OffscreenParser";
-export {HtmlOptionKeys} from "./schemas/html";
+
+export {HtmlEntrypointOptionKeys} from "./schemas/html";

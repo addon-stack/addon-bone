@@ -1,7 +1,7 @@
 import _ from "lodash";
 
 import {Configuration as RspackConfig, HtmlRspackPlugin} from "@rspack/core";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
@@ -15,17 +15,14 @@ export default definePlugin(() => {
                 return {};
             }
 
-            let options = _.isFunction(config.html) ? config.html() : config.html;
+            const value = _.isFunction(config.html) ? config.html() : config.html;
 
-            if (_.isEmpty(options)) {
+            if (value === undefined) {
                 return {};
             }
 
-            if (!_.isArray(options)) {
-                options = [options];
-            }
-
-            const plugins = options.map(options => new HtmlRspackTagsPlugin(options));
+            const options = Array.isArray(value) ? value : [value];
+            const plugins = options.map(options => new HtmlTagsRspackPlugin(options));
 
             return {plugins} satisfies RspackConfig;
         },

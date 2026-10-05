@@ -1,5 +1,4 @@
 import type {Configuration as RspackConfig, Filename} from "@rspack/core";
-import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
 import {Command, Mode, Workspace} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";
@@ -9,6 +8,7 @@ import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
 import {EnvFilterOptions, EnvFilterVariant} from "@typing/env";
 import {ActionOptions} from "@typing/action";
+import type {HtmlOptions} from "@typing/html";
 
 /**
  * Configuration options for building a browser extension. This interface defines

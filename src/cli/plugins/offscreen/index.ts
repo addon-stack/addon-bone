@@ -1,6 +1,6 @@
 import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import {RspackVirtualModulePlugin} from "rspack-plugin-virtual-module";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
@@ -63,7 +63,7 @@ export default definePlugin(() => {
                 }
 
                 const htmlPlugins = (await offscreen.view().html()).map(options => new HtmlRspackPlugin(options));
-                const tagsPlugins = (await offscreen.view().tags()).map(options => new HtmlRspackTagsPlugin(options));
+                const tagsPlugins = (await offscreen.view().tags()).map(options => new HtmlTagsRspackPlugin(options));
 
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
 

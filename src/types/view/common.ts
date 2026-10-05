@@ -1,7 +1,7 @@
 import type {Optional} from "utility-types";
-import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
+import type {HtmlEntrypointOptions} from "@typing/html";
 
-import {Awaiter, ExcludeFunctionsFromProperties, PickNonFunctionProperties} from "@typing/helpers";
+import {Awaiter, PickNonFunctionProperties} from "@typing/helpers";
 import {EntrypointBuilder, EntrypointOptions} from "@typing/entrypoint";
 
 export interface ViewConfig {
@@ -10,7 +10,7 @@ export interface ViewConfig {
     template?: string;
 }
 
-export type ViewOptions = ViewConfig & EntrypointOptions & ExcludeFunctionsFromProperties<HtmlOptions>;
+export type ViewOptions = ViewConfig & EntrypointOptions & HtmlEntrypointOptions;
 
 export type ViewEntrypointOptions = ViewOptions;
 

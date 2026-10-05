@@ -16,6 +16,14 @@ const parseOptions = (...parts: string[]) => {
 };
 
 describe("PopupParser", () => {
+    test("ignores a sibling view definition", () => {
+        expect(parseOptions("options", "foreign-definition", "popup.ts")).toEqual({});
+    });
+
+    test("leaves omitted options for later defaults", () => {
+        expect(parseOptions("options", "defaults", "popup.ts")).toEqual({});
+    });
+
     test("parses definePopup with its icon, apply flag, permissions and inherited view and CSP options", () => {
         expect(parseOptions("options", "full", "popup.ts")).toEqual({
             as: "panel",
@@ -30,6 +38,15 @@ describe("PopupParser", () => {
             hostPermissions: ["https://*.example.com/*"],
             optionalHostPermissions: ["https://other.test/*"],
             links: "extra.css",
+            append: false,
+            useHash: true,
+            usePublicPath: false,
+            prependExternals: false,
+            jsExtensions: [".js", ".module"],
+            cssExtensions: ".css",
+            tags: [{path: "runtime.module", type: "js"}],
+            scripts: "extra.js",
+            metas: {attributes: {name: "popup-test", content: "enabled"}},
         });
     });
 

@@ -21,6 +21,10 @@ const file = (...parts: string[]) => {
 const parseOptions = (...parts: string[]) => parser.options(file(...parts));
 
 describe("OptionsParser", () => {
+    test("ignores a sibling view definition", () => {
+        expect(parseOptions("options", "foreign-definition", "options.ts")).toEqual({});
+    });
+
     test("parses defineOptions with permissions and inherited view, CSP and build filters", () => {
         expect(parseOptions("options", "full", "options.ts")).toEqual({
             openInTab: true,
@@ -48,6 +52,13 @@ describe("OptionsParser", () => {
             optionalHostPermissions: ["https://other.test/*"],
             scripts: "extra.js",
             links: "extra.css",
+            append: false,
+            useHash: true,
+            usePublicPath: false,
+            prependExternals: false,
+            jsExtensions: [".js", ".module"],
+            cssExtensions: ".css",
+            tags: [{path: "runtime.module", type: "js"}],
             metas: {
                 attributes: {
                     name: "options-test",

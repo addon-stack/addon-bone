@@ -1,5 +1,5 @@
 import {Configuration as RspackConfig, HtmlRspackPlugin} from "@rspack/core";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import Override from "./Override";
 
@@ -39,7 +39,7 @@ export default definePlugin(() => {
             }
 
             const htmlPlugins = (await view.html()).map(options => new HtmlRspackPlugin(options));
-            const tagsPlugins = (await view.tags()).map(options => new HtmlRspackTagsPlugin(options));
+            const tagsPlugins = (await view.tags()).map(options => new HtmlTagsRspackPlugin(options));
 
             return {
                 plugins: [plugin, ...htmlPlugins, ...tagsPlugins],

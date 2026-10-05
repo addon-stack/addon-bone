@@ -49,6 +49,13 @@ describe.each([
             optionalHostPermissions: ["https://other.test/*"],
             scripts: "extra.js",
             links: "extra.css",
+            append: false,
+            useHash: true,
+            usePublicPath: false,
+            prependExternals: false,
+            jsExtensions: [".js", ".module"],
+            cssExtensions: ".css",
+            tags: [{path: "runtime.module", type: "js"}],
             metas: {
                 attributes: {
                     name: `${type}-test`,
@@ -56,6 +63,10 @@ describe.each([
                 },
             },
         });
+    });
+
+    test("leaves omitted options for later defaults", () => {
+        expect(parseOptions("defaults")).toEqual({});
     });
 
     test("ignores options wrapped in another override definition", () => {

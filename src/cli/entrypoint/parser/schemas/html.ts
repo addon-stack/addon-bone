@@ -1,87 +1,64 @@
 import {z} from "zod";
 
-const HtmlTypeStringSchema = z.enum(["css", "js"]);
+const AttributesSchema = z.record(z.union([z.string(), z.boolean(), z.number().finite()]));
 
-const HtmlAttributesObjectSchema = z.record(z.string(), z.union([z.string(), z.boolean(), z.number()]));
-
-const HtmlAddHashFunctionSchema = z.function().args(z.string(), z.string()).returns(z.string());
-
-const HtmlAddPublicPathFunctionSchema = z.function().args(z.string(), z.string()).returns(z.string());
-
-const HtmlCommonOptionsSchema = z.object({
+const CommonSchema = z.object({
     append: z.boolean().optional(),
     useHash: z.boolean().optional(),
-    addHash: HtmlAddHashFunctionSchema.optional(),
-    hash: z.union([z.boolean(), z.string(), HtmlAddHashFunctionSchema]).optional(),
+    addHash: z.never({invalid_type_error: "Configure addHash in config.html"}).optional(),
+    hash: z.union([z.boolean(), z.string()]).optional(),
     usePublicPath: z.boolean().optional(),
-    addPublicPath: HtmlAddPublicPathFunctionSchema.optional(),
-    publicPath: z.union([z.boolean(), z.string(), HtmlAddPublicPathFunctionSchema]).optional(),
+    addPublicPath: z.never({invalid_type_error: "Configure addPublicPath in config.html"}).optional(),
+    publicPath: z.union([z.boolean(), z.string()]).optional(),
 });
 
-const HtmlExternalObjectSchema = z.object({
-    packageName: z.string(),
-    variableName: z.string(),
-});
-
-const HtmlBaseTagOptionsSchema = HtmlCommonOptionsSchema.extend({
+const BaseTagSchema = CommonSchema.extend({
     glob: z.string().optional(),
     globPath: z.string().optional(),
     globFlatten: z.boolean().optional(),
     sourcePath: z.string().optional(),
 });
 
-const HtmlLinkTagOptionsSchema = HtmlBaseTagOptionsSchema.extend({
+const LinkSchema = BaseTagSchema.extend({
     path: z.string(),
-    attributes: HtmlAttributesObjectSchema.optional(),
+    attributes: AttributesSchema.optional(),
+    external: z.never({invalid_type_error: "external is only supported for scripts"}).optional(),
 });
 
-const HtmlScriptTagOptionsSchema = HtmlBaseTagOptionsSchema.extend({
-    path: z.string(),
-    attributes: HtmlAttributesObjectSchema.optional(),
-    external: HtmlExternalObjectSchema.optional(),
+const ScriptSchema = LinkSchema.extend({
+    external: z.object({packageName: z.string(), variableName: z.string()}).optional(),
 });
 
-const HtmlMaybeLinkTagOptionsSchema = HtmlLinkTagOptionsSchema.extend({
-    type: HtmlTypeStringSchema.optional(),
-});
-
-const HtmlMaybeScriptTagOptionsSchema = HtmlScriptTagOptionsSchema.extend({
-    type: HtmlTypeStringSchema.optional(),
-});
-
-const HtmlMetaTagOptionsSchema = HtmlBaseTagOptionsSchema.extend({
+const MetaSchema = BaseTagSchema.extend({
     path: z.string().optional(),
-    attributes: HtmlAttributesObjectSchema,
+    attributes: AttributesSchema.refine(attributes => Object.keys(attributes).length > 0, {
+        message: "A meta tag requires a nonempty attributes object",
+    }),
+    external: z.never({invalid_type_error: "external is only supported for scripts"}).optional(),
 });
 
-/**
- * Options a view passes to the HTML tags plugin.
- *
- * The same list validates what an entrypoint may declare and selects what reaches the HTML plugin,
- * so manifest-only options such as permissions or CSP never leak into it.
- */
-export const HtmlOptionsSchema = HtmlCommonOptionsSchema.extend({
-    append: z.boolean().optional(),
+const TagSchema = ScriptSchema.extend({type: z.enum(["css", "js"]).optional()});
+const LinkValueSchema = z.union([z.string(), LinkSchema]);
+const ScriptValueSchema = z.union([z.string(), ScriptSchema]);
+const TagValueSchema = z.union([z.string(), TagSchema]);
+
+export const HtmlEntrypointOptionsSchema = CommonSchema.extend({
     prependExternals: z.boolean().optional(),
     jsExtensions: z.union([z.string(), z.array(z.string())]).optional(),
     cssExtensions: z.union([z.string(), z.array(z.string())]).optional(),
-    tags: z
-        .union([
-            z.string(),
-            HtmlMaybeLinkTagOptionsSchema,
-            HtmlMaybeScriptTagOptionsSchema,
-            z.array(z.union([z.string(), HtmlMaybeLinkTagOptionsSchema, HtmlMaybeScriptTagOptionsSchema])),
-        ])
+    files: z
+        .never({invalid_type_error: "The entrypoint selects its HTML file; configure files in config.html"})
         .optional(),
-    links: z
-        .union([z.string(), HtmlLinkTagOptionsSchema, z.array(z.union([z.string(), HtmlLinkTagOptionsSchema]))])
-        .optional(),
-    scripts: z
-        .union([z.string(), HtmlScriptTagOptionsSchema, z.array(z.union([z.string(), HtmlScriptTagOptionsSchema]))])
-        .optional(),
+    links: z.union([LinkValueSchema, z.array(LinkValueSchema)]).optional(),
+    scripts: z.union([ScriptValueSchema, z.array(ScriptValueSchema)]).optional(),
+    tags: z.union([TagValueSchema, z.array(TagValueSchema)]).optional(),
     metas: z
-        .union([z.string(), HtmlMetaTagOptionsSchema, z.array(z.union([z.string(), HtmlMetaTagOptionsSchema]))])
+        .union([MetaSchema, z.array(MetaSchema)], {
+            errorMap: () => ({
+                message: "Expected a meta object with nonempty attributes, or an array of such objects",
+            }),
+        })
         .optional(),
 });
 
-export const HtmlOptionKeys: readonly string[] = Object.keys(HtmlOptionsSchema.shape);
+export const HtmlEntrypointOptionKeys = Object.keys(HtmlEntrypointOptionsSchema.shape);

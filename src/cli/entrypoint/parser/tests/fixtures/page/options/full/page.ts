@@ -1,0 +1,36 @@
+import {Browser, CspSource, definePage, Mode} from "adnbn";
+
+export default definePage({
+    name: "help",
+    matches: ["https://example.com/*"],
+    as: "help-view",
+    title: "Help",
+    template: "./template.html",
+    includeApp: ["app"],
+    excludeApp: ["legacy"],
+    includeBrowser: [Browser.Chrome],
+    excludeBrowser: [Browser.Firefox],
+    mode: Mode.Production,
+    debug: true,
+    manifestVersion: 3,
+    scripts: "extra.js",
+    links: "extra.css",
+    append: false,
+    useHash: true,
+    usePublicPath: false,
+    prependExternals: false,
+    jsExtensions: [".js", ".module"],
+    cssExtensions: ".css",
+    tags: [{path: "runtime.module", type: "js"}],
+    metas: {attributes: {name: "page-test", content: "enabled"}},
+    csp: {
+        wasm: true,
+        sources: {
+            connect: [CspSource.Self, "https://api.example.com"],
+            image: [CspSource.Self, CspSource.Data, CspSource.Blob],
+            style: [CspSource.Self, CspSource.UnsafeInline],
+            worker: [CspSource.Blob],
+            frame: ["https://frame.example.com"],
+        },
+    },
+});

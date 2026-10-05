@@ -1,5 +1,5 @@
 import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import Page from "./Page";
 
@@ -31,6 +31,7 @@ export default definePlugin(() => {
                     Object.fromEntries(Array.from((await page.views()).values(), item => [item.alias, item.filename]))
                 ),
             });
+
             const modulePlugin = new GenerateModulePlugin(await getModules());
 
             if (config.command === Command.Watch) {
@@ -57,7 +58,7 @@ export default definePlugin(() => {
                 }
 
                 const htmlPlugins = (await page.view().html()).map(options => new HtmlRspackPlugin(options));
-                const tagsPlugins = (await page.view().tags()).map(options => new HtmlRspackTagsPlugin(options));
+                const tagsPlugins = (await page.view().tags()).map(options => new HtmlTagsRspackPlugin(options));
 
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
             }
