@@ -19,6 +19,20 @@ const shape = (name: string, properties: string[], definition: string | string[]
  * The definition used by a fixture is arbitrary; each parser proves its own one in its `full` scenario.
  */
 describe("OptionFile export shapes", () => {
+    test("reads static options from a JSX file without evaluating its render component", () => {
+        const file = OptionFile.make(path.join(shapes, "jsx-definition.jsx"))
+            .setDefinition("definePage")
+            .setProperties(["name", "title", "matches"]);
+
+        expect(file.getOptions()).toEqual({
+            name: "jsx-page",
+            title: "JSX page",
+            matches: ["https://example.com/*"],
+        });
+        expect(file.getDefinition()).toBe("definePage");
+        expect(file.getDeclaredProperties()).toEqual(new Set(["title", "name", "matches", "render"]));
+    });
+
     test.each([
         {
             title: "a definition call",

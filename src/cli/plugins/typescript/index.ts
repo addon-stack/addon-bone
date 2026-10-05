@@ -22,7 +22,7 @@ export default definePlugin(() => {
         bundler: () => {
             return {
                 resolve: {
-                    extensions: [".ts", ".tsx", ".js"],
+                    extensions: [".ts", ".tsx", ".js", ".jsx"],
                     alias: typescript.aliases(),
                 },
                 module: {
@@ -35,6 +35,20 @@ export default definePlugin(() => {
                                     parser: {
                                         syntax: "typescript",
                                         tsx: true,
+                                    },
+                                    target: "es2020",
+                                },
+                            },
+                            type: "javascript/auto",
+                        },
+                        {
+                            test: /\.jsx$/,
+                            loader: "builtin:swc-loader",
+                            options: {
+                                jsc: {
+                                    parser: {
+                                        syntax: "ecmascript",
+                                        jsx: true,
                                     },
                                     target: "es2020",
                                 },
