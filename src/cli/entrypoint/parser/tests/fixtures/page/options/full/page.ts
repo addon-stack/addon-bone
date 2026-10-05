@@ -3,6 +3,10 @@ import {Browser, CspSource, definePage, Mode} from "adnbn";
 export default definePage({
     name: "help",
     matches: ["https://example.com/*"],
+    permissions: ["storage", "tabs"],
+    optionalPermissions: ["topSites"],
+    hostPermissions: ["https://*.example.com/*"],
+    optionalHostPermissions: ["https://other.test/*"],
     as: "help-view",
     title: "Help",
     template: "./template.html",

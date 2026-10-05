@@ -69,7 +69,13 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({manifest}) => {
-            manifest.appendAccessibleResources(await page.accessibleResources()).appendCsp(await page.csp());
+            manifest
+                .appendAccessibleResources(await page.accessibleResources())
+                .appendCsp(await page.csp())
+                .appendPermissions(await page.permissions())
+                .appendOptionalPermissions(await page.optionalPermissions())
+                .appendHostPermissions(await page.hostPermissions())
+                .appendOptionalHostPermissions(await page.optionalHostPermissions());
         },
     };
 });

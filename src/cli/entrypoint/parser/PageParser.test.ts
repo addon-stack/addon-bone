@@ -21,10 +21,14 @@ const file = (...parts: string[]) => {
 const parseOptions = (...parts: string[]) => parser.options(file(...parts));
 
 describe("PageParser", () => {
-    test("parses definePage with its name, matches and inherited view, HTML, CSP and build options", () => {
+    test("parses definePage with its name, matches, permissions and inherited view, HTML, CSP and build options", () => {
         expect(parseOptions("options", "full", "page.ts")).toEqual({
             name: "help",
             matches: ["https://example.com/*"],
+            permissions: ["storage", "tabs"],
+            optionalPermissions: ["topSites"],
+            hostPermissions: ["https://*.example.com/*"],
+            optionalHostPermissions: ["https://other.test/*"],
             as: "help-view",
             title: "Help",
             template: "./template.html",
