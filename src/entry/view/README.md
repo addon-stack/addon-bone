@@ -25,15 +25,33 @@ export default definePopup({
 ```ts title="src/help.page.ts"
 export const title = "Help";
 
-export default async () => {
-    const response = await fetch("/help.json");
-    const heading = document.createElement("h1");
+const loadTitle = async (heading: HTMLHeadingElement) => {
+    try {
+        const response = await fetch("/help.json");
 
-    heading.textContent = (await response.json()).title;
+        if (!response.ok) {
+            throw new Error(`Loading help failed: ${response.status}`);
+        }
+
+        heading.textContent = (await response.json()).title;
+    } catch {
+        heading.textContent = "Help is unavailable";
+    }
+};
+
+export default () => {
+    const heading = document.createElement("h1");
+    heading.textContent = "Loading help";
+
+    void loadTitle(heading);
 
     return heading;
 };
 ```
+
+`render` returns synchronously. Start asynchronous work separately and update the returned DOM element,
+or use state and effects in a React component. The framework does not await a render result and provides
+no `prepare` hook for views. A container factory may still be asynchronous.
 
 ## Adapter selection and generated modules
 
@@ -71,18 +89,22 @@ container through [`resolvers/container.ts`](resolvers/container.ts) and the ren
 
 1. destroys the previous run and sets `document.title` from `title`;
 2. calls the render with the definition options as props (the definition without `render` and
-   `container`); a view renders once, so the handler may be asynchronous;
+   `container`); the normalized handler returns its value synchronously;
 3. creates nothing when the render or its value is absent;
-4. creates the container, prepends it to `document.body`, and only then calls the adapter's `mount()`, so a
+4. awaits the container, prepends it to `document.body`, and only then calls the adapter's `mount()`, so a
    renderer may measure connected DOM.
 
 `destroy()` calls the adapter's `unmount()` and removes the container, even when `unmount()` throws. An
 adapter implements only what depends on its framework:
 
 - `resolveRender()` decides what the render input means and drops values the adapter cannot render. Vanilla
-  calls a function and uses its (awaited) result; React treats a function as a component invoked by React,
+  calls a function and uses its immediate result; React treats a function as a component invoked by React,
   so it may use hooks.
 - `mount()` puts the value into the container. React creates a root for a React node; `unmount()` unmounts it.
+
+`build()` and `destroy()` retain their asynchronous lifecycle contract. Offscreen and sandbox still await
+their transport's `init` and `main` before building the view. A synchronous render does not bypass those
+steps or force React to commit immediately.
 
 Every adapter renders the framework-independent values the same way, shared with the content adapters
 through [`src/entry/core/render.ts`](../core/render.ts):
@@ -109,6 +131,32 @@ View contracts live in `src/types/view`, organized like the content contracts:
 - `definition.ts` owns `ViewRenderDefinition` (the `render` and `container` mixin adopted by offscreen and
   sandbox), `ViewDefinition`, the resolved definition and the injected builder constructor.
 - `index.ts` exports the contracts through `@typing/view`.
+
+Use the public generic types to annotate reusable functions with the entrypoint's props:
+
+```tsx title="src/report.page.tsx"
+import {definePage, type PageProps, type ViewRenderReactComponent} from "adnbn";
+
+import React from "react";
+
+const Report: ViewRenderReactComponent<PageProps> = ({title}) => <h1>{title}</h1>;
+
+export default definePage({title: "Report", render: Report});
+```
+
+For a Vanilla handler, use `ViewRenderHandler<PageProps>`; for another entrypoint, use its corresponding
+props type, such as `PopupProps`. Both render contracts reject Promise results, including `Promise<void>`.
+Ordinary synchronous functions also work without an explicit annotation: TypeScript infers their result.
+
+React 19's `React.FC` permits a Promise result, so that annotation is too broad for a view render.
+Use `ViewRenderReactComponent<Props>`, keep the inferred function type, or wrap an existing synchronous
+component with `render: props => <Report {...props} />`. A JSX wrapper does not make an async client
+component supported. React owns component invocation and hooks.
+
+These restrictions are checked through the public TypeScript contracts. JavaScript without type checking,
+untyped exports and `any` can bypass them. If Vanilla receives a Promise or thenable result, it warns in
+the console and ignores that result without awaiting it or creating a container. React owns component
+invocation and its diagnostics; Addon Bone does not inspect async functions before invoking them.
 
 ## Adding an adapter
 

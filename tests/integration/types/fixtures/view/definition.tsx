@@ -1,4 +1,5 @@
 import {createPortal} from "react-dom";
+import type {FC} from "react";
 import {defineOffscreen, definePopup, defineSandbox} from "adnbn";
 
 import type {
@@ -41,20 +42,20 @@ for (const render of values) {
     definePopup(definition);
 }
 
-const handler: ViewRenderHandler<Props> = async ({title}) => title ?? document.createElement("p");
+const handler: ViewRenderHandler<Props> = ({title}) => title ?? document.createElement("p");
 
 definePopup({render: handler});
 
 definePopup({
     title: "Popup",
 
-    container: props => {
+    container: async props => {
         const title: string | undefined = props.title;
 
         return {tagName: "section", title: title ?? ""};
     },
 
-    render: async props => {
+    render: props => {
         // @ts-expect-error: Render handlers receive the view options as props.
         props.missing;
 
@@ -63,10 +64,35 @@ definePopup({
 });
 
 // Entrypoints that host a view adopt the same render contract.
-defineOffscreen({init: () => ({}), render: () => "Offscreen"});
-defineSandbox({init: () => ({}), render: <span>Sandbox</span>});
+defineOffscreen({init: async () => ({}), main: async () => {}, render: () => "Offscreen"});
+defineSandbox({init: async () => ({}), main: async () => {}, render: <span>Sandbox</span>});
 
-// @ts-expect-error: A Promise is not a render value; await data inside a render handler instead.
+const emptyHandler: ViewRenderHandler<Props> = () => {};
+definePopup({render: emptyHandler});
+
+// @ts-expect-error: Render handlers return their value synchronously.
+const asyncHandler: ViewRenderHandler<Props> = async () => "text";
+
+// @ts-expect-error: Returning a Promise is also invalid without an async modifier.
+const promiseHandler: ViewRenderHandler<Props> = () => Promise.resolve("text");
+
+// @ts-expect-error: A handler that returns no content must still be synchronous.
+const asyncEmptyHandler: ViewRenderHandler<Props> = async () => {};
+
+// @ts-expect-error: View components are synchronous client components.
+const AsyncPanel: ViewRenderReactComponent<Props> = async ({title}) => <span>{title}</span>;
+
+// @ts-expect-error: The component branch must not allow async render through a define helper.
+definePopup({render: async () => <span>Async</span>});
+
+const WidePanel: FC<Props> = Panel;
+
+// @ts-expect-error: React 19 FC can return a Promise, so it does not guarantee synchronous rendering.
+definePopup({render: WidePanel});
+
+definePopup({render: props => <WidePanel {...props} />});
+
+// @ts-expect-error: A Promise is not a render value; load data separately from render.
 definePopup({render: Promise.resolve("text")});
 
 // @ts-expect-error: A plain object is neither a DOM nor a React render value.

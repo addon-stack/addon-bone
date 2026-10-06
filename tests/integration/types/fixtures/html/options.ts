@@ -11,7 +11,7 @@ const options: HtmlEntrypointOptions = {
     publicPath: "/",
 };
 
-definePage({...options, render: async () => "Page"});
+definePage({...options, render: () => "Page"});
 definePage({metas: meta});
 definePage({metas: [meta]});
 

@@ -14,8 +14,22 @@ export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
             return;
         }
 
-        return async props => {
-            const value = typeof render === "function" ? await render(props) : render;
+        return props => {
+            const value = typeof render === "function" ? render(props) : render;
+
+            if (
+                value !== null &&
+                (typeof value === "object" || typeof value === "function") &&
+                "then" in value &&
+                typeof value.then === "function"
+            ) {
+                console.warn(
+                    "Vanilla view render must be synchronous. The Promise or thenable result was ignored. " +
+                        "Load data in a separate async function and return the initial UI immediately."
+                );
+
+                return;
+            }
 
             return isDomRenderValue(value) ? value : undefined;
         };

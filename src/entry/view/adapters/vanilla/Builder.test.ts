@@ -1,6 +1,6 @@
 import Builder from "./Builder";
 
-import type {ViewConfig} from "@typing/view";
+import type {ViewConfig, ViewRenderHandler} from "@typing/view";
 
 describe("Vanilla view Builder", () => {
     afterEach(() => {
@@ -45,6 +45,59 @@ describe("Vanilla view Builder", () => {
         await new Builder<ViewConfig>({container: {tagName: "section", id: "root"}, render: "content"}).build();
 
         expect(document.body.firstElementChild?.outerHTML).toBe('<section id="root">content</section>');
+    });
+
+    test("awaits an asynchronous container before mounting the synchronous render value", async () => {
+        const started = Promise.withResolvers<void>();
+        const ready = Promise.withResolvers<Element>();
+        const container = document.createElement("section");
+
+        const builder = new Builder<ViewConfig>({
+            title: "Async container",
+            render: "content",
+            container: async ({title}) => {
+                container.title = title ?? "";
+                started.resolve();
+
+                return await ready.promise;
+            },
+        });
+
+        const building = builder.build();
+        await started.promise;
+
+        expect(document.body.children).toHaveLength(0);
+
+        ready.resolve(container);
+        await building;
+
+        expect(document.body.firstElementChild).toBe(container);
+        expect(container.title).toBe("Async container");
+        expect(container.textContent).toBe("content");
+
+        await builder.destroy();
+    });
+
+    test.each([
+        ["a Promise", Promise.withResolvers<string>().promise],
+        ["a thenable", {then: jest.fn()}],
+    ])("warns and skips the container without awaiting %s from an untyped render", async (_, value) => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const container = jest.fn(() => document.createElement("section"));
+        const render = (() => value) as unknown as ViewRenderHandler<ViewConfig>;
+        const builder = new Builder<ViewConfig>({render, container});
+
+        try {
+            await builder.build();
+
+            expect(warn).toHaveBeenCalledTimes(1);
+            expect(warn).toHaveBeenCalledWith(expect.stringContaining("Vanilla view render must be synchronous"));
+            expect(container).not.toHaveBeenCalled();
+            expect(document.body.children).toHaveLength(0);
+        } finally {
+            warn.mockRestore();
+            await builder.destroy();
+        }
     });
 
     test.each([
