@@ -149,8 +149,18 @@ test.each([
                 }, 10_000);
 
                 complete = (error, stats) => {
-                    if (!error && stats && stats.hasErrors() !== expectErrors) {
-                        return;
+                    if (!error && stats) {
+                        if (stats.hasErrors() !== expectErrors) {
+                            return;
+                        }
+
+                        // A setup-triggered rebuild may succeed before polling observes the new file.
+                        // Advance only after the watcher reports this phase's actual file change.
+                        const changes = expectErrors ? compiler?.removedFiles : compiler?.modifiedFiles;
+
+                        if (update && !changes?.has(index)) {
+                            return;
+                        }
                     }
 
                     clearTimeout(timer);

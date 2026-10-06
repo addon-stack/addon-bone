@@ -29,12 +29,12 @@ jobs:
     if: >-
       github.ref == 'refs/heads/main' &&
       github.actor != format('{0}[bot]', vars.RELEASE_APP_SLUG)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       should_release: ${{ steps.policy.outputs.should_release }}
     steps:
       - name: Checkout trusted workflow revision
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
@@ -55,7 +55,7 @@ jobs:
 
   release:
     name: Release & Publish
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [policy, ci]
     if: needs.policy.outputs.should_release == 'true'
     environment: release
@@ -73,14 +73,14 @@ jobs:
           permission-contents: write
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           fetch-tags: true
           token: ${{ steps.release-app-token.outputs.token }}
 
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: 'npm'

@@ -169,9 +169,9 @@ Pre-push runs `npm run check`, without browser launches or coverage. It includes
 
 ## CI and coverage
 
-CI runs units, compiler/build/declaration tests, fixture typechecks, Chrome and Firefox in separate jobs. All non-browser groups retain the Linux/Windows × Node 22/24 matrix; both browsers run on Linux for each Node version. Existing `Test and Build` check names now aggregate the entire matrix, not only the OS/Node named in each check; they fail if any required job fails, is cancelled or is skipped. A full workflow contains 22 jobs including matrix computation and aggregation, with at most 16 test jobs ready together before coverage/aggregation dependencies finish.
+CI runs units, compiler/build/declaration tests, fixture typechecks, Chrome and Firefox in separate jobs. All non-browser groups retain the Linux/Windows × Node 22/24 matrix; both browsers run on Linux for each Node version. Linux jobs use `ubuntu-24.04`. Existing `Test and Build` check names retain their `ubuntu-latest` label for compatibility and aggregate the entire matrix, not only the OS/Node named in each check; they fail if any required job fails, is cancelled or is skipped. A full workflow contains 22 jobs including matrix computation and aggregation, with at most 16 test jobs ready together before coverage/aggregation dependencies finish.
 
-Babel coverage is collected in the Ubuntu/Node 22 unit and build jobs, then merged once with `scripts/merge-coverage.mjs`. The other matrix cells run the same tests without coverage instrumentation. The published report is `coverage-ubuntu-latest-node22`; platform-specific coverage reports are no longer produced. Moving compiler tests between groups must not remove their source coverage. Keep both `coverage-final.json` inputs when merging locally:
+Babel coverage is collected in the Ubuntu/Node 22 unit and build jobs, then merged once with `scripts/merge-coverage.mjs`. The other matrix cells run the same tests without coverage instrumentation. The published report is `coverage-ubuntu-24.04-node22`; platform-specific coverage reports are no longer produced. Moving compiler tests between groups must not remove their source coverage. Keep both `coverage-final.json` inputs when merging locally:
 
 ```sh
 npm run test:run -- --selectProjects unit-node unit-dom --coverage --coverageDirectory=coverage/unit
