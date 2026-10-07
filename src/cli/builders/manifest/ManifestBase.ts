@@ -569,7 +569,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
             const scripts = Array.from(dependencies.js);
 
-            return {background: {scripts, persistent: persistent || undefined}};
+            return {background: {scripts, persistent}};
         }
     }
 

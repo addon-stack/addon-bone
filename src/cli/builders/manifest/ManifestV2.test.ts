@@ -28,6 +28,20 @@ describe("ManifestV2", () => {
         });
     });
 
+    it.each([true, false, undefined])("serializes background persistence %s without coercion", persistent => {
+        const manifest = new ManifestV2(Browser.Chrome)
+            .setDependencies(new Map([["background", dependency(["background.js"])]]))
+            .setBackground({entry: "background", ...(persistent === undefined ? {} : {persistent})})
+            .build();
+
+        const serialized = JSON.parse(JSON.stringify(manifest));
+
+        expect(serialized.background).toEqual({
+            scripts: ["background.js"],
+            ...(persistent === undefined ? {} : {persistent}),
+        });
+    });
+
     it("builds browser_action from popup and selected icons", () => {
         const manifest: any = new ManifestV2(Browser.Chrome)
             .setName("Popup Addon")

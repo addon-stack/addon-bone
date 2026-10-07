@@ -35,6 +35,22 @@ describe("ManifestV3", () => {
         expect(manifest.background).toEqual({scripts: ["background.js"], persistent: undefined});
     });
 
+    describe.each([Browser.Chrome, Browser.Firefox])("%s background serialization", browser => {
+        it.each([true, false, undefined])("omits persistence %s from MV3", persistent => {
+            const manifest = new ManifestV3(browser)
+                .setDependencies(new Map([["background", dependency(["background.js"])]]))
+                .setBackground({entry: "background", ...(persistent === undefined ? {} : {persistent})})
+                .build();
+
+            const serialized = JSON.parse(JSON.stringify(manifest));
+
+            expect(serialized.background).toEqual(
+                browser === Browser.Firefox ? {scripts: ["background.js"]} : {service_worker: "background.js"}
+            );
+            expect(serialized.background).not.toHaveProperty("persistent");
+        });
+    });
+
     it("builds action from popup and selected icons", () => {
         const manifest: any = new ManifestV3(Browser.Chrome)
             .setName("Popup Addon")

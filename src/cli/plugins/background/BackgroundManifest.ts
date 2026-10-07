@@ -22,14 +22,22 @@ export default class {
         return false;
     }
 
-    public async isPersistent(): Promise<boolean> {
+    public async isPersistent(): Promise<boolean | undefined> {
+        let persistent: boolean | undefined;
+
         for await (const entry of this.entries) {
-            if (await entry.isPersistent()) {
+            const value = await entry.isPersistent();
+
+            if (value === true) {
                 return true;
+            }
+
+            if (value === false) {
+                persistent = false;
             }
         }
 
-        return false;
+        return persistent;
     }
 
     public async getPermissions(): Promise<ManifestPermissions> {

@@ -15,10 +15,15 @@ export default class BackgroundEntry<O extends BackgroundEntrypointOptions> {
         return new Map([[BackgroundEntry.name, new Set(options.keys())]]);
     }
 
-    public async isPersistent(): Promise<boolean> {
+    public async isPersistent(): Promise<boolean | undefined> {
         const options = await this.finder.plugin().options();
+        const persistent = Array.from(options.values(), ({persistent}) => persistent);
 
-        return Array.from(options.values()).some(({persistent}) => persistent);
+        if (persistent.includes(true)) {
+            return true;
+        }
+
+        return persistent.includes(false) ? false : undefined;
     }
 
     public async getPermissions(): Promise<ManifestPermissions> {

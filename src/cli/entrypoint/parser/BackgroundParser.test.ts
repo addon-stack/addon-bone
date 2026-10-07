@@ -32,4 +32,12 @@ describe("BackgroundParser", () => {
     test("rejects a non-boolean persistent value", () => {
         expect(() => parseOptions("invalid", "persistent.ts")).toThrow("Invalid options persistent");
     });
+
+    test("preserves explicit false", () => {
+        expect(parseOptions("options", "event-page", "background.ts")).toEqual({persistent: false});
+    });
+
+    test("leaves persistence unspecified by default", () => {
+        expect(parseOptions("options", "defaults", "background.ts")).toEqual({});
+    });
 });
