@@ -6,7 +6,7 @@ describe("view contracts", () => {
     const fixture = path.join(__dirname, "fixtures/view/definition.tsx");
 
     test.each(["source", "package"])(
-        "checks synchronous view render contracts and asynchronous containers through the %s API",
+        "checks synchronous view renders, asynchronous containers and entrypoint permissions through the %s API",
         mode => {
             const config = ts.readConfigFile(path.join(projectDir, "tsconfig.json"), ts.sys.readFile);
             const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, projectDir);

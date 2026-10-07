@@ -25,7 +25,7 @@ describe("OffscreenParser", () => {
             expect(parser.options(file("options", "defaults", "audio.offscreen.ts"))).toEqual({});
         });
 
-        test("parses defineOffscreen with its name, reasons and inherited view and CSP options", () => {
+        test("parses defineOffscreen with its name, reasons, permissions and inherited view and CSP options", () => {
             expect(parser.options(file("options", "full", "audio.offscreen.ts"))).toEqual({
                 name: "audio",
                 reasons: ["AUDIO_PLAYBACK", "BLOBS"],
@@ -34,6 +34,10 @@ describe("OffscreenParser", () => {
                 title: "Extension panel",
                 template: "./template.html",
                 includeBrowser: ["chrome"],
+                permissions: ["clipboardRead"],
+                optionalPermissions: ["clipboardWrite"],
+                hostPermissions: ["https://api.example.com/*"],
+                optionalHostPermissions: ["https://optional.example.com/*"],
                 csp: {sources: {connect: ["'self'", "https://api.example.com"]}},
                 links: "extra.css",
                 append: false,

@@ -7,7 +7,7 @@ import {stop, waitFor} from "../../browser/utils/browser";
 
 jest.setTimeout(90_000);
 
-test("CLI watch replaces page permissions and a fresh build drops a removed page", async () => {
+test("CLI watch replaces page and offscreen permissions and a fresh build drops removed views", async () => {
     const root = path.resolve(__dirname, "../../../..");
     const fixture = await createIntegrationFixture(root, path.join(__dirname, "views"));
     let watcher: ChildProcess | undefined;
@@ -17,6 +17,7 @@ test("CLI watch replaces page permissions and a fresh build drops a removed page
         const directory = await fixture.build({browser: "chrome"});
         const manifestPath = path.join(directory, "manifest.json");
         const entry = path.join(fixture.directory, "src", "reports.page.ts");
+        const offscreen = path.join(fixture.directory, "src", "processor.offscreen.ts");
         await rm(manifestPath);
 
         watcher = spawn(process.execPath, [path.join(root, "bin", "adnbn.js"), "watch", ".", "-b", "chrome"], {
@@ -61,7 +62,7 @@ test("CLI watch replaces page permissions and a fresh build drops a removed page
                     return manifest;
                 },
                 15_000,
-                `CLI watch page permissions after ${state}`
+                `CLI watch view permissions after ${state}`
             );
 
         const retained = ["bookmarks", "downloads", "history", "sidePanel", "storage", "tabs"];
@@ -70,31 +71,53 @@ test("CLI watch replaces page permissions and a fresh build drops a removed page
         await observe(
             "startup",
             0,
-            [...retained, "alarms"],
-            ["clipboardWrite", "topSites"],
-            [retainedHost, "https://api.example.net/*"],
-            ["https://export.example.org/*"]
+            [...retained, "alarms", "offscreen", "geolocation"],
+            ["clipboardWrite", "topSites", "contextMenus"],
+            [retainedHost, "https://api.example.net/*", "https://offscreen.example.net/*"],
+            ["https://export.example.org/*", "https://optional-offscreen.example.org/*"]
         );
 
         const beforeEdit = completedBuilds();
         await writeFile(entry, await readFile(path.join(__dirname, "states", "reports.ts")));
 
         const changed = await observe(
-            "edit",
+            "page edit",
             beforeEdit,
-            [...retained, "idle"],
-            ["clipboardRead", "topSites"],
-            [retainedHost, "https://changed.example.net/*"],
-            ["https://changed.example.org/*"]
+            [...retained, "idle", "offscreen", "geolocation"],
+            ["clipboardRead", "topSites", "contextMenus"],
+            [retainedHost, "https://changed.example.net/*", "https://offscreen.example.net/*"],
+            ["https://changed.example.org/*", "https://optional-offscreen.example.org/*"]
         );
 
-        expect(changed.content_security_policy.extension_pages).toContain("connect-src https://changed.example.net;");
+        expect(changed.content_security_policy.extension_pages).toContain("https://changed.example.net");
+        expect(changed.content_security_policy.extension_pages).toContain("https://offscreen.example.net");
         expect(changed.content_security_policy.extension_pages).not.toContain("https://api.example.net");
+
+        const beforeOffscreenEdit = completedBuilds();
+        await writeFile(offscreen, await readFile(path.join(__dirname, "states", "processor.ts")));
+
+        const changedOffscreen = await observe(
+            "offscreen edit",
+            beforeOffscreenEdit,
+            [...retained, "idle", "offscreen", "management"],
+            ["clipboardRead", "topSites", "cookies"],
+            [retainedHost, "https://changed.example.net/*", "https://changed-offscreen.example.net/*"],
+            ["https://changed.example.org/*", "https://optional-changed-offscreen.example.org/*"]
+        );
+
+        expect(changedOffscreen.content_security_policy.extension_pages).toContain("https://changed.example.net");
+
+        expect(changedOffscreen.content_security_policy.extension_pages).toContain(
+            "https://changed-offscreen.example.net"
+        );
+
+        expect(changedOffscreen.content_security_policy.extension_pages).not.toContain("https://offscreen.example.net");
 
         // Entrypoint deletion is checked after stopping watch, as in the Relay integration.
         await stop(watcher);
         watcher = undefined;
         await rm(entry);
+        await rm(offscreen);
         await fixture.build({browser: "chrome"});
 
         const removed = JSON.parse(await readFile(manifestPath, "utf8"));

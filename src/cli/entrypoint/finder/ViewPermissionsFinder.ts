@@ -10,7 +10,7 @@ type PermissionsEntrypointOptions = CspEntrypointOptions & PermissionsOptions;
  * Views that opt into the permissions contract.
  *
  * Only views that reach the build contribute: every built view when several are allowed,
- * because any of them can be switched to at runtime, and the single winner otherwise.
+ * and the single winner otherwise. Their contribution does not depend on runtime use.
  */
 export default abstract class ViewPermissionsFinder<
     O extends PermissionsEntrypointOptions,

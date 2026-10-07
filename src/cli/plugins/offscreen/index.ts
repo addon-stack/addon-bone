@@ -98,7 +98,14 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({manifest, config}) => {
-            manifest.appendCsp(await offscreen.views().csp());
+            const views = offscreen.views();
+
+            manifest
+                .appendCsp(await views.csp())
+                .appendPermissions(await views.permissions())
+                .appendOptionalPermissions(await views.optionalPermissions())
+                .appendHostPermissions(await views.hostPermissions())
+                .appendOptionalHostPermissions(await views.optionalHostPermissions());
 
             if (config.manifestVersion !== 2 && config.browser !== Browser.Firefox && (await offscreen.exists())) {
                 manifest.addPermission("offscreen");

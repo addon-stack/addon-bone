@@ -67,6 +67,23 @@ definePopup({
 defineOffscreen({init: async () => ({}), main: async () => {}, render: () => "Offscreen"});
 defineSandbox({init: async () => ({}), main: async () => {}, render: <span>Sandbox</span>});
 
+defineOffscreen({
+    permissions: ["clipboardRead"],
+    optionalPermissions: ["clipboardWrite"],
+    hostPermissions: ["https://api.example.com/*"],
+    optionalHostPermissions: ["https://optional.example.com/*"],
+    csp: {sources: {connect: ["https://api.example.com"]}},
+    init: options => ({hosts: options.hostPermissions ?? []}),
+    main: (instance, options) => {
+        const hosts: string[] = instance.hosts;
+        const optionalHosts: string[] | undefined = options.optionalHostPermissions;
+    },
+    render: props => props.permissions?.join(", "),
+});
+
+// @ts-expect-error: Sandbox does not adopt the permissions contract.
+defineSandbox({permissions: ["storage"], init: () => ({})});
+
 const emptyHandler: ViewRenderHandler<Props> = () => {};
 definePopup({render: emptyHandler});
 

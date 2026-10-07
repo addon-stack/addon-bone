@@ -13,28 +13,42 @@ const pageHost = "https://api.example.net/*";
 const firefoxHost = "https://firefox.example.net/*";
 const optionalHost = "https://export.example.org/*";
 const optionalFirefoxHost = "https://optional-firefox.example.org/*";
+const offscreenHost = "https://offscreen.example.net/*";
+const optionalOffscreenHost = "https://optional-offscreen.example.org/*";
+const firefoxOffscreenHost = "https://firefox-offscreen.example.net/*";
+const optionalFirefoxOffscreenHost = "https://optional-firefox-offscreen.example.org/*";
 
 /**
  * The application builds two popups and two sidebars (one of each is not applied by default)
- * an options page and two pages, one of which is Firefox-only. Pages are never opened;
- * their inclusion in the build is enough to contribute permissions and CSP.
+ * an options page, two pages and two offscreens. One page and one offscreen are Firefox-only.
+ * Pages and offscreens are never opened; their inclusion in the build is enough to contribute permissions and CSP.
  */
 test.each([
     {
         target: "chrome MV3 collects every built view and the side panel permission",
         browser: "chrome",
         manifestVersion: 3,
-        permissions: ["alarms", "bookmarks", "downloads", "history", "sidePanel", "storage", "tabs"],
-        optionalPermissions: ["clipboardWrite", "topSites"],
-        hostPermissions: [host, pageHost],
-        optionalHostPermissions: [optionalHost],
+        permissions: [
+            "alarms",
+            "bookmarks",
+            "downloads",
+            "history",
+            "offscreen",
+            "sidePanel",
+            "storage",
+            "tabs",
+            "geolocation",
+        ],
+        optionalPermissions: ["clipboardWrite", "topSites", "contextMenus"],
+        hostPermissions: [host, pageHost, offscreenHost],
+        optionalHostPermissions: [optionalHost, optionalOffscreenHost],
     },
     {
         target: "chrome MV2 has no sidebar, so sidebar permissions are not requested",
         browser: "chrome",
         manifestVersion: 2,
-        permissions: ["alarms", "downloads", host, pageHost, "storage", "tabs"],
-        optionalPermissions: ["clipboardWrite", "topSites", optionalHost],
+        permissions: ["alarms", "downloads", host, pageHost, offscreenHost, "storage", "tabs", "geolocation"],
+        optionalPermissions: ["clipboardWrite", "topSites", "contextMenus", optionalHost, optionalOffscreenHost],
         hostPermissions: undefined,
         optionalHostPermissions: undefined,
     },
@@ -42,10 +56,25 @@ test.each([
         target: "firefox MV3 builds the sidebar action without the side panel permission",
         browser: "firefox",
         manifestVersion: 3,
-        permissions: ["alarms", "bookmarks", "downloads", "history", "notifications", "storage", "tabs"],
-        optionalPermissions: ["clipboardWrite", "idle", "topSites"],
-        hostPermissions: [host, pageHost, firefoxHost],
-        optionalHostPermissions: [optionalHost, optionalFirefoxHost],
+        permissions: [
+            "alarms",
+            "bookmarks",
+            "downloads",
+            "history",
+            "notifications",
+            "storage",
+            "tabs",
+            "geolocation",
+            "webRequest",
+        ],
+        optionalPermissions: ["clipboardWrite", "sessions", "idle", "topSites", "contextMenus"],
+        hostPermissions: [host, pageHost, firefoxHost, offscreenHost, firefoxOffscreenHost],
+        optionalHostPermissions: [
+            optionalHost,
+            optionalFirefoxHost,
+            optionalOffscreenHost,
+            optionalFirefoxOffscreenHost,
+        ],
     },
     {
         target: "firefox MV2 keeps sidebar permissions and declares hosts as permissions",
@@ -59,11 +88,25 @@ test.each([
             host,
             pageHost,
             firefoxHost,
+            offscreenHost,
+            firefoxOffscreenHost,
             "notifications",
             "storage",
             "tabs",
+            "geolocation",
+            "webRequest",
         ],
-        optionalPermissions: ["clipboardWrite", "idle", "topSites", optionalHost, optionalFirefoxHost],
+        optionalPermissions: [
+            "clipboardWrite",
+            "sessions",
+            "idle",
+            "topSites",
+            "contextMenus",
+            optionalHost,
+            optionalFirefoxHost,
+            optionalOffscreenHost,
+            optionalFirefoxOffscreenHost,
+        ],
         hostPermissions: undefined,
         optionalHostPermissions: undefined,
     },
@@ -91,8 +134,13 @@ test.each([
 
             const sources =
                 browser === "firefox"
-                    ? ["https://api.example.net", "https://firefox.example.net"]
-                    : ["https://api.example.net"];
+                    ? [
+                          "https://api.example.net",
+                          "https://firefox.example.net",
+                          "https://offscreen.example.net",
+                          "https://firefox-offscreen.example.net",
+                      ]
+                    : ["https://api.example.net", "https://offscreen.example.net"];
 
             const connect = csp
                 .split(";")

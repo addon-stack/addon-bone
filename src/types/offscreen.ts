@@ -8,6 +8,7 @@ import {
 import {ViewOptions, ViewRenderDefinition} from "@typing/view";
 import {Awaiter} from "@typing/helpers";
 import {CspOptions} from "@typing/csp";
+import type {PermissionsOptions} from "@typing/permissions";
 
 export const OffscreenGlobalKey = "adnbnOffscreen";
 
@@ -73,7 +74,15 @@ export interface OffscreenConfig extends TransportConfig {
     justification?: string;
 }
 
-export type OffscreenOptions = OffscreenConfig & CspOptions & ViewOptions;
+/**
+ * Each offscreen document included in a build contributes its permissions and CSP to the extension manifest,
+ * even if it is never created. Permissions and CSP apply to the extension, not just this document.
+ *
+ * A native Chrome offscreen document can call only the `runtime` extension API. Declare what its feature needs,
+ * such as `clipboardWrite` or the hosts it fetches. The framework adds the `offscreen` permission automatically
+ * according to the target browser and manifest version; do not declare it manually in cross-browser builds.
+ */
+export type OffscreenOptions = OffscreenConfig & PermissionsOptions & CspOptions & ViewOptions;
 
 export type OffscreenEntrypointOptions = Partial<OffscreenOptions>;
 
