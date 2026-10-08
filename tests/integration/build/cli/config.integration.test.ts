@@ -158,6 +158,17 @@ describe("user configuration through real c12", () => {
         expect(await readJson("user-plugin.json")).toEqual({name: "My Extension for Firefox", browser: "firefox"});
     });
 
+    test("CLI build preserves manifest callback fields after reading web accessible resources", async () => {
+        const result = run([cli, "build", ".", "--config", "manifest-callback.config.ts"]);
+
+        expect({status: result.status, stderr: result.stderr}).toEqual({status: 0, stderr: ""});
+        expect(await readJson("dist", "addon-chrome-mv3", "manifest.json")).toMatchObject({
+            manifest_version: 3,
+            version: "1.2.3",
+            version_name: "1.2 beta",
+        });
+    });
+
     test("object and callback settings recalculate the same defaults after one callback invocation", async () => {
         const configs = ["object", "callback"].map(kind => {
             const result = inspect({mode: Mode.Production}, path.join("defaults", `${kind}.config.ts`));

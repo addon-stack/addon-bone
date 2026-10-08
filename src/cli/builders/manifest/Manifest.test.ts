@@ -141,6 +141,82 @@ describe("Manifest common builder methods", () => {
         expect(builder.get()).toEqual(builder.build());
     });
 
+    describe.each([
+        {version: 2, Builder: ManifestV2},
+        {version: 3, Builder: ManifestV3},
+    ])("MV$version raw updates", ({Builder}) => {
+        it("merges later raw fields after reading the manifest", () => {
+            const builder = new Builder(Browser.Chrome).raw({
+                version_name: "before",
+                commands: {open: {description: "Before", suggested_key: {default: "Ctrl+Shift+U"}}},
+                externally_connectable: {matches: ["https://before.example/*"]},
+            });
+
+            expect(builder.get().version_name).toBe("before");
+
+            builder.raw({
+                version_name: "after",
+                commands: {open: {description: "After", suggested_key: {mac: "Command+Shift+U"}}},
+                externally_connectable: {matches: ["https://after.example/*"]},
+            });
+
+            const manifest = builder.get();
+
+            expect(manifest).toMatchObject({
+                version_name: "after",
+                commands: {
+                    open: {
+                        description: "After",
+                        suggested_key: {default: "Ctrl+Shift+U", mac: "Command+Shift+U"},
+                    },
+                },
+                externally_connectable: {matches: ["https://before.example/*", "https://after.example/*"]},
+            });
+
+            expect(builder.get()).toEqual(manifest);
+        });
+
+        it("restores raw commands after clearing internal commands", () => {
+            const rawCommands = {
+                shared: {
+                    description: "Raw description",
+                    suggested_key: {default: "Ctrl+Shift+Y", mac: "Command+Shift+Y"},
+                },
+            };
+
+            const builder = new Builder(Browser.Chrome)
+                .raw({commands: rawCommands})
+                .setCommands(
+                    new Set([
+                        {name: "shared", description: "Internal description", macKey: "Command+Shift+U"},
+                        {name: "temporary"},
+                    ])
+                );
+
+            expect(builder.get().commands).toMatchObject({
+                shared: {
+                    description: "Internal description",
+                    suggested_key: {default: "Ctrl+Shift+Y", mac: "Command+Shift+U"},
+                },
+                temporary: {description: "temporary"},
+            });
+
+            builder.setCommands();
+
+            expect(builder.get().commands).toEqual(rawCommands);
+        });
+
+        it("includes raw fields after reading web accessible resources", () => {
+            const builder = new Builder(Browser.Chrome);
+
+            expect(builder.getWebAccessibleResources()).toEqual([]);
+
+            builder.raw({version_name: "after"});
+
+            expect(builder.get().version_name).toBe("after");
+        });
+    });
+
     it("merges raw objects and arrays and keeps unknown raw fields", () => {
         const builder = new ManifestV3(Browser.Chrome);
 

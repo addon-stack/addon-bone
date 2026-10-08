@@ -440,6 +440,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public raw(manifest: OptionalManifest): this {
         this.raws.add(manifest);
+        this.mergedRaws = undefined;
 
         return this;
     }
@@ -596,7 +597,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             {} as CoreManifest["commands"]
         );
 
-        const commands = _.merge(this.combinedRaws.commands, internalCommands);
+        const commands = _.merge({}, this.combinedRaws.commands, internalCommands);
 
         if (Object.keys(commands).length) {
             return {commands};
