@@ -1,10 +1,13 @@
+import type ManifestBase from "./ManifestBase";
 import ManifestV2 from "./ManifestV2";
 import ManifestV3 from "./ManifestV3";
 
-import {ManifestBuilder} from "@typing/manifest";
+import type {Manifest} from "@typing/manifest";
 import {ReadonlyConfig} from "@typing/config";
 
-export default (config: ReadonlyConfig): ManifestBuilder => {
+export {default as ManifestBase} from "./ManifestBase";
+
+export default (config: ReadonlyConfig): ManifestBase<Manifest> => {
     const {manifestVersion, browser} = config;
 
     if (manifestVersion === 2) {

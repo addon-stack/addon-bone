@@ -1,1 +1,31 @@
-export {type ManifestBuilder, ManifestIncognito} from "@typing/manifest";
+export {ManifestIncognito} from "@typing/manifest";
+
+export type {
+    Manifest,
+    CoreManifest,
+    OptionalManifest,
+    ManifestVersion,
+    ManifestIncognitoValue,
+    ManifestBuilder,
+    ManifestEntry,
+    ManifestBackground,
+    ManifestCommand,
+    ManifestCommands,
+    ManifestContentScript,
+    ManifestContentScripts,
+    ManifestPopup,
+    ManifestSidebar,
+    ManifestOptions,
+    ManifestOverride,
+    ManifestOverridePage,
+    ManifestSandbox,
+    ManifestIcon,
+    ManifestIcons,
+    ManifestPermission,
+    ManifestPermissions,
+    ManifestOptionalPermission,
+    ManifestOptionalPermissions,
+    ManifestHostPermissions,
+    ManifestAccessibleResource,
+    ManifestAccessibleResources,
+} from "@typing/manifest";

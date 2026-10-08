@@ -50,7 +50,7 @@ export class ManifestError extends Error {
     }
 }
 
-export default abstract class<T extends CoreManifest> implements ManifestBuilder<T> {
+export default abstract class ManifestBase<T extends CoreManifest> implements ManifestBuilder<T> {
     protected name?: string;
     protected author?: string;
     protected homepage?: string;

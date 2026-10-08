@@ -2,7 +2,8 @@ import rspack, {Compilation, Compiler} from "@rspack/core";
 
 import {getCompilationBuildAssets, getManifestHooks} from "../utils";
 
-import {ManifestBuilder, ManifestDependencies, ManifestDependency} from "@typing/manifest";
+import type {ManifestBase} from "@cli/builders/manifest";
+import {Manifest, ManifestDependencies, ManifestDependency} from "@typing/manifest";
 import {EntrypointAssetsMap} from "@typing/entrypoint";
 
 export const createManifestDependencies = (buildAssets: EntrypointAssetsMap): ManifestDependencies => {
@@ -22,7 +23,7 @@ export const createManifestDependencies = (buildAssets: EntrypointAssetsMap): Ma
 };
 
 class ManifestPlugin {
-    constructor(private readonly manifest: ManifestBuilder | (() => ManifestBuilder)) {}
+    constructor(private readonly manifest: ManifestBase<Manifest> | (() => ManifestBase<Manifest>)) {}
 
     apply(compiler: Compiler): void {
         compiler.hooks.compilation.tap("ManifestPlugin", compilation => {
