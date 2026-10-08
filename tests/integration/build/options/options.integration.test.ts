@@ -1,4 +1,4 @@
-import {readFile} from "fs/promises";
+import {readFile, writeFile} from "fs/promises";
 import path from "path";
 
 import {createIntegrationFixture} from "../../utils/fixture";
@@ -13,6 +13,11 @@ describe.each(["chrome", "edge", "opera", "safari", "firefox"])("%s options mani
         const fixture = await createIntegrationFixture(rootDir, fixtureDir);
 
         try {
+            await writeFile(
+                path.join(fixture.directory, "manifest-version.json"),
+                JSON.stringify({mv2: manifestVersion === 2})
+            );
+
             const extensionDir = await fixture.build({browser, manifestVersion});
             const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
 

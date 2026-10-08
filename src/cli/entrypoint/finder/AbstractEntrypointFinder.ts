@@ -5,7 +5,7 @@ import pluralize from "pluralize";
 import AbstractParsedFinder from "./AbstractParsedFinder";
 import {FileLayer, setFilePrecedence} from "./utils/filePrecedence";
 
-import {getAppSourcePath, getSharedPath} from "@cli/resolvers/path";
+import {getAppSourcePath, getSharedPath} from "@cli/workspace";
 
 import {EntrypointFile, EntrypointFileExtensions, EntrypointOptions} from "@typing/entrypoint";
 import {ReadonlyConfig} from "@typing/config";

@@ -1,6 +1,7 @@
-import {definePlugin} from "@main/plugin";
-import {fromRootPath} from "@cli/resolvers/path";
 import fs from "fs";
+
+import {definePlugin} from "@main/plugin";
+import {fromRootPath} from "@cli/workspace";
 
 export default definePlugin(() => {
     return {

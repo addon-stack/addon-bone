@@ -16,7 +16,7 @@ import {DocumentStylesLayer, DefaultStylesLayer} from "@cli/bundler/layers";
 import {definePlugin} from "@main/plugin";
 
 import {appFilenameResolver} from "@cli/bundler";
-import {getAppSourcePath, getResolvePath, getSharedPath} from "@cli/resolvers/path";
+import {getAppSourcePath, getResolvePath, getSharedPath} from "@cli/workspace";
 
 import {ReadonlyConfig} from "@typing/config";
 

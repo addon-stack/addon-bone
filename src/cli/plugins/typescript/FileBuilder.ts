@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import {fromRootPath, getResolvePath} from "@cli/resolvers/path";
+import {fromRootPath, getResolvePath} from "@cli/workspace";
 
 import {PackageName, SystemDir} from "@typing/app";
 import {ReadonlyConfig} from "@typing/config";

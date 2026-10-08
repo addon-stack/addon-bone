@@ -1,46 +1,43 @@
 import {existsSync} from "fs";
-import dotenv, {type DotenvParseOutput} from "dotenv";
 import {loadConfig} from "c12";
 import _ from "lodash";
 
-import {
-    pluginAction,
-    pluginAsset,
-    pluginBackground,
-    pluginBundler,
-    pluginContent,
-    pluginDotenv,
-    pluginHtml,
-    pluginIcon,
-    pluginLocale,
-    pluginMeta,
-    pluginOffscreen,
-    pluginManifest,
-    pluginOptimization,
-    pluginOptions,
-    pluginOutput,
-    pluginOverride,
-    pluginPage,
-    pluginPopup,
-    pluginPublic,
-    pluginReact,
-    pluginSandbox,
-    pluginSidebar,
-    pluginStyle,
-    pluginTypescript,
-    pluginVersion,
-    pluginView,
-} from "../plugins";
-
-import {fromRootPath, getAppPath, getAppSourcePath, getConfigFile} from "../resolvers/path";
+import resolveDotenv from "./dotenv";
+import resolvePlugins from "./plugins";
+import {getConfigFile} from "@cli/workspace/paths";
 
 import type {Config, OptionalConfig, ReadonlyConfig, UserConfig} from "@typing/config";
 import {Command, Mode, Workspace} from "@typing/app";
 import {Browser} from "@typing/browser";
-import {Plugin} from "@typing/plugin";
-import {ManifestVersion} from "@typing/manifest";
 import {Language, LanguageCodes} from "@typing/locale";
 import {DefaultIconGroupName} from "@typing/icon";
+
+type ConfigDefaultSources = Pick<Config, "app" | "browser" | "mode" | "command" | "debug">;
+
+type ConfigDependentDefaults = Pick<
+    Config,
+    "name" | "manifestVersion" | "assetsFilename" | "jsFilename" | "cssFilename" | "cssIdentName"
+>;
+
+type ConfigDependentDefaultKey = keyof ConfigDependentDefaults;
+
+interface ConfigInitialState {
+    config: Config;
+    automaticDefaults: ConfigDependentDefaultKey[];
+}
+
+const resolveDefaults = ({app, browser, mode, command, debug}: ConfigDefaultSources): ConfigDependentDefaults => {
+    const production = mode === Mode.Production && command === Command.Build && !debug;
+
+    return {
+        name: app,
+        manifestVersion: browser === Browser.Safari ? 2 : 3,
+        assetsFilename: production ? "[contenthash:4][ext]" : "[name]-[contenthash:4][ext]",
+        jsFilename: production ? "[contenthash:5].js" : "[name].js",
+        cssFilename: production ? "[contenthash:5].css" : "[name].css",
+        cssIdentName: production ? "[app]-[hash:base64:5]" : "[local]-[hash:base64:5]",
+    };
+};
 
 const resolveLanguage = (lang?: `${Language}` | Language): Language => {
     if (!lang) {
@@ -152,245 +149,129 @@ const validateConfig = (config: ReadonlyConfig): ReadonlyConfig => {
     return config;
 };
 
-const updateLocalDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
-    const {mode, app, browser, manifestVersion} = config;
-
-    const localVars: DotenvParseOutput = {
-        APP: app,
-        BROWSER: browser,
-        MODE: mode,
-        MANIFEST_VERSION: String(manifestVersion),
-    };
-
-    Object.assign(process.env, localVars);
-
-    return localVars;
-};
-
-const loadDotenv = (config: ReadonlyConfig): DotenvParseOutput => {
-    const {mode, browser, debug} = config;
-
-    const preset = [
-        `.env.${mode}.${browser}.local`,
-        `.env.${mode}.${browser}`,
-        `.env.${browser}.local`,
-        `.env.${browser}`,
-        `.env.${mode}.local`,
-        `.env.${mode}`,
-        `.env.local`,
-        `.env`,
-    ];
-
-    const appSourcePaths = preset.map(file => getAppSourcePath(config, file));
-    const appPaths = preset.map(file => getAppPath(config, file));
-    const rootPaths = preset.map(file => fromRootPath(config, file));
-
-    const paths = [...appSourcePaths, ...appPaths, ...rootPaths];
-
-    const {parsed: fileVars = {}} = dotenv.config({path: paths, quiet: !debug});
-
-    return {...fileVars, ...updateLocalDotenv(config)};
-};
-
-export default async (config: OptionalConfig): Promise<Config> => {
-    let {
+const createInitialConfig = (options: OptionalConfig): ConfigInitialState => {
+    const {
         command = Command.Build,
         debug = false,
-        configFile = "adnbn.config.ts",
         browser = Browser.Chrome,
-        app = "myapp",
-        name = app,
-        description,
-        shortName,
-        version = "VERSION",
-        minimumVersion = "MINIMUM_VERSION",
-        author = undefined,
-        homepage = "HOMEPAGE",
-        icon = DefaultIconGroupName,
-        action,
-        lang = Language.English,
-        incognito,
-        specific,
-        workspace = Workspace.Single,
-        rootDir = ".",
-        outDir = "dist",
-        srcDir = "src",
-        sharedDir = "shared",
-        appsDir = "apps",
-        appSrcDir = ".",
-        localeDir = "locales",
-        iconSrcDir = "icons",
-        iconOutDir = "icons",
-        jsDir = "js",
-        cssDir = "css",
-        assetsDir = "assets",
-        publicDir = "public",
-        htmlDir = ".",
-        html = [],
-        bundler = {},
-        env = {},
-        manifest,
-        manifestVersion = (new Set<Browser>([Browser.Safari]).has(browser) ? 2 : 3) as ManifestVersion,
+        app = "addon",
         mode = Mode.Development,
-        analyze = false,
-        plugins = [],
-        mergeBackground = false,
-        mergeCommands = false,
-        mergeContentScripts = false,
-        concatContentScripts = true,
-        mergeStyles = true,
-        mergeIcons = false,
-        mergeLocales = true,
-        mergePages = false,
-        mergePopup = false,
-        mergePublic = false,
-        multiplePopup = false,
-        mergeSidebar = false,
-        multipleSidebar = false,
-        mergeRelay = false,
-        mergeService = false,
-        mergeOffscreen = false,
-        mergeSandbox = false,
-        commonChunks = true,
-        artifactName = "[name]-[browser]-[mv]",
-        assetsFilename = mode === Mode.Production && command === Command.Build && !debug
-            ? "[contenthash:4][ext]"
-            : "[name]-[contenthash:4][ext]",
-        jsFilename = mode === Mode.Production && command === Command.Build && !debug
-            ? "[contenthash:5].js"
-            : "[name].js",
-        cssFilename = mode === Mode.Production && command === Command.Build && !debug
-            ? "[contenthash:5].css"
-            : "[name].css",
-        cssIdentName = mode === Mode.Production && command === Command.Build && !debug
-            ? "[app]-[hash:base64:5]"
-            : "[local]-[hash:base64:5]",
-    } = config;
+    } = options;
 
-    let resolvedConfig: Config = {
+    const initialDefaults = resolveDefaults({app, browser, mode, command, debug});
+
+    const defaults: Config = {
         command,
         debug,
         mode,
         browser,
         app,
-        name,
-        description,
-        shortName,
-        version,
-        minimumVersion,
-        author,
-        homepage,
-        lang: resolveLanguage(lang),
-        icon,
-        action,
-        incognito,
-        specific,
-        manifest,
-        manifestVersion,
-        workspace: resolveWorkspace(workspace),
-        rootDir,
-        outDir,
-        srcDir,
-        sharedDir,
-        appsDir,
-        appSrcDir,
-        jsDir,
-        cssDir,
-        assetsDir,
-        publicDir,
-        htmlDir,
-        localeDir,
-        iconSrcDir,
-        iconOutDir,
-        html,
-        bundler,
-        env,
-        plugins,
-        analyze,
-        configFile,
-        mergeBackground,
-        mergeCommands,
-        mergeContentScripts,
-        concatContentScripts,
-        mergeStyles,
-        mergeIcons,
-        mergeLocales,
-        mergePages,
-        mergePopup,
-        mergePublic,
-        multiplePopup,
-        mergeSidebar,
-        multipleSidebar,
-        mergeRelay,
-        mergeService,
-        mergeOffscreen,
-        mergeSandbox,
-        commonChunks,
-        artifactName,
-        assetsFilename,
-        jsFilename,
-        cssFilename,
-        cssIdentName,
+        ...initialDefaults,
+        description: undefined,
+        shortName: undefined,
+        version: "VERSION",
+        minimumVersion: "MINIMUM_VERSION",
+        author: undefined,
+        homepage: "HOMEPAGE",
+        lang: Language.English,
+        icon: DefaultIconGroupName,
+        action: undefined,
+        incognito: undefined,
+        specific: undefined,
+        manifest: undefined,
+        workspace: Workspace.Single,
+        rootDir: ".",
+        outDir: "dist",
+        srcDir: "src",
+        sharedDir: "shared",
+        appsDir: "apps",
+        appSrcDir: ".",
+        jsDir: "js",
+        cssDir: "css",
+        assetsDir: "assets",
+        publicDir: "public",
+        htmlDir: ".",
+        localeDir: "locales",
+        iconSrcDir: "icons",
+        iconOutDir: "icons",
+        html: [],
+        bundler: {},
+        env: {},
+        plugins: [],
+        analyze: false,
+        configFile: "adnbn.config.ts",
+        mergeBackground: false,
+        mergeCommands: false,
+        mergeContentScripts: false,
+        concatContentScripts: true,
+        mergeStyles: true,
+        mergeIcons: false,
+        mergeLocales: true,
+        mergePages: false,
+        mergePopup: false,
+        mergePublic: false,
+        multiplePopup: false,
+        mergeSidebar: false,
+        multipleSidebar: false,
+        mergeRelay: false,
+        mergeService: false,
+        mergeOffscreen: false,
+        mergeSandbox: false,
+        commonChunks: true,
+        artifactName: "[name]-[browser]-[mv]",
     };
 
-    let vars = loadDotenv(resolvedConfig);
+    // Launch options accept known fields and fall back only for undefined values.
+    const config = _.defaults({}, _.pick(options, Object.keys(defaults)), defaults);
 
-    const {
-        plugins: userPlugins = [],
-        lang: userLang,
-        workspace: userWorkspace,
-        ...userConfig
-    } = await getUserConfig(resolvedConfig);
-
-    resolvedConfig = {
-        ...resolvedConfig,
-        ...userConfig,
-        lang: resolveLanguage(userLang ?? resolvedConfig.lang),
-        workspace: resolveWorkspace(userWorkspace ?? resolvedConfig.workspace),
-    };
-
-    resolvedConfig.sharedDir = resolveSharedDir(resolvedConfig.workspace, resolvedConfig.sharedDir);
-
-    resolvedConfig = validateConfig(resolvedConfig);
-
-    vars = {...vars, ...loadDotenv(resolvedConfig)};
-
-    /**
-     * IMPORTANT: the order of plugins matters. Early plugins prepare the environment and artifacts for the following ones
-     * (e.g., environment variables/output/transpilation/assets → page/version generation → bundling).
-     * Reordering may result in missing artifacts, incorrect configuration, or build failures.
-     */
-    const corePlugins: Plugin[] = [
-        pluginDotenv(vars),
-        pluginOutput(),
-        pluginOptimization(),
-        pluginTypescript(),
-        pluginReact(),
-        pluginIcon(),
-        pluginAsset(),
-        pluginStyle(),
-        pluginLocale(),
-        pluginMeta(),
-        pluginAction(),
-        pluginContent(),
-        pluginBackground(),
-        pluginOptions(),
-        pluginOverride(),
-        pluginPopup(),
-        pluginPublic(),
-        pluginSidebar(),
-        pluginOffscreen(),
-        pluginSandbox(),
-        pluginPage(),
-        pluginView(),
-        pluginHtml(),
-        pluginVersion(),
-        pluginBundler(),
-        pluginManifest(),
-    ];
+    const automaticDefaults = (Object.keys(initialDefaults) as ConfigDependentDefaultKey[]).filter(
+        key => options[key] === undefined
+    );
 
     return {
-        ...resolvedConfig,
-        plugins: [...plugins, ...userPlugins, ...corePlugins],
+        config: {...config, lang: resolveLanguage(config.lang), workspace: resolveWorkspace(config.workspace)},
+        automaticDefaults,
     };
 };
+
+const applyUserConfig = (
+    initialConfig: Config,
+    userConfig: UserConfig,
+    automaticDefaults: ConfigDependentDefaultKey[]
+): Config => {
+    const {lang, workspace, ...overrides} = userConfig;
+
+    let config: Config = {
+        ...initialConfig,
+        ...overrides,
+        lang: resolveLanguage(lang ?? initialConfig.lang),
+        workspace: resolveWorkspace(workspace ?? initialConfig.workspace),
+    };
+
+    const defaults = resolveDefaults(config);
+
+    config = {
+        ...config,
+        ...Object.fromEntries(
+            automaticDefaults.filter(key => !Object.hasOwn(overrides, key)).map(key => [key, defaults[key]])
+        ),
+    };
+
+    config.sharedDir = resolveSharedDir(config.workspace, config.sharedDir);
+
+    return validateConfig(config);
+};
+
+export default async function resolveConfig(options: OptionalConfig): Promise<Config> {
+    const {config: initialConfig, automaticDefaults} = createInitialConfig(options);
+    const optionPlugins = initialConfig.plugins;
+    const initialVars = resolveDotenv(initialConfig);
+    const {plugins: userPlugins = [], ...userConfig} = await getUserConfig(initialConfig);
+    const config = applyUserConfig(initialConfig, userConfig, automaticDefaults);
+    const vars = {...initialVars, ...resolveDotenv(config)};
+
+    return {
+        ...config,
+        plugins: resolvePlugins(optionPlugins, userPlugins, vars),
+    };
+}

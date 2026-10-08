@@ -3,7 +3,7 @@ import {Configuration as RspackConfig} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
 
-import {getResolvePath} from "@cli/resolvers/path";
+import {getResolvePath} from "@cli/workspace";
 
 export default definePlugin(() => {
     return {

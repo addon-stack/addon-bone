@@ -7,7 +7,7 @@ import {watch} from "./watch";
 
 import configResolver from "@cli/resolvers/config";
 import bundlerResolver from "@cli/resolvers/bundler";
-import {processPluginHandler} from "@cli/resolvers/plugin";
+import {processPluginHandler} from "@cli/handlers";
 
 import {OptionalConfig, ReadonlyConfig} from "@typing/config";
 import {Command} from "@typing/app";

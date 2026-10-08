@@ -3,7 +3,7 @@ import {NormalModule} from "@rspack/core";
 import {definePlugin} from "@main/plugin";
 
 import {onlyViaTopLevelEntry} from "@cli/bundler";
-import {getResolvePath, getSourcePath} from "@cli/resolvers/path";
+import {getResolvePath, getSourcePath} from "@cli/workspace";
 
 export {default as View} from "./View";
 

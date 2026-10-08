@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 
-import {getAppPath, getAppSourcePath, getResolvePath, getSharedPath, getSourcePath} from "@cli/resolvers/path";
+import {getAppPath, getAppSourcePath, getResolvePath, getSharedPath, getSourcePath} from "@cli/workspace";
 
 import AbstractFinder from "./AbstractFinder";
 import {FileLayer, getWorkspaceFileLayers, setFilePrecedence, type WorkspaceFileLayer} from "./utils/filePrecedence";

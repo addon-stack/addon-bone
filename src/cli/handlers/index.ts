@@ -1,0 +1,1 @@
+export {processPluginHandler} from "./plugin";

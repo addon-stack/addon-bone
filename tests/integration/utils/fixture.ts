@@ -75,7 +75,7 @@ export const prepareIntegrationFixture = async (
         );
     }
 
-    return path.join(directory, "dist", `myapp-${browser}-mv${manifestVersion}`);
+    return path.join(directory, "dist", `addon-${browser}-mv${manifestVersion}`);
 };
 
 export const createIntegrationFixture = async (

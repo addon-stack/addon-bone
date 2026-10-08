@@ -4,7 +4,7 @@ import {TsConfigJson} from "type-fest";
 
 import FileBuilder from "./FileBuilder";
 
-import {resolveRootPath} from "@cli/resolvers/path";
+import {resolveRootPath} from "@cli/workspace";
 
 import {ReadonlyConfig} from "@typing/config";
 import {PackageName} from "@typing/app";

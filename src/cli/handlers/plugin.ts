@@ -2,7 +2,7 @@ import _ from "lodash";
 
 import {Plugin, PluginHandler, PluginHandlerKeys, PluginHandlerOptions, PluginNameHandlerResult} from "@typing/plugin";
 
-export const resolvePluginHandler = async <O extends object, T>(
+const resolvePluginHandler = async <O extends object, T>(
     handler: PluginHandler<O, T> | undefined,
     options: O
 ): Promise<T | undefined> => {

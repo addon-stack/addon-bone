@@ -91,7 +91,7 @@ for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) 
     assert.equal(process.cwd(), workingDirectory);
     assert.equal(process.env, environment);
     assert.deepEqual({...process.env}, snapshot);
-    const output = path.join(root, `dist/myapp-${browser}-mv3`);
+    const output = path.join(root, `dist/addon-${browser}-mv3`);
     const html = await readFile(path.join(output, "newtab.html"), "utf8");
     const manifest = JSON.parse(await readFile(path.join(output, "manifest.json"), "utf8"));
     assert.ok(html.includes(`<title>Absolute root ${label}</title>`));

@@ -7,7 +7,7 @@ import {compareFilePrecedence} from "./utils/filePrecedence";
 
 import {toPosixPath} from "@cli/utils/path";
 import {isFile} from "@cli/utils/fs";
-import {getResolvePath, getSourcePath, resolveRootPath} from "@cli/resolvers/path";
+import {getResolvePath, getSourcePath, resolveRootPath} from "@cli/workspace";
 import {resolveAssetsPath, resolveEntrypointPath} from "@cli/entrypoint/utils";
 
 import {ReadonlyConfig} from "@typing/config";
