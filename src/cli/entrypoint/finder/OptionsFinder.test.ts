@@ -67,6 +67,13 @@ describe("OptionsFinder", () => {
         expect(files).toEqual(["account.options.tsx", "advanced.options/index.tsx", "options.ts", "options/index.ts"]);
     });
 
+    test("ignores nested candidates when there is no root entrypoint", async () => {
+        const rootDir = path.resolve(__dirname, "tests", "fixtures", "discovery", "nested");
+        const finder = new OptionsFinder(makeConfig({rootDir, sharedDir: "."}));
+
+        await expect(finder.files()).resolves.toEqual(new Set());
+    });
+
     test("selects the highest-priority options page and only collects its CSP", async () => {
         const plugin = file("/plugins/default/options.ts");
         const shared = file("/project/src/shared/options.ts");

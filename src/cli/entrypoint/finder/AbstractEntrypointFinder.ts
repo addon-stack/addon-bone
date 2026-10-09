@@ -10,7 +10,7 @@ import {getAppSourcePath, getSharedPath} from "@cli/workspace";
 import {EntrypointFile, EntrypointFileExtensions, EntrypointOptions} from "@typing/entrypoint";
 import {ReadonlyConfig} from "@typing/config";
 
-export default abstract class<O extends EntrypointOptions> extends AbstractParsedFinder<O> {
+export default abstract class AbstractEntrypointFinder<O extends EntrypointOptions> extends AbstractParsedFinder<O> {
     protected fileExtensionsPattern: string;
 
     protected possibleIndexFiles: Set<string>;
@@ -30,6 +30,11 @@ export default abstract class<O extends EntrypointOptions> extends AbstractParse
 
     public canMerge(): boolean {
         return false;
+    }
+
+    /** Whether workspace discovery may also collect candidates inside plural or type-named directories. */
+    protected allowGroupedDirectories(): boolean {
+        return true;
     }
 
     protected async getFiles(): Promise<Set<EntrypointFile>> {
@@ -72,6 +77,7 @@ export default abstract class<O extends EntrypointOptions> extends AbstractParse
 
     protected findFiles(directory: string): Set<EntrypointFile> {
         const entrypoint = this.type();
+        const allowGroupedDirectories = this.allowGroupedDirectories();
         const entrypointPluralize = pluralize(entrypoint);
 
         const rootFiles: EntrypointFile[] = [];
@@ -121,7 +127,11 @@ export default abstract class<O extends EntrypointOptions> extends AbstractParse
             }
         };
 
-        collect(directory, rootFiles, true);
+        collect(directory, rootFiles, allowGroupedDirectories);
+
+        if (!allowGroupedDirectories) {
+            return new Set(rootFiles);
+        }
 
         if (groupedFiles.length > 0) {
             return new Set(groupedFiles);

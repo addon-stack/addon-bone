@@ -23,6 +23,9 @@ tests/integration/
 │   │   │   ├── root-dir/
 │   │   │   └── root-dir-b/
 │   │   └── scripts/
+│   ├── entrypoint-discovery/
+│   │   ├── entrypoint-discovery.integration.test.ts
+│   │   └── fixture/
 │   ├── html/
 │   │   ├── html.integration.test.ts
 │   │   ├── fixture/

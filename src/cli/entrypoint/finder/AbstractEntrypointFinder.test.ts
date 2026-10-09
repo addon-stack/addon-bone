@@ -8,8 +8,16 @@ import {toPosix} from "@cli/utils/path";
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile, EntrypointOptions, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
+interface TestFinderOptions {
+    grouped?: boolean;
+    type?: EntrypointType;
+}
+
 class TestFinder extends AbstractEntrypointFinder<EntrypointOptions> {
-    public constructor() {
+    public constructor(
+        config: Partial<ReadonlyConfig> = {},
+        private readonly settings: TestFinderOptions = {}
+    ) {
         super({
             app: "app",
             appsDir: "apps",
@@ -18,11 +26,16 @@ class TestFinder extends AbstractEntrypointFinder<EntrypointOptions> {
             rootDir: ".",
             sharedDir: "shared",
             srcDir: "src",
+            ...config,
         } as ReadonlyConfig);
     }
 
     public type(): EntrypointType {
-        return EntrypointType.Background;
+        return this.settings.type ?? EntrypointType.Background;
+    }
+
+    protected allowGroupedDirectories(): boolean {
+        return this.settings.grouped ?? true;
     }
 
     public scan(directory: string): Set<EntrypointFile> {
@@ -50,7 +63,49 @@ const relativeFiles = (root: string, files: Set<EntrypointFile>): string[] => {
     return Array.from(files, ({file}) => toPosix(path.relative(root, file))).sort();
 };
 
+const fixtures = path.resolve(__dirname, "tests", "fixtures", "discovery");
+
 describe("AbstractEntrypointFinder", () => {
+    test.each([
+        {grouped: true, expected: ["popups/main.popup.ts", "popups/named.popup/index.ts"]},
+        {grouped: false, expected: ["popup.ts", "popup/index.ts"]},
+    ])("applies grouped directory policy $grouped before choosing root candidates", async ({grouped, expected}) => {
+        const rootDir = path.join(fixtures, "grouped");
+        const finder = new TestFinder({rootDir, sharedDir: "."}, {grouped, type: EntrypointType.Popup});
+
+        expect(relativeFiles(path.join(rootDir, "src"), await finder.files())).toEqual(expected);
+    });
+
+    test.each([true, false])("applies grouped directory policy %s to the nested fallback", async grouped => {
+        const rootDir = path.join(fixtures, "fallback");
+        const finder = new TestFinder({rootDir, sharedDir: "."}, {grouped});
+
+        expect(relativeFiles(path.join(rootDir, "src"), await finder.files())).toEqual(
+            grouped ? ["background/background.ts"] : []
+        );
+    });
+
+    test("keeps TS, TSX, JS and JSX across the four root layouts when grouping is disabled", async () => {
+        const rootDir = path.join(fixtures, "extensions");
+        const finder = new TestFinder({rootDir, sharedDir: "."}, {grouped: false, type: EntrypointType.Options});
+
+        expect(relativeFiles(path.join(rootDir, "src"), await finder.files())).toEqual([
+            "named.options.js",
+            "named.options/index.jsx",
+            "options.ts",
+            "options/index.tsx",
+        ]);
+    });
+
+    test("ignores nested files and index directories when grouping is disabled", async () => {
+        const finder = new TestFinder(
+            {rootDir: path.join(fixtures, "nested"), sharedDir: "."},
+            {grouped: false, type: EntrypointType.Options}
+        );
+
+        await expect(finder.files()).resolves.toEqual(new Set());
+    });
+
     test("uses grouped entrypoint directory instead of root-level entrypoint files", () => {
         const root = createTempDir();
 

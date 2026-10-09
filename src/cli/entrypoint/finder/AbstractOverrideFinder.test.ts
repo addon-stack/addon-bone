@@ -44,7 +44,7 @@ describe.each([
             {
                 name: "third-party",
                 [type]: {
-                    file: path.join(workspace, "plugins", "third-party", `${type}.ts`),
+                    file: path.join(workspace, "plugins", "third-party", type, `${type}.ts`),
                     import: `third-party/${type}`,
                     external: "third-party",
                 },
@@ -74,6 +74,13 @@ describe.each([
         expect(relativeFiles(workspace, await makeFinder().files())).toEqual([`src/apps/app/${type}.ts`]);
     });
 
+    test("ignores grouped and nested candidates when there is no root entrypoint", async () => {
+        const rootDir = path.join(fixtures, "..", "discovery", "nested");
+        const finder = new Finder(makeConfig({rootDir, sharedDir: "."}));
+
+        await expect(finder.files()).resolves.toEqual(new Set());
+    });
+
     test("falls back to the shared candidate for an app without its own", async () => {
         expect(relativeFiles(workspace, await makeFinder({app: "other"}).files())).toEqual([`src/shared/${type}.ts`]);
     });
@@ -82,7 +89,7 @@ describe.each([
         const finder = makeFinder();
 
         expect(relativeFiles(workspace, await finder.plugin().files())).toEqual([
-            `plugins/third-party/${type}.ts`,
+            `plugins/third-party/${type}/${type}.ts`,
             `src/apps/app/${type}.ts`,
         ]);
 
@@ -108,11 +115,12 @@ describe.each([
         ]);
     });
 
-    test("uses the plugin candidate when the workspace has none", async () => {
+    test("uses the explicitly supplied nested plugin candidate when the workspace has none", async () => {
         const finder = makeFinder({srcDir: "missing"});
         const [view] = (await finder.views()).values();
 
         expect(view).toMatchObject({
+            file: {file: path.join(workspace, "plugins", "third-party", type, `${type}.ts`)},
             alias: `third-party/${type}`,
             filename: `${type}.html`,
             options: {title: `Plugin ${type}`},
