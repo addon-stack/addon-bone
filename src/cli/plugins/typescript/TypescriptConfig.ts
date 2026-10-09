@@ -36,8 +36,8 @@ export default class extends FileBuilder {
     }
 
     protected alias(): Record<string, string> {
-        const srcDir = this.config.srcDir;
-        const sharedDir = path.posix.join(srcDir, this.config.sharedDir);
+        const srcDir = this.config.srcDir.split(path.sep).join("/");
+        const sharedDir = path.posix.join(srcDir, this.config.sharedDir.split(path.sep).join("/"));
 
         return {
             [srcDir]: srcDir,

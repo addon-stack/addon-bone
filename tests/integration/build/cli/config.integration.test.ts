@@ -239,7 +239,7 @@ describe("user configuration through real c12", () => {
                 ...(kind === "explicit" ? ["--mv2"] : []),
             ]);
 
-            expect(result.status).toBe(0);
+            expect({status: result.status, stderr: result.stderr}).toEqual({status: 0, stderr: expect.any(String)});
 
             if (kind !== "debug") {
                 expect(result.stderr).toBe("");
