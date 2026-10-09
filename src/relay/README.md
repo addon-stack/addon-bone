@@ -76,6 +76,8 @@ The two `getRelay` imports serve different contexts:
 
 The local accessor is not a way to address another frame. The remote accessor rejects use in a context containing the Relay manager; use the local instance there.
 
+After the context check, a missing local instance throws synchronously with its name instead of returning `undefined`.
+
 ### Export ownership
 
 - [`adnbn`](../main/relay.ts) exports `defineRelay`, the remote `getRelay`, and the public definition, call-target, proxy, result, and error contracts. Import `RelayAllFrames`, `RelayMethod`, `RelayFrameErrorKind`, `RelayDiscoveryError`, and `RelayProtocolError` here.

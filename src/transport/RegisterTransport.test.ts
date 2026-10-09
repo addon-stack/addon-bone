@@ -64,6 +64,18 @@ describe("RegisterTransport", () => {
         message = new TestMessage();
     });
 
+    test("returns the registered instance until destroy removes it", () => {
+        const instance = {parse: (text: string) => text.length};
+        const registration = new TestRegister(() => instance, message, manager);
+
+        expect(registration.register()).toBe(instance);
+        expect(registration.get()).toBe(instance);
+
+        registration.destroy();
+
+        expect(() => registration.get()).toThrow('Transport instance "test" is not registered in the current context.');
+    });
+
     test("exposes sender on the call-scoped execution context", async () => {
         const instance = new TestRegister(
             () => ({

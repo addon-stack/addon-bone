@@ -19,13 +19,13 @@ describe("RegisterOffscreen", () => {
         globalThis[OffscreenGlobalAccess] = true;
     });
 
-    test("throws an error when get() is called outside offscreen context", async () => {
+    test.each([offscreenName, "missing"])("rejects direct access to %s outside offscreen before lookup", name => {
         globalThis[OffscreenGlobalAccess] = false;
 
-        const proxy = new RegisterOffscreen(offscreenName, () => mathService);
+        const registration = new RegisterOffscreen(name, () => mathService);
 
-        expect(() => proxy.get()).toThrow(
-            `Offscreen service "${offscreenName}" can be getting only from offscreen context.`
+        expect(() => registration.get()).toThrow(
+            `Offscreen service "${name}" can be getting only from offscreen context.`
         );
     });
 

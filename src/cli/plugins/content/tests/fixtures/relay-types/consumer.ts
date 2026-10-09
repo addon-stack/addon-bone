@@ -4,6 +4,12 @@ import * as entry from "adnbn/entry/relay";
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type Expect<T extends true> = T;
 
+type Scanner = {
+    scan(text: string): number;
+    load(): Promise<string>;
+    nested: {ready(): boolean; count: number};
+};
+
 const original = local.getRelay("scanner");
 const scalar = api.getRelay("scanner", 1);
 const top = api.getRelay("scanner", {tabId: 1});
@@ -40,6 +46,7 @@ type NestedObjectResult = Expect<
 type ScalarAlias = Expect<Equal<typeof scalar, api.RelayProxyTarget<"scanner">>>;
 type BatchAlias = Expect<Equal<typeof all, api.RelayBatchProxyTarget<"scanner">>>;
 type LocalAlias = Expect<Equal<typeof original, local.RelayTarget<"scanner">>>;
+type LocalInstance = Expect<Equal<typeof original, Scanner>>;
 type Names = Expect<Equal<local.RelayName, "scanner">>;
 
 scalar.scan("text");

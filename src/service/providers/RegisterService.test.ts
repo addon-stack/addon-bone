@@ -21,14 +21,14 @@ beforeEach(() => {
 });
 
 describe("RegisterService", () => {
-    test("rejects direct access outside background", () => {
+    test.each([serviceName, "missing"])("rejects direct access to %s outside background before lookup", name => {
         const session = getBrowserTest();
 
         session.useContext(session.context);
         session.addCleanup(installGlobals({window: {}, location: {pathname: "/popup.html"}}));
 
-        expect(() => registration.get()).toThrow(
-            `Service "${serviceName}" can be getting only from background context.`
+        expect(() => new RegisterService(name, () => mathService).get()).toThrow(
+            `Service "${name}" can be getting only from background context.`
         );
     });
 

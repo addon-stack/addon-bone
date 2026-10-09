@@ -6,7 +6,13 @@ export default abstract class<N extends TransportName, T = TransportDictionary[N
     protected abstract manager(): TransportManager;
 
     public get(): T {
-        return this.manager().get(this.name);
+        const instance = this.manager().get(this.name);
+
+        if (instance === undefined) {
+            throw new Error(`Transport instance "${this.name}" is not registered in the current context.`);
+        }
+
+        return instance;
     }
 
     public destroy(): void {

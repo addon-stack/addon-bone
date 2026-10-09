@@ -29,6 +29,7 @@ describe("Relay entrypoint contracts", () => {
 
             if (mode === "source") {
                 rootNames.push(
+                    path.join(__dirname, "fixtures/relay/register.ts"),
                     path.join(__dirname, "fixtures/relay/virtual.ts"),
                     path.join(projectDir, "src/cli/virtual/relay.ts"),
                     path.join(projectDir, "src/cli/virtual/virtual.d.ts")

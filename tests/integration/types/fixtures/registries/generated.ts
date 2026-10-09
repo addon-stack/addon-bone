@@ -4,6 +4,10 @@ import * as offscreen from "adnbn/offscreen";
 import * as sandbox from "adnbn/sandbox";
 import type {Equal, Expect} from "./assert";
 
+type WorkerInstance = {run(input: string): number};
+type DocumentInstance = {parse(input: string): boolean};
+type FrameInstance = {render(input: string): Promise<string>};
+
 type PopupNames = Expect<Equal<api.PopupAlias, "popup" | 'quoted"popup'>>;
 type SidebarNames = Expect<Equal<api.SidebarAlias, "sidebar">>;
 type IconNames = Expect<Equal<api.IconName, "brand">>;
@@ -43,6 +47,16 @@ const document = api.getOffscreen("document");
 const frame = api.getSandbox("frame");
 const localWorker = service.getService("worker");
 const localDocument = offscreen.getOffscreen("document");
+const registeredWorker = new service.RegisterService("worker", () => localWorker).get();
+const registeredDocument = new offscreen.RegisterOffscreen("document", () => localDocument).get();
+
+const registeredFrame = new sandbox.RegisterSandbox(
+    "frame",
+    (): FrameInstance => ({
+        render: async input => input,
+    })
+).get();
+
 const workerResult = worker.run("input");
 const documentResult = document.parse("input");
 const frameResult = frame.render("input");
@@ -59,6 +73,11 @@ type DocumentProxy = Expect<Equal<typeof document, offscreen.OffscreenProxyTarge
 type FrameProxy = Expect<Equal<typeof frame, sandbox.SandboxProxyTarget<"frame">>>;
 type WorkerTarget = Expect<Equal<typeof localWorker, service.ServiceTarget<"worker">>>;
 type DocumentTarget = Expect<Equal<typeof localDocument, offscreen.OffscreenTarget<"document">>>;
+type WorkerInstanceType = Expect<Equal<typeof localWorker, WorkerInstance>>;
+type DocumentInstanceType = Expect<Equal<typeof localDocument, DocumentInstance>>;
+type RegisteredWorkerType = Expect<Equal<typeof registeredWorker, WorkerInstance>>;
+type RegisteredDocumentType = Expect<Equal<typeof registeredDocument, DocumentInstance>>;
+type RegisteredFrameType = Expect<Equal<typeof registeredFrame, FrameInstance>>;
 
 // @ts-expect-error: The generated popup names constrain the original API.
 api.changePopup("unknown");
