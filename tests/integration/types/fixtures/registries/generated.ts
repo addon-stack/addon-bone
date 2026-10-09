@@ -28,11 +28,22 @@ api.changeSidebarIcon("brand");
 api.changeActionIcon();
 api.changeSidebarIcon();
 api.getPopups().get("popup");
+const popupEntry: api.PopupMapEntry | undefined = api.getPopups().get("popup");
+const tooltip: string | undefined = popupEntry?.tooltip;
+
+// @ts-expect-error: Runtime popup metadata no longer use the document title as a tooltip.
+popupEntry?.title;
+
+const manifestPopup: api.ManifestPopup = {title: "__MSG_popup_title__", path: "popup.html"};
 api.getSidebars().get("sidebar");
 api.getIcons().get("brand");
 
 api.defineConfig({action: {icon: "brand"}});
-api.definePopup({icon: "brand", render: "Popup"});
+api.definePopup({icon: "brand", title: "Popup document", tooltip: "@popup.title", render: "Popup"});
+api.definePopup({tooltip: ""});
+
+// @ts-expect-error: Popup tooltips must be strings.
+api.definePopup({tooltip: 42});
 api.defineSidebar({icon: "brand", render: "Sidebar"});
 
 // @ts-expect-error: Action defaults use the generated icon group names.

@@ -6,12 +6,13 @@ import {definePlugin} from "@main/plugin";
 import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
-import Popup, {PopupNameToManifest} from "./Popup";
+import Popup from "./Popup";
 import {createPopupModule, PopupModuleName} from "./popup-module";
 
 import {PopupDeclaration} from "./declaration";
 
 import {Command} from "@typing/app";
+import type {PopupAliasMap} from "@typing/popup";
 
 export default definePlugin(() => {
     let popup: Popup;
@@ -29,14 +30,14 @@ export default definePlugin(() => {
 
             const plugins: Plugins = [];
 
-            let alias: PopupNameToManifest = {};
+            let alias: PopupAliasMap = {};
 
             if (await popup.empty()) {
                 if (config.debug) {
                     console.info("Popup entries not found");
                 }
             } else {
-                alias = await popup.manifestByAlias();
+                alias = await popup.entriesByAlias();
 
                 // prettier-ignore
                 const plugin = EntrypointPlugin.from(await popup.view().entries())

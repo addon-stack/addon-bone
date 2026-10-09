@@ -28,6 +28,7 @@ describe("PopupParser", () => {
         expect(parseOptions("options", "full", "popup.ts")).toEqual({
             as: "panel",
             title: "Extension panel",
+            tooltip: "@popup.panel",
             template: "./template.html",
             icon: "toolbar",
             apply: false,
@@ -50,7 +51,11 @@ describe("PopupParser", () => {
         });
     });
 
-    test.each(["icon", "apply"])("rejects an invalid %s value", field => {
+    test("preserves an explicitly empty tooltip", () => {
+        expect(parseOptions("options", "empty-tooltip", "popup.ts")).toEqual({tooltip: ""});
+    });
+
+    test.each(["icon", "apply", "tooltip"])("rejects an invalid %s value", field => {
         expect(() => parseOptions("invalid", `${field}.ts`)).toThrow(`Invalid options ${field}`);
     });
 });

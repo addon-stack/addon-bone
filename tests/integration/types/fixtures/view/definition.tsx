@@ -48,6 +48,7 @@ definePopup({render: handler});
 
 definePopup({
     title: "Popup",
+    tooltip: "Open popup",
 
     container: async props => {
         const title: string | undefined = props.title;
@@ -56,6 +57,8 @@ definePopup({
     },
 
     render: props => {
+        const tooltip: string | undefined = props.tooltip;
+
         // @ts-expect-error: Render handlers receive the view options as props.
         props.missing;
 

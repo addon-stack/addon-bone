@@ -5,12 +5,10 @@ import {modifyLocaleMessageKey} from "@shared/locale";
 import {PopupFinder} from "@cli/entrypoint";
 
 import {ReadonlyConfig} from "@typing/config";
-import {PopupEntrypointOptions} from "@typing/popup";
+import {PopupAliasMap, PopupEntrypointOptions} from "@typing/popup";
 import {ManifestPopup} from "@typing/manifest";
 
-export type PopupNameToManifest = Record<string, ManifestPopup>;
-
-export default class extends PopupFinder {
+export default class Popup extends PopupFinder {
     protected _view?: View<PopupEntrypointOptions>;
 
     public constructor(config: ReadonlyConfig) {
@@ -25,32 +23,32 @@ export default class extends PopupFinder {
         const views = await this.views();
 
         for (const {filename, options} of views.values()) {
-            const {apply = true, title, icon} = options;
+            const {apply = true, tooltip, icon} = options;
 
             if (apply) {
                 return {
                     path: filename,
-                    title: modifyLocaleMessageKey(title),
+                    title: modifyLocaleMessageKey(tooltip),
                     icon,
                 };
             }
         }
     }
 
-    public async manifestByAlias(): Promise<PopupNameToManifest> {
+    public async entriesByAlias(): Promise<PopupAliasMap> {
         return Array.from(await this.views()).reduce((aliases, [_, item]) => {
             const {options, filename} = item;
-            const {title, icon} = options;
+            const {tooltip, icon} = options;
 
             return {
                 ...aliases,
                 [item.alias]: {
                     path: filename,
-                    title,
+                    tooltip,
                     icon,
                 },
             };
-        }, {} as PopupNameToManifest);
+        }, {} as PopupAliasMap);
     }
 
     public clear(): this {

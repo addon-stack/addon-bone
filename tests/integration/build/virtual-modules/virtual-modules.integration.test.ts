@@ -17,7 +17,7 @@ test("generated entrypoint data reach public getters and disappear without consu
         const runtime = {readData: undefined as undefined | (() => unknown)};
         vm.runInNewContext(source, runtime);
         expect(runtime.readData!()).toEqual({
-            popup: {popup: {path: "popup.html", title: "Popup data", icon: "dataicons"}},
+            popup: {popup: {path: "popup.html", tooltip: "Popup data", icon: "dataicons"}},
             sidebar: {sidebar: {path: "sidebar.html", title: "Sidebar data"}},
             offscreen: {
                 dataOffscreen: {url: "offscreen.html", reasons: ["DOM_PARSER"], justification: "Offscreen data"},

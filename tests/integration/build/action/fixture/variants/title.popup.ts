@@ -1,6 +1,6 @@
 import {definePopup} from "adnbn";
 
 export default definePopup({
-    title: "@popup.title",
+    title: "Popup document",
     render: "Popup",
 });

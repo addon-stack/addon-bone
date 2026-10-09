@@ -3,6 +3,7 @@ import {Browser, CspSource, definePopup} from "adnbn";
 export default definePopup({
     as: "panel",
     title: "Extension panel",
+    tooltip: "@popup.panel",
     template: "./template.html",
     icon: "toolbar",
     apply: false,

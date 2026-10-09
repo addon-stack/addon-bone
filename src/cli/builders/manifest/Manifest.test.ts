@@ -468,6 +468,7 @@ describe.each([
     it.each([
         {options: {}, title: "Action", icon: "action"},
         {options: {title: "Popup"}, title: "Popup", icon: "action"},
+        {options: {title: ""}, title: "", icon: "action"},
         {options: {icon: "popup"}, title: "Action", icon: "popup"},
         {options: {title: "Popup", icon: "popup"}, title: "Popup", icon: "popup"},
     ])("overrides popup fields independently: $options", ({options, title, icon}) => {

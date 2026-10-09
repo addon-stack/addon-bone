@@ -222,7 +222,7 @@ export interface ManifestPopup {
      */
     icon?: string;
     /**
-     * Represents an optional title or name or locale key that can be assigned to an entity.
+     * Toolbar tooltip for default_title; may contain browser message references such as __MSG_popup_account__.
      */
     title?: string;
     /**

@@ -18,9 +18,12 @@ import {definePopup} from "adnbn";
 
 export default definePopup({
     title: "Popup",
+    tooltip: "Open popup",
     render: ({title}) => <h1>{title}</h1>,
 });
 ```
+
+For Popup, `title` controls the document and render props; `tooltip` independently controls the toolbar button.
 
 ```ts title="src/help.page.ts"
 export const title = "Help";

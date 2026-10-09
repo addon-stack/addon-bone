@@ -46,7 +46,7 @@ describe.each([
             popup: true,
             command: false,
             icon: "active",
-            title: "popup",
+            title: "action",
         },
         {
             scenario: "unapplied popup",
@@ -85,6 +85,12 @@ describe.each([
             expect(messages.action_title.message).toBe("Run the action");
             expect(messages.popup_title.message).toBe("Open the popup");
             expect((await stat(path.join(extensionDir, "icons", `${icon}-16.png`))).isFile()).toBe(true);
+
+            if (popup) {
+                expect(await readFile(path.join(extensionDir, "popup.html"), "utf8")).toContain(
+                    "<title>Popup document</title>"
+                );
+            }
 
             if (command) {
                 const name = manifestVersion === 2 ? "_execute_browser_action" : "_execute_action";
