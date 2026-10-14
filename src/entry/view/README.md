@@ -25,6 +25,9 @@ export default definePopup({
 
 For Popup, `title` controls the document and render props; `tooltip` independently controls the toolbar button.
 
+For Sidebar, `title` controls the document and render props; `label` controls the browser UI where supported.
+See `SidebarConfig.label` and `changeSidebar()` for localization, defaults and browser behavior.
+
 ```ts title="src/help.page.ts"
 export const title = "Help";
 

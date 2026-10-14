@@ -35,7 +35,10 @@ const tooltip: string | undefined = popupEntry?.tooltip;
 popupEntry?.title;
 
 const manifestPopup: api.ManifestPopup = {title: "__MSG_popup_title__", path: "popup.html"};
-api.getSidebars().get("sidebar");
+const sidebarEntry: api.SidebarMapEntry | undefined = api.getSidebars().get("sidebar");
+const label: string | undefined = sidebarEntry?.label;
+type SidebarEntryKeys = Expect<Equal<keyof api.SidebarMapEntry, "path" | "icon" | "label">>;
+const manifestSidebar: api.ManifestSidebar = {title: "__MSG_sidebar_title__", path: "sidebar.html"};
 api.getIcons().get("brand");
 
 api.defineConfig({action: {icon: "brand"}});
@@ -44,7 +47,11 @@ api.definePopup({tooltip: ""});
 
 // @ts-expect-error: Popup tooltips must be strings.
 api.definePopup({tooltip: 42});
-api.defineSidebar({icon: "brand", render: "Sidebar"});
+api.defineSidebar({icon: "brand", title: "Sidebar document", label: "@sidebar.title", render: "Sidebar"});
+api.defineSidebar({label: ""});
+
+// @ts-expect-error: Sidebar labels must be strings.
+api.defineSidebar({label: 42});
 
 // @ts-expect-error: Action defaults use the generated icon group names.
 api.defineConfig({action: {icon: "unknown"}});

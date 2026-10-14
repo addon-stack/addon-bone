@@ -1,5 +1,5 @@
 import type {PopupAlias, PopupAliasRegistry, PopupMap} from "@typing/popup";
-import type {SidebarAlias, SidebarAliasRegistry, SidebarMap} from "@typing/sidebar";
+import type {SidebarAlias, SidebarAliasRegistry, SidebarMap, SidebarMapEntry} from "@typing/sidebar";
 import type {IconName, IconNameRegistry, IconsMap} from "@typing/icon";
 import type {ServiceName, ServiceRegistry} from "@typing/service";
 import type {OffscreenName, OffscreenRegistry, OffscreenMap} from "@typing/offscreen";
@@ -22,6 +22,7 @@ type OffscreenNames = Expect<Equal<OffscreenName, "document">>;
 type SandboxNames = Expect<Equal<SandboxName, "frame">>;
 type PopupCollection = Expect<Equal<PopupMap, api.PopupMap>>;
 type SidebarCollection = Expect<Equal<SidebarMap, api.SidebarMap>>;
+type SidebarEntry = Expect<Equal<SidebarMapEntry, api.SidebarMapEntry>>;
 type IconCollection = Expect<Equal<IconsMap, api.IconsMap>>;
 type OffscreenCollection = Expect<Equal<OffscreenMap, api.OffscreenMap>>;
 type SandboxCollection = Expect<Equal<SandboxMap, api.SandboxMap>>;

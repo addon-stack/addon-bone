@@ -239,7 +239,7 @@ export interface ManifestSidebar {
      */
     icon?: string;
     /**
-     * Represents an optional title or name or locale key that can be assigned to an entity.
+     * Sidebar UI title for default_title; may contain browser message references such as __MSG_sidebar_account__.
      */
     title?: string;
     /**

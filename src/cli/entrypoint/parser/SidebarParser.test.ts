@@ -28,6 +28,7 @@ describe("SidebarParser", () => {
         expect(parseOptions("options", "full", "sidebar.ts")).toEqual({
             as: "panel",
             title: "Extension panel",
+            label: "@sidebar.panel",
             template: "./template.html",
             icon: "toolbar",
             apply: false,
@@ -50,7 +51,11 @@ describe("SidebarParser", () => {
         });
     });
 
-    test.each(["icon", "apply"])("rejects an invalid %s value", field => {
+    test("preserves an explicitly empty label", () => {
+        expect(parseOptions("options", "empty-label", "sidebar.ts")).toEqual({label: ""});
+    });
+
+    test.each(["icon", "apply", "label"])("rejects an invalid %s value", field => {
         expect(() => parseOptions("invalid", `${field}.ts`)).toThrow(`Invalid options ${field}`);
     });
 });

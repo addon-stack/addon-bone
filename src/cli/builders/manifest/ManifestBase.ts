@@ -665,9 +665,13 @@ export default abstract class ManifestBase<T extends CoreManifest> implements Ma
             const sidePanel = this.combinedRaws.side_panel;
 
             if (SidebarAlternativeBrowsers.has(this.browser)) {
-                if (sidebarAction) return {sidebar_action: sidebarAction};
+                if (sidebarAction) {
+                    return {sidebar_action: sidebarAction};
+                }
             } else {
-                if (sidePanel) return {side_panel: sidePanel};
+                if (sidePanel) {
+                    return {side_panel: sidePanel};
+                }
             }
 
             return;
@@ -675,15 +679,18 @@ export default abstract class ManifestBase<T extends CoreManifest> implements Ma
 
         const {path, icon, title} = this.sidebar;
 
-        const commonProps = {
-            open_at_install: this.browser === Browser.Firefox ? false : undefined,
-            default_title: title || this.name,
-            default_icon: this.getIconsByName(icon),
-        };
+        if (SidebarAlternativeBrowsers.has(this.browser)) {
+            return {
+                sidebar_action: {
+                    open_at_install: this.browser === Browser.Firefox ? false : undefined,
+                    default_title: title ?? this.name,
+                    default_icon: this.getIconsByName(icon),
+                    default_panel: path,
+                },
+            };
+        }
 
-        return SidebarAlternativeBrowsers.has(this.browser)
-            ? {sidebar_action: {...commonProps, default_panel: path}}
-            : {side_panel: {...commonProps, default_path: path}};
+        return {side_panel: {default_path: path}};
     }
 
     protected buildOptions(): Partial<CoreManifest> {

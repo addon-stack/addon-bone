@@ -5,12 +5,10 @@ import {modifyLocaleMessageKey} from "@shared/locale";
 import {SidebarFinder} from "@cli/entrypoint";
 
 import {ReadonlyConfig} from "@typing/config";
-import {SidebarEntrypointOptions} from "@typing/sidebar";
+import {SidebarAliasMap, SidebarEntrypointOptions} from "@typing/sidebar";
 import {ManifestSidebar} from "@typing/manifest";
 
-export type SidebarNameToManifest = Record<string, ManifestSidebar>;
-
-export default class extends SidebarFinder {
+export default class Sidebar extends SidebarFinder {
     protected _view?: View<SidebarEntrypointOptions>;
 
     public constructor(config: ReadonlyConfig) {
@@ -25,32 +23,32 @@ export default class extends SidebarFinder {
         const views = await this.views();
 
         for (const {filename, options} of views.values()) {
-            const {apply = true, title, icon} = options;
+            const {apply = true, label, icon} = options;
 
             if (apply) {
                 return {
                     path: filename,
-                    title: modifyLocaleMessageKey(title),
+                    title: modifyLocaleMessageKey(label),
                     icon,
                 };
             }
         }
     }
 
-    public async manifestByAlias(): Promise<SidebarNameToManifest> {
+    public async entriesByAlias(): Promise<SidebarAliasMap> {
         return Array.from(await this.views()).reduce((aliases, [_, item]) => {
             const {options, filename} = item;
-            const {title, icon} = options;
+            const {label, icon} = options;
 
             return {
                 ...aliases,
                 [item.alias]: {
                     path: filename,
-                    title,
+                    label,
                     icon,
                 },
             };
-        }, {} as SidebarNameToManifest);
+        }, {} as SidebarAliasMap);
     }
 
     public clear(): this {

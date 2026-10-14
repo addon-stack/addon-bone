@@ -3,6 +3,7 @@ import {Browser, CspSource, defineSidebar} from "adnbn";
 export default defineSidebar({
     as: "panel",
     title: "Extension panel",
+    label: "@sidebar.panel",
     template: "./template.html",
     icon: "toolbar",
     apply: false,

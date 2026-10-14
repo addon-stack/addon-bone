@@ -83,9 +83,9 @@ describe("ManifestV3", () => {
             .setSidebar({path: "sidebar.html", title: "Sidebar"})
             .build();
 
-        expect(chrome.side_panel.default_path).toBe("sidebar.html");
-        expect(chrome.side_panel.default_title).toBe("Sidebar");
+        expect(chrome.side_panel).toEqual({default_path: "sidebar.html"});
         expect(firefox.sidebar_action.default_panel).toBe("sidebar.html");
+        expect(firefox.sidebar_action.default_title).toBe("Sidebar");
         expect(firefox.sidebar_action.open_at_install).toBe(false);
     });
 
