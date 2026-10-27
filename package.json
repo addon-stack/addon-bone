@@ -164,6 +164,7 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "^4.37.0",
     "typescript": "^5.7.3",
+    "utility-types": "^3.11.0",
     "webpack-merge": "^6.0.1",
     "zod": "^3.24.2"
   },
@@ -209,8 +210,7 @@
     "tsc-alias": "^1.8.17",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
-    "uglify-js": "^3.19.3",
-    "utility-types": "^3.11.0"
+    "uglify-js": "^3.19.3"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "0.20.2"
