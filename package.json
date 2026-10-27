@@ -237,6 +237,9 @@
     }
   },
   "overrides": {
+    "get-uri": {
+      "basic-ftp": "6.2.3"
+    },
     "glob": "$glob",
     "jsdom": "27.4.0",
     "test-exclude": "^7.0.1",
