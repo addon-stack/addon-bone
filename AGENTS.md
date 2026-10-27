@@ -14,7 +14,7 @@
 
 ## Cross-platform tests
 
-- The full CI matrix in `.github/workflows/ci.yml` runs on Linux and Windows with Node.js 22 and 24. New and changed non-browser tests must work on both operating systems. Chrome and Firefox browser integrations currently run on Linux; consult the workflow for the current matrix.
+- Regular CI in `.github/workflows/ci.yml` runs on Linux and Windows with Node.js 24. Pull requests targeting `main` and pre-release validation use the full Node.js 22/24 matrix. New and changed non-browser tests must work on both operating systems and supported Node.js versions. Chrome and Firefox browser integrations run on Linux for each selected Node.js version; consult the workflow for the current matrix. Coverage and package publication use Node.js 24.
 - Build filesystem paths with `path.resolve` and `path.join`, including paths used with in-memory filesystems. Do not hardcode Unix roots such as `/dist` or Windows drive letters. Configure the compiler and read, write, or assert its output using the same resolved directory. Keep filesystem paths distinct from URLs and manifest asset paths, which use forward slashes.
 - In watch tests, simulate edits with `writeFile(destination, await readFile(source))`. Do not use `copyFile` to update watched files: on Windows it can preserve an old `mtime`, preventing the watcher from detecting the change. Copying initial fixtures before starting watch is fine.
 - Wait for the expected compilation or observable output with a descriptive timeout. Do not rely on fixed sleeps or assume that emitted files mean the watcher has finished reconnecting. Preserve exact filename casing and account for platform line endings when they are not part of the tested contract.
