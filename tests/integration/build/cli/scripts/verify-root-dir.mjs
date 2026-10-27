@@ -107,12 +107,12 @@ for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) 
         if (renderer === "react") {
             const dependencies = await realpath(path.join(root === rootA ? rootA : directory, "node_modules"));
             const modules = stats.toJson({all: false, modules: true, nestedModules: true}).modules;
-            const identifiers = [];
+            const resources = [];
 
             const collect = entries => {
                 for (const entry of entries ?? []) {
-                    if (entry.identifier) {
-                        identifiers.push(entry.identifier);
+                    if (entry.nameForCondition) {
+                        resources.push(entry.nameForCondition);
                     }
 
                     collect(entry.modules);
@@ -128,14 +128,17 @@ for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) 
                         ? path.join(dependencies, "react-dom", "node_modules", dependency)
                         : path.join(dependencies, dependency)) + path.sep;
 
-                const selected = identifiers.filter(identifier =>
-                    identifier.includes(path.sep + dependency + path.sep)
+                // Windows may report the same temp directory with either its long name or an 8.3 alias.
+                const selected = await Promise.all(
+                    resources
+                        .filter(resource => resource.includes(path.sep + dependency + path.sep))
+                        .map(resource => realpath(resource))
                 );
 
                 assert.ok(selected.length > 0, dependency);
 
                 assert.ok(
-                    selected.every(identifier => identifier.includes(expected)),
+                    selected.every(resource => resource.startsWith(expected)),
                     selected.join("\n")
                 );
             }
