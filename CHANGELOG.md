@@ -1,5 +1,263 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.16.0 (2026-10-27)
+
+### 💥 Breaking Changes
+
+* Sidebar title now controls only the HTML document and
+render props. Use label for the browser sidebar title and tooltip.
+getSidebars() entries expose label instead of title. changeSidebar()
+also applies the selected sidebar icon when the browser supports it.
+
+* Popup title now controls only the document and View props.
+Move toolbar tooltip values to tooltip and read getPopups() metadata from
+tooltip instead of title. ManifestPopup.title remains unchanged.
+
+* Direct getters now throw synchronously when an instance is
+missing instead of returning undefined. Callers that checked for undefined
+must handle the exception.
+
+* Automatic workspace discovery for options, newtab,
+history and bookmarks no longer scans grouping directories such as
+newtabs/ and histories/, or searches for additional candidates inside
+<type>/. Direct <type>/index.<ext> entrypoints remain supported.
+
+Ignored nested layouts are <type>/<type>.<ext>,
+<type>/<name>.<type>.<ext>, <type>/<type>/index.<ext> and
+<type>/<name>.<type>/index.<ext>. The same four candidate forms under
+newtabs/ for newtab and histories/ for history are also ignored.
+
+Move options/options.tsx to options/index.tsx,
+options/account.options.tsx to account.options.tsx, and
+newtabs/main.newtab.tsx to main.newtab.tsx.
+Named directory variants such as main.newtab/index.tsx remain supported.
+All paths are relative to the scanned source directory. Explicitly
+supplied plugin entrypoints are unaffected.
+
+* ManifestBuilder no longer exposes setDependencies(), including
+configuration callbacks and plugin handlers. Compilation dependency injection
+is reserved for framework internals.
+
+* The default app changes from "myapp" to "addon", affecting
+the default manifest name, output directory, APP environment variable,
+and multi-workspace application path. Set app: "myapp" or pass --app myapp
+to retain the previous layout, or rename the application directory to addon.
+
+* ViewRenderHandler no longer accepts Promise results and
+ViewRenderReactComponent now requires a synchronous component instead of FC.
+Move asynchronous loading to a separate function or a React effect and return
+the initial UI synchronously. Type reusable components with
+ViewRenderReactComponent<Props>, keep their inferred return type, or wrap an
+existing synchronous React.FC with props => <Report {...props} />.
+
+* Require Node.js >=22.12.0. Meta tags must be objects with
+attributes; string values and arrays containing strings are rejected.
+The files option in entrypoints now raises an error instead of being
+ignored. config.html values of null, an empty string or zero now fail
+instead of being skipped.
+
+* Relative resources in Sass partials now resolve from the
+partial instead of the entry stylesheet, including builds with
+mergeStyles disabled. Update paths that relied on the entry directory.
+Local Sass module requests now retain the declaring file's directory.
+Repeated variable assignments and configured module loads are preserved,
+and late @use/@forward directives are rejected. Correct configurations
+that previously depended on deduplication or directive reordering.
+
+
+### ✨ Features
+
+* **entrypoint:** restrict workspace discovery for single-page entrypoints ([723f111](https://github.com/addon-stack/addon-bone/commit/723f111e4b046c70476ad6ab98a15a2b06b38f3f))
+
+  Discover options, newtab, history and bookmarks only as <type>.<ext>,
+  <name>.<type>.<ext>, <type>/index.<ext> and <name>.<type>/index.<ext>
+  in each scanned app or shared source directory.
+
+  Declare this policy through allowGroupedDirectories(), independently
+  of allowMultiple(). Preserve grouping and nested fallback discovery
+  for other entrypoints. Files in former locations remain available as
+  ordinary imports. Keep build filters, workspace precedence and explicit
+  plugin entrypoints unchanged.
+
+  Cover the policy in the base finder, Options, override and Popup tests,
+  and add a build integration for adjacent modules, templates, styles
+  and resources. Update the integration test inventory documentation.
+
+* **manifest:** expose types and narrow the builder contract ([335d575](https://github.com/addon-stack/addon-bone/commit/335d575bcfddd9d2313dea4ce32abc7e6a96aa23))
+
+  Export named manifest and browser-specific types from adnbn. Keep compilation
+  dependency types internal and use ManifestBase<Manifest> in the factory and
+  Rspack plugin without changing manifest generation or watch behavior.
+
+  Rename the private Chrome manifest base alias to distinguish it from the builder.
+  Verify public exports and builder boundaries against source and package declarations.
+
+* **offscreen:** support entrypoint permissions ([e9691da](https://github.com/addon-stack/addon-bone/commit/e9691da62a2ec8ecc851e1bc9c40363aafd4deed))
+
+
+* **page:** support entrypoint permissions ([52d6a0f](https://github.com/addon-stack/addon-bone/commit/52d6a0f2895b8fddc605bcef867e84b893dbdf65))
+
+
+* **popup:** separate document titles from toolbar tooltips ([08217e5](https://github.com/addon-stack/addon-bone/commit/08217e5a1fa2914dd33d52bac468fd6e4fb90054))
+
+  Add the tooltip option for literal text and locale keys. Preserve View title
+  behavior and the initial action title fallback. Resolve localized tooltips
+  through browser i18n when changing popups, preserving the current tooltip
+  when the option is omitted and allowing explicit empty values.
+
+  Update generated runtime metadata, public types, examples, and focused
+  parser, runtime, build, and browser coverage. Clarify ManifestPopup.title
+  as manifest default_title data without referring to Popup configuration.
+
+* **sidebar:** separate UI labels from document titles ([87afddf](https://github.com/addon-stack/addon-bone/commit/87afddfbfed8b2a99731c47ee08809d2d1d78104))
+
+  Use label for the native sidebar UI and resolve locale keys through
+  browser i18n when switching. Apply configured icons where supported,
+  preserve omitted values and propagate native errors.
+
+  Keep ManifestSidebar.title as manifest data and emit only default_path
+  for Chrome side_panel. Update types, documentation and parser, runtime,
+  build and browser checks.
+
+
+
+### 🐛 Bug Fixed
+
+* **build:** compile JSX entrypoints and components ([8015806](https://github.com/addon-stack/addon-bone/commit/8015806ba9e0bfdfe26d54c6f622f4248d9662d9))
+
+
+* **ci:** update actions and synchronize Sass watch tests ([5f01f88](https://github.com/addon-stack/addon-bone/commit/5f01f88b60914a259e5d2e802620313a80d9a2e5))
+
+
+* **cli:** resolve project paths and React dependencies ([b992c7b](https://github.com/addon-stack/addon-bone/commit/b992c7bdc8d5b8c718851cfc64eceba64c228570))
+
+  Normalize root-relative filesystem paths before generating entrypoint
+  imports and preserve JavaScript file extensions for ESM resolution.
+  Resolve React packages from the project root and scheduler from react-dom,
+  including ancestor and nested installations, while keeping React optional.
+
+  Cover relative and absolute CLI/API roots, consecutive projects, watch
+  updates, and JavaScript index entrypoints without increasing timeouts.
+
+  Validated 2508 non-browser tests, builds and fixture typechecks on Node 22
+  and 24. Clean tarball installations pass 26 build scenarios per version,
+  strict declaration checks, and separate React rendering checks in Chrome.
+
+* **command:** validate shortcuts for the target browser ([a787bd2](https://github.com/addon-stack/addon-bone/commit/a787bd21cddf83953b4954d15a3fe5f76b0060f9))
+
+
+* **config:** pass initial config to user callback ([764a716](https://github.com/addon-stack/addon-bone/commit/764a7163cdd8f159fef05416a24c0dc909d7bd52))
+
+
+* **config:** recalculate dependent defaults after user overrides ([060935a](https://github.com/addon-stack/addon-bone/commit/060935ab3f889bd5e009a4709a5116119e912788))
+
+  Recalculate automatic name, manifest version, and filename defaults from
+  final configuration inputs while preserving explicit values and the
+  single callback invocation. Let Safari default to MV2 when --mv2 is absent.
+
+  Separate environment and plugin-list resolution, move workspace paths
+  and plugin handlers into dedicated modules, remove unused string helpers,
+  and document CLI ownership in an English README.
+
+  Add real-c12 and CLI build regression coverage, preserve explicit manifest
+  targets in integration fixtures, and update default app expectations.
+
+* **deps:** reduce dependency security vulnerabilities ([7136abb](https://github.com/addon-stack/addon-bone/commit/7136abb1bff63e335934807597d71221941cadbb))
+
+  Update vulnerable dependencies, remove the unused Rspack CLI, and pin
+  release-it's undici to a patched version. Declare memfs explicitly for
+  the existing bundler tests.
+
+  Give the isolated styles watch fixture its own package.json so polling
+  does not scan shared temporary directories. Keep all timeouts unchanged.
+
+  Validation: npm run check passes on Node 22 and 24 (2490 tests each).
+  The dependency audit is reduced from 45 findings to 8, with no critical
+  findings. Deferred Zod, basic-ftp, and tsup esbuild changes are excluded.
+
+* **html:** align HTML options with the tags plugin ([6c5ba71](https://github.com/addon-stack/addon-bone/commit/6c5ba71f8a014d7cb58479d7dee8cd6a38cf326e))
+
+  Replace html-rspack-tags-plugin with @rspackjs/plugin-html-tags and own
+  HTML contracts in the shared types layer. Keep entrypoint options static
+  and validate them once through ViewParser; let the tags plugin validate
+  resolved config.html values.
+
+  Cover metadata, static options and configuration forms at their owning
+  layers, with real parser fixtures and focused build/type integrations.
+
+  Validation: 229 suites / 2361 tests passed, followed by 45 parser tests
+  and source/package type checks for 49 fixtures after fixture cleanup.
+  Package build, typecheck, inventory, Prettier and diff checks passed.
+
+* **manifest:** keep raw fields current after builder reads ([972dee7](https://github.com/addon-stack/addon-bone/commit/972dee763df8259c66aae542b7b53d97c32d4a30))
+
+  Invalidate the merged raw cache on raw() and merge generated commands into a fresh object
+  to preserve the cached raw values.
+
+  Cover MV2 and MV3 updates after reads, clearing internal commands, and a real CLI build
+  using a manifest callback.
+
+* **manifest:** map execute action commands for MV2 ([79362a1](https://github.com/addon-stack/addon-bone/commit/79362a171b1d9ae235d28fcc18b8dcb6e2328f80))
+
+
+* **manifest:** preserve explicit background persistence in MV2 ([70d249f](https://github.com/addon-stack/addon-bone/commit/70d249f58c72a8996bf7912505c2dfc191374ac3))
+
+
+* **style:** resolve Sass modules and resources from their source files ([d5c90f3](https://github.com/addon-stack/addon-bone/commit/d5c90f379de0a67f3cb7d0fec26bda047909c4b0))
+
+  Prepare standalone and merged styles with their original filenames so
+  local Sass requests and complete literal URLs retain their origin.
+  Resolve resources in imported partials through Sass source maps while
+  preserving one CSS module, shared-to-app order and existing style layers.
+
+  Track existing and missing Sass candidates for bare and explicit relative
+  requests so watch builds recover when modules are created or restored.
+  Keep preparation internal and reuse an existing URL loader when supplied
+  by another plugin.
+
+  Cover multi-app assets, font mixins, native loader loading and watch
+  recovery with unit and build tests. Document supported URL patterns and
+  source-map limitations.
+
+* **transport:** throw when a local instance is missing ([b4d15c6](https://github.com/addon-stack/addon-bone/commit/b4d15c6bca5f50a29bda4c037d78fb07be0fa3ed))
+
+  Check direct instance lookup in BaseTransport while preserving object identity,
+  context checks, optional manager lookup, and remote proxy behavior.
+
+  Add runtime regressions and concrete source/package type assertions for direct
+  getters and registration providers. Document the local Relay exception.
+
+* **typescript:** normalize module alias separators on Windows ([e9b920e](https://github.com/addon-stack/addon-bone/commit/e9b920ee73649e33b18f74928665f55b6560daa0))
+
+  Use forward slashes for module alias keys and generated TypeScript paths
+  while keeping filesystem targets native. Cover nested paths and relative
+  prefixes, and include stderr in CLI build failures.
+
+* **types:** install utility-types with the package ([6393000](https://github.com/addon-stack/addon-bone/commit/639300022b8f869e5c8c93ff497a5a917b4a0060))
+
+  Move utility-types to dependencies because the public declarations import
+  it. Keep the existing version so clean consumer projects receive complete
+  types without installing an undeclared development dependency.
+
+  Validated strict consumer typechecks from the packed package on Node 22
+  and 24, including container callback inference with skipLibCheck disabled.
+
+
+
+### 🛠️ Refactoring
+
+* **view:** require synchronous render handlers ([752f9ec](https://github.com/addon-stack/addon-bone/commit/752f9ec944a5ec144b7ff9c23ee7136f3da54031))
+
+  Keep asynchronous containers and offscreen/sandbox init and main unchanged.
+  Warn when an untyped Vanilla render returns a Promise or thenable.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 25
+
 ## 🚀 Release Addon Bone v0.15.0 (2026-09-29)
 
 ### 💥 Breaking Changes
