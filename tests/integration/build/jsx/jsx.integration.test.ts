@@ -31,6 +31,7 @@ test.each(["chrome", "firefox"])("%s builds JSX pages and preserves their AST op
             ["named", "JSX named"],
             ["element", "JSX element"],
             ["javascript", "JavaScript page"],
+            ["indexed", "JavaScript index page"],
             ["typescript", "TypeScript page"],
             ["react-typescript", "TSX page"],
         ]) {

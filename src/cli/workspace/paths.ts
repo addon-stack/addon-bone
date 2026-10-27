@@ -12,7 +12,7 @@ export const resolveRootPath = (config: ReadonlyConfig): string => {
 };
 
 export const fromRootPath = (config: ReadonlyConfig, to?: string): string => {
-    return path.join(config.rootDir, to ?? "");
+    return path.join(resolveRootPath(config), to ?? "");
 };
 
 export const getSourcePath = (config: ReadonlyConfig, to?: string): string => {

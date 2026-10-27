@@ -1,0 +1,10 @@
+{
+  "name": "adnbn-test-react-root",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "adnbn": "*",
+    "react": "*",
+    "react-dom": "*"
+  }
+}
