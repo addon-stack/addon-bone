@@ -1,7 +1,7 @@
 import path from "path";
 import {LocaleFinder} from "@cli/entrypoint";
 import type {GenerateJsonPluginData, GenerateModulePluginDependencies} from "@cli/bundler";
-import {getSourcePath, getSharedPath, getAppPath, getAppSourcePath} from "@cli/resolvers/path";
+import {getSourcePath, getSharedPath, getAppPath, getAppSourcePath} from "@cli/workspace";
 
 import {escapeLocaleMessages, flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
 

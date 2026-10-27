@@ -1,6 +1,6 @@
 import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
 import {RspackVirtualModulePlugin} from "rspack-plugin-virtual-module";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
@@ -63,7 +63,7 @@ export default definePlugin(() => {
                 }
 
                 const htmlPlugins = (await offscreen.view().html()).map(options => new HtmlRspackPlugin(options));
-                const tagsPlugins = (await offscreen.view().tags()).map(options => new HtmlRspackTagsPlugin(options));
+                const tagsPlugins = (await offscreen.view().tags()).map(options => new HtmlTagsRspackPlugin(options));
 
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
 
@@ -98,7 +98,14 @@ export default definePlugin(() => {
             } satisfies RspackConfig;
         },
         manifest: async ({manifest, config}) => {
-            manifest.appendCsp(await offscreen.views().csp());
+            const views = offscreen.views();
+
+            manifest
+                .appendCsp(await views.csp())
+                .appendPermissions(await views.permissions())
+                .appendOptionalPermissions(await views.optionalPermissions())
+                .appendHostPermissions(await views.hostPermissions())
+                .appendOptionalHostPermissions(await views.optionalHostPermissions());
 
             if (config.manifestVersion !== 2 && config.browser !== Browser.Firefox && (await offscreen.exists())) {
                 manifest.addPermission("offscreen");

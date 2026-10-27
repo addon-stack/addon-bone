@@ -21,7 +21,7 @@ cli.command("init", "Initialize a new project").action(() => {
 cli.command("watch [root]", "Start watch mode")
     .option("-m, --mode <mode>", "Set env mode", {default: "development"})
     .option("-c, --config <config>", "Path to config file")
-    .option("-a, --app <app>", "Specify an app to run", {default: "myapp"})
+    .option("-a, --app <app>", "Specify an app to run", {default: "addon"})
     .option("-b, --browser <browser>", "Specify a browser")
     .option("--mv2", "Target manifest v2")
     .action(async (root, options) => {
@@ -32,7 +32,7 @@ cli.command("watch [root]", "Start watch mode")
                 debug: options.debug,
                 app: options.app,
                 browser: options.browser,
-                manifestVersion: options.mv2 ? 2 : 3,
+                manifestVersion: options.mv2 ? 2 : undefined,
                 rootDir: root,
                 configFile: options.config,
             });
@@ -45,7 +45,7 @@ cli.command("watch [root]", "Start watch mode")
 cli.command("build [root]", "Build for production")
     .option("-m, --mode <mode>", "Set env mode", {default: "production"})
     .option("-c, --config <config>", "Path to config file")
-    .option("-a, --app <app>", "Specify an app to run", {default: "myapp"})
+    .option("-a, --app <app>", "Specify an app to run", {default: "addon"})
     .option("-b, --browser <browser>", "Specify a browser", {default: Browser.Chrome})
     .option("--mv2", "Target manifest v2")
     .option("--analyze", "Visualize extension bundle")
@@ -57,7 +57,7 @@ cli.command("build [root]", "Build for production")
                 debug: options.debug,
                 app: options.app,
                 browser: options.browser,
-                manifestVersion: options.mv2 ? 2 : 3,
+                manifestVersion: options.mv2 ? 2 : undefined,
                 rootDir: root,
                 configFile: options.config,
                 analyze: options.analyze,

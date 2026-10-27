@@ -34,7 +34,7 @@ describe("competing overrides", () => {
             const build = fixture.build({browser});
 
             await expect(build).rejects.toThrow(
-                `An extension can override only one browser page, but app "myapp" enables 2 override entrypoints for ${browser}:`
+                `An extension can override only one browser page, but app "addon" enables 2 override entrypoints for ${browser}:`
             );
             await expect(build).rejects.toThrow("  - newtab: src/newtab.ts");
             await expect(build).rejects.toThrow("  - history: src/history.ts");

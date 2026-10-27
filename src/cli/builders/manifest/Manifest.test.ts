@@ -141,6 +141,82 @@ describe("Manifest common builder methods", () => {
         expect(builder.get()).toEqual(builder.build());
     });
 
+    describe.each([
+        {version: 2, Builder: ManifestV2},
+        {version: 3, Builder: ManifestV3},
+    ])("MV$version raw updates", ({Builder}) => {
+        it("merges later raw fields after reading the manifest", () => {
+            const builder = new Builder(Browser.Chrome).raw({
+                version_name: "before",
+                commands: {open: {description: "Before", suggested_key: {default: "Ctrl+Shift+U"}}},
+                externally_connectable: {matches: ["https://before.example/*"]},
+            });
+
+            expect(builder.get().version_name).toBe("before");
+
+            builder.raw({
+                version_name: "after",
+                commands: {open: {description: "After", suggested_key: {mac: "Command+Shift+U"}}},
+                externally_connectable: {matches: ["https://after.example/*"]},
+            });
+
+            const manifest = builder.get();
+
+            expect(manifest).toMatchObject({
+                version_name: "after",
+                commands: {
+                    open: {
+                        description: "After",
+                        suggested_key: {default: "Ctrl+Shift+U", mac: "Command+Shift+U"},
+                    },
+                },
+                externally_connectable: {matches: ["https://before.example/*", "https://after.example/*"]},
+            });
+
+            expect(builder.get()).toEqual(manifest);
+        });
+
+        it("restores raw commands after clearing internal commands", () => {
+            const rawCommands = {
+                shared: {
+                    description: "Raw description",
+                    suggested_key: {default: "Ctrl+Shift+Y", mac: "Command+Shift+Y"},
+                },
+            };
+
+            const builder = new Builder(Browser.Chrome)
+                .raw({commands: rawCommands})
+                .setCommands(
+                    new Set([
+                        {name: "shared", description: "Internal description", macKey: "Command+Shift+U"},
+                        {name: "temporary"},
+                    ])
+                );
+
+            expect(builder.get().commands).toMatchObject({
+                shared: {
+                    description: "Internal description",
+                    suggested_key: {default: "Ctrl+Shift+Y", mac: "Command+Shift+U"},
+                },
+                temporary: {description: "temporary"},
+            });
+
+            builder.setCommands();
+
+            expect(builder.get().commands).toEqual(rawCommands);
+        });
+
+        it("includes raw fields after reading web accessible resources", () => {
+            const builder = new Builder(Browser.Chrome);
+
+            expect(builder.getWebAccessibleResources()).toEqual([]);
+
+            builder.raw({version_name: "after"});
+
+            expect(builder.get().version_name).toBe("after");
+        });
+    });
+
     it("merges raw objects and arrays and keeps unknown raw fields", () => {
         const builder = new ManifestV3(Browser.Chrome);
 
@@ -268,6 +344,59 @@ describe("Manifest common builder methods", () => {
 });
 
 describe.each([
+    {version: 2, Builder: ManifestV2, actionCommand: "_execute_browser_action"},
+    {version: 3, Builder: ManifestV3, actionCommand: "_execute_action"},
+] as const)("MV$version commands", ({Builder, actionCommand}) => {
+    it("preserves command options and ordinary names without changing the internal action name", () => {
+        const command = Object.freeze({
+            name: CommandExecuteActionName,
+            defaultKey: "Ctrl+Shift+1",
+            windowsKey: "Ctrl+Shift+2",
+            macKey: "Ctrl+Shift+3",
+            chromeosKey: "Ctrl+Shift+4",
+            linuxKey: "Ctrl+Shift+5",
+            description: "Run the action",
+            global: true,
+        });
+
+        const manifest = new Builder(Browser.Chrome)
+            .setCommands(
+                new Set([
+                    command,
+                    {
+                        name: "open-settings",
+                        defaultKey: "Ctrl+Shift+S",
+                        macKey: "Command+Shift+S",
+                        description: "Open settings",
+                        global: false,
+                    },
+                ])
+            )
+            .build();
+
+        expect(manifest.commands).toEqual({
+            [actionCommand]: {
+                suggested_key: {
+                    default: "Ctrl+Shift+1",
+                    windows: "Ctrl+Shift+2",
+                    mac: "Ctrl+Shift+3",
+                    chromeos: "Ctrl+Shift+4",
+                    linux: "Ctrl+Shift+5",
+                },
+                description: "Run the action",
+                global: true,
+            },
+            "open-settings": {
+                suggested_key: {default: "Ctrl+Shift+S", mac: "Command+Shift+S"},
+                description: "Open settings",
+                global: false,
+            },
+        });
+        expect(command.name).toBe("_execute_action");
+    });
+});
+
+describe.each([
     {version: 2, Builder: ManifestV2, field: "browser_action"},
     {version: 3, Builder: ManifestV3, field: "action"},
 ] as const)("MV$version toolbar action", ({Builder, field}) => {
@@ -339,6 +468,7 @@ describe.each([
     it.each([
         {options: {}, title: "Action", icon: "action"},
         {options: {title: "Popup"}, title: "Popup", icon: "action"},
+        {options: {title: ""}, title: "", icon: "action"},
         {options: {icon: "popup"}, title: "Action", icon: "popup"},
         {options: {title: "Popup", icon: "popup"}, title: "Popup", icon: "popup"},
     ])("overrides popup fields independently: $options", ({options, title, icon}) => {

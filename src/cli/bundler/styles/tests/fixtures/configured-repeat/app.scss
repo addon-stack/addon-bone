@@ -1,0 +1,2 @@
+$color: red;
+@use "./tokens" with /* configure */ ($color: $color);

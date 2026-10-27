@@ -78,7 +78,11 @@ test.each<{
         const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-css-routing-"));
 
         const config = {
-            rootDir: path.join(__dirname, "src"),
+            rootDir: __dirname,
+            srcDir: "src",
+            sharedDir: ".",
+            appsDir: "apps",
+            appSrcDir: ".",
             app: "test",
             browser,
             commonChunks,

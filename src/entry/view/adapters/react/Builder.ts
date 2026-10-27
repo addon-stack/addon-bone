@@ -20,7 +20,7 @@ export default class Builder<T extends ViewConfig> extends ViewBuilder<T> {
             return;
         }
 
-        return async props => {
+        return props => {
             // Functions in React entrypoints are components; React owns their invocation and hooks.
             const value =
                 typeof render === "function" ? createElement(render as ViewRenderReactComponent<T>, props) : render;

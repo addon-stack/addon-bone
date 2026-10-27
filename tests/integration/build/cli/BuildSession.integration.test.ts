@@ -55,8 +55,8 @@ test("reuses one child with fixed cwd across A-B-A, rejects overlap and restores
     expect(samples.map(sample => sample.build)).toEqual([1, 2, 3]);
     expect(samples.map(sample => sample.cwd)).toEqual(Array(3).fill(session.directory));
     expect(samples.every(sample => sample.rss > 0 && sample.heapUsed > 0)).toBe(true);
-    expect(await readFile(path.join(root, "dist/myapp-chrome-mv3/newtab.html"), "utf8")).toContain("Absolute root A");
-    expect(await readFile(path.join(rootB, "dist/myapp-firefox-mv3/newtab.html"), "utf8")).toContain("Absolute root B");
+    expect(await readFile(path.join(root, "dist/addon-chrome-mv3/newtab.html"), "utf8")).toContain("Absolute root A");
+    expect(await readFile(path.join(rootB, "dist/addon-firefox-mv3/newtab.html"), "utf8")).toContain("Absolute root B");
     expect(process.cwd()).toBe(cwd);
     expect({...process.env}).toEqual(environment);
     await session.dispose();

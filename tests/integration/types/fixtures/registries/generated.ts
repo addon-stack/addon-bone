@@ -4,6 +4,10 @@ import * as offscreen from "adnbn/offscreen";
 import * as sandbox from "adnbn/sandbox";
 import type {Equal, Expect} from "./assert";
 
+type WorkerInstance = {run(input: string): number};
+type DocumentInstance = {parse(input: string): boolean};
+type FrameInstance = {render(input: string): Promise<string>};
+
 type PopupNames = Expect<Equal<api.PopupAlias, "popup" | 'quoted"popup'>>;
 type SidebarNames = Expect<Equal<api.SidebarAlias, "sidebar">>;
 type IconNames = Expect<Equal<api.IconName, "brand">>;
@@ -24,12 +28,30 @@ api.changeSidebarIcon("brand");
 api.changeActionIcon();
 api.changeSidebarIcon();
 api.getPopups().get("popup");
-api.getSidebars().get("sidebar");
+const popupEntry: api.PopupMapEntry | undefined = api.getPopups().get("popup");
+const tooltip: string | undefined = popupEntry?.tooltip;
+
+// @ts-expect-error: Runtime popup metadata no longer use the document title as a tooltip.
+popupEntry?.title;
+
+const manifestPopup: api.ManifestPopup = {title: "__MSG_popup_title__", path: "popup.html"};
+const sidebarEntry: api.SidebarMapEntry | undefined = api.getSidebars().get("sidebar");
+const label: string | undefined = sidebarEntry?.label;
+type SidebarEntryKeys = Expect<Equal<keyof api.SidebarMapEntry, "path" | "icon" | "label">>;
+const manifestSidebar: api.ManifestSidebar = {title: "__MSG_sidebar_title__", path: "sidebar.html"};
 api.getIcons().get("brand");
 
 api.defineConfig({action: {icon: "brand"}});
-api.definePopup({icon: "brand", render: "Popup"});
-api.defineSidebar({icon: "brand", render: "Sidebar"});
+api.definePopup({icon: "brand", title: "Popup document", tooltip: "@popup.title", render: "Popup"});
+api.definePopup({tooltip: ""});
+
+// @ts-expect-error: Popup tooltips must be strings.
+api.definePopup({tooltip: 42});
+api.defineSidebar({icon: "brand", title: "Sidebar document", label: "@sidebar.title", render: "Sidebar"});
+api.defineSidebar({label: ""});
+
+// @ts-expect-error: Sidebar labels must be strings.
+api.defineSidebar({label: 42});
 
 // @ts-expect-error: Action defaults use the generated icon group names.
 api.defineConfig({action: {icon: "unknown"}});
@@ -43,6 +65,16 @@ const document = api.getOffscreen("document");
 const frame = api.getSandbox("frame");
 const localWorker = service.getService("worker");
 const localDocument = offscreen.getOffscreen("document");
+const registeredWorker = new service.RegisterService("worker", () => localWorker).get();
+const registeredDocument = new offscreen.RegisterOffscreen("document", () => localDocument).get();
+
+const registeredFrame = new sandbox.RegisterSandbox(
+    "frame",
+    (): FrameInstance => ({
+        render: async input => input,
+    })
+).get();
+
 const workerResult = worker.run("input");
 const documentResult = document.parse("input");
 const frameResult = frame.render("input");
@@ -59,6 +91,11 @@ type DocumentProxy = Expect<Equal<typeof document, offscreen.OffscreenProxyTarge
 type FrameProxy = Expect<Equal<typeof frame, sandbox.SandboxProxyTarget<"frame">>>;
 type WorkerTarget = Expect<Equal<typeof localWorker, service.ServiceTarget<"worker">>>;
 type DocumentTarget = Expect<Equal<typeof localDocument, offscreen.OffscreenTarget<"document">>>;
+type WorkerInstanceType = Expect<Equal<typeof localWorker, WorkerInstance>>;
+type DocumentInstanceType = Expect<Equal<typeof localDocument, DocumentInstance>>;
+type RegisteredWorkerType = Expect<Equal<typeof registeredWorker, WorkerInstance>>;
+type RegisteredDocumentType = Expect<Equal<typeof registeredDocument, DocumentInstance>>;
+type RegisteredFrameType = Expect<Equal<typeof registeredFrame, FrameInstance>>;
 
 // @ts-expect-error: The generated popup names constrain the original API.
 api.changePopup("unknown");

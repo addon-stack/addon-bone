@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import {spawnSync} from "node:child_process";
-import {cp, mkdir, readFile, readdir, symlink} from "node:fs/promises";
+import {cp, mkdir, readFile, readdir, realpath, symlink} from "node:fs/promises";
 import path from "node:path";
 import {pathToFileURL} from "node:url";
 
-const [projectRoot, directory, mode, sharedCwd] = process.argv.slice(2);
+const [projectRoot, directory, mode, sharedCwd, form = "absolute", renderer = "vanilla"] = process.argv.slice(2);
 const {buildApp} = await import(pathToFileURL(path.join(projectRoot, "dist/cli/builders/app/index.js")).href);
 const rootA = path.join(directory, "project a");
 const rootB = path.join(directory, "project b");
-const cwd = sharedCwd ?? path.join(directory, "unrelated");
+const cwd = sharedCwd || (["bare", "dot"].includes(form) ? directory : path.join(directory, "unrelated"));
 
 await mkdir(cwd, {recursive: true});
 
@@ -23,6 +23,32 @@ for (const root of [rootA, rootB]) {
 }
 
 await cp(path.join(import.meta.dirname, "../fixtures/root-dir-b"), path.join(rootB, "src"), {recursive: true});
+
+if (renderer === "react") {
+    for (const root of [rootA, rootB]) {
+        await cp(path.join(import.meta.dirname, "../fixtures/root-dir-react"), root, {recursive: true});
+    }
+
+    // A owns its dependencies; B inherits the workspace installation. Keep real copies so module paths differ.
+    for (const root of [rootA, directory]) {
+        const modules = path.join(root, "node_modules");
+
+        for (const dependency of ["react", "react-dom"]) {
+            await cp(path.join(projectRoot, "node_modules", dependency), path.join(modules, dependency), {
+                recursive: true,
+                dereference: true,
+            });
+        }
+
+        const scheduler =
+            root === rootA
+                ? path.join(modules, "react-dom", "node_modules", "scheduler")
+                : path.join(modules, "scheduler");
+
+        await cp(path.join(projectRoot, "node_modules", "scheduler"), scheduler, {recursive: true, dereference: true});
+    }
+}
+
 process.chdir(cwd);
 const workingDirectory = process.cwd();
 const environment = process.env;
@@ -35,9 +61,11 @@ const sequence = [
 ];
 
 for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) : sequence) {
+    const rootDir = form === "absolute" ? root : (form === "dot" ? `.${path.sep}` : "") + path.relative(cwd, root);
+
     if (mode !== "cli") {
         const stats = await buildApp({
-            rootDir: root,
+            rootDir,
             browser,
             mode: "production",
             plugins:
@@ -75,10 +103,50 @@ for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) 
             throw error;
         });
         assert.equal(stats.hasErrors(), false);
+
+        if (renderer === "react") {
+            const dependencies = await realpath(path.join(root === rootA ? rootA : directory, "node_modules"));
+            const modules = stats.toJson({all: false, modules: true, nestedModules: true}).modules;
+            const resources = [];
+
+            const collect = entries => {
+                for (const entry of entries ?? []) {
+                    if (entry.nameForCondition) {
+                        resources.push(entry.nameForCondition);
+                    }
+
+                    collect(entry.modules);
+                    collect(entry.children);
+                }
+            };
+
+            collect(modules);
+
+            for (const dependency of ["react", "react-dom", "scheduler"]) {
+                const expected =
+                    (dependency === "scheduler" && root === rootA
+                        ? path.join(dependencies, "react-dom", "node_modules", dependency)
+                        : path.join(dependencies, dependency)) + path.sep;
+
+                // Windows may report the same temp directory with either its long name or an 8.3 alias.
+                const selected = await Promise.all(
+                    resources
+                        .filter(resource => resource.includes(path.sep + dependency + path.sep))
+                        .map(resource => realpath(resource))
+                );
+
+                assert.ok(selected.length > 0, dependency);
+
+                assert.ok(
+                    selected.every(resource => resource.startsWith(expected)),
+                    selected.join("\n")
+                );
+            }
+        }
     } else {
         const result = spawnSync(
             process.execPath,
-            [path.join(projectRoot, "bin/adnbn.js"), "build", root, "-b", browser],
+            [path.join(projectRoot, "bin/adnbn.js"), "build", rootDir, "-b", browser],
             {
                 encoding: "utf8",
                 timeout: 30_000,
@@ -91,7 +159,7 @@ for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) 
     assert.equal(process.cwd(), workingDirectory);
     assert.equal(process.env, environment);
     assert.deepEqual({...process.env}, snapshot);
-    const output = path.join(root, `dist/myapp-${browser}-mv3`);
+    const output = path.join(root, `dist/addon-${browser}-mv3`);
     const html = await readFile(path.join(output, "newtab.html"), "utf8");
     const manifest = JSON.parse(await readFile(path.join(output, "manifest.json"), "utf8"));
     assert.ok(html.includes(`<title>Absolute root ${label}</title>`));
@@ -103,12 +171,18 @@ for (const [root, label, browser] of mode === "parallel" ? sequence.slice(1, 2) 
     assert.ok(code.includes(`Root ${label} runtime`));
     assert.ok(code.includes("Offscreen root runtime"));
 
+    if (renderer === "react") {
+        assert.ok(code.includes("React root runtime"));
+        const page = await readFile(path.join(output, "react.html"), "utf8");
+        assert.ok(page.includes("<title>React root page</title>"));
+    }
+
     if (browser === "firefox") {
         assert.ok(manifest.background.scripts.length > 0);
     }
 }
 
-console.log("Absolute root contract verified");
+console.log("Root directory contract verified");
 
 if (process.connected) {
     process.disconnect();

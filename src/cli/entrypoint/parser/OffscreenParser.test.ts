@@ -17,7 +17,15 @@ const file = (...parts: string[]) => {
 
 describe("OffscreenParser", () => {
     describe("options", () => {
-        test("parses defineOffscreen with its name, reasons and inherited view and CSP options", () => {
+        test("ignores a sibling view definition", () => {
+            expect(parser.options(file("options", "foreign-definition", "audio.offscreen.ts"))).toEqual({});
+        });
+
+        test("leaves omitted options for later defaults", () => {
+            expect(parser.options(file("options", "defaults", "audio.offscreen.ts"))).toEqual({});
+        });
+
+        test("parses defineOffscreen with its name, reasons, permissions and inherited view and CSP options", () => {
             expect(parser.options(file("options", "full", "audio.offscreen.ts"))).toEqual({
                 name: "audio",
                 reasons: ["AUDIO_PLAYBACK", "BLOBS"],
@@ -26,8 +34,21 @@ describe("OffscreenParser", () => {
                 title: "Extension panel",
                 template: "./template.html",
                 includeBrowser: ["chrome"],
+                permissions: ["clipboardRead"],
+                optionalPermissions: ["clipboardWrite"],
+                hostPermissions: ["https://api.example.com/*"],
+                optionalHostPermissions: ["https://optional.example.com/*"],
                 csp: {sources: {connect: ["'self'", "https://api.example.com"]}},
                 links: "extra.css",
+                append: false,
+                useHash: true,
+                usePublicPath: false,
+                prependExternals: false,
+                jsExtensions: [".js", ".module"],
+                cssExtensions: ".css",
+                tags: [{path: "runtime.module", type: "js"}],
+                scripts: "extra.js",
+                metas: {attributes: {name: "offscreen-test", content: "enabled"}},
             });
         });
 

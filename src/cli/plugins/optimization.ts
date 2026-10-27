@@ -4,7 +4,7 @@ import {merge as mergeConfig} from "webpack-merge";
 
 import {definePlugin} from "@main/plugin";
 
-import {resolveRootPath} from "@cli/resolvers/path";
+import {resolveRootPath} from "@cli/workspace";
 
 export default definePlugin(() => {
     return {

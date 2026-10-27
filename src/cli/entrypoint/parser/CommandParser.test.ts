@@ -1,75 +1,30 @@
-import fs from "fs";
-import os from "os";
 import path from "path";
 
 import CommandParser from "./CommandParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-jest.mock("../file/resolvers", () => {
-    class TsResolver {
-        public static make(): TsResolver {
-            return new TsResolver();
-        }
-
-        public get matchPath(): {(_path: string): string | undefined} {
-            return () => undefined;
-        }
-    }
-
-    class ImportResolver {
-        public setBaseDir(): this {
-            return this;
-        }
-
-        public get(importPath: string): string {
-            return importPath;
-        }
-    }
-
-    return {ImportResolver, TsResolver};
-});
-
 const rootDir = path.resolve(__dirname, "../../../..");
+const fixtures = path.resolve(__dirname, "tests", "fixtures", "command");
+const parser = new CommandParser({rootDir} as ReadonlyConfig);
 
-const parse = (source: string) => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-command-parser-"));
-    const file = path.join(directory, "test.command.ts");
+const parseOptions = (...parts: string[]) => {
+    const file = path.join(fixtures, ...parts);
 
-    fs.writeFileSync(file, source);
-
-    return new CommandParser({rootDir} as ReadonlyConfig).options({file, import: file});
+    return parser.options({file, import: file});
 };
-
-const parseError = (source: string): Error => {
-    try {
-        parse(source);
-    } catch (error) {
-        return error as Error;
-    }
-
-    throw new Error("Expected command parser to throw");
-};
-
-const command = (options: string) => `
-import {defineCommand} from "adnbn";
-
-export default defineCommand({
-    ${options},
-    execute() {},
-});
-`;
 
 describe("CommandParser", () => {
-    test("parses defineCommand with shortcuts and inherited background options from a real entrypoint file", () => {
-        const file = path.join(__dirname, "tests", "fixtures", "command", "options", "full", "save.command.ts");
-
-        expect(new CommandParser({rootDir} as ReadonlyConfig).options({file, import: file})).toEqual({
+    test("reads every command option and the adopted background schema", () => {
+        expect(parseOptions("options", "full", "save.command.ts")).toEqual({
             name: "save",
             description: "Save the page",
             global: false,
             defaultKey: "Ctrl+Shift+K",
+            windowsKey: "Alt+Shift+U",
             macKey: "Command+Shift+K",
+            chromeosKey: "Search+K",
+            linuxKey: "Ctrl+Y",
             persistent: true,
             permissions: ["storage", "tabs"],
             optionalPermissions: ["history"],
@@ -79,70 +34,126 @@ describe("CommandParser", () => {
         });
     });
 
-    test("names a defineExecuteActionCommand entrypoint after the browser action command", () => {
-        const file = path.join(
-            __dirname,
-            "tests",
-            "fixtures",
-            "command",
-            "options",
-            "execute-action",
-            "open.command.ts"
-        );
-
-        expect(new CommandParser({rootDir} as ReadonlyConfig).options({file, import: file})).toEqual({
+    test("keeps the internal execute action name and leaves optional values unset", () => {
+        expect(parseOptions("options", "execute-action", "open.command.ts")).toEqual({
             name: "_execute_action",
             defaultKey: "Ctrl+Shift+O",
         });
     });
 
-    test("accepts browser command shortcuts", () => {
-        const options = parse(
-            command(`
-                defaultKey: "Ctrl+Shift+Y",
-                windowsKey: "Alt+Shift+U",
-                linuxKey: "Ctrl+F12",
-                chromeosKey: "MediaPlayPause"
-            `)
+    test("accepts Firefox combinations before browser compatibility is checked", () => {
+        expect(parseOptions("options", "firefox", "open.command.ts")).toEqual({
+            defaultKey: "Ctrl+Alt+Y",
+            includeBrowser: ["firefox"],
+        });
+    });
+
+    test.each([
+        [
+            "characters",
+            {
+                defaultKey: "Ctrl+A",
+                windowsKey: "Alt+Z",
+                macKey: "MacCtrl+0",
+                chromeosKey: "Search+9",
+                linuxKey: "Ctrl+y",
+            },
+        ],
+        [
+            "named",
+            {
+                defaultKey: "Ctrl+Tab",
+                windowsKey: "Alt+Shift+Insert",
+                macKey: "Option+Shift+Comma",
+                chromeosKey: "Search+Ctrl+Shift+Y",
+                linuxKey: "Ctrl+PageDown",
+            },
+        ],
+        [
+            "navigation",
+            {
+                defaultKey: "Ctrl+Up",
+                windowsKey: "Alt+Down",
+                macKey: "Command+Left",
+                chromeosKey: "Search+Right",
+                linuxKey: "Ctrl+PageUp",
+            },
+        ],
+        [
+            "editing",
+            {
+                defaultKey: "Ctrl+Period",
+                windowsKey: "Alt+Delete",
+                macKey: "Command+Home",
+                chromeosKey: "Search+End",
+                linuxKey: "Ctrl+Space",
+            },
+        ],
+        [
+            "functions",
+            {
+                defaultKey: "F1",
+                windowsKey: "Ctrl+Alt+F12",
+                macKey: "Command+MacCtrl+Y",
+                chromeosKey: "Search+Shift+Y",
+                linuxKey: "Shift+F12",
+            },
+        ],
+        [
+            "media",
+            {
+                defaultKey: "MediaNextTrack",
+                windowsKey: "MediaPlayPause",
+                macKey: "MediaPrevTrack",
+                chromeosKey: "MediaStop",
+                linuxKey: "MediaPlayPause",
+            },
+        ],
+    ] as const)("accepts the shared shortcut syntax for %s and preserves every value", (scenario, options) => {
+        expect(parseOptions("options", "shortcuts", `${scenario}.command.ts`)).toEqual(options);
+    });
+
+    test.each([
+        ["empty.ts", "", "empty components"],
+        ["whitespace.ts", "Ctrl +Y", "Whitespace"],
+        ["empty-component.ts", "Ctrl++Y", "empty components"],
+        ["trailing-separator.ts", "Ctrl+Y+", "empty components"],
+        ["wrong-separator.ts", "Ctrl-Y", 'Unknown key "Ctrl-Y"'],
+        ["unknown-modifier.ts", "Control+Y", 'Unknown modifier "Control"'],
+        ["repeated-modifier.ts", "Ctrl+Ctrl+Y", "Repeated modifiers"],
+        ["key-order.ts", "Ctrl+Y+Shift", "key must be the last"],
+        ["missing-key-name.ts", "Ctrl+Shift", "Expected one key name"],
+        ["unknown-key.ts", "Ctrl+UnlistedKey", 'Unknown key "UnlistedKey"'],
+        ["unsupported-key.ts", "Ctrl+Enter", 'Unknown key "Enter"'],
+        ["function-range.ts", "Ctrl+F13", 'Unknown key "F13"'],
+        ["media-modifier.ts", "Ctrl+MediaPlayPause", "Media keys cannot have modifiers"],
+        ["missing-modifier.ts", "Y", "A modifier is required"],
+    ])("rejects invalid shortcut syntax in %s with the option and value", (filename, value, reason) => {
+        expect(() => parseOptions("invalid", filename)).toThrow(
+            `Invalid options defaultKey in "${path.join(fixtures, "invalid", filename)}": ${JSON.stringify(value)}:`
         );
 
-        expect(options.defaultKey).toBe("Ctrl+Shift+Y");
-        expect(options.windowsKey).toBe("Alt+Shift+U");
-        expect(options.linuxKey).toBe("Ctrl+F12");
-        expect(options.chromeosKey).toBe("MediaPlayPause");
+        expect(() => parseOptions("invalid", filename)).toThrow(reason);
     });
 
-    test("accepts macOS-specific command modifiers only for macKey", () => {
-        const options = parse(
-            command(`
-                defaultKey: "Ctrl+Shift+Y",
-                macKey: "Command+Shift+P"
-            `)
+    test("does not read command options from a sibling definition", () => {
+        expect(() => parseOptions("options", "sibling", "background.ts")).toThrow(
+            "At least one suggested key must be defined"
         );
-
-        expect(options.macKey).toBe("Command+Shift+P");
-
-        expect(() => parse(command(`defaultKey: "Command+Shift+P"`))).toThrow("Invalid shortcut key");
-        expect(() => parse(command(`linuxKey: "Option+Shift+U"`))).toThrow("Invalid shortcut key");
     });
 
-    test("rejects modifiers with media keys", () => {
-        expect(() => parse(command(`defaultKey: "Ctrl+MediaPlayPause"`))).toThrow("Invalid shortcut key");
+    test("includes the source file when no suggested key is declared", () => {
+        expect(() => parseOptions("invalid", "missing-key.ts")).toThrow(
+            `Invalid command options in "${path.join(fixtures, "invalid", "missing-key.ts")}": At least one suggested key must be defined`
+        );
     });
 
-    test("includes file path when no suggested key is defined", () => {
-        const error = parseError(command(`name: "missing-key"`));
-
-        expect(error.message).toContain("At least one suggested key must be defined");
-        expect(error.message).toContain("test.command.ts");
-    });
-
-    test("requires Chrome global command shortcuts to use Ctrl+Shift+[0..9]", () => {
-        expect(parse(command(`global: true, defaultKey: "Ctrl+Shift+5"`)).defaultKey).toBe("Ctrl+Shift+5");
-
-        const error = parseError(command(`global: true, defaultKey: "Ctrl+Shift+Y"`));
-
-        expect(error.message).toContain("must use Ctrl+Shift+[0..9]");
-        expect(error.message).toContain("test.command.ts");
+    test.each([
+        ["key-type.ts", "defaultKey"],
+        ["global-type.ts", "global"],
+    ])("rejects invalid option types in %s", (filename, option) => {
+        expect(() => parseOptions("invalid", filename)).toThrow(
+            `Invalid options ${option} in "${path.join(fixtures, "invalid", filename)}"`
+        );
     });
 });

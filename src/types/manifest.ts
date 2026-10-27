@@ -28,7 +28,7 @@ export enum ManifestIncognito {
 
 type ManifestCommon = chrome.runtime.Manifest;
 
-type ManifestBase = chrome.runtime.ManifestBase;
+type ChromeManifestBase = chrome.runtime.ManifestBase;
 
 export type ManifestPermission = chrome.runtime.ManifestPermission;
 
@@ -36,7 +36,7 @@ export type ManifestOptionalPermission = chrome.runtime.ManifestOptionalPermissi
 
 export type ManifestAction = NonNullable<chrome.runtime.ManifestV3["action"]>;
 
-type ManifestFixed<T extends ManifestBase> = Omit<T, "manifest_version"> & {
+type ManifestFixed<T extends ChromeManifestBase> = Omit<T, "manifest_version"> & {
     manifest_version: ManifestVersion;
 };
 
@@ -49,7 +49,7 @@ export type ManifestVersion = 2 | 3;
 
 export type ManifestIncognitoValue = ManifestIncognito | `${ManifestIncognito}`;
 
-export type CoreManifest = ManifestFixed<ManifestBase>;
+export type CoreManifest = ManifestFixed<ChromeManifestBase>;
 
 export type ChromeManifest = ManifestFixed<ManifestCommon>;
 
@@ -155,9 +155,6 @@ export interface ManifestBuilder<T extends CoreManifest = Manifest> {
 
     appendCsp(csps: Iterable<CspConfig>): this;
 
-    // System
-    setDependencies(dependencies: ManifestDependencies): this;
-
     // Permissions
     addPermission(permission: ManifestPermission): this;
 
@@ -225,7 +222,7 @@ export interface ManifestPopup {
      */
     icon?: string;
     /**
-     * Represents an optional title or name or locale key that can be assigned to an entity.
+     * Toolbar tooltip for default_title; may contain browser message references such as __MSG_popup_account__.
      */
     title?: string;
     /**
@@ -242,7 +239,7 @@ export interface ManifestSidebar {
      */
     icon?: string;
     /**
-     * Represents an optional title or name or locale key that can be assigned to an entity.
+     * Sidebar UI title for default_title; may contain browser message references such as __MSG_sidebar_account__.
      */
     title?: string;
     /**

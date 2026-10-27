@@ -3,6 +3,7 @@ import {Browser, CspSource, defineSidebar} from "adnbn";
 export default defineSidebar({
     as: "panel",
     title: "Extension panel",
+    label: "@sidebar.panel",
     template: "./template.html",
     icon: "toolbar",
     apply: false,
@@ -13,5 +14,14 @@ export default defineSidebar({
     hostPermissions: ["https://*.example.com/*"],
     optionalHostPermissions: ["https://other.test/*"],
     links: "extra.css",
+    append: false,
+    useHash: true,
+    usePublicPath: false,
+    prependExternals: false,
+    jsExtensions: [".js", ".module"],
+    cssExtensions: ".css",
+    tags: [{path: "runtime.module", type: "js"}],
+    scripts: "extra.js",
+    metas: {attributes: {name: "sidebar-test", content: "enabled"}},
     render: ({title}) => title,
 });

@@ -23,6 +23,14 @@ const parseContract = (...parts: string[]) => parser.contract(file(...parts));
 
 describe("SandboxParser", () => {
     describe("options", () => {
+        test("ignores a sibling view definition", () => {
+            expect(parseOptions("options", "foreign-definition", "sandbox.ts")).toEqual({});
+        });
+
+        test("leaves omitted options for later defaults", () => {
+            expect(parseOptions("options", "defaults", "sandbox.ts")).toEqual({});
+        });
+
         test("parses full sandbox options from a real entrypoint file", () => {
             expect(parseOptions("options", "full", "sandbox.ts")).toEqual({
                 as: "unsafe-parser-frame",
@@ -55,6 +63,13 @@ describe("SandboxParser", () => {
                 },
                 scripts: "extra.js",
                 links: "extra.css",
+                append: false,
+                useHash: true,
+                usePublicPath: false,
+                prependExternals: false,
+                jsExtensions: [".js", ".module"],
+                cssExtensions: ".css",
+                tags: [{path: "runtime.module", type: "js"}],
                 metas: {
                     attributes: {
                         name: "sandbox-test",

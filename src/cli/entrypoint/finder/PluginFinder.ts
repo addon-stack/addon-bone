@@ -3,7 +3,7 @@ import _ from "lodash";
 import AbstractParsedFinder from "./AbstractParsedFinder";
 import {FileLayer, setFilePrecedence} from "./utils/filePrecedence";
 
-import {processPluginHandler} from "@cli/resolvers/plugin";
+import {processPluginHandler} from "@cli/handlers";
 
 import {ReadonlyConfig} from "@typing/config";
 import {PluginHandlerKeys} from "@typing/plugin";

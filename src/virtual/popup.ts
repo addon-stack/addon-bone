@@ -1,4 +1,4 @@
-import type {ManifestPopup} from "@typing/manifest";
+import type {PopupAliasMap} from "@typing/popup";
 
 /** Package fallback; extension builds supply #adnbn/popup as a generated module. */
-export const aliases: Record<string, ManifestPopup> = {};
+export const aliases: PopupAliasMap = {};

@@ -7,6 +7,7 @@ export * from "./content";
 export * from "./csp";
 export * from "./entrypoint";
 export * from "./env";
+export * from "./html";
 export * from "./icon";
 export * from "./manifest";
 export * from "./offscreen";

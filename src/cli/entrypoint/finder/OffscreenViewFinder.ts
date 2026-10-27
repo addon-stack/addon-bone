@@ -1,11 +1,11 @@
-import ViewCspFinder from "./ViewCspFinder";
+import ViewPermissionsFinder from "./ViewPermissionsFinder";
 import AbstractTransportFinder from "./AbstractTransportFinder";
 
 import {ReadonlyConfig} from "@typing/config";
 import {OffscreenEntrypointOptions} from "@typing/offscreen";
 import {EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class extends ViewCspFinder<OffscreenEntrypointOptions> {
+export default class OffscreenViewFinder extends ViewPermissionsFinder<OffscreenEntrypointOptions> {
     constructor(
         config: ReadonlyConfig,
         protected readonly finder: AbstractTransportFinder<OffscreenEntrypointOptions>

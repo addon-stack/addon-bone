@@ -50,7 +50,7 @@ export class ManifestError extends Error {
     }
 }
 
-export default abstract class<T extends CoreManifest> implements ManifestBuilder<T> {
+export default abstract class ManifestBase<T extends CoreManifest> implements ManifestBuilder<T> {
     protected name?: string;
     protected author?: string;
     protected homepage?: string;
@@ -440,6 +440,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
     public raw(manifest: OptionalManifest): this {
         this.raws.add(manifest);
+        this.mergedRaws = undefined;
 
         return this;
     }
@@ -569,7 +570,7 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
             const scripts = Array.from(dependencies.js);
 
-            return {background: {scripts, persistent: persistent || undefined}};
+            return {background: {scripts, persistent}};
         }
     }
 
@@ -596,9 +597,11 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             {} as CoreManifest["commands"]
         );
 
-        const commands = _.merge(this.combinedRaws.commands, internalCommands);
+        const commands = _.merge({}, this.combinedRaws.commands, internalCommands);
 
-        if (Object.keys(commands).length) return {commands};
+        if (Object.keys(commands).length) {
+            return {commands};
+        }
     }
 
     protected buildContentScripts(): Partial<CoreManifest> | undefined {
@@ -662,9 +665,13 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
             const sidePanel = this.combinedRaws.side_panel;
 
             if (SidebarAlternativeBrowsers.has(this.browser)) {
-                if (sidebarAction) return {sidebar_action: sidebarAction};
+                if (sidebarAction) {
+                    return {sidebar_action: sidebarAction};
+                }
             } else {
-                if (sidePanel) return {side_panel: sidePanel};
+                if (sidePanel) {
+                    return {side_panel: sidePanel};
+                }
             }
 
             return;
@@ -672,15 +679,18 @@ export default abstract class<T extends CoreManifest> implements ManifestBuilder
 
         const {path, icon, title} = this.sidebar;
 
-        const commonProps = {
-            open_at_install: this.browser === Browser.Firefox ? false : undefined,
-            default_title: title || this.name,
-            default_icon: this.getIconsByName(icon),
-        };
+        if (SidebarAlternativeBrowsers.has(this.browser)) {
+            return {
+                sidebar_action: {
+                    open_at_install: this.browser === Browser.Firefox ? false : undefined,
+                    default_title: title ?? this.name,
+                    default_icon: this.getIconsByName(icon),
+                    default_panel: path,
+                },
+            };
+        }
 
-        return SidebarAlternativeBrowsers.has(this.browser)
-            ? {sidebar_action: {...commonProps, default_panel: path}}
-            : {side_panel: {...commonProps, default_path: path}};
+        return {side_panel: {default_path: path}};
     }
 
     protected buildOptions(): Partial<CoreManifest> {

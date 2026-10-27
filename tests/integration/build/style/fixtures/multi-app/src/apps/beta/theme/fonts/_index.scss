@@ -1,6 +1,6 @@
 @use "../metrics";
 
-$inter-latin: url("./Inter-Latin.woff2?browser") !default;
+$inter-latin: url("./Inter-Latin.woff2?browser&v=1#face") !default;
 
 @font-face {
   font-family: Example;

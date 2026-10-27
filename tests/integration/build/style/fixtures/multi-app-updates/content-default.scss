@@ -1,0 +1,8 @@
+@use "sass:math";
+@use "../theme/tokens" as appTokens;
+@use "../theme/fonts";
+
+.badge {
+  color: appTokens.$accent;
+  --order: app-updated;
+}

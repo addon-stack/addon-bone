@@ -3,7 +3,7 @@ import path from "path";
 import View from "../view/View";
 
 import {AbstractOverrideFinder, BookmarksFinder, HistoryFinder, NewtabFinder} from "@cli/entrypoint";
-import {resolveRootPath} from "@cli/resolvers/path";
+import {resolveRootPath} from "@cli/workspace";
 import {toPosix} from "@cli/utils/path";
 
 import {Browser} from "@typing/browser";

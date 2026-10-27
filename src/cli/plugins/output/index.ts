@@ -5,7 +5,7 @@ import {definePlugin} from "@main/plugin";
 
 import {appFilenameResolver, BuildAssetsMapPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {createRuntimeModule} from "@cli/bundler/plugins/utils";
-import {getOutputPath, getResolvePath} from "@cli/resolvers/path";
+import {getOutputPath, getResolvePath} from "@cli/workspace";
 
 import {RuntimeModuleRequest, RuntimeModuleReaders, EntrypointAssetsModule} from "./runtime";
 

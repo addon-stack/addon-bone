@@ -1,4 +1,7 @@
+import path from "path";
+
 import PopupFinder from "./PopupFinder";
+import {toPosix} from "@cli/utils/path";
 
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile, EntrypointOptionsFinder, EntrypointType} from "@typing/entrypoint";
@@ -52,6 +55,15 @@ const createPlugin = (
 });
 
 describe("PopupFinder", () => {
+    test("keeps grouped directory priority when multiple popups are disabled", async () => {
+        const rootDir = path.resolve(__dirname, "tests", "fixtures", "discovery", "grouped");
+        const finder = new PopupFinder({...config, rootDir, sharedDir: ".", multiplePopup: false});
+        const files = Array.from(await finder.files(), ({file}) => toPosix(path.relative(rootDir, file)));
+
+        expect(finder.allowMultiple()).toBe(false);
+        expect(files).toEqual(["src/popups/main.popup.ts", "src/popups/named.popup/index.ts"]);
+    });
+
     test("selects the highest-priority popup when multiple popups are disabled", async () => {
         const plugin = file("/plugins/default/popup.ts");
         const shared = file("/project/src/shared/popup.ts");

@@ -1,10 +1,10 @@
 import {act} from "@testing-library/react";
-import {createElement, Fragment, useEffect} from "react";
+import {createElement, Fragment, useEffect, useState} from "react";
 import {createPortal} from "react-dom";
 
 import Builder from "./Builder";
 
-import type {ViewConfig} from "@typing/view";
+import type {ViewConfig, ViewRenderReactComponent} from "@typing/view";
 
 describe("React view Builder", () => {
     afterEach(() => {
@@ -32,6 +32,39 @@ describe("React view Builder", () => {
         await act(() => builder.build());
 
         expect(document.body.firstElementChild?.innerHTML).toBe("<strong>element</strong>");
+
+        await act(() => builder.destroy());
+    });
+
+    test("renders typed props before data loads and updates state from an asynchronous effect", async () => {
+        const response = Promise.withResolvers<string>();
+
+        const Component: ViewRenderReactComponent<ViewConfig> = ({title}) => {
+            const [text, setText] = useState("Loading");
+
+            useEffect(() => {
+                const load = async () => {
+                    setText(await response.promise);
+                };
+
+                void load();
+            }, []);
+
+            return createElement("p", null, `${title}: ${text}`);
+        };
+
+        const builder = new Builder<ViewConfig>({title: "Report", render: Component});
+
+        await act(() => builder.build());
+
+        expect(document.body.textContent).toBe("Report: Loading");
+
+        await act(async () => {
+            response.resolve("Loaded");
+            await response.promise;
+        });
+
+        expect(document.body.textContent).toBe("Report: Loaded");
 
         await act(() => builder.destroy());
     });

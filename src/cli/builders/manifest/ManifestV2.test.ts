@@ -28,6 +28,20 @@ describe("ManifestV2", () => {
         });
     });
 
+    it.each([true, false, undefined])("serializes background persistence %s without coercion", persistent => {
+        const manifest = new ManifestV2(Browser.Chrome)
+            .setDependencies(new Map([["background", dependency(["background.js"])]]))
+            .setBackground({entry: "background", ...(persistent === undefined ? {} : {persistent})})
+            .build();
+
+        const serialized = JSON.parse(JSON.stringify(manifest));
+
+        expect(serialized.background).toEqual({
+            scripts: ["background.js"],
+            ...(persistent === undefined ? {} : {persistent}),
+        });
+    });
+
     it("builds browser_action from popup and selected icons", () => {
         const manifest: any = new ManifestV2(Browser.Chrome)
             .setName("Popup Addon")
@@ -49,6 +63,44 @@ describe("ManifestV2", () => {
             .build();
 
         expect(manifest.browser_action).toEqual({default_title: "Command Addon"});
+        expect(manifest.commands).toHaveProperty("_execute_browser_action");
+        expect(manifest.commands).not.toHaveProperty("_execute_action");
+        expect(manifest.commands._execute_browser_action.description).toBeUndefined();
+    });
+
+    it("merges the renamed action with native raw command options across repeated builds", () => {
+        const builder = new ManifestV2(Browser.Chrome)
+            .setCommands(
+                new Set([
+                    {
+                        name: CommandExecuteActionName,
+                        defaultKey: "Ctrl+Shift+Y",
+                        description: "Run the action",
+                    },
+                ])
+            )
+            .raw({
+                commands: {
+                    _execute_browser_action: {
+                        suggested_key: {default: "Ctrl+Shift+O", mac: "Command+Shift+Y"},
+                        description: "Raw action",
+                        global: false,
+                    },
+                    "open-settings": {suggested_key: {default: "Ctrl+Shift+S"}, description: "Open settings"},
+                },
+            });
+
+        const expected = {
+            _execute_browser_action: {
+                suggested_key: {default: "Ctrl+Shift+Y", mac: "Command+Shift+Y"},
+                description: "Run the action",
+                global: false,
+            },
+            "open-settings": {suggested_key: {default: "Ctrl+Shift+S"}, description: "Open settings"},
+        };
+
+        expect(builder.build().commands).toEqual(expected);
+        expect(builder.build().commands).toEqual(expected);
     });
 
     it("builds sidebar_action only for MV2 browsers that support it", () => {

@@ -1,5 +1,6 @@
 import {ViewDefinition, ViewOptions} from "@typing/view";
 import {CspOptions} from "@typing/csp";
+import type {PermissionsOptions} from "@typing/permissions";
 
 /**
  * Empty because page aliases depend on the consuming application's entrypoints.
@@ -16,7 +17,11 @@ export interface PageConfig {
     matches?: string[];
 }
 
-export type PageEntrypointOptions = PageConfig & CspOptions & ViewOptions;
+/**
+ * Each page included in a build contributes its permissions and CSP to the extension manifest,
+ * even if the page is never opened. Permissions and CSP apply to the extension, not just this page.
+ */
+export type PageEntrypointOptions = PageConfig & PermissionsOptions & CspOptions & ViewOptions;
 
 export type PageProps = PageEntrypointOptions;
 

@@ -4,8 +4,9 @@ import {merge as mergeConfig} from "webpack-merge";
 import path from "node:path";
 
 import manifestFactory from "../builders/manifest";
-import {processPluginHandler} from "./plugin";
-import {resolveRootPath} from "./path";
+
+import {processPluginHandler} from "@cli/handlers";
+import {resolveRootPath} from "@cli/workspace";
 
 import ManifestPlugin from "@cli/bundler/plugins/manifest";
 import WatchPlugin from "@cli/bundler/plugins/watch";

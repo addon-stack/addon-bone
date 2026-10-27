@@ -21,7 +21,7 @@ on:
 jobs:
   compute-matrix:
     name: Compute matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
       name_suffix: ${{ steps.set.outputs.name_suffix }}
@@ -29,10 +29,10 @@ jobs:
       - id: set
         run: |
           if [[ "${{ github.event_name }}" != "workflow_call" || "${{ inputs.full }}" == "true" ]]; then
-            echo 'matrix={"os":["ubuntu-latest","windows-latest"],"node":[22,24]}' >> "$GITHUB_OUTPUT"
+            echo 'matrix={"os":["ubuntu-24.04","windows-latest"],"node":[22,24]}' >> "$GITHUB_OUTPUT"
             echo 'name_suffix=(full matrix)' >> "$GITHUB_OUTPUT"
           else
-            echo 'matrix={"os":["ubuntu-latest"],"node":[22]}' >> "$GITHUB_OUTPUT"
+            echo 'matrix={"os":["ubuntu-24.04"],"node":[22]}' >> "$GITHUB_OUTPUT"
             echo 'name_suffix=' >> "$GITHUB_OUTPUT"
           fi
 
@@ -47,9 +47,9 @@ jobs:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -60,14 +60,14 @@ jobs:
       - name: Verify test groups
         run: npm run test:inventory
       - name: Units with coverage (no package build)
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        if: matrix.os == 'ubuntu-24.04' && matrix.node == 22
         run: npm run test:run -- --selectProjects unit-node unit-dom --ci --coverage --coverageDirectory=coverage/unit
       - name: Units (no package build)
-        if: matrix.os != 'ubuntu-latest' || matrix.node != 22
+        if: matrix.os != 'ubuntu-24.04' || matrix.node != 22
         run: npm run test:run -- --selectProjects unit-node unit-dom --ci
       - name: Upload unit coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
-        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-24.04' && matrix.node == 22
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-unit-${{ matrix.os }}-node${{ matrix.node }}
           path: coverage/unit/coverage-final.json
@@ -83,9 +83,9 @@ jobs:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -94,18 +94,18 @@ jobs:
       - name: Build package
         run: npm run build
       - name: Compiler, CLI and declaration integrations with coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        if: matrix.os == 'ubuntu-24.04' && matrix.node == 22
         run: npm run test:run -- --selectProjects build types --ci --maxWorkers=2 --coverage --coverageDirectory=coverage/build
       - name: Compiler, CLI and declaration integrations
-        if: matrix.os != 'ubuntu-latest' || matrix.node != 22
+        if: matrix.os != 'ubuntu-24.04' || matrix.node != 22
         run: npm run test:run -- --selectProjects build types --ci --maxWorkers=2
       - name: Override builds in isolated sessions
         run: npm run test:run -- --selectProjects build --testPathPatterns=tests/integration/build/override --ci --maxWorkers=2
         env:
           ADNBN_OVERRIDE_BUILD_MODE: session
       - name: Upload build coverage
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 22
-        uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-24.04' && matrix.node == 22
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-build-${{ matrix.os }}-node${{ matrix.node }}
           path: coverage/build/coverage-final.json
@@ -121,9 +121,9 @@ jobs:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -135,7 +135,7 @@ jobs:
   browser:
     name: Browser (${{ matrix.browser }}, Node ${{ matrix.node }})
     needs: compute-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     strategy:
@@ -145,9 +145,9 @@ jobs:
         browser: [chrome, firefox]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -174,7 +174,7 @@ jobs:
           ADNBN_FIREFOX_BIN: ${{ steps.firefox.outputs.firefox-path }}
       - name: Upload browser startup timings
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: browser-startup-${{ matrix.browser }}-node-${{ matrix.node }}
           path: .cache/integration/browser-startup.json
@@ -183,45 +183,45 @@ jobs:
           retention-days: 7
 
   coverage:
-    name: Coverage (ubuntu-latest, Node 22)
+    name: Coverage (ubuntu-24.04, Node 22)
     needs: [compute-matrix, unit, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Download unit coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
-          name: coverage-unit-ubuntu-latest-node22
+          name: coverage-unit-ubuntu-24.04-node22
           path: coverage/unit
       - name: Download build coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
-          name: coverage-build-ubuntu-latest-node22
+          name: coverage-build-ubuntu-24.04-node22
           path: coverage/build
       - name: Merge source coverage from both groups
         run: node scripts/merge-coverage.mjs coverage/unit/coverage-final.json coverage/build/coverage-final.json
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
-          name: coverage-ubuntu-latest-node22
+          name: coverage-ubuntu-24.04-node22
           path: coverage/merged
 
   # Keep the existing required check names while the work runs in independent jobs.
   build-and-test:
-    name: Test and Build (${{ matrix.os }}, Node ${{ matrix.node }}) ${{ needs.compute-matrix.outputs.name_suffix }}
+    name: Test and Build (${{ matrix.os == 'ubuntu-24.04' && 'ubuntu-latest' || matrix.os }}, Node ${{ matrix.node }}) ${{ needs.compute-matrix.outputs.name_suffix }}
     if: ${{ always() && needs.compute-matrix.result == 'success' }}
     needs: [compute-matrix, unit, build, fixtures, browser, coverage]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}

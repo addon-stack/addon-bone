@@ -71,7 +71,7 @@ export default abstract class Builder<T extends ViewConfig> extends EntrypointBu
         }
 
         const props = this.getProps();
-        const value = await render(props);
+        const value = render(props);
 
         if (value === undefined) {
             return;

@@ -1,18 +1,18 @@
 import {Configuration as RspackConfig, HtmlRspackPlugin, Plugins} from "@rspack/core";
-import HtmlRspackTagsPlugin from "html-rspack-tags-plugin";
+import HtmlTagsRspackPlugin from "@rspackjs/plugin-html-tags";
 
 import {definePlugin} from "@main/plugin";
 
 import {EntrypointPlugin, GenerateModulePlugin} from "@cli/bundler";
 import {virtualViewModule} from "@cli/virtual";
 
-import Sidebar, {SidebarNameToManifest} from "./Sidebar";
+import Sidebar from "./Sidebar";
 import {createSidebarModule, SidebarModuleName} from "./sidebar-module";
 
 import {SidebarDeclaration} from "./declaration";
 
 import {Command} from "@typing/app";
-import {SidebarAlternativeBrowsers} from "@typing/sidebar";
+import {SidebarAlternativeBrowsers, type SidebarAliasMap} from "@typing/sidebar";
 
 export default definePlugin(() => {
     let sidebar: Sidebar;
@@ -50,10 +50,10 @@ export default definePlugin(() => {
 
             const plugins: Plugins = [];
 
-            let alias: SidebarNameToManifest = {};
+            let alias: SidebarAliasMap = {};
 
             if (build) {
-                alias = await sidebar.manifestByAlias();
+                alias = await sidebar.entriesByAlias();
 
                 // prettier-ignore
                 const plugin = EntrypointPlugin.from(await sidebar.view().entries())
@@ -68,7 +68,7 @@ export default definePlugin(() => {
                 }
 
                 const htmlPlugins = (await sidebar.view().html()).map(options => new HtmlRspackPlugin(options));
-                const tagsPlugins = (await sidebar.view().tags()).map(options => new HtmlRspackTagsPlugin(options));
+                const tagsPlugins = (await sidebar.view().tags()).map(options => new HtmlTagsRspackPlugin(options));
 
                 plugins.push(plugin, ...htmlPlugins, ...tagsPlugins);
             }

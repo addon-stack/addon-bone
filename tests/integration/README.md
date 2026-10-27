@@ -23,6 +23,13 @@ tests/integration/
 │   │   │   ├── root-dir/
 │   │   │   └── root-dir-b/
 │   │   └── scripts/
+│   ├── entrypoint-discovery/
+│   │   ├── entrypoint-discovery.integration.test.ts
+│   │   └── fixture/
+│   ├── html/
+│   │   ├── html.integration.test.ts
+│   │   ├── fixture/
+│   │   └── scenarios/
 │   ├── locale/
 │   │   ├── locale.integration.test.ts
 │   │   ├── dynamic.integration.test.ts
@@ -47,13 +54,24 @@ tests/integration/
 │   │   └── history/
 │   ├── permissions/
 │   │   ├── permissions.integration.test.ts
+│   │   ├── view-watch.integration.test.ts
+│   │   ├── states/
 │   │   └── views/
 │   ├── style/
 │   │   ├── style-merge.integration.test.ts
+│   │   ├── module-resolution.integration.test.ts
+│   │   ├── font-reuse.integration.test.ts
+│   │   ├── virtual-style.integration.test.ts
 │   │   ├── compiler.ts
 │   │   └── fixtures/
+│   │       ├── bare-module-watch/
+│   │       ├── bare-module-watch-updates/
+│   │       ├── relative-module-watch-updates/
+│   │       ├── font-reuse/
 │   │       ├── multi-app/
-│   │       └── multi-app-updates/
+│   │       ├── multi-app-updates/
+│   │       ├── virtual-theme/
+│   │       └── virtual-theme-updates/
 │   └── …
 ├── browser/
 │   ├── relay/
@@ -93,11 +111,15 @@ tests/integration/
 │       └── …
 ├── types/
 │   ├── content.integration.test.ts
+│   ├── html.integration.test.ts
+│   ├── page.integration.test.ts
 │   ├── registries.integration.test.ts
 │   ├── relay.integration.test.ts
 │   ├── view.integration.test.ts
 │   └── fixtures/
 │       ├── content/
+│       ├── html/
+│       ├── page/
 │       ├── registries/
 │       ├── relay/
 │       └── view/
@@ -231,14 +253,17 @@ creation/close race. The diagnostic expects the second build to fail and is deli
 Parallel test sessions use distinct working directories; production directory naming is unchanged.
 
 - `types/content`: shared Content and adapter render types through the public source and built package APIs, callback props inference, and iframe-navigation restrictions for both define functions.
-- `types/view`: shared View and adapter render types through the public source and built package APIs, render and container props inference, the render contract adopted by Offscreen and Sandbox, and the rejection of Promise and plain-object render values.
+- [types/html.integration.test.ts](types/html.integration.test.ts): static entrypoint options, configuration callbacks, object metadata, and rejected string metadata through both source and built declarations. Fixtures live in `types/fixtures/html`.
+- `types/view`: shared synchronous View and adapter render types through the public source and built package APIs, reusable component and handler types with props, asynchronous container factories, the render contract adopted by Offscreen and Sandbox alongside asynchronous transport hooks, Offscreen permissions alongside CSP and callback options, the rejection of permissions in Sandbox, and the rejection of Promise-returning handlers/components, broad React 19 `FC` types, Promise values and plain objects.
+- `types/page`: Page accepts the shared permissions contract alongside CSP and render props through the public source and built package APIs.
 - `types/registries`: generated registry augmentation, empty fallbacks, public and internal type agreement, and message contracts against source and built package APIs. Compiler-host path checks cover both slash styles.
+- [build/html](build/html): emitted metadata and asset tags, all four `config.html` forms, page-specific tag selection, and representative failures from configuration, entrypoint parsing, and plugin validation. Invalid inputs live in its own `scenarios` directory. Parser field matrices belong beside `ViewParser`; validation rules owned by `@rspackjs/plugin-html-tags` belong in that package's tests. No browser is launched.
 - `build/options/embedded`: ten manifest checks covering explicit `openInTab: false` across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. No browser is launched.
 - `browser/view`: one Chrome MV3 case covering React offscreen and sandbox views rendered by the injected builder with their props and titles, a headless offscreen without a view container, and strings rendered as text by the React view, Vanilla view and React content adapters.
 - `browser/options`: two Chrome MV3 cases covering Vanilla and React rendering, CSS, state/events, opening Options from background, and a View chunk shared with a Page.
 - `build/override`: separate New Tab, Bookmarks, History and competing-entrypoint files let Jest schedule the scenarios across workers. The files share assertions, while each case keeps its own application copy and build. Thirty manifest checks cover the New Tab, Bookmarks, and History applications across Chrome, Edge, Opera, Safari, and Firefox in MV2 and MV3. Supporting browsers receive `chrome_url_overrides`, the page HTML, its CSP, and the permission declared by the entrypoint; the others receive none of them. Three more cases add the History entrypoint to a copy of the New Tab application: Chrome and Edge builds fail naming both entrypoints, while Firefox keeps the New Tab with its own permission and without the History one. No browser is launched.
-- `build/permissions/views`: four manifest checks of one application with two popups, two sidebars, and an options page that each declare permissions. Every built view contributes, including a popup and a sidebar that are not applied by default; Chrome MV2 has no sidebar, so its permissions are not requested; Firefox builds the sidebar action without `sidePanel`; MV2 declares hosts as permissions. No browser is launched.
-- `build/style`: shared and app stylesheet merging with `mergeStyles` through the production style and asset rules. Two applications with the same layout and different fonts each receive one CSS module per destination, the same class identifier in ordinary and `?unisolated` output, and their own font. App overrides with a namespace conflict, a missing module, or invalid SCSS fail the build. Watch mode tracks override creation, edits, imported partials, resources, removal, and recreation. No browser is launched.
+- `build/permissions/views`: four manifest checks of one application with two popups, two sidebars, an options page, two Pages and two Offscreens that declare permissions. Every built view contributes, including a popup and a sidebar that are not applied by default and Pages and Offscreens that are never opened. Chrome MV2 has no sidebar, so its permissions are not requested; Firefox builds the sidebar action without `sidePanel`. A Firefox-only Page and Offscreen contribute no permissions or CSP to Chrome. Tests cover required and optional API/host permissions, MV2 host placement, merged CSP and independent Page WAR matches. The automatic `offscreen` permission is present only in Chrome MV3. `view-watch.integration.test.ts` checks that editing a Page and then an Offscreen replaces their permissions and CSP during watch. It then stops the watcher, deletes both entries and checks a fresh build, preserving other views' requirements and dropping the automatic `offscreen` permission. Entrypoint deletion during watch is not covered: `EntrypointPlugin` currently checks `modifiedFiles` without `removedFiles`. No browser is launched.
+- `build/style`: shared and app stylesheet merging with `mergeStyles` through the production style and asset rules. Two applications with the same layout and different fonts each receive one CSS module per destination, the same class identifier in ordinary and `?unisolated` output, and their own font. Tests cover resources declared in partials, passed through `with`, and reused through a complete font-face mixin; standalone styles with merging disabled; and production/development source maps. Generated styles exercise aliases, `?asis`, and an existing external `resolve-url-loader`. A native Node build checks the built framework and ESM loader. App overrides with a namespace conflict, a missing module, or invalid SCSS fail the build. Watch mode tracks override creation, edits, imported partials, resources, removal, recreation, the appearance of a local module for a bare Sass request, and recovery after creating a missing module for an explicit relative request. No browser is launched.
 - `browser/override`: three Chrome MV3 cases opening `chrome://newtab`, `chrome://bookmarks`, and `chrome://history`. They verify that Chrome serves the extension page, React and Vanilla rendering, CSS, state/events, custom `as` and `htmlDir` naming, and a View chunk shared with a Page.
 - `browser/offscreen/service`: one Chrome MV3 round trip from background through Offscreen to a registered background service.
 - `browser/content/entrypoint-assets`: one Chrome MV3 case and two Firefox cases (MV2 and MV3) using the same application and probe assertions. They cover current asset getters, rejecting the full-map getter outside background, common chunks, dynamic imports, CSS/SVG resource URLs, world separation, and top/child frames. The Chrome case also reads the full-map readiness flag in background.

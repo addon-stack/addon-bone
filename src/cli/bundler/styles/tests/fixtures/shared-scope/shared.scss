@@ -1,0 +1,4 @@
+@use "sass:math";
+$size: 11px;
+@mixin common { padding: $size; }
+.shared { width: math.div(10px, 2); }

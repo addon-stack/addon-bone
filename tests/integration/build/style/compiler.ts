@@ -12,12 +12,12 @@ const project = path.resolve(__dirname, "../../../..");
 export const fixtures = path.join(__dirname, "fixtures");
 export const entries = ["normal", "document", "asis"];
 
-export const createFixture = async (): Promise<string> => {
+export const createFixture = async (name = "multi-app"): Promise<string> => {
     // Rspack resolves symlinks, including the macOS temporary-directory alias.
-    const root = await realpath(await mkdtemp(path.join(os.tmpdir(), "adnbn-style-merge-")));
+    const root = await realpath(await mkdtemp(path.join(os.tmpdir(), "adnbn style merge ")));
 
     try {
-        await cp(path.join(fixtures, "multi-app"), root, {recursive: true});
+        await cp(path.join(fixtures, name), root, {recursive: true});
     } catch (error) {
         await rm(root, {recursive: true, force: true});
 
@@ -27,7 +27,12 @@ export const createFixture = async (): Promise<string> => {
     return root;
 };
 
-export const createCompiler = async (root: string, app: string, mergeStyles = true): Promise<Compiler> => {
+export const createCompiler = async (
+    root: string,
+    app: string,
+    mergeStyles = true,
+    overrides: Configuration = {}
+): Promise<Compiler> => {
     const config = {
         rootDir: root,
         srcDir: "src",
@@ -67,13 +72,17 @@ export const createCompiler = async (root: string, app: string, mergeStyles = tr
             library: {type: "commonjs2"},
         },
         resolve: {
-            alias: {"@tokens": path.join(root, "src/shared/theme/_alias.scss")},
+            alias: {
+                "@tokens": path.join(root, "src/shared/theme/_alias.scss"),
+                "@font": path.join(root, "src/apps", app, "theme/fonts"),
+            },
             modules: [path.join(root, "vendor"), path.join(project, "node_modules")],
         },
         resolveLoader: {modules: [path.join(project, "node_modules")]},
-        module: {rules: [...styles.module!.rules!, ...assets.module!.rules!]},
-        plugins: [...styles.plugins!, ...assets.plugins!],
         optimization: {minimize: false},
+        ...overrides,
+        module: {rules: [...styles.module!.rules!, ...assets.module!.rules!, ...(overrides.module?.rules ?? [])]},
+        plugins: [...styles.plugins!, ...assets.plugins!, ...(overrides.plugins ?? [])],
     });
 };
 

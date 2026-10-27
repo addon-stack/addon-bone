@@ -24,6 +24,13 @@ export default defineBookmarks({
     optionalHostPermissions: ["https://other.test/*"],
     scripts: "extra.js",
     links: "extra.css",
+    append: false,
+    useHash: true,
+    usePublicPath: false,
+    prependExternals: false,
+    jsExtensions: [".js", ".module"],
+    cssExtensions: ".css",
+    tags: [{path: "runtime.module", type: "js"}],
     metas: {
         attributes: {
             name: "bookmarks-test",

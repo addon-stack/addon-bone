@@ -1,5 +1,4 @@
 import type {Configuration as RspackConfig, Filename} from "@rspack/core";
-import type {Options as HtmlOptions} from "html-rspack-tags-plugin";
 
 import {Command, Mode, Workspace} from "@typing/app";
 import {Browser, BrowserSpecific} from "@typing/browser";
@@ -9,6 +8,7 @@ import {Language} from "@typing/locale";
 import {Awaiter} from "@typing/helpers";
 import {EnvFilterOptions, EnvFilterVariant} from "@typing/env";
 import {ActionOptions} from "@typing/action";
+import type {HtmlOptions} from "@typing/html";
 
 /**
  * Configuration options for building a browser extension. This interface defines
@@ -464,9 +464,10 @@ export interface Config {
     /**
      * Flag indicating whether to merge styles from App and Shared directories.
      * When `true`, importing a shared stylesheet also compiles the app stylesheet at the same
-     * relative path into the same CSS module, with shared rules before app rules. Relative `@use`
-     * and `@forward` requests and literal `url(...)` values in the merged sources resolve from the
-     * file that declares them.
+     * relative path into the same CSS module, with shared rules before app rules. Local Sass
+     * requests and literal `url(...)` values in the merged sources resolve from their source file.
+     * Resources declared in imported Sass partials are resolved using Sass source maps, even
+     * when merging is disabled. Full literal URLs passed through `with` remain supported.
      *
      * @default true
      */

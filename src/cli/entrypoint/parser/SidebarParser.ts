@@ -5,7 +5,7 @@ import {PermissionsSchema} from "./schemas/permissions";
 
 import {SidebarEntrypointOptions} from "@typing/sidebar";
 
-export default class extends ViewCspParser<SidebarEntrypointOptions> {
+export default class SidebarParser extends ViewCspParser<SidebarEntrypointOptions> {
     protected definition(): string {
         return "defineSidebar";
     }
@@ -14,6 +14,7 @@ export default class extends ViewCspParser<SidebarEntrypointOptions> {
         return super.schema().merge(PermissionsSchema).extend({
             icon: z.string().nonempty().optional(),
             apply: z.boolean().optional(),
+            label: z.string().optional(),
         });
     }
 }

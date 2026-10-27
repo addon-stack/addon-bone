@@ -1,12 +1,12 @@
 import {readFile, rm, unlink, writeFile} from "fs/promises";
 import path from "path";
-import vm from "vm";
 import postcss from "postcss";
 import type {Compilation, Compiler, NormalModule, Stats} from "@rspack/core";
 
 import {DefaultStylesLayer, DocumentStylesLayer} from "@cli/bundler/layers";
 
 import {closeCompiler, createCompiler, createFixture, entries, fixtures, getCss, runCompiler} from "./compiler";
+import {assertSuccess, getBadgeClass, getFont, hasDeclaration} from "./style-output";
 
 let root: string;
 let compiler: Compiler | undefined;
@@ -25,34 +25,6 @@ afterEach(async () => {
         await rm(root, {recursive: true, force: true});
     }
 });
-
-const getBadgeClass = (compilation: Compilation, entry: string): string => {
-    const script = compilation.getAsset(`${entry}.js`)!.source.source().toString();
-
-    return vm.runInNewContext(`${script}\nmodule.exports.default.badge`, {module: {exports: {}}});
-};
-
-const getFont = (compilation: Compilation): string => {
-    return compilation
-        .getAssets()
-        .filter(asset => asset.name.endsWith(".woff2"))
-        .map(asset => asset.source.source().toString())
-        .join("");
-};
-
-const assertSuccess = (stats: Stats): void => {
-    expect(stats.toJson({all: false, errors: true}).errors).toEqual([]);
-};
-
-const hasDeclaration = (css: string, prop: string, value: string): boolean => {
-    let found = false;
-
-    postcss.parse(css).walkDecls(prop, declaration => {
-        found ||= declaration.value === value;
-    });
-
-    return found;
-};
 
 test.each([
     ["alpha", "blue"],
@@ -121,6 +93,28 @@ test("mergeStyles=false compiles the shared source without loading the app overr
     expect(stats.compilation.fileDependencies.has(path.join(root, "src/apps/alpha/content/content.scss"))).toBe(false);
 });
 
+test.each([false, "source-map"] as const)(
+    "resolves standalone partial assets with merging disabled and devtool=%s",
+    async devtool => {
+        compiler = await createCompiler(root, "beta", false, {
+            mode: devtool ? "development" : "production",
+            devtool,
+            entry: {normal: "./standalone.js"},
+        });
+
+        const stats = await runCompiler(compiler);
+        assertSuccess(stats);
+        const css = getCss(stats.compilation, "normal");
+        const font = path.join(root, "src/apps/beta/theme/fonts/Inter-Latin.woff2");
+
+        expect(Buffer.from(getFont(stats.compilation))).toEqual(await readFile(font));
+        expect(css).toMatch(/Inter-Latin\.[a-f0-9]+\.woff2#face/);
+        expect(hasDeclaration(css, "--order", "app")).toBe(true);
+        expect(hasDeclaration(css, "--order", "shared")).toBe(false);
+        expect(stats.compilation.getAssets().some(asset => asset.name.endsWith(".css.map"))).toBe(Boolean(devtool));
+    }
+);
+
 test.each([
     ["conflict", /already a module with namespace "sharedTokens"/],
     ["missing", /Can't find stylesheet to import/],
@@ -140,6 +134,7 @@ test.each(["alpha", "beta"])(
     async app => {
         const appPath = path.join(root, "src/apps", app, "content/content.scss");
         const initialSource = path.join(fixtures, "multi-app/src/apps", app, "content/content.scss");
+        const updatedSource = app === "beta" ? "content-default.scss" : "content.scss";
         await unlink(appPath);
         compiler = await createCompiler(root, app);
         let complete: ((error: Error | null, stats?: Stats) => void) | undefined;
@@ -198,7 +193,7 @@ test.each(["alpha", "beta"])(
             expect(getBadgeClass(stats.compilation, "normal")).toBe(badge);
 
             stats = await next("override edit", contains("--order", "app-updated"), () =>
-                updateFrom(appPath, "content.scss")
+                updateFrom(appPath, updatedSource)
             );
             expect(getBadgeClass(stats.compilation, "normal")).toBe(badge);
 
@@ -213,7 +208,7 @@ test.each(["alpha", "beta"])(
             expect(stats.compilation.fileDependencies.has(appPath)).toBe(true);
 
             stats = await next("override correction", contains("--order", "app-updated"), () =>
-                updateFrom(appPath, "content.scss")
+                updateFrom(appPath, updatedSource)
             );
 
             expect(getBadgeClass(stats.compilation, "normal")).toBe(badge);
@@ -246,7 +241,7 @@ test.each(["alpha", "beta"])(
             expect(getBadgeClass(stats.compilation, "normal")).toBe(badge);
 
             stats = await next("override recreation", contains("--order", "app-updated"), () =>
-                updateFrom(appPath, "content.scss")
+                updateFrom(appPath, updatedSource)
             );
 
             expect(getBadgeClass(stats.compilation, "normal")).toBe(badge);

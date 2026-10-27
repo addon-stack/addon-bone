@@ -1,0 +1,10 @@
+{
+  "name": "adnbn-test-popup",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "dependencies": {
+    "adnbn": "file:../../../../../..",
+    "@addon-core/browser": "*"
+  }
+}

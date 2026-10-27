@@ -1,4 +1,4 @@
-import {readdir, readFile} from "fs/promises";
+import {readdir, readFile, writeFile} from "fs/promises";
 import path from "path";
 
 import BuildSession from "../../utils/BuildSession";
@@ -45,6 +45,11 @@ export const testOverridePage = ({page, permission, supported, unsupported}: Ove
                 const fixture = await createIntegrationFixture(rootDir, fixtureDir, session);
 
                 try {
+                    await writeFile(
+                        path.join(fixture.directory, "manifest-version.json"),
+                        JSON.stringify({mv2: manifestVersion === 2})
+                    );
+
                     const extensionDir = await fixture.build({browser, manifestVersion});
                     const manifest = await readOverrideManifest(extensionDir);
                     const html = await readFile(path.join(extensionDir, `${page}.html`), "utf8");
@@ -66,6 +71,11 @@ export const testOverridePage = ({page, permission, supported, unsupported}: Ove
                 const fixture = await createIntegrationFixture(rootDir, fixtureDir, session);
 
                 try {
+                    await writeFile(
+                        path.join(fixture.directory, "manifest-version.json"),
+                        JSON.stringify({mv2: manifestVersion === 2})
+                    );
+
                     const extensionDir = await fixture.build({browser, manifestVersion});
                     const manifest = await readOverrideManifest(extensionDir);
 

@@ -1,0 +1,6 @@
+$font: url("./Virtual.woff2?browser&v=1#face") !default;
+
+@font-face {
+  font-family: Virtual;
+  src: $font format("woff2");
+}

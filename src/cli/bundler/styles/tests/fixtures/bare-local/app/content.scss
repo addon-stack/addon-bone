@@ -1,0 +1,5 @@
+@use "tokens.v2" as appTokens;
+@use "indexed";
+@use "plain.css";
+@import "legacy";
+.app { color: appTokens.$color; width: indexed.$size; height: $height; }

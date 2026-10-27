@@ -1,0 +1,9 @@
+$font: url("./Geist.woff2?browser&v=1#face");
+$family: Geist;
+
+@mixin face {
+  @font-face {
+    font-family: $family;
+    src: $font format("woff2");
+  }
+}

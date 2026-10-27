@@ -2,7 +2,7 @@ import _ from "lodash";
 import path from "path";
 import pluralize from "pluralize";
 
-import {processPluginHandler} from "@cli/resolvers/plugin";
+import {processPluginHandler} from "@cli/handlers";
 
 import AbstractFinder from "./AbstractFinder";
 import AbstractAssetFinder from "./AbstractAssetFinder";

@@ -8,13 +8,17 @@ import type {ReadonlyConfig} from "@typing/config";
 import type {OptionsEntrypointOptions} from "@typing/options";
 import {EntrypointOptionsFinder, EntrypointParser, EntrypointType} from "@typing/entrypoint";
 
-export default class extends ViewPermissionsFinder<OptionsEntrypointOptions> {
+export default class OptionsFinder extends ViewPermissionsFinder<OptionsEntrypointOptions> {
     public constructor(config: ReadonlyConfig) {
         super(config);
     }
 
     public type(): EntrypointType {
         return EntrypointType.Options;
+    }
+
+    protected allowGroupedDirectories(): boolean {
+        return false;
     }
 
     protected getParser(): EntrypointParser<OptionsEntrypointOptions> {

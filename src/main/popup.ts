@@ -1,5 +1,7 @@
-import {setActionPopup, setActionTitle} from "@addon-core/browser";
+import {getI18nMessage, setActionPopup, setActionTitle} from "@addon-core/browser";
 import {aliases} from "#adnbn/popup";
+
+import {convertLocaleKey, extractLocaleKey} from "@shared/locale/keys";
 
 import {changeActionIcon} from "./icon";
 
@@ -8,7 +10,7 @@ import type {IconName} from "@typing/icon";
 
 type Tab = chrome.tabs.Tab;
 
-export type {PopupAliasRegistry, PopupAlias, PopupMap} from "@typing/popup";
+export type {PopupAliasRegistry, PopupAlias, PopupMap, PopupMapEntry} from "@typing/popup";
 
 export const definePopup = (options: PopupDefinition): PopupDefinition => {
     return options;
@@ -28,6 +30,12 @@ export const getPopups = (): PopupMap => {
     return popups;
 };
 
+/**
+ * Selects a popup globally or for a tab, updating its configured tooltip and icon.
+ * An omitted tooltip preserves the current toolbar tooltip. Locale markers use native browser translations.
+ * Explicit empty strings, empty translations, and missing translations are passed to the browser as an empty title.
+ * The browser controls how an empty title is displayed; it does not guarantee a hidden tooltip.
+ */
 export const changePopup = async (alias: PopupAlias, tab?: number | Tab): Promise<void> => {
     const popup = getPopups().get(alias);
 
@@ -39,7 +47,7 @@ export const changePopup = async (alias: PopupAlias, tab?: number | Tab): Promis
         tab = tab.id;
     }
 
-    const {path, title, icon} = popup;
+    const {path, tooltip, icon} = popup;
 
     if (!path) {
         throw new Error(`Not found popup path: "${alias}"`);
@@ -47,7 +55,10 @@ export const changePopup = async (alias: PopupAlias, tab?: number | Tab): Promis
 
     await setActionPopup(path, tab);
 
-    if (title) {
+    if (tooltip !== undefined) {
+        const key = extractLocaleKey(tooltip);
+        const title = key ? (getI18nMessage(convertLocaleKey(key)) ?? "") : tooltip;
+
         await setActionTitle(title, tab);
     }
 

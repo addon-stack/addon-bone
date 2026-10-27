@@ -1,11 +1,22 @@
-import {setSidebarPath, setSidebarTitle} from "@addon-core/browser";
+import {
+    canSetSidebarIcon,
+    canSetSidebarTitle,
+    getI18nMessage,
+    setSidebarPath,
+    setSidebarTitle,
+} from "@addon-core/browser";
 import {aliases} from "#adnbn/sidebar";
 
+import {convertLocaleKey, extractLocaleKey} from "@shared/locale/keys";
+
+import {changeSidebarIcon} from "./icon";
+
+import type {IconName} from "@typing/icon";
 import type {SidebarAlias, SidebarDefinition, SidebarMap} from "@typing/sidebar";
 
 type Tab = chrome.tabs.Tab;
 
-export type {SidebarAliasRegistry, SidebarAlias, SidebarMap} from "@typing/sidebar";
+export type {SidebarAliasRegistry, SidebarAlias, SidebarMap, SidebarMapEntry} from "@typing/sidebar";
 
 export const defineSidebar = (options: SidebarDefinition): SidebarDefinition => {
     return options;
@@ -25,6 +36,13 @@ export const getSidebars = (): SidebarMap => {
     return sidebars;
 };
 
+/**
+ * Selects a sidebar globally or for a tab, updating its configured label and icon where supported.
+ * An omitted icon preserves the current icon. Unsupported label and icon updates are skipped.
+ * An omitted label preserves the current title. Locale markers use native browser translations.
+ * Explicit empty strings, empty translations, and missing translations are passed as an empty title.
+ * The browser controls how an empty title is displayed. Labels do not set document titles.
+ */
 export const changeSidebar = async (alias: SidebarAlias, tab?: number | Tab): Promise<void> => {
     const sidebar = getSidebars().get(alias);
 
@@ -36,7 +54,7 @@ export const changeSidebar = async (alias: SidebarAlias, tab?: number | Tab): Pr
         tab = tab.id;
     }
 
-    const {path, title} = sidebar;
+    const {path, label, icon} = sidebar;
 
     if (!path) {
         throw new Error(`Not found sidebar path: "${alias}"`);
@@ -44,7 +62,14 @@ export const changeSidebar = async (alias: SidebarAlias, tab?: number | Tab): Pr
 
     await setSidebarPath(path, tab);
 
-    if (title) {
+    if (label !== undefined && canSetSidebarTitle()) {
+        const key = extractLocaleKey(label);
+        const title = key ? (getI18nMessage(convertLocaleKey(key)) ?? "") : label;
+
         await setSidebarTitle(title, tab);
+    }
+
+    if (icon && canSetSidebarIcon()) {
+        await changeSidebarIcon(icon as IconName, tab);
     }
 };

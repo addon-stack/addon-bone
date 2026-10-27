@@ -1,0 +1,8 @@
+@use "./space\ name" as space;
+@use "./space%20name" as encodedSpace;
+@use "50%off" as percent;
+@use "./\74 okens" as tokens;
+@use "./quo\'te" as quoted;
+@use "./line\
+continuation" as continued;
+.badge { color: space.$color; background: encodedSpace.$color; width: tokens.$size; height: quoted.$height; margin: continued.$margin; padding: percent.$padding; }

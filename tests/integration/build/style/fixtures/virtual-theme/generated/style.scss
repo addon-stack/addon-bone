@@ -1,0 +1,14 @@
+// A consumer plugin supplies prepared contents for this stable resource.
+@use "../src/apps/alpha/theme/fonts";
+
+.badge {
+  color: red;
+  --order: shared;
+  background-image: url("../src/shared/theme/shared.svg?browser#shape");
+}
+
+.badge {
+  color: blue;
+  --order: app;
+  background-image: url("../src/apps/alpha/theme/app.svg?browser#shape");
+}

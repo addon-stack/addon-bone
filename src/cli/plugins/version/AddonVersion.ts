@@ -2,7 +2,7 @@ import fs from "fs";
 import semver from "semver";
 
 import {getEnv} from "@main/env";
-import {fromRootPath} from "@cli/resolvers/path";
+import {fromRootPath} from "@cli/workspace";
 
 import AbstractVersion from "./AbstractVersion";
 

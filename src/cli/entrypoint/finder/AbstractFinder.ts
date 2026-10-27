@@ -5,9 +5,9 @@ import {fileURLToPath} from "url";
 
 import {compareFilePrecedence} from "./utils/filePrecedence";
 
-import {toPosixPath} from "@cli/utils/path";
+import {toPosix, toPosixPath} from "@cli/utils/path";
 import {isFile} from "@cli/utils/fs";
-import {getResolvePath, getSourcePath, resolveRootPath} from "@cli/resolvers/path";
+import {getResolvePath, getSourcePath, resolveRootPath} from "@cli/workspace";
 import {resolveAssetsPath, resolveEntrypointPath} from "@cli/entrypoint/utils";
 
 import {ReadonlyConfig} from "@typing/config";
@@ -59,7 +59,8 @@ export default abstract class implements EntrypointFinder {
     }
 
     protected file(filename: string): EntrypointFile {
-        return {file: filename, import: toPosixPath(filename)};
+        // Absolute imports from JavaScript ESM entries must retain the file extension, including index files.
+        return {file: filename, import: toPosix(filename)};
     }
 
     protected resolve(name: string, filename: string): EntrypointFile {

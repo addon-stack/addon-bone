@@ -3,6 +3,7 @@ import {Browser, CspSource, definePopup} from "adnbn";
 export default definePopup({
     as: "panel",
     title: "Extension panel",
+    tooltip: "@popup.panel",
     template: "./template.html",
     icon: "toolbar",
     apply: false,
@@ -13,5 +14,14 @@ export default definePopup({
     hostPermissions: ["https://*.example.com/*"],
     optionalHostPermissions: ["https://other.test/*"],
     links: "extra.css",
+    append: false,
+    useHash: true,
+    usePublicPath: false,
+    prependExternals: false,
+    jsExtensions: [".js", ".module"],
+    cssExtensions: ".css",
+    tags: [{path: "runtime.module", type: "js"}],
+    scripts: "extra.js",
+    metas: {attributes: {name: "popup-test", content: "enabled"}},
     render: ({title}) => title,
 });

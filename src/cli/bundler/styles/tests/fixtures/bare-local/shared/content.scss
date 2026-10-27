@@ -1,0 +1,2 @@
+@use "tokens.v2" as sharedTokens;
+.shared { color: sharedTokens.$color; }

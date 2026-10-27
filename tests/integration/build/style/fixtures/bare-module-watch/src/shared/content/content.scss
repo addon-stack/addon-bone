@@ -1,0 +1,6 @@
+@use "tokens" as sharedTokens;
+
+.badge {
+  color: sharedTokens.$accent;
+  --order: shared;
+}

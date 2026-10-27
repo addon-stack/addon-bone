@@ -16,10 +16,19 @@ const parseOptions = (...parts: string[]) => {
 };
 
 describe("SidebarParser", () => {
+    test("ignores a sibling view definition", () => {
+        expect(parseOptions("options", "foreign-definition", "sidebar.ts")).toEqual({});
+    });
+
+    test("leaves omitted options for later defaults", () => {
+        expect(parseOptions("options", "defaults", "sidebar.ts")).toEqual({});
+    });
+
     test("parses defineSidebar with its icon, apply flag, permissions and inherited view and CSP options", () => {
         expect(parseOptions("options", "full", "sidebar.ts")).toEqual({
             as: "panel",
             title: "Extension panel",
+            label: "@sidebar.panel",
             template: "./template.html",
             icon: "toolbar",
             apply: false,
@@ -30,10 +39,23 @@ describe("SidebarParser", () => {
             hostPermissions: ["https://*.example.com/*"],
             optionalHostPermissions: ["https://other.test/*"],
             links: "extra.css",
+            append: false,
+            useHash: true,
+            usePublicPath: false,
+            prependExternals: false,
+            jsExtensions: [".js", ".module"],
+            cssExtensions: ".css",
+            tags: [{path: "runtime.module", type: "js"}],
+            scripts: "extra.js",
+            metas: {attributes: {name: "sidebar-test", content: "enabled"}},
         });
     });
 
-    test.each(["icon", "apply"])("rejects an invalid %s value", field => {
+    test("preserves an explicitly empty label", () => {
+        expect(parseOptions("options", "empty-label", "sidebar.ts")).toEqual({label: ""});
+    });
+
+    test.each(["icon", "apply", "label"])("rejects an invalid %s value", field => {
         expect(() => parseOptions("invalid", `${field}.ts`)).toThrow(`Invalid options ${field}`);
     });
 });

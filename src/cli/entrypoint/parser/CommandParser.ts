@@ -7,62 +7,111 @@ import {modifyLocaleMessageKey} from "@shared/locale";
 import {CommandEntrypointOptions, CommandExecuteActionName} from "@typing/command";
 import {EntrypointFile} from "@typing/entrypoint";
 
-export default class extends BackgroundParser<CommandEntrypointOptions> {
+const shortcutModifiers = new Set(["Ctrl", "Alt", "Shift", "Command", "MacCtrl", "Option", "Search"]);
+
+// Union of the named keys accepted by supported browsers; compatibility is checked after filtering.
+// https://github.com/chromium/chromium/blob/main/ui/base/accelerators/command_constants.h
+// https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/commands#shortcut_values
+const shortcutKeys = new Set([
+    "Comma",
+    "Period",
+    "Up",
+    "Down",
+    "Left",
+    "Right",
+    "Insert",
+    "Delete",
+    "Home",
+    "End",
+    "PageUp",
+    "PageDown",
+    "Space",
+    "Tab",
+    "MediaNextTrack",
+    "MediaPlayPause",
+    "MediaPrevTrack",
+    "MediaStop",
+]);
+
+export default class CommandParser extends BackgroundParser<CommandEntrypointOptions> {
     protected definition(): string[] {
         return ["defineCommand", "defineExecuteActionCommand"];
     }
 
     protected schema(): typeof this.CommonPropertiesSchema {
-        const key =
-            "(?:[A-Z0-9]|F(?:[1-9]|1[0-2])|Comma|Period|Home|End|PageUp|PageDown|Space|Insert|Delete|Up|Down|Left|Right)";
-        const mediaKey = "(?:MediaNextTrack|MediaPlayPause|MediaPrevTrack|MediaStop)";
-        const shortcutMessage =
-            "Invalid shortcut key, expected format like: Ctrl+Shift+K, Alt+Shift+U, or MediaPlayPause";
-        const macShortcutMessage =
-            "Invalid mac shortcut key, expected format like: Command+Shift+P, MacCtrl+K, Option+Shift+U, or MediaPlayPause";
-
-        const ShortcutKeySchema = z
+        const shortcutKeySchema = z
             .string()
-            .regex(new RegExp(`^(?:(?:Ctrl|Alt)(?:\\+Shift)?\\+${key}|${mediaKey})$`), shortcutMessage)
-            .optional();
+            .superRefine((value, context) => {
+                const reason = this.getShortcutError(value);
 
-        const MacShortcutKeySchema = z
-            .string()
-            .regex(
-                new RegExp(`^(?:(?:Ctrl|Alt|Command|MacCtrl|Option)(?:\\+Shift)?\\+${key}|${mediaKey})$`),
-                macShortcutMessage
-            )
+                if (reason) {
+                    context.addIssue({code: z.ZodIssueCode.custom, message: `${JSON.stringify(value)}: ${reason}`});
+                }
+            })
             .optional();
 
         return super.schema().extend({
             name: z.string().nonempty().optional(),
             description: z.string().nonempty().optional(),
             global: z.boolean().optional(),
-            defaultKey: ShortcutKeySchema,
-            windowsKey: ShortcutKeySchema,
-            macKey: MacShortcutKeySchema,
-            chromeosKey: ShortcutKeySchema,
-            linuxKey: ShortcutKeySchema,
+            defaultKey: shortcutKeySchema,
+            windowsKey: shortcutKeySchema,
+            macKey: shortcutKeySchema,
+            chromeosKey: shortcutKeySchema,
+            linuxKey: shortcutKeySchema,
         });
+    }
+
+    private getShortcutError(value: string): string | undefined {
+        // Addon Bone requires a whitespace-free declaration, even where a browser accepts spaces.
+        if (/\s/.test(value)) {
+            return "Whitespace is not allowed in shortcuts; use a value such as Ctrl+Shift+Y";
+        }
+
+        const modifiers = value.split("+");
+        const key = modifiers.pop()!;
+
+        if (!key || modifiers.some(modifier => !modifier)) {
+            return "Expected modifiers separated by '+' followed by one key; empty components are not allowed";
+        }
+
+        const unknownModifier = modifiers.find(modifier => !shortcutModifiers.has(modifier));
+
+        if (unknownModifier) {
+            return `Unknown modifier "${unknownModifier}"; the key must be the last component`;
+        }
+
+        if (new Set(modifiers).size !== modifiers.length) {
+            return "Repeated modifiers are not allowed";
+        }
+
+        if (shortcutModifiers.has(key)) {
+            return "Expected one key name after the modifiers";
+        }
+
+        const functionKey = /^F(?:[1-9]|1[0-2])$/.test(key);
+
+        // Safari also accepts lowercase letters; CommandFinder checks their compatibility with other browsers.
+        if (!/^[A-Za-z0-9]$/.test(key) && !functionKey && !shortcutKeys.has(key)) {
+            return `Unknown key "${key}"; use a letter, a digit, F1-F12 or a supported named key`;
+        }
+
+        if (key.startsWith("Media")) {
+            return modifiers.length ? "Media keys cannot have modifiers" : undefined;
+        }
+
+        if (!modifiers.length && !functionKey) {
+            return "A modifier is required except for function keys and media keys";
+        }
+
+        return undefined;
     }
 
     public options(file: EntrypointFile): CommandEntrypointOptions {
         const {defaultKey, windowsKey, macKey, chromeosKey, linuxKey, ...options} = super.options(file);
 
-        if (!defaultKey && !windowsKey && !macKey && !chromeosKey && !linuxKey) {
+        if ([defaultKey, windowsKey, macKey, chromeosKey, linuxKey].every(key => key === undefined)) {
             throw new Error(`Invalid command options in "${file.file}": At least one suggested key must be defined`);
-        }
-
-        if (options.global) {
-            const globalShortcut = /^Ctrl\+Shift\+[0-9]$/;
-            const keys = {defaultKey, windowsKey, macKey, chromeosKey, linuxKey};
-            const invalidKey = Object.entries(keys).find(([, key]) => key && !globalShortcut.test(key));
-
-            if (invalidKey) {
-                throw new Error(
-                    `Invalid command options in "${file.file}": Global command shortcut "${invalidKey[1]}" in "${invalidKey[0]}" must use Ctrl+Shift+[0..9]`
-                );
-            }
         }
 
         return {

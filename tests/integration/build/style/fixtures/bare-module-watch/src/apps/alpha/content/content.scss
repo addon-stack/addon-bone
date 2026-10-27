@@ -1,0 +1,6 @@
+@use "tokens" as appTokens;
+
+.badge {
+  color: appTokens.$accent;
+  --order: app;
+}

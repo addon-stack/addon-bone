@@ -11,11 +11,11 @@ beforeEach(() => {
     new RegisterRelay("math", RelayMethod.Scripting, () => math).register();
 });
 
-test("rejects access outside the Relay content context", () => {
+test.each(["math", "missing"])("rejects direct access to %s outside the Relay context before lookup", name => {
     Reflect.deleteProperty(globalThis, RelayGlobalKey);
 
-    expect(() => new RegisterRelay("math", RelayMethod.Scripting, () => math).get()).toThrow(
-        'Relay "math" can be getting only from content script'
+    expect(() => new RegisterRelay(name, RelayMethod.Scripting, () => math).get()).toThrow(
+        `Relay "${name}" can be getting only from content script`
     );
 });
 

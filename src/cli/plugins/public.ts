@@ -4,7 +4,7 @@ import {RawCopyPattern} from "@rspack/binding";
 
 import {definePlugin} from "@main/plugin";
 
-import {getAppPath, getAppSourcePath, getSharedPath, getSourcePath} from "@cli/resolvers/path";
+import {getAppPath, getAppSourcePath, getSharedPath, getSourcePath} from "@cli/workspace";
 
 type CopyPatterns = Array<Pick<RawCopyPattern, "from" | "to" | "force" | "priority">>;
 

@@ -1,0 +1,2 @@
+@use "sass:math";
+.badge { width: math.div(8px, 2); }

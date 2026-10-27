@@ -23,7 +23,11 @@ test.each([true, false])(
     async commonChunks => {
         const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-content-chunks-"));
         const config = {
-            rootDir: root,
+            rootDir: __dirname,
+            srcDir: "src",
+            sharedDir: ".",
+            appsDir: "apps",
+            appSrcDir: ".",
             app: "test",
             commonChunks,
             mergeStyles: false,

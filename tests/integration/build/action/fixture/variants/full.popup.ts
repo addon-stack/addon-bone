@@ -2,6 +2,7 @@ import {definePopup} from "adnbn";
 
 export default definePopup({
     icon: "popup",
-    title: "@popup.title",
+    title: "Popup document",
+    tooltip: "@popup.title",
     render: "Popup",
 });

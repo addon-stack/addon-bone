@@ -4,7 +4,7 @@ import {TsConfigJson} from "type-fest";
 
 import FileBuilder from "./FileBuilder";
 
-import {resolveRootPath} from "@cli/resolvers/path";
+import {resolveRootPath} from "@cli/workspace";
 
 import {ReadonlyConfig} from "@typing/config";
 import {PackageName} from "@typing/app";
@@ -36,8 +36,8 @@ export default class extends FileBuilder {
     }
 
     protected alias(): Record<string, string> {
-        const srcDir = this.config.srcDir;
-        const sharedDir = path.posix.join(srcDir, this.config.sharedDir);
+        const srcDir = this.config.srcDir.split(path.sep).join("/");
+        const sharedDir = path.posix.join(srcDir, this.config.sharedDir.split(path.sep).join("/"));
 
         return {
             [srcDir]: srcDir,

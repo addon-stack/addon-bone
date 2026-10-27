@@ -30,4 +30,8 @@ export default abstract class AbstractOverrideFinder<
     public allowMultiple(): boolean {
         return false;
     }
+
+    protected allowGroupedDirectories(): boolean {
+        return false;
+    }
 }

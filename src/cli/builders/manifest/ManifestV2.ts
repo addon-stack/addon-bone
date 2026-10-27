@@ -1,9 +1,12 @@
+import _ from "lodash";
+
 import ManifestBase, {ManifestError} from "./ManifestBase";
 
 import {filterHostPatterns, filterOptionalPermissions, filterPermissionsForMV2} from "./utils";
 
 import {CoreManifest, ManifestVersion} from "@typing/manifest";
 import {Browser} from "@typing/browser";
+import {CommandExecuteActionName} from "@typing/command";
 import {SidebarAlternativeBrowsers} from "@typing/sidebar";
 
 type ManifestV2 = chrome.runtime.ManifestV2;
@@ -16,6 +19,23 @@ export default class extends ManifestBase<ManifestV2> {
 
     public getManifestVersion(): ManifestVersion {
         return 2;
+    }
+
+    protected buildCommands(): Partial<CoreManifest> | undefined {
+        const manifest = super.buildCommands();
+
+        if (!manifest?.commands?.[CommandExecuteActionName]) {
+            return manifest;
+        }
+
+        const {[CommandExecuteActionName]: action, ...commands} = manifest.commands;
+
+        return {
+            commands: {
+                ...commands,
+                _execute_browser_action: _.merge({}, commands._execute_browser_action, action),
+            },
+        };
     }
 
     protected buildAction(): Partial<ManifestV2> | undefined {
