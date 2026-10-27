@@ -866,6 +866,7 @@ test("switches the selected CSS runtime from shadow to normal and back during wa
     const watchFixtures = path.join(temporaryRoot, "fixtures");
     const outputPath = path.join(temporaryRoot, "dist");
     fs.cpSync(fixtures, watchFixtures, {recursive: true});
+    fs.writeFileSync(path.join(watchFixtures, "package.json"), "{}\n");
     fs.writeFileSync(path.join(watchFixtures, "watch-state.js"), "globalThis.shadowWatchState = true;\n");
     fs.writeFileSync(
         path.join(watchFixtures, "shadow.js"),

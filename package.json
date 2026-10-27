@@ -136,8 +136,7 @@
     "@addon-core/browser": "^0.12.0",
     "@addon-core/inject-script": "^0.5.1",
     "@addon-core/storage": "^0.8.3",
-    "@rsdoctor/rspack-plugin": "^1.5.1",
-    "@rspack/cli": "^1.7.5",
+    "@rsdoctor/rspack-plugin": "^1.5.16",
     "@rspack/core": "^1.7.5",
     "@rspack/lite-tapable": "^1.1.0",
     "@rspackjs/plugin-html-tags": "^1.0.0",
@@ -148,13 +147,13 @@
     "css-loader": "^7.1.2",
     "file-loader": "^6.2.0",
     "get-value": "^4.0.1",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.2",
     "json-stringify-deterministic": "^1.0.12",
     "lodash": "4.18.1",
     "mini-css-extract-plugin": "^2.9.2",
-    "nanoid": "^5.1.4",
+    "nanoid": "^5.1.16",
     "pluralize": "^8.0.0",
-    "postcss": "^8.5.15",
+    "postcss": "^8.5.23",
     "postcss-scss": "^4.0.9",
     "postcss-value-parser": "^4.2.0",
     "resolve-url-loader": "^5.0.0",
@@ -201,6 +200,7 @@
     "istanbul-reports": "^3.2.0",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.0.0",
+    "memfs": "4.57.2",
     "prettier": "^3.6.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -240,6 +240,9 @@
     "glob": "$glob",
     "jsdom": "27.4.0",
     "test-exclude": "^7.0.1",
+    "release-it": {
+      "undici": "6.29.1"
+    },
     "tsup": {
       "source-map": "^0.7.4"
     }
