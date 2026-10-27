@@ -21,7 +21,7 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
         manifestVersion: z.union([z.literal(2), z.literal(3)]).optional(),
     });
 
-    protected abstract schema(): z.AnyZodObject;
+    protected abstract schema(): z.ZodObject;
 
     protected abstract definition(): string | string[];
 
@@ -59,7 +59,7 @@ export default abstract class AbstractParser<O extends EntrypointOptions> implem
         const {success, error, data} = this.schema().safeParse(this.getOptions(file));
 
         if (!success) {
-            const e = error?.errors[0];
+            const e = error.issues[0];
 
             if (e) {
                 throw new Error(`Invalid options ${e.path.join(", ")} in "${file.file}": ${e.message}`);

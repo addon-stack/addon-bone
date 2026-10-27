@@ -57,6 +57,17 @@ describe("ViewParser", () => {
         expect(parseOptions("options", "defaults", "page.ts")).toEqual({});
     });
 
+    test("preserves optional values and falsy attributes while stripping unknown nested options", () => {
+        expect(parseOptions("options", "sparse", "page.ts")).toStrictEqual({
+            append: undefined,
+            metas: {
+                attributes: {name: "description", content: "", hidden: false, priority: 0},
+                glob: undefined,
+            },
+            scripts: [{path: "extra.js", attributes: {defer: true}}],
+        });
+    });
+
     test("reads a meta object", () => {
         expect(parseOptions("options", "object", "page.ts")).toEqual({metas: {attributes: {charset: "utf-8"}}});
     });
@@ -79,7 +90,7 @@ describe("ViewParser", () => {
         ["meta-missing", /meta object with nonempty attributes/],
         ["meta-null", /meta object with nonempty attributes/],
         ["meta-invalid-attribute", /meta object with nonempty attributes/],
-        ["meta-nonfinite-attribute", /Number must be finite/],
+        ["meta-nonfinite-attribute", /meta object with nonempty attributes/],
     ])("rejects %s and identifies its field and source file", (scenario, message) => {
         expect(() => parseOptions("invalid", `${scenario}.ts`)).toThrow("Invalid options metas");
         expect(() => parseOptions("invalid", `${scenario}.ts`)).toThrow(`${scenario}.ts`);
@@ -93,6 +104,12 @@ describe("ViewParser", () => {
     test("rejects the files selector instead of dropping it", () => {
         expect(() => parseOptions("invalid", "files.ts")).toThrow(
             /Invalid options files.*files.ts.*entrypoint selects its HTML file/
+        );
+    });
+
+    test("retains the configuration hint for a forbidden static callback option", () => {
+        expect(() => parseOptions("invalid", "static-add-hash.ts")).toThrow(
+            /Invalid options addHash.*static-add-hash.ts.*Configure addHash in config.html/
         );
     });
 

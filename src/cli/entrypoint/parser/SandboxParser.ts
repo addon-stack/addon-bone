@@ -18,6 +18,8 @@ export default class extends ViewParser<SandboxEntrypointOptions> {
 
     protected schema(): typeof this.CommonPropertiesSchema {
         const sources = z.array(z.enum(sandboxSourceValues)).optional();
+        // Preserve the positive-number contract from Zod 3, including positive infinity.
+        const timeout = z.union([z.number().positive(), z.literal(Infinity)]).optional();
 
         return super.schema().extend({
             name: z
@@ -30,8 +32,8 @@ export default class extends ViewParser<SandboxEntrypointOptions> {
                         "Key must start with a Unicode letter, `$` or `_`, and may only contain letters, digits, `$` or `_`",
                 })
                 .optional(),
-            readyTimeout: z.number().positive().optional(),
-            requestTimeout: z.number().positive().optional(),
+            readyTimeout: timeout,
+            requestTimeout: timeout,
             removeOnRequestTimeout: z.boolean().optional(),
             csp: z
                 .object({

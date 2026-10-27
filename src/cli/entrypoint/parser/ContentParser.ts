@@ -23,7 +23,7 @@ export default class ContentParser<
         return ["defineContentScript", "defineContentScriptAppend"];
     }
 
-    protected schema(): z.AnyZodObject {
+    protected schema(): z.ZodObject {
         const frameSchema = z
             .object({
                 type: z.literal(ContentScriptIsolation.Iframe),

@@ -80,6 +80,28 @@ test("reports invalid metas returned by the html factory during a real build", a
 });
 
 test.each([
+    ["invalid-callback", /addHash.*function/],
+    ["throwing-callback", /HTML hash callback failed/],
+])("reports %s from config.html during a real build", async (scenario, message) => {
+    const fixture = await createIntegrationFixture(rootDir, fixtureDir);
+
+    try {
+        await writeFile(
+            path.join(fixture.directory, "adnbn.config.ts"),
+            await readFile(path.join(scenarios, "config-function-array.ts"))
+        );
+        await writeFile(
+            path.join(fixture.directory, "html-options.ts"),
+            await readFile(path.join(scenarios, `options-${scenario}.ts`))
+        );
+
+        await expect(fixture.build()).rejects.toThrow(message);
+    } finally {
+        await fixture.dispose();
+    }
+});
+
+test.each([
     ["invalid-metas", /Invalid options metas.*object\.page\.ts.*attributes/],
     ["conflicting-hash", /metas\.hash/],
 ])("rejects entrypoint %s during a real build", async (scenario, message) => {
