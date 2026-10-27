@@ -16,6 +16,20 @@ describe("SpecificSettings meta", () => {
 
     const makeConfig = (specific: any): any => ({specific});
 
+    test.each([{}, {gecko: {}}, {gecko: {dataCollectionPermissions: {}}}, {gecko: undefined}])(
+        "preserves missing and explicitly undefined optional fields in %p",
+        specific => {
+            expect(new SpecificSettings(makeConfig(specific)).getResolved()).toStrictEqual(specific);
+        }
+    );
+
+    test.each([{unknown: true}, {gecko: null}, {gecko: {dataCollectionPermissions: {required: null}}}])(
+        "rejects unknown keys and null optional fields in %p",
+        specific => {
+            expect(new SpecificSettings(makeConfig(specific)).getResolved()).toBeUndefined();
+        }
+    );
+
     test("returns direct valid object", () => {
         const specific = {
             gecko: {

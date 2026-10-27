@@ -23,7 +23,7 @@ class CommonParser extends AbstractParser<EntrypointOptions> {
         return "defineBackground";
     }
 
-    protected schema(): z.AnyZodObject {
+    protected schema(): z.ZodObject {
         return this.CommonPropertiesSchema;
     }
 }

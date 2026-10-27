@@ -166,7 +166,7 @@
     "typescript": "^5.7.3",
     "utility-types": "^3.11.0",
     "webpack-merge": "^6.0.1",
-    "zod": "^3.24.2"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
@@ -237,6 +237,9 @@
     }
   },
   "overrides": {
+    "get-uri": {
+      "basic-ftp": "6.2.3"
+    },
     "glob": "$glob",
     "jsdom": "27.4.0",
     "test-exclude": "^7.0.1",

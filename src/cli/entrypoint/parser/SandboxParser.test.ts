@@ -31,6 +31,24 @@ describe("SandboxParser", () => {
             expect(parseOptions("options", "defaults", "sandbox.ts")).toEqual({});
         });
 
+        test("preserves positive infinite timeout values accepted by existing configurations", () => {
+            expect(parseOptions("options", "infinite-timeouts", "sandbox.ts")).toStrictEqual({
+                readyTimeout: Infinity,
+                requestTimeout: Infinity,
+            });
+        });
+
+        test.each([
+            ["zero-timeout", "readyTimeout"],
+            ["negative-timeout", "requestTimeout"],
+            ["string-timeout", "readyTimeout"],
+        ])("rejects %s and identifies its field and source", (scenario, field) => {
+            const source = file("invalid", `${scenario}.ts`);
+
+            expect(() => parser.options(source)).toThrow(`Invalid options ${field}`);
+            expect(() => parser.options(source)).toThrow(source.file);
+        });
+
         test("parses full sandbox options from a real entrypoint file", () => {
             expect(parseOptions("options", "full", "sandbox.ts")).toEqual({
                 as: "unsafe-parser-frame",
