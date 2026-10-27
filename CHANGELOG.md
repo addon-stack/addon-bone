@@ -1,5 +1,33 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.16.1 (2026-10-27)
+
+
+### 🐛 Bug Fixed
+
+* **deps:** migrate validation to Zod 4 ([e8bb8e4](https://github.com/addon-stack/addon-bone/commit/e8bb8e4380d9cfcbde2f5d00d2d18211de7f61f0))
+
+  Upgrade Zod to 4.6.7 to resolve GHSA-mrhx-c7xc-m3w5.
+  Adapt object schemas, records and diagnostics while preserving optional
+  fields and accepted Sandbox timeout values.
+
+  Add parser and HTML callback regressions. npm run check passes 2523 tests
+  on Node 22 and 24. Installed tarballs pass consumer builds, strict
+  declaration checks and clean audits on both versions.
+
+* **deps:** resolve basic-ftp security advisory ([ac7d8a5](https://github.com/addon-stack/addon-bone/commit/ac7d8a5623aeb2b5d5d6832132b6deb019cb2199))
+
+  Override basic-ftp to 6.2.3 within get-uri to remove six high audit findings.
+
+  Verified proxy behavior, release previews and npm run check on Node 22 and 24.
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 4
+
 ## 🚀 Release Addon Bone v0.16.0 (2026-10-27)
 
 ### 💥 Breaking Changes
