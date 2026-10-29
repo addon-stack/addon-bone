@@ -24,7 +24,7 @@ export interface Scenario {
 }
 
 export const expectLocaleChunks = async ({browser, entries, bytes, enabled = true}: Scenario): Promise<void> => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "chunks-fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "chunks-fixture"));
     try {
         for (const entry of fixtureEntries) {
             if (!entries.includes(entry)) await rm(path.join(fixture.directory, "src", `${entry}.ts`));

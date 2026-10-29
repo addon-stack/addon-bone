@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {waitForBrowserStartup} from "./startup";
 
 afterEach(() => {

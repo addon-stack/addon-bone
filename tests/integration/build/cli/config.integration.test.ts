@@ -7,7 +7,7 @@ import type {OptionalConfig} from "@typing/config";
 import {Browser} from "@typing/browser";
 import {Mode} from "@typing/app";
 
-const projectRoot = path.resolve(__dirname, "../../../..");
+const projectRoot = path.resolve(import.meta.dirname, "../../../..");
 const resolver = path.join(projectRoot, "dist", "cli", "resolvers", "config.js");
 const cli = path.join(projectRoot, "bin", "adnbn.js");
 
@@ -33,7 +33,7 @@ describe("user configuration through real c12", () => {
     let fixture: IntegrationFixture;
 
     beforeEach(async () => {
-        fixture = await createIntegrationFixture(projectRoot, path.join(__dirname, "fixtures", "config"));
+        fixture = await createIntegrationFixture(projectRoot, path.join(import.meta.dirname, "fixtures", "config"));
     });
 
     afterEach(async () => {
@@ -57,7 +57,7 @@ describe("user configuration through real c12", () => {
 
     const inspect = (options: OptionalConfig = {}, configFile = "adnbn.config.ts") => {
         return run([
-            path.join(__dirname, "scripts", "inspect-config.mjs"),
+            path.join(import.meta.dirname, "scripts", "inspect-config.mjs"),
             resolver,
             fixture.directory,
             configFile,

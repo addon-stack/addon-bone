@@ -39,7 +39,7 @@ describe("ResourceAccessPlugin", () => {
             .raw({web_accessible_resources: [{resources: ["client.js"], matches: ["https://*.example.com/*"]}]});
 
         return rspack({
-            context: path.join(__dirname, "tests/fixtures"),
+            context: path.join(import.meta.dirname, "tests/fixtures"),
             entry: {background: "./client.js", client: "./client.js"},
             mode: "production",
             devtool: false,

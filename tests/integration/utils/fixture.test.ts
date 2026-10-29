@@ -2,7 +2,7 @@ import path from "node:path";
 
 import {findIntegrationFixtures} from "./fixture";
 
-const integration = path.resolve(__dirname, "..");
+const integration = path.resolve(import.meta.dirname, "..");
 
 test("does not prepare internal CLI configs as standalone consumer applications", async () => {
     expect(await findIntegrationFixtures(path.join(integration, "build/cli"))).toEqual([]);

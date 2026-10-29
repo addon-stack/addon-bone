@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import path from "path";
 
 import CommandFinder from "./CommandFinder";
@@ -7,7 +9,7 @@ import {Browser} from "@typing/browser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "command");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "command");
 
 const makeFinder = (scenario: string, overrides: Partial<ReadonlyConfig> = {}): CommandFinder => {
     const config = {

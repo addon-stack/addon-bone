@@ -1,4 +1,6 @@
-jest.mock("#adnbn/sidebar", () => ({
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/sidebar", () => ({
     aliases: {
         plain: {path: "plain.html", label: "Open account", icon: "account"},
         localized: {path: "account.html", label: "@sidebar.account", icon: "account"},
@@ -10,11 +12,11 @@ jest.mock("#adnbn/sidebar", () => ({
     },
 }));
 
-jest.mock("#adnbn/icon", () => ({groups: {account: {16: "account-16.png"}}}));
+jest.unstable_mockModule("#adnbn/icon", () => ({groups: {account: {16: "account-16.png"}}}));
 
-import {createTabFixture} from "@addon-core/browser/testing";
-import {getBrowserTest} from "@tests/browser-harness/session";
-import {changeSidebar, getSidebars} from "./sidebar";
+const {createTabFixture} = await import("@addon-core/browser/testing");
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {changeSidebar, getSidebars} = await import("./sidebar");
 
 describe("changeSidebar in Firefox", () => {
     beforeEach(() => {

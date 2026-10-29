@@ -6,8 +6,8 @@ import {startIntegrationSite} from "../utils/site";
 import {waitFor} from "../utils/browser";
 
 export const runFramePagesIntegration = async (browser: "chrome" | "firefox", manifestVersion: 2 | 3) => {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = await createIntegrationFixture(root, path.join(__dirname, "frame-pages"));
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = await createIntegrationFixture(root, path.join(import.meta.dirname, "frame-pages"));
     const site = await startIntegrationSite(path.join(fixture.directory, "site"), null);
     let session: Awaited<ReturnType<typeof startBrowserSession>> | undefined;
     try {

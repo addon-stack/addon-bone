@@ -1,8 +1,13 @@
 module.exports = {
     getCacheKey(source, filename) {
-        return require("crypto").createHash("sha256").update(source).update(filename).update("raw-v2").digest("hex");
+        return require("crypto")
+            .createHash("sha256")
+            .update(source)
+            .update(filename)
+            .update("raw-esm-v3")
+            .digest("hex");
     },
     process(source) {
-        return {code: `module.exports = ${JSON.stringify(source)};`};
+        return {code: `export default ${JSON.stringify(source)};`};
     },
 };

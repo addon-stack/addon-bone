@@ -74,11 +74,11 @@ test.each<{
         withoutMap,
         cssFilename = "css/[name].[contenthash:8].css",
     }) => {
-        const root = path.resolve(__dirname, "../../../..");
+        const root = path.resolve(import.meta.dirname, "../../../..");
         const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-css-routing-"));
 
         const config = {
-            rootDir: __dirname,
+            rootDir: import.meta.dirname,
             srcDir: "src",
             sharedDir: ".",
             appsDir: "apps",
@@ -114,7 +114,7 @@ test.each<{
         ) as Configuration;
 
         const compiler = rspack({
-            context: path.join(__dirname, "src"),
+            context: path.join(import.meta.dirname, "src"),
             mode: "production",
             devtool: false,
             entry: {
@@ -131,7 +131,7 @@ test.each<{
             resolveLoader: {modules: [path.join(root, "node_modules")]},
             resolve: {
                 alias: {adnbn$: path.join(root, "dist/index.js")},
-                modules: [path.join(__dirname, "src/vendor"), "node_modules"],
+                modules: [path.join(import.meta.dirname, "src/vendor"), "node_modules"],
             },
             module: {rules: [...styles.module!.rules!, ...assets.module!.rules!]},
             optimization: {

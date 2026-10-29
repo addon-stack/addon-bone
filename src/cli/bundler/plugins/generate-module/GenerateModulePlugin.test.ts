@@ -7,7 +7,7 @@ import vm from "vm";
 import {rspack, type Compiler, type NormalModule, type Stats} from "@rspack/core";
 import {GenerateModulePlugin} from "./index";
 
-const fixtures = path.join(__dirname, "tests/fixtures");
+const fixtures = path.join(import.meta.dirname, "tests/fixtures");
 const modules = {
     "virtual/value": "export default 3;",
     "virtual/tools": "export function double(value) { return value * 2; }",

@@ -6,8 +6,8 @@ import {startIntegrationSite} from "../utils/site";
 import {waitFor} from "../utils/browser";
 
 export async function expectRenderProps(browser: "chrome" | "firefox") {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = await createIntegrationFixture(root, path.join(__dirname, "render-props"));
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = await createIntegrationFixture(root, path.join(import.meta.dirname, "render-props"));
     const site = await startIntegrationSite(path.join(fixture.directory, "site"), null);
     let session: Awaited<ReturnType<typeof startBrowserSession>> | undefined;
 

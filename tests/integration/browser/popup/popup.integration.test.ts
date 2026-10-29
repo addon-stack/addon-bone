@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {verifyPopup} from "./popup";
 
 jest.setTimeout(90_000);

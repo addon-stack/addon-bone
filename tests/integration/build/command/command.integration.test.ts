@@ -1,10 +1,12 @@
+import {jest} from "@jest/globals";
+
 import {readFile} from "fs/promises";
 import path from "path";
 
 import {createIntegrationFixture} from "../../utils/fixture";
 
-const projectRoot = path.resolve(__dirname, "../../../..");
-const fixtureDir = path.join(__dirname, "fixture");
+const projectRoot = path.resolve(import.meta.dirname, "../../../..");
+const fixtureDir = path.join(import.meta.dirname, "fixture");
 
 jest.setTimeout(90_000);
 

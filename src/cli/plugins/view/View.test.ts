@@ -8,7 +8,7 @@ import {Mode} from "@typing/app";
 import {Browser} from "@typing/browser";
 import type {ReadonlyConfig} from "@typing/config";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
 
 const makeView = (fixture: string) => {
     const config = {

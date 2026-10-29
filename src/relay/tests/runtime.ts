@@ -5,8 +5,8 @@ import {createTabFixture} from "@addon-core/browser/testing";
 import {getBrowserTest} from "@tests/browser-harness/session";
 
 const source = buildSync({
-    entryPoints: [path.resolve(__dirname, "fixtures/runtime.ts")],
-    tsconfig: path.resolve(__dirname, "../../../tsconfig.json"),
+    entryPoints: [path.resolve(import.meta.dirname, "fixtures/runtime.ts")],
+    tsconfig: path.resolve(import.meta.dirname, "../../../tsconfig.json"),
     bundle: true,
     write: false,
     format: "iife",

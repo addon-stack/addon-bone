@@ -3,7 +3,7 @@ import {readFileSync} from "node:fs";
 import path from "node:path";
 import {load} from "js-yaml";
 
-const root = path.resolve(__dirname, "..");
+const root = path.resolve(import.meta.dirname, "..");
 const script = path.join(root, ".github/scripts/validateMainPullRequestSource.mjs");
 const runPolicy = (input: string) =>
     spawnSync(process.execPath, [script], {

@@ -6,8 +6,8 @@ import {startIntegrationSite} from "../utils/site";
 import {waitFor} from "../utils/browser";
 
 export const expectRelayStyles = async (browser: "chrome" | "firefox", manifestVersion: 2 | 3): Promise<void> => {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = await createIntegrationFixture(root, path.join(__dirname, "relay-styles"));
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = await createIntegrationFixture(root, path.join(import.meta.dirname, "relay-styles"));
     const site = await startIntegrationSite(path.join(fixture.directory, "site"), null);
     let session: Awaited<ReturnType<typeof startBrowserSession>> | undefined;
     try {

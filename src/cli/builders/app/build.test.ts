@@ -5,7 +5,7 @@ import path from "path";
 
 import {BuildError, build} from "./build";
 
-const fixtures = path.join(__dirname, "tests", "fixtures");
+const fixtures = path.join(import.meta.dirname, "tests", "fixtures");
 let output: string;
 
 beforeEach(async () => {

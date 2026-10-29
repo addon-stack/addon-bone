@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import ContainerRegistry from "./ContainerRegistry";
 
 test("owns registered containers and their descendants until released", () => {

@@ -1,11 +1,14 @@
+import type {LocaleValidator} from "@typing/locale";
+import {jest} from "@jest/globals";
+
 import LocaleBuilder from "./LocaleBuilder";
 
 import {Language, LocaleCustomKeyForLanguage, LocaleValuesSeparator} from "@typing/locale";
 import {Browser} from "@typing/browser";
 
 const makeValidator = () => ({
-    isValid: jest.fn(),
-    validate: jest.fn(),
+    isValid: jest.fn<() => boolean>(),
+    validate: jest.fn<(locale: LocaleBuilder) => LocaleValidator>(),
 });
 
 describe("LocaleBuilder", () => {

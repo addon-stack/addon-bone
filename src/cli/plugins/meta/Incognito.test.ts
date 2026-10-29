@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import Incognito from "./Incognito";
 import {ManifestIncognito} from "@typing/manifest";
 

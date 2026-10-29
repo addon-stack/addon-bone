@@ -9,7 +9,7 @@ import {Browser} from "@typing/browser";
 import {Language} from "@typing/locale";
 import {ReadonlyConfig} from "@typing/config";
 
-const fixtures = path.resolve(__dirname, "tests/fixtures");
+const fixtures = path.resolve(import.meta.dirname, "tests/fixtures");
 
 const localeFixture = (name: string): Partial<ReadonlyConfig> => {
     const root = path.join(fixtures, name);

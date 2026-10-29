@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {resolveDefinition} from "./definition";
 
 describe("Relay definitions", () => {

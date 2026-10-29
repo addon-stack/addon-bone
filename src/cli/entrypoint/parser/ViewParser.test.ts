@@ -11,8 +11,8 @@ class TestViewParser extends ViewParser<ViewEntrypointOptions> {
     }
 }
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.join(__dirname, "tests", "fixtures", "view");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.join(import.meta.dirname, "tests", "fixtures", "view");
 const parser = new TestViewParser({rootDir} as ReadonlyConfig);
 const parseOptions = (...parts: string[]) => {
     const file = path.join(fixtures, ...parts);

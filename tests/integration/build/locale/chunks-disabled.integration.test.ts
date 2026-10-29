@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {fixtureEntries, expectLocaleChunks, type Scenario} from "./chunks-utils";
 
 jest.setTimeout(90_000);

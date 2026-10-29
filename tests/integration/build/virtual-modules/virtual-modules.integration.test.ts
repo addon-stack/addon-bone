@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {copyFile, readFile} from "fs/promises";
 import path from "path";
 import vm from "vm";
@@ -7,7 +9,7 @@ import {createIntegrationFixture} from "../../utils/fixture";
 jest.setTimeout(60_000);
 
 test("generated entrypoint data reach public getters and disappear without consumers", async () => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
 
     try {
         const directory = await fixture.build();
@@ -37,7 +39,7 @@ test("generated entrypoint data reach public getters and disappear without consu
         );
 
         await copyFile(
-            path.join(__dirname, "states/unused-background.ts"),
+            path.join(import.meta.dirname, "states/unused-background.ts"),
             path.join(fixture.directory, "src/background.ts")
         );
         await fixture.build();

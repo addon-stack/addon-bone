@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {fork} from "node:child_process";
 import {cp, mkdir, mkdtemp, readFile, rm, symlink, access} from "node:fs/promises";
 import os from "node:os";
@@ -5,8 +7,8 @@ import path from "node:path";
 
 import BuildSession, {BuildSessionError} from "../../utils/BuildSession";
 
-const projectRoot = path.resolve(__dirname, "../../../..");
-const fixtures = path.join(__dirname, "fixtures");
+const projectRoot = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.join(import.meta.dirname, "fixtures");
 let directory: string;
 let root: string;
 let session: BuildSession;

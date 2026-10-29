@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {readFile} from "fs/promises";
 import path from "path";
 
@@ -5,7 +7,7 @@ import {waitFor} from "../utils/browser";
 import {startBrowserSession} from "../utils/session";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
 
 jest.setTimeout(90_000);
 
@@ -21,7 +23,7 @@ test.each([
     let session: Awaited<ReturnType<typeof startBrowserSession>> | undefined;
 
     try {
-        fixture = await createIntegrationFixture(rootDir, path.join(__dirname, page));
+        fixture = await createIntegrationFixture(rootDir, path.join(import.meta.dirname, page));
 
         const extensionDir = await fixture.build();
         const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));

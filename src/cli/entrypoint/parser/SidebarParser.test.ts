@@ -4,8 +4,8 @@ import SidebarParser from "./SidebarParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "sidebar");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "sidebar");
 
 const parser = new SidebarParser({rootDir} as ReadonlyConfig);
 

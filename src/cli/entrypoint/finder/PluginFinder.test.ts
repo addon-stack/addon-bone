@@ -5,7 +5,7 @@ import PopupFinder from "./PopupFinder";
 import {ReadonlyConfig} from "@typing/config";
 import {EntrypointFile} from "@typing/entrypoint";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "precedence");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "precedence");
 
 const pluginFile = (name: string): EntrypointFile => ({
     file: path.join(fixtures, "plugins", name, "popup.ts"),

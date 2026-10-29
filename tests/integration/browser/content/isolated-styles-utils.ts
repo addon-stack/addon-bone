@@ -138,7 +138,7 @@ export const runIsolatedStylesIntegration = async (
     manifestVersion: 2 | 3,
     fixtureName = "isolation-shadow"
 ): Promise<void> => {
-    const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+    const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
     let session: BrowserSession | undefined;
     let chrome: CdpClient | undefined;
     let firefox: BidiClient | undefined;
@@ -147,7 +147,7 @@ export const runIsolatedStylesIntegration = async (
     let lastState: unknown;
 
     try {
-        fixture = await createIntegrationFixture(rootDir, path.join(__dirname, fixtureName));
+        fixture = await createIntegrationFixture(rootDir, path.join(import.meta.dirname, fixtureName));
         const extensionDir = await fixture.build({browser: name, manifestVersion});
         const manifest = JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
         const scripts = manifest.content_scripts as Array<{css?: string[]; js: string[]}>;

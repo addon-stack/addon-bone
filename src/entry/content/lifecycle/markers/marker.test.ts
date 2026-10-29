@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {AttributeMarker, WeakMarker} from "./index";
 
 import {ContentScriptMarkerContract, ContentScriptMarkerValue} from "@typing/content";

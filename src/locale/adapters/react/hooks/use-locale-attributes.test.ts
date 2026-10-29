@@ -1,13 +1,16 @@
-import {getBrowserTest} from "@tests/browser-harness/session";
-
-jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic-locale"));
-
-import {createElement, StrictMode} from "react";
-import {renderToString} from "react-dom/server";
-import {act, cleanup, renderHook} from "@testing-library/react";
-import {useLocale, useLocaleAttributes, useNativeLocale, type LocaleReactContract} from "../index";
-import {MemoryLocaleStorage} from "@locale/tests/fixtures";
 import {Language, LocaleDir} from "@typing/locale";
+import {jest} from "@jest/globals";
+
+import type {LocaleReactContract} from "../index";
+
+jest.unstable_mockModule("#adnbn/locale", () => import("./tests/fixtures/dynamic-locale"));
+
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {createElement, StrictMode} = await import("react");
+const {renderToString} = await import("react-dom/server.node");
+const {act, cleanup, renderHook} = await import("@testing-library/react");
+const {useLocale, useLocaleAttributes, useNativeLocale} = await import("../index");
+const {MemoryLocaleStorage} = await import("@locale/tests/fixtures");
 
 const english: Pick<LocaleReactContract, "lang" | "dir"> = {
     lang: Language.English,

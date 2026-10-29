@@ -1,13 +1,15 @@
+import {jest} from "@jest/globals";
+
 import path from "path";
 import OptionFile from "./OptionFile";
 
-const fixtures = path.resolve(__dirname, "tests/fixtures/static-options");
+const fixtures = path.resolve(import.meta.dirname, "tests/fixtures/static-options");
 const read = (name: string, properties: string[]) =>
     OptionFile.make(path.join(fixtures, name + ".ts"))
         .setDefinition("defineContentScript")
         .setProperties(properties);
 
-const shapes = path.resolve(__dirname, "tests/fixtures/export-shapes");
+const shapes = path.resolve(import.meta.dirname, "tests/fixtures/export-shapes");
 const shape = (name: string, properties: string[], definition: string | string[] = "defineBackground") =>
     OptionFile.make(path.join(shapes, name + ".ts"))
         .setDefinition(definition)

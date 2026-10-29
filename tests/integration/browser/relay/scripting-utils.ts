@@ -7,8 +7,8 @@ import {waitFor} from "@tests/integration/browser/utils/browser";
 type BrowserSession = Awaited<ReturnType<typeof startBrowserSession>>;
 
 export async function expectRelayScripting(browser: "chrome" | "firefox", manifestVersion: 2 | 3): Promise<void> {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = await createIntegrationFixture(root, path.join(__dirname, "scripting"));
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = await createIntegrationFixture(root, path.join(import.meta.dirname, "scripting"));
     const site = await startIntegrationSite(path.join(fixture.directory, "site"), null);
     let session: BrowserSession | undefined;
 

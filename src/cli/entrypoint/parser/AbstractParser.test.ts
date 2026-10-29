@@ -6,8 +6,8 @@ import AbstractParser from "./AbstractParser";
 import type {ReadonlyConfig} from "@typing/config";
 import type {EntrypointFile, EntrypointOptions} from "@typing/entrypoint";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "common");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "common");
 
 const config = {rootDir} as ReadonlyConfig;
 

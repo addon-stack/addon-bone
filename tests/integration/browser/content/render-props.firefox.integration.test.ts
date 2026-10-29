@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {expectRenderProps} from "./render-props-utils";
 jest.setTimeout(90_000);
 

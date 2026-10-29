@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {readFile, stat} from "fs/promises";
 import path from "path";
 
@@ -10,8 +12,8 @@ import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fix
 
 import {documentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
-const fixtureDir = path.join(__dirname, "entrypoint-assets");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
+const fixtureDir = path.join(import.meta.dirname, "entrypoint-assets");
 
 const evaluate = async (browser: CdpClient, sessionId: string, expression: string): Promise<any> => {
     const result = await browser.send(

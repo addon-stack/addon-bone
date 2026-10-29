@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {expectRelayScripting} from "./scripting-utils";
 
 jest.setTimeout(90_000);

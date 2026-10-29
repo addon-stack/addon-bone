@@ -1,10 +1,12 @@
+import {jest} from "@jest/globals";
+
 import path from "path";
 import {rspack, Compiler, type Stats} from "@rspack/core";
 import {createFsFromVolume, Volume} from "memfs";
 import GenerateJsonPlugin from "./GenerateJsonPlugin";
 
 describe("GenerateJsonPlugin watch updates", () => {
-    const output = path.resolve(__dirname, "dist");
+    const output = path.resolve(import.meta.dirname, "dist");
     let compiler: Compiler;
 
     const run = () =>

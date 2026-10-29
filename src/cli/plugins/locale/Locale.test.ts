@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -10,7 +12,7 @@ import {Language, LocaleMessages} from "@typing/locale";
 import {GenerateJsonPluginData} from "@cli/bundler";
 import {flattenLocaleMessages, getLocaleFilename} from "@shared/locale";
 
-const fixtures = path.resolve(__dirname, "tests/fixtures/completion");
+const fixtures = path.resolve(import.meta.dirname, "tests/fixtures/completion");
 
 const makeLocale = (fixture: string, overrides: Partial<ReadonlyConfig> = {}): Locale => {
     const plugins = [...(overrides.plugins ?? [])];
@@ -51,11 +53,11 @@ const messages = (json: GenerateJsonPluginData, lang: Language): LocaleMessages 
     json[getLocaleFilename(lang)] as LocaleMessages;
 
 describe("locale JSON completion", () => {
-    let consoleWarnSpy: jest.SpyInstance;
+    let consoleWarnSpy: jest.Spied<typeof console.warn>;
     const temporaryDirectories: string[] = [];
 
     beforeEach(() => {
-        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     });
 
     afterEach(() => {

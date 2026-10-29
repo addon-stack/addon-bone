@@ -16,8 +16,8 @@ import stylePlugin from "@cli/plugins/style";
 import {ContentScriptStylesRuntimeProperty, ContentScriptWorld} from "@typing/content";
 import type {ReadonlyConfig} from "@typing/config";
 
-export const project = path.resolve(__dirname, "../../../../..");
-export const fixture = path.join(__dirname, "src");
+export const project = path.resolve(import.meta.dirname, "../../../../..");
+export const fixture = path.join(import.meta.dirname, "src");
 export const orders = ["document-first", "document-last"] as const;
 export const watchSelections = new WeakMap<Compilation, boolean>();
 
@@ -35,7 +35,7 @@ export const createCompiler = async (
     const cssFilename = options.cssFilename ?? "css/[name].[contenthash:8].css";
     const cssChunkFilename = cssFilename;
     const config = {
-        rootDir: __dirname,
+        rootDir: import.meta.dirname,
         srcDir: "src",
         sharedDir: ".",
         appsDir: "apps",

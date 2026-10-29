@@ -1,8 +1,10 @@
 # Running tests
 
-Run commands from the repository root. Node.js 22 and 24 are supported.
+Run commands from the repository root. Node.js 22.12 or newer in the 22 line, and Node.js 24, are supported.
 
-Use the npm test commands below, or `npm run test:run --` to pass arguments directly to Jest. All Jest invocations from these commands, pre-push and inventory checks use `scripts/test-run.mjs`. On macOS arm64 this wrapper launches Jest with `--no-sparkplug`; Linux and Windows keep Node's default JIT settings.
+Use the npm test commands below, or `npm run test:run --` to pass arguments directly to Jest. All Jest invocations from these commands, pre-push and inventory checks use `scripts/test-run.mjs`. The wrapper enables native ESM with `--experimental-vm-modules`. On macOS arm64 it also adds `--no-sparkplug`; Linux and Windows keep Node's default JIT settings.
+
+Tests import `jest` from `@jest/globals` and use `import.meta.dirname` or `import.meta.filename` for filesystem paths. Register ESM fixtures with `jest.unstable_mockModule` before dynamically importing their consumers; static imports execute before mock registration. Raw templates are transformed into ESM default exports. Compiler tests use the real Rspack package and loaders. The style build tests resolve the framework's private URL loader to its built ESM file in `dist`: Rspack loads it through native Node, so these tests do not depend on Node's optional TypeScript stripping. Run the package build before these tests, as required for the `build` project.
 
 The observed Node 24 crashes contain `Builtins_BaselineOutOfLinePrologue` and `ClearStaleLeftTrimmedPointerVisitor`, matching the Sparkplug report in [nodejs/node#62393](https://github.com/nodejs/node/issues/62393). The earlier `--no-maglev` workaround did not prevent the crash. Successful repetitions measure observed stability; they do not prove a rare native fault impossible. Keep the workaround scoped to the reproduced environment and reassess it when the upstream fix is verified. Jest workers inherit the flag through `execArgv`; CLI fixture child processes and real browsers keep their normal settings. Tests are never automatically retried or skipped to hide a native crash.
 
@@ -48,7 +50,7 @@ The [override scheduling follow-up](benchmarks/2026-09-25-override.md) compares 
 
 ## Groups and workers
 
-`jest.config.ts` defines six projects: `unit-node`, `unit-dom`, `build`, `types`, `chrome` and `firefox`. Put DOM tests in the `unit-dom` patterns. Tests that execute the built CLI, consume package declarations or compile imports from the built package belong to `build` or `types`. Keep unit tests runnable with no `dist` directory. Each browser file contains scenarios for one browser only.
+`jest.config.mjs` defines six projects: `unit-node`, `unit-dom`, `build`, `types`, `chrome` and `firefox`. The configuration is native JavaScript with JSDoc types so loading it does not require Node's TypeScript support. Put DOM tests in the `unit-dom` patterns. Tests that execute the built CLI, consume package declarations or compile imports from the built package belong to `build` or `types`. Keep unit tests runnable with no `dist` directory. Each browser file contains scenarios for one browser only.
 
 Relay declaration tests keep the source/package × POSIX/Windows matrix for the generated registry, selectors and exports.
 Constructor, prepared-data and bootstrap contracts live in `integration/types/relay.integration.test.ts`, checked against

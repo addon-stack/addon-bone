@@ -1,17 +1,24 @@
-import {getBrowserTest} from "@tests/browser-harness/session";
+import {Language, LocaleDir} from "@typing/locale";
+import {jest} from "@jest/globals";
 
-jest.mock("#adnbn/locale", () => ({
-    keys: Object.keys(require("./tests/fixtures/native-messages.json")).map(key => key.replaceAll("_", ".")),
+import type {LocaleReactContract} from "../index";
+
+jest.unstable_mockModule("#adnbn/locale", async () => ({
+    default: {},
+    lang: "en",
+    keys: Object.keys((await import("./tests/fixtures/native-messages.json")).default).map(key =>
+        key.replaceAll("_", ".")
+    ),
     languages: ["en", "fr"],
 }));
 
-import {createElement, createRef, StrictMode, useState} from "react";
-import {createPortal} from "react-dom";
-import {cleanup, fireEvent, render, renderHook} from "@testing-library/react";
-import {useNativeLocale, type LocaleReactContract} from "../index";
-import {NativeLocale} from "@locale/providers";
-import {Language, LocaleDir} from "@typing/locale";
-import messages from "./tests/fixtures/native-messages.json";
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {createElement, createRef, StrictMode, useState} = await import("react");
+const {createPortal} = await import("react-dom");
+const {cleanup, fireEvent, render, renderHook} = await import("@testing-library/react");
+const {useNativeLocale} = await import("../index");
+const {NativeLocale} = await import("@locale/providers");
+const {default: messages} = await import("./tests/fixtures/native-messages.json");
 
 interface Structure {
     "app.title": {plural: false; substitutions: []};
@@ -74,7 +81,7 @@ describe("useNativeLocale", () => {
     });
 
     test("renders repeated JSX placeholders without adding DOM wrappers", () => {
-        const warn = jest.spyOn(console, "error").mockImplementation();
+        const warn = jest.spyOn(console, "error").mockImplementation(() => {});
         const Greeting = () => {
             const {t} = useFixtureLocale();
             return createElement("p", null, t("app.greeting", {name: createElement("strong", null, "Ada")}));
@@ -163,7 +170,7 @@ describe("useNativeLocale", () => {
     });
 
     test("preserves empty messages and the existing missing-message and substitution diagnostics", () => {
-        const warn = jest.spyOn(console, "warn").mockImplementation();
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
         const {result} = renderHook(useFixtureLocale);
         expect(result.current.t("app.empty")).toBe("");
         expect(warn).not.toHaveBeenCalled();

@@ -4,8 +4,8 @@ import OffscreenParser from "./OffscreenParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "offscreen");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "offscreen");
 
 const parser = new OffscreenParser({rootDir} as ReadonlyConfig);
 

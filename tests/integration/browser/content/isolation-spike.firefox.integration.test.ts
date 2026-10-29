@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {runIsolationSpike} from "./isolation-spike-utils";
 
 jest.setTimeout(90_000);

@@ -1,5 +1,7 @@
 /** @jest-environment node */
 
+import {jest} from "@jest/globals";
+
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -14,8 +16,8 @@ import IsolatedStylesPlugin, {
     type IsolatedStylesPluginFiles,
 } from "./IsolatedStylesPlugin";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
-const projectRoot = path.resolve(__dirname, "../../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
+const projectRoot = path.resolve(import.meta.dirname, "../../../../..");
 const RuntimeProperty = "fixtureStyles";
 
 interface BuildResult {
@@ -789,7 +791,7 @@ test.each(["contenthash", "chunkhash", "fullhash", "callback"])(
         });
         try {
             const harness = executeShadowEntrypoint(result);
-            const resolveAgain = jest.fn();
+            const resolveAgain = jest.fn<(file: string) => string>();
             harness.runtime.initialize(resolveAgain);
             expect(resolveAgain).not.toHaveBeenCalled();
             const root = createRoot(link => queueMicrotask(() => link.onload?.()));

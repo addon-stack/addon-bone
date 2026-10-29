@@ -1,3 +1,6 @@
+import type {CommandExecute} from "@typing/command";
+import {jest} from "@jest/globals";
+
 import Builder from "./Builder";
 
 import {defineExecuteActionCommand} from "@main/command";
@@ -12,7 +15,7 @@ describe.each([
 
         harness.runtime.setManifest({name: "Command Addon", version: "1.0.0", manifest_version: manifestVersion});
 
-        const execute = jest.fn();
+        const execute = jest.fn<CommandExecute>();
         const definition = defineExecuteActionCommand({defaultKey: "Ctrl+Shift+Y", execute});
         const builder = new Builder(definition);
         const tab = {id: 1} as chrome.tabs.Tab;

@@ -8,8 +8,8 @@ import RelayDeclaration from "./RelayDeclaration";
 import type {ReadonlyConfig} from "@typing/config";
 
 describe("Relay declarations", () => {
-    const projectDir = path.resolve(__dirname, "../../../..");
-    const fixtureDir = path.join(__dirname, "tests/fixtures/relay-types");
+    const projectDir = path.resolve(import.meta.dirname, "../../../..");
+    const fixtureDir = path.join(import.meta.dirname, "tests/fixtures/relay-types");
     const consumerFile = path.join(fixtureDir, "consumer.ts");
     const generatedFile = path.join(fixtureDir, "generated.d.ts");
     let rootDir: string;

@@ -7,7 +7,7 @@ import {Command, Mode} from "@typing/app";
 import {Browser} from "@typing/browser";
 import {Language} from "@typing/locale";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "locale");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "locale");
 
 class TestLocaleFinder extends LocaleFinder {
     public languageFromFilename(filename: string): Language {

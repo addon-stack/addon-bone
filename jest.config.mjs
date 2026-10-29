@@ -1,7 +1,8 @@
-import type {Config} from "jest";
+// @ts-check
 import {availableParallelism} from "node:os";
 
-const shared: Config = {
+/** @type {import("jest").Config} */
+const shared = {
     rootDir: import.meta.dirname,
     testEnvironment: "node",
     // This function is serialized into browser/VM realms; Istanbul closures cannot cross that boundary.
@@ -9,12 +10,13 @@ const shared: Config = {
 
     globals: {ADNBN_TEST_ROOT: import.meta.dirname},
     setupFilesAfterEnv: ["<rootDir>/tests/jest.setup.ts"],
-    transformIgnorePatterns: ["/node_modules/(?!(@addon-core/storage|nanoid)/)"],
     modulePathIgnorePatterns: ["<rootDir>/.cache/"],
     resolver: "<rootDir>/tests/raw-module-resolver.cjs",
     moduleNameMapper: {
+        // Rspack loads this module through native Node, outside Jest's TypeScript transform.
+        // Build tests use the published ESM loader, including on Node 22.12 without type stripping.
         "^\\.\\./\\.\\./bundler/loaders/resolve-style-urls$":
-            "<rootDir>/tests/integration/build/style/resolve-style-urls-loader.cjs",
+            "<rootDir>/dist/cli/bundler/loaders/resolve-style-urls.js",
         "^#adnbn/(.*)$": "<rootDir>/src/virtual/$1.ts",
         "^@cli/(.*)$": "<rootDir>/src/cli/$1",
         "^@entry/(.*)$": "<rootDir>/src/entry/$1",
@@ -68,10 +70,12 @@ const domTests = [
     "<rootDir>/src/locale/adapters/**/*.test.ts",
     "<rootDir>/src/message/adapters/**/*.test.ts",
 ];
-const exclude = (patterns: string[]) =>
+/** @param {string[]} patterns */
+const exclude = patterns =>
     patterns.map(pattern => `!${pattern.replace("<rootDir>", import.meta.dirname.replaceAll("\\", "/"))}`);
 
-const config: Config = {
+/** @type {import("jest").Config} */
+const config = {
     verbose: false,
     reporters: ["default", "<rootDir>/tests/BrowserStartupReporter.cjs"],
     maxWorkers: Math.max(1, Math.min(8, availableParallelism() - 1)),

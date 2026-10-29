@@ -2,7 +2,7 @@ import path from "path";
 import ts from "typescript";
 
 describe("locale contracts", () => {
-    const fixture = path.join(__dirname, "fixtures/locale/substitutions.ts");
+    const fixture = path.join(import.meta.dirname, "fixtures/locale/substitutions.ts");
 
     test.each(["source", "package"])(
         "checks substitution arguments and plural keys through the %s API",

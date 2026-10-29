@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import React from "react";
 import {act, cleanup, render, renderHook} from "@testing-library/react";
 import type {BrowserContextMessaging} from "@addon-core/browser/testing";
@@ -18,8 +20,8 @@ type SuspendedHandlerProps = {value: string};
 type BooleanMessages = {isEnabled: () => boolean};
 
 let caller: BrowserContextMessaging;
-let addListener: jest.SpyInstance;
-let removeListener: jest.SpyInstance;
+let addListener: jest.Spied<typeof chrome.runtime.onMessage.addListener>;
+let removeListener: jest.Spied<typeof chrome.runtime.onMessage.removeListener>;
 
 beforeEach(() => {
     const session = getBrowserTest();

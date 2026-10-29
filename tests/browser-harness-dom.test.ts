@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {getManifest} from "@addon-core/browser";
 
 import {getBrowserTest} from "./browser-harness/session";

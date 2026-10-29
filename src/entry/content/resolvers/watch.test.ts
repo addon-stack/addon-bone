@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {createAwaitFirstStrategy, createMutationObserverStrategy} from "../../../content";
 import {EventEmitter, ManagedContext} from "../lifecycle/context";
 import Node from "../lifecycle/nodes/Node";
@@ -17,7 +19,10 @@ describe("content watch strategies", () => {
         body.remove();
 
         try {
-            const unwatch = createMutationObserverStrategy()(jest.fn(), new ManagedContext(new EventEmitter()));
+            const unwatch = createMutationObserverStrategy()(
+                jest.fn<() => void>(),
+                new ManagedContext(new EventEmitter())
+            );
 
             expect(observe).toHaveBeenCalledWith(
                 document.documentElement,
@@ -35,7 +40,7 @@ describe("content watch strategies", () => {
         jest.useFakeTimers();
         const element = document.createElement("span");
         document.body.append(element);
-        const update = jest.fn();
+        const update = jest.fn<() => void>();
         const context = new ManagedContext(new EventEmitter());
 
         const unwatch = createMutationObserverStrategy({
@@ -73,7 +78,7 @@ describe("content watch strategies", () => {
         const element = document.createElement("span");
         element.textContent = "initial";
         document.body.append(element);
-        const update = jest.fn();
+        const update = jest.fn<() => void>();
         const context = new ManagedContext(new EventEmitter());
         const unwatch = createMutationObserverStrategy()(update, context);
 
@@ -93,7 +98,7 @@ describe("content watch strategies", () => {
 
     test("processes continuous mutations without waiting for a quiet period", async () => {
         jest.useFakeTimers();
-        const update = jest.fn();
+        const update = jest.fn<() => void>();
         const context = new ManagedContext(new EventEmitter());
         const unwatch = createMutationObserverStrategy()(update, context);
 
@@ -143,7 +148,7 @@ describe("content watch strategies", () => {
         const node = new MountNode(new Node(anchor, container), context.containers, mounter);
         context.add(node);
         context.mount();
-        const update = jest.fn();
+        const update = jest.fn<() => void>();
         const unwatch = createMutationObserverStrategy({attributes: true, characterData: true})(update, context);
 
         try {
@@ -198,7 +203,7 @@ describe("content watch strategies", () => {
             unwatch: () => managedContext.unwatch(),
         };
 
-        const update = jest.fn();
+        const update = jest.fn<() => void>();
         const unwatch = createMutationObserverStrategy()(update, context);
 
         try {
@@ -226,7 +231,7 @@ describe("content watch strategies", () => {
         );
         context.add(node);
         context.mount();
-        const update = jest.fn();
+        const update = jest.fn<() => void>();
         const unwatch = createMutationObserverStrategy()(update, context);
 
         try {

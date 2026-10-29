@@ -4,8 +4,8 @@ import os from "os";
 import path from "path";
 import {stripVTControlCharacters} from "util";
 
-const cli = path.resolve(__dirname, "../../../../bin/adnbn.js");
-const fixtures = path.join(__dirname, "fixtures/exit-code");
+const cli = path.resolve(import.meta.dirname, "../../../../bin/adnbn.js");
+const fixtures = path.join(import.meta.dirname, "fixtures/exit-code");
 
 describe("CLI exit codes", () => {
     let root: string;

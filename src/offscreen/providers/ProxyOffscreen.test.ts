@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {closeOffscreen} from "@addon-core/browser";
 import {getBrowserTest} from "@tests/browser-harness/session";
 import MockLockManager from "@tests/offscreen/MockLockManager";

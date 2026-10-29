@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {getBrowserTest} from "@tests/browser-harness/session";
 
 import SandboxMessage from "./SandboxMessage";

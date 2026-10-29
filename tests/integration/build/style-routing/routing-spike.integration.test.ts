@@ -4,8 +4,8 @@ import path from "path";
 import vm from "vm";
 import {rspack, CssExtractRspackPlugin, type Compiler, type Filename, type Stats} from "@rspack/core";
 
-const project = path.resolve(__dirname, "../../../..");
-const fixtures = path.join(__dirname, "src");
+const project = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.join(import.meta.dirname, "src");
 const layer = "adnbn:css:isolation";
 const boundary = "// object to store loaded CSS chunks";
 

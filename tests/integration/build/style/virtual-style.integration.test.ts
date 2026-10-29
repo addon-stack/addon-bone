@@ -125,7 +125,7 @@ test("the production style pipeline loads its private ESM loader under native No
 
     const {stdout, stderr} = await promisify(execFile)(
         process.execPath,
-        [path.join(__dirname, "verify-native-consumer.mjs"), root],
+        [path.join(import.meta.dirname, "verify-native-consumer.mjs"), root],
         {timeout: 15_000, maxBuffer: 1024 * 1024}
     );
 

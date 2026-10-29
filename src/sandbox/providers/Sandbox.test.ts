@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import SandboxFrame from "../SandboxFrame";
 import SandboxMessage from "../SandboxMessage";
 import RegisterSandbox from "./RegisterSandbox";
@@ -55,7 +57,7 @@ describe("Sandbox host runtime", () => {
         const send = message.send({path: "parse", args: ["<p>Hi</p>"]});
 
         const frame = document.querySelector("iframe") as HTMLIFrameElement;
-        const postMessage = jest.fn();
+        const postMessage = jest.fn<typeof window.postMessage>();
         Object.defineProperty(frame.contentWindow, "postMessage", {configurable: true, value: postMessage});
 
         ready("parser", frame);

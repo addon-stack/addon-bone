@@ -10,8 +10,8 @@ const stateExpression = `Array.from(document.querySelectorAll('[data-probe]'), h
     links: Array.from(host.querySelector('iframe').contentDocument.querySelectorAll('link'), link => link.href)}))`;
 
 export const runIsolationSpike = async (browser: "chrome" | "firefox", manifestVersion: 2 | 3) => {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = path.join(__dirname, "isolation-spike");
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = path.join(import.meta.dirname, "isolation-spike");
     const cache = path.join(root, ".cache/integration");
     await mkdir(cache, {recursive: true});
     const extension = await mkdtemp(path.join(cache, "isolation-spike-"));
@@ -39,7 +39,7 @@ export const runIsolationSpike = async (browser: "chrome" | "firefox", manifestV
         for (const file of ["initial.css", "lazy.css", "panel.html", "panel.js"])
             await cp(path.join(fixture, "src", file), path.join(extension, file));
         await cp(
-            path.join(__dirname, "isolation-shadow/src/probe.content/probe.woff2"),
+            path.join(import.meta.dirname, "isolation-shadow/src/probe.content/probe.woff2"),
             path.join(extension, "probe.woff2")
         );
         const resources = ["initial.css", "lazy.css", "probe.woff2", "panel.html"];

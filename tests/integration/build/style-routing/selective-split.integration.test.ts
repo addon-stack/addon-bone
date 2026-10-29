@@ -135,7 +135,10 @@ test("watch adds and removes the shared lazy split and restores the ordinary CSS
     const output = await mkdtemp(path.join(os.tmpdir(), "adnbn-selective-watch-"));
     const selectionFile = path.join(output, "selection.json");
     const setState = async (state: string) =>
-        writeFile(selectionFile, await readFile(path.join(__dirname, "delivery-spike/states", `${state}.json`)));
+        writeFile(
+            selectionFile,
+            await readFile(path.join(import.meta.dirname, "delivery-spike/states", `${state}.json`))
+        );
     await setState("none");
     const compiler = await createCompiler(output, false, {initial: true, selectionFile});
     let queuedState: string | undefined;

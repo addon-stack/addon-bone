@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {readFile, stat} from "fs/promises";
 import path from "path";
 
@@ -8,8 +10,8 @@ import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 import {documentStateExpression, expectLoadedProbe, type DocumentState} from "./utils";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
-const fixtureDir = path.join(__dirname, "entrypoint-assets");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
+const fixtureDir = path.join(import.meta.dirname, "entrypoint-assets");
 
 interface FrameState {
     top: DocumentState;

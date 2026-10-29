@@ -4,8 +4,8 @@ import ServiceParser from "./ServiceParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "service");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "service");
 
 const parser = new ServiceParser({rootDir} as ReadonlyConfig);
 

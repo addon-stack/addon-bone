@@ -1,3 +1,6 @@
+import {createRequire} from "node:module";
+import {jest} from "@jest/globals";
+
 import {spawnSync} from "node:child_process";
 import path from "node:path";
 
@@ -8,13 +11,15 @@ type Execute = (
     options: {cwd: string; env: Environment; shell: false; stdio: "inherit"}
 ) => {status: number | null; error?: Error};
 
+const require = createRequire(import.meta.url);
+
 const {shouldRelease, getReleaseArguments, runRelease} = require("../.github/scripts/releaseAutomation.cjs") as {
     shouldRelease: (env: Environment) => boolean;
     getReleaseArguments: (env: Environment) => string[];
     runRelease: (env: Environment, execute: Execute) => number;
 };
 
-const root = path.resolve(__dirname, "..");
+const root = path.resolve(import.meta.dirname, "..");
 const script = path.join(root, ".github/scripts/releaseAutomation.cjs");
 const environment = (overrides: Environment = {}): Environment => ({
     GITHUB_EVENT_NAME: "push",

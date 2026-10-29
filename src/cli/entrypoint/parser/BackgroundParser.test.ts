@@ -4,8 +4,8 @@ import BackgroundParser from "./BackgroundParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "background");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "background");
 
 const parser = new BackgroundParser({rootDir} as ReadonlyConfig);
 

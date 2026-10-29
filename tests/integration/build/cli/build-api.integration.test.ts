@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import {stripVTControlCharacters} from "node:util";
 
-const scripts = path.join(__dirname, "scripts");
-const appModule = path.resolve(__dirname, "../../../../dist/cli/builders/app/index.js");
+const scripts = path.join(import.meta.dirname, "scripts");
+const appModule = path.resolve(import.meta.dirname, "../../../../dist/cli/builders/app/index.js");
 
 test.each([
     "sequence",
@@ -51,7 +51,7 @@ test("the internal app build returns Stats after shutdown without printing them"
     const artifact = path.join(root, "dist/exit-code-chrome-mv3");
 
     try {
-        cpSync(path.join(__dirname, "fixtures/exit-code/lifecycle"), root, {recursive: true});
+        cpSync(path.join(import.meta.dirname, "fixtures/exit-code/lifecycle"), root, {recursive: true});
         const result = spawnSync(process.execPath, [path.join(scripts, "build-api.mjs"), appModule, root, artifact], {
             cwd: root,
             encoding: "utf8",

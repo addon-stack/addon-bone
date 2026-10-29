@@ -14,8 +14,8 @@ import ManifestV3 from "@cli/builders/manifest/ManifestV3";
 import {Browser} from "@typing/browser";
 import {ContentScriptStylesRuntimeProperty, ContentScriptWorld} from "@typing/content";
 
-export const project = path.resolve(__dirname, "../../../../..");
-export const fixtures = path.join(__dirname, "src");
+export const project = path.resolve(import.meta.dirname, "../../../../..");
+export const fixtures = path.join(import.meta.dirname, "src");
 export const origin = "https://extension.test/";
 export const contentEntries = ["normal", "shadow", "iframe", "relay", "switch"];
 export const worldLayer = getContentLayer(ContentScriptWorld.Isolated);
@@ -35,7 +35,7 @@ export const createCompiler = async (output: string, options: CompilerOptions = 
     const cssFilename = options.cssFilename ?? "css/[name].[contenthash:8].css";
     let selection = "none";
     const config = {
-        rootDir: __dirname,
+        rootDir: import.meta.dirname,
         srcDir: "src",
         sharedDir: ".",
         appsDir: "apps",
@@ -69,7 +69,7 @@ export const createCompiler = async (output: string, options: CompilerOptions = 
         },
         resolve: {
             alias: {"adnbn/entry/content/vanilla$": path.join(project, "dist/entry/content/adapters/vanilla/index.js")},
-            modules: [path.resolve(__dirname, "../src/vendor"), path.join(project, "node_modules")],
+            modules: [path.resolve(import.meta.dirname, "../src/vendor"), path.join(project, "node_modules")],
             extensions: [".js"],
         },
         resolveLoader: {modules: [path.join(project, "node_modules")]},

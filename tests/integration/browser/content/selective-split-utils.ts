@@ -90,7 +90,7 @@ export const runSelectiveSplitProbe = async (browser: "chrome" | "firefox", mani
         );
 
         session = await startBrowserSession(browser, project, extension);
-        const sourceSite = path.join(__dirname, "../../build/style-routing/selective-split/site");
+        const sourceSite = path.join(import.meta.dirname, "../../build/style-routing/selective-split/site");
         const siteDirectory = path.join(extension, "site");
         await mkdir(siteDirectory);
         await copyFile(path.join(sourceSite, "top.html"), path.join(siteDirectory, "top.html"));

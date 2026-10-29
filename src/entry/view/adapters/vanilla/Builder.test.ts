@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import Builder from "./Builder";
 
 import type {ViewConfig, ViewRenderHandler} from "@typing/view";

@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {verifyLocaleDollars} from "./dollars";
 
 jest.setTimeout(90_000);

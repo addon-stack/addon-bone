@@ -1,24 +1,24 @@
-jest.mock("#adnbn/locale", () => require("../src/locale/providers/tests/fixtures/dynamic"));
-
-import {executeScript, getBrowserInfo, getManifest, sendMessage, sendTabMessage} from "@addon-core/browser";
-import {createTabFixture} from "@addon-core/browser/testing";
-import {Storage} from "@addon-core/storage";
-
-import NativeLocale from "@locale/providers/NativeLocale";
-import {ObservableLocale} from "@locale/observers";
-import {MemoryLocaleStorage} from "@locale/tests/fixtures";
-import OffscreenBridge from "@offscreen/OffscreenBridge";
-import SandboxMessage from "@sandbox/SandboxMessage";
-import {getApp, getBrowser, getManifestVersion, isBrowser} from "@main/env";
-import {Browser} from "@typing/browser";
-import MessageManager from "@message/MessageManager";
-import Message from "@message/providers/Message";
-import RelayManager from "@relay/RelayManager";
-import {MessageGlobalKey} from "@typing/message";
 import {RelayGlobalKey} from "@typing/relay";
+import {MessageGlobalKey} from "@typing/message";
+import {Browser} from "@typing/browser";
+import {jest} from "@jest/globals";
 
-import BrowserTestSession from "./browser-harness/BrowserTestSession";
-import {getBrowserTest, stopBrowserTest} from "./browser-harness/session";
+jest.unstable_mockModule("#adnbn/locale", () => import("../src/locale/providers/tests/fixtures/dynamic"));
+
+const {executeScript, getBrowserInfo, getManifest, sendMessage, sendTabMessage} = await import("@addon-core/browser");
+const {createTabFixture} = await import("@addon-core/browser/testing");
+const {Storage} = await import("@addon-core/storage");
+const {default: NativeLocale} = await import("@locale/providers/NativeLocale");
+const {ObservableLocale} = await import("@locale/observers");
+const {MemoryLocaleStorage} = await import("@locale/tests/fixtures");
+const {default: OffscreenBridge} = await import("@offscreen/OffscreenBridge");
+const {default: SandboxMessage} = await import("@sandbox/SandboxMessage");
+const {getApp, getBrowser, getManifestVersion, isBrowser} = await import("@main/env");
+const {default: MessageManager} = await import("@message/MessageManager");
+const {default: Message} = await import("@message/providers/Message");
+const {default: RelayManager} = await import("@relay/RelayManager");
+const {default: BrowserTestSession} = await import("./browser-harness/BrowserTestSession");
+const {getBrowserTest, stopBrowserTest} = await import("./browser-harness/session");
 
 const hostSetTimeout = setTimeout;
 const initialBrowser = process.env.BROWSER;
@@ -119,7 +119,7 @@ test("disposes pending guest execution, listeners, framework caches and restores
 test("continues teardown after a consumer cleanup fails and rejects pending message channels", async () => {
     const session = getBrowserTest();
     const receiver = session.harness.contexts.create({kind: "background"});
-    const cleaned = jest.fn();
+    const cleaned = jest.fn<() => void>();
 
     receiver.onMessage.on(() => true);
 

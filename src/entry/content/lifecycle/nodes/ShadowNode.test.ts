@@ -1,8 +1,3 @@
-import {ContainerRegistry} from "../context";
-import {MountNode, Node, ShadowNode} from "./index";
-import IsolationSetup from "../IsolationSetup";
-import {getContentScriptStylesRuntime} from "./isolated-styles";
-
 import {
     ContentScriptShadowMode,
     type ContentScriptShadowOptions,
@@ -11,10 +6,17 @@ import {
     type ContentScriptBoundaryProps,
     type ContentScriptTargetProps,
 } from "@typing/content";
+import {jest} from "@jest/globals";
 
-jest.mock("./isolated-styles", () => ({
+jest.unstable_mockModule("./isolated-styles", () => ({
     getContentScriptStylesRuntime: jest.fn(),
 }));
+
+const {getContentScriptStylesRuntime} = await import("./isolated-styles");
+
+const {ContainerRegistry} = await import("../context");
+const {MountNode, Node, ShadowNode} = await import("./index");
+const {default: IsolationSetup} = await import("../IsolationSetup");
 
 const createNode = (
     runtime: ContentScriptStylesRuntime,
@@ -123,7 +125,7 @@ describe("ShadowNode", () => {
             add: jest.fn(),
             ready: jest.fn(async () => undefined),
             delete: jest.fn(),
-            load: jest.fn(),
+            load: jest.fn<(url: string) => Promise<void>>(),
         };
 
         const factory = jest.fn(({boundary, document}: ContentScriptTargetProps<undefined, "shadow">) => {
@@ -167,7 +169,7 @@ describe("ShadowNode", () => {
             add: jest.fn(),
             ready: jest.fn(async () => undefined),
             delete: jest.fn(),
-            load: jest.fn(),
+            load: jest.fn<(url: string) => Promise<void>>(),
         };
 
         const factory = jest.fn(({document}: ContentScriptTargetProps<undefined, "shadow">) =>
@@ -200,7 +202,7 @@ describe("ShadowNode", () => {
             add: jest.fn(),
             ready: jest.fn(async () => undefined),
             delete: jest.fn(),
-            load: jest.fn(),
+            load: jest.fn<(url: string) => Promise<void>>(),
         };
 
         const {node} = createNode(runtime, undefined, undefined, ({document}) => {
@@ -283,7 +285,7 @@ test("ShadowNode sets up each closed boundary once and cleans subscriptions befo
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
     const calls: string[] = [];
     const cleanup = jest.fn();
@@ -331,7 +333,7 @@ test.each(["setup", "target", "unmount"])("ShadowNode releases boundary resource
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
     const cleanup = jest.fn();
 

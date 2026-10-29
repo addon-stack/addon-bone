@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {getBrowserTest} from "@tests/browser-harness/session";
 import {LocaleStorage} from "./index";
 import {Language} from "@typing/locale";
@@ -38,7 +40,7 @@ test.each([Language.English, Language.EnglishGreatBritain, Language.German])(
 test.each([null, "", "unknown", "__proto__", "en-GB", 1, {}, ["en"]])(
     "ignores invalid stored values in reads and notifications: %p",
     async invalid => {
-        const warn = jest.spyOn(console, "warn").mockImplementation();
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
         const storage = new LocaleStorage();
         const handler = jest.fn();
         const stop = storage.watch(handler);

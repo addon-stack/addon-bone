@@ -59,7 +59,7 @@ const file = (filename: string): EntrypointFile => ({
 
 describe("OptionsFinder", () => {
     test("discovers options files and index directories without treating options as a separate plural group", () => {
-        const fixtures = path.resolve(__dirname, "tests", "fixtures", "options", "discovery");
+        const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "options", "discovery");
         const finder = new TestOptionsFinder(config, new Map());
 
         const files = [...finder.scan(fixtures)].map(({file}) => toPosix(path.relative(fixtures, file))).sort();
@@ -68,7 +68,7 @@ describe("OptionsFinder", () => {
     });
 
     test("ignores nested candidates when there is no root entrypoint", async () => {
-        const rootDir = path.resolve(__dirname, "tests", "fixtures", "discovery", "nested");
+        const rootDir = path.resolve(import.meta.dirname, "tests", "fixtures", "discovery", "nested");
         const finder = new OptionsFinder(makeConfig({rootDir, sharedDir: "."}));
 
         await expect(finder.files()).resolves.toEqual(new Set());

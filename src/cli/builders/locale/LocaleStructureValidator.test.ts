@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import LocaleBuilder from "./LocaleBuilder";
 import LocaleStructureValidator from "./LocaleStructureValidator";
 
@@ -13,10 +15,10 @@ const makeBuilders = (items: Array<[Language, LocaleData]>): LocaleBuilders => {
 };
 
 describe("LocaleStructureValidator", () => {
-    let consoleWarnSpy: jest.SpyInstance;
+    let consoleWarnSpy: jest.Spied<typeof console.warn>;
 
     beforeEach(() => {
-        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     });
 
     afterEach(() => {
