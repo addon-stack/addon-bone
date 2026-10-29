@@ -6,8 +6,8 @@ import NewtabParser from "./NewtabParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
 
 const config = {rootDir} as ReadonlyConfig;
 

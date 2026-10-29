@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {copyFile, readFile, readdir, rm} from "fs/promises";
 import path from "path";
 import vm from "vm";
@@ -6,10 +8,10 @@ import {run} from "../../utils/process";
 
 jest.setTimeout(90_000);
 
-const fixtureDirectory = path.join(__dirname, "dynamic-fixture");
+const fixtureDirectory = path.join(import.meta.dirname, "dynamic-fixture");
 
 test("the published package imports without bundler aliases or extension APIs", async () => {
-    await run(process.execPath, [path.join(__dirname, "states/package-import.mjs")], ADNBN_TEST_ROOT);
+    await run(process.execPath, [path.join(import.meta.dirname, "states/package-import.mjs")], ADNBN_TEST_ROOT);
 });
 
 test.each(["chrome", "firefox"])(
@@ -59,7 +61,7 @@ test("native-only consumers do not include the catalogue despite importing the p
         for (const file of ["popup.ts", "options.ts", "locale.content.ts", "main.content.ts"])
             await rm(path.join(fixture.directory, "src", file));
         await copyFile(
-            path.join(__dirname, "states/native-background.ts"),
+            path.join(import.meta.dirname, "states/native-background.ts"),
             path.join(fixture.directory, "src/background.ts")
         );
         const directory = await fixture.build();
@@ -106,7 +108,10 @@ test("the native React hook builds through the public adapter without bundling t
     try {
         for (const file of ["background.ts", "options.ts", "locale.content.ts", "main.content.ts"])
             await rm(path.join(fixture.directory, "src", file));
-        await copyFile(path.join(__dirname, "states/native-popup.ts"), path.join(fixture.directory, "src/popup.ts"));
+        await copyFile(
+            path.join(import.meta.dirname, "states/native-popup.ts"),
+            path.join(fixture.directory, "src/popup.ts")
+        );
 
         const directory = await fixture.build();
         const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));

@@ -56,7 +56,7 @@ const createPlugin = (
 
 describe("PopupFinder", () => {
     test("keeps grouped directory priority when multiple popups are disabled", async () => {
-        const rootDir = path.resolve(__dirname, "tests", "fixtures", "discovery", "grouped");
+        const rootDir = path.resolve(import.meta.dirname, "tests", "fixtures", "discovery", "grouped");
         const finder = new PopupFinder({...config, rootDir, sharedDir: ".", multiplePopup: false});
         const files = Array.from(await finder.files(), ({file}) => toPosix(path.relative(rootDir, file)));
 

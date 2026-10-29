@@ -4,7 +4,7 @@ import PopupFinder from "./PopupFinder";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "tests", "fixtures", "selection");
+const rootDir = path.resolve(import.meta.dirname, "tests", "fixtures", "selection");
 
 const makeFinder = (multiplePopup: boolean): PopupFinder => {
     const config = {

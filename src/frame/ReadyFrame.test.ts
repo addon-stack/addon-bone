@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import ReadyFrame, {ReadyFrameParams} from "./ReadyFrame";
 
 const wait = () => new Promise(resolve => setTimeout(resolve));

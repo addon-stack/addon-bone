@@ -1,17 +1,18 @@
-import {act} from "@testing-library/react";
-import {createElement, Fragment, useEffect, useState} from "react";
-import {createPortal} from "react-dom";
-
-import Builder from "./Builder";
-import {resolveDefinition} from "./definition";
-import {createMutationObserverStrategy} from "../../resolvers/watch";
 import {ContentScriptEvent, type ContentScriptContext, type ContentScriptProps} from "@typing/content";
+import {jest} from "@jest/globals";
 
-// Extend the shared random-ID mock for the builders' generated marker attribute.
-jest.mock("nanoid", () => ({
+// Keep the builders' generated marker attributes deterministic.
+jest.unstable_mockModule("nanoid", () => ({
     nanoid: jest.fn(() => "mocked-id"),
     customAlphabet: () => () => "contentmarker",
 }));
+
+const {act} = await import("@testing-library/react");
+const {createElement, Fragment, useEffect, useState} = await import("react");
+const {createPortal} = await import("react-dom");
+const {default: Builder} = await import("./Builder");
+const {resolveDefinition} = await import("./definition");
+const {createMutationObserverStrategy} = await import("../../resolvers/watch");
 
 describe("React Builder", () => {
     afterEach(() => document.body.replaceChildren());

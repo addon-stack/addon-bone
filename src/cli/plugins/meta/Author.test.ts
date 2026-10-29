@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import Author from "./Author";
 
 describe("Author meta", () => {

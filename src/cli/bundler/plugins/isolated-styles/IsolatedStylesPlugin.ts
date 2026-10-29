@@ -12,6 +12,7 @@ const PluginName = "IsolatedStylesPlugin";
 const CssLoadingRuntimeIdentifier = "webpack/runtime/css loading";
 const CssRuntimeBoundary = "// object to store loaded CSS chunks";
 const CssFilenameExpression = /var href = (.+?)\(chunkId\);/;
+const CssStylesheetLoaderDeclaration = /\bvar\s+(extractCssLoadStylesheet)\s*=\s*function\b/;
 
 export interface IsolatedStylesPluginOptions extends RuntimePropertyOptions {
     cssFilename: Filename;
@@ -195,8 +196,10 @@ export default class IsolatedStylesPlugin {
 
                 const boundary = originalSource.indexOf(CssRuntimeBoundary);
                 const filenameExpression = originalSource.match(CssFilenameExpression)?.[1];
+                const originalLoader = originalSource.slice(0, boundary);
+                const stylesheetLoader = originalLoader.match(CssStylesheetLoaderDeclaration)?.[1];
 
-                if (boundary < 0 || !filenameExpression) {
+                if (boundary < 0 || !filenameExpression || !stylesheetLoader) {
                     throw new Error(`CSS loading runtime seam for isolated entrypoint "${chunk.name}" is unavailable`);
                 }
 
@@ -206,7 +209,8 @@ export default class IsolatedStylesPlugin {
                             .filter(candidate => isIsolatedStylesChunk(compilation, candidate))
                             .map(candidate => [candidate.id, true])
                     ),
-                    originalLoader: originalSource.slice(0, boundary),
+                    originalLoader,
+                    stylesheetLoader,
                     cssFilenameExpression: filenameExpression,
                     originalRuntime: originalSource.slice(boundary),
                     publicPath: RuntimeGlobals.publicPath,

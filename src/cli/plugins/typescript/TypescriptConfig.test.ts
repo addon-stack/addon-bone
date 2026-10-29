@@ -5,7 +5,7 @@ import TypescriptConfig from "./TypescriptConfig";
 import type {ReadonlyConfig} from "@typing/config";
 
 describe("TypescriptConfig", () => {
-    const rootDir = path.resolve(__dirname, "tests", "project");
+    const rootDir = path.resolve(import.meta.dirname, "tests", "project");
 
     test.each([
         {name: "default directories", srcDir: "src", sharedDir: ".", alias: "src", source: "src", shared: "src"},

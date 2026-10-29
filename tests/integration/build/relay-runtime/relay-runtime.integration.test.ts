@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {spawn, type ChildProcess} from "child_process";
 import {copyFile, readFile, rm, writeFile} from "fs/promises";
 import path from "path";
@@ -17,17 +19,17 @@ test("generated page and Relay data follow their consumers through the public ba
     try {
         for (const file of ["control.relay.ts", "iframe.relay.ts"]) await rm(path.join(fixture.directory, "src", file));
         await copyFile(
-            path.join(__dirname, "states/messaging.ts"),
+            path.join(import.meta.dirname, "states/messaging.ts"),
             path.join(fixture.directory, "src/shadow.relay.ts")
         );
         await copyFile(
-            path.join(__dirname, "states/page.ts"),
+            path.join(import.meta.dirname, "states/page.ts"),
             path.join(fixture.directory, "src/control.page/index.ts")
         );
 
         for (const state of ["unused-background", "page-background", "background"]) {
             await copyFile(
-                path.join(__dirname, "states", `${state}.ts`),
+                path.join(import.meta.dirname, "states", `${state}.ts`),
                 path.join(fixture.directory, "src/background.ts")
             );
             const directory = await fixture.build();
@@ -52,7 +54,7 @@ test("generated page and Relay data follow their consumers through the public ba
 });
 
 test("content plugin delivers Relay options and refreshes names, methods and optional values in CLI watch", async () => {
-    const root = path.resolve(__dirname, "../../../..");
+    const root = path.resolve(import.meta.dirname, "../../../..");
     // Reuse the browser application: the same production configuration also exercises real Relay RPC.
     const fixture = await createIntegrationFixture(
         root,
@@ -84,11 +86,14 @@ test("content plugin delivers Relay options and refreshes names, methods and opt
     try {
         await rm(path.join(fixture.directory, "src/control.relay.ts"));
         await rm(path.join(fixture.directory, "src/iframe.relay.ts"));
-        await copyFile(path.join(__dirname, "states/background.ts"), path.join(fixture.directory, "src/background.ts"));
+        await copyFile(
+            path.join(import.meta.dirname, "states/background.ts"),
+            path.join(fixture.directory, "src/background.ts")
+        );
         const entry = path.join(fixture.directory, "src/shadow.relay.ts");
         // Save like an editor: Windows copyFile preserves the fixture's old mtime, so watch can miss the edit.
         const setState = async (state: string) =>
-            writeFile(entry, await readFile(path.join(__dirname, "states", `${state}.ts`)));
+            writeFile(entry, await readFile(path.join(import.meta.dirname, "states", `${state}.ts`)));
         await setState("messaging");
         const directory = await fixture.build({browser: "chrome"});
         const inspect = async () => {

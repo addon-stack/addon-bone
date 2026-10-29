@@ -1,7 +1,14 @@
-import {getBrowserTest} from "@tests/browser-harness/session";
-import {resolve} from "./index";
+import {jest} from "@jest/globals";
 
-jest.mock("#adnbn/locale", () => ({keys: ["locale", "app.title", "app.greeting"], languages: ["en"]}));
+jest.unstable_mockModule("#adnbn/locale", () => ({
+    default: {},
+    lang: "en",
+    keys: ["locale", "app.title", "app.greeting"],
+    languages: ["en"],
+}));
+
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {resolve} = await import("./index");
 
 describe("locale resolve", () => {
     beforeEach(() => {
@@ -29,7 +36,7 @@ describe("locale resolve", () => {
     });
 
     test("keeps the native missing-key warning and fallback", () => {
-        const warn = jest.spyOn(console, "warn").mockImplementation();
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
 
         expect(resolve("@missing")).toBe("missing");
         expect(warn).toHaveBeenCalledWith('Locale key "missing" not found in "en" language.');

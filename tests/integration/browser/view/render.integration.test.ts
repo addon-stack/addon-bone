@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {readFile} from "fs/promises";
 import path from "path";
 
@@ -7,7 +9,7 @@ import {waitFor} from "../utils/browser";
 import {startIntegrationSite, type IntegrationSite} from "../utils/site";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
 
 jest.setTimeout(90_000);
 
@@ -18,7 +20,7 @@ test("Chrome MV3 renders offscreen, sandbox, page and content views through the 
     let site: IntegrationSite | undefined;
 
     try {
-        fixture = await createIntegrationFixture(rootDir, path.join(__dirname, "render"));
+        fixture = await createIntegrationFixture(rootDir, path.join(import.meta.dirname, "render"));
         site = await startIntegrationSite(path.join(fixture.directory, "site"), null);
 
         const extensionDir = await fixture.build();

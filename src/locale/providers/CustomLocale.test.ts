@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import CustomLocale from "./CustomLocale";
 
 import {Language, LocaleValuesSeparator} from "@typing/locale";
@@ -11,11 +13,11 @@ describe("CustomLocale", () => {
     };
 
     const locale = new CustomLocale(Language.English, mockMessages);
-    let consoleWarnSpy: jest.SpyInstance;
+    let consoleWarnSpy: jest.Spied<typeof console.warn>;
 
     beforeEach(() => {
         locale.setLang(Language.English).setData(mockMessages);
-        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+        consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     });
 
     afterEach(() => {

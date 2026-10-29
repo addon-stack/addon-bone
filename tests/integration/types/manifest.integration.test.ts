@@ -2,8 +2,8 @@ import path from "node:path";
 import ts from "typescript";
 
 describe("manifest contracts", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixture = path.join(__dirname, "fixtures", "manifest", "builder.ts");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixture = path.join(import.meta.dirname, "fixtures", "manifest", "builder.ts");
 
     test.each(["source", "package"])(
         "checks public manifest types and builder boundaries through the %s API",

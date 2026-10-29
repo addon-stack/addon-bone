@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {waitFor} from "@testing-library/react";
 
 import sandbox, {Builder, resolveDefinition} from "./index";

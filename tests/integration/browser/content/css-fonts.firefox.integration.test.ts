@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {runCssFontsProbe} from "./css-fonts-utils";
 
 jest.setTimeout(90_000);

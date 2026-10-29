@@ -7,7 +7,7 @@ import LocaleDeclaration from "./LocaleDeclaration";
 import type {ReadonlyConfig} from "@typing/config";
 import type {LocaleStructure} from "@typing/locale";
 
-const fixtureDirectory = path.join(__dirname, "tests/fixtures");
+const fixtureDirectory = path.join(import.meta.dirname, "tests/fixtures");
 
 const typecheck = (files: string[], declaration?: string, target: "source" | "package" = "package"): string[] => {
     const config = ts.readConfigFile(path.join(ADNBN_TEST_ROOT, "tsconfig.json"), ts.sys.readFile);

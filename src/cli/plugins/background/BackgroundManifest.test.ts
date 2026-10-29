@@ -1,8 +1,32 @@
+import path from "node:path";
+
 import BackgroundEntry from "./BackgroundEntry";
 import BackgroundManifest from "./BackgroundManifest";
-import TestBackgroundFinder from "./tests/TestBackgroundFinder";
+import {BackgroundFinder} from "@cli/entrypoint";
 
 import type {BackgroundEntrypointOptions} from "@typing/background";
+import type {ReadonlyConfig} from "@typing/config";
+import type {EntrypointFile, EntrypointOptionsFinder} from "@typing/entrypoint";
+
+class TestBackgroundFinder extends BackgroundFinder {
+    public constructor(private readonly entries: BackgroundEntrypointOptions[]) {
+        super({rootDir: path.resolve(import.meta.dirname)} as ReadonlyConfig);
+    }
+
+    public plugin(): EntrypointOptionsFinder<BackgroundEntrypointOptions> {
+        return this;
+    }
+
+    public async options(): Promise<Map<EntrypointFile, BackgroundEntrypointOptions>> {
+        return new Map(
+            this.entries.map((options, index) => {
+                const file = path.resolve(import.meta.dirname, `${index}.background.ts`);
+
+                return [{file, import: file}, options];
+            })
+        );
+    }
+}
 
 interface PersistenceScenario {
     name: string;

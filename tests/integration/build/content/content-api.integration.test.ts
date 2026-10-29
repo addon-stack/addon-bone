@@ -2,7 +2,7 @@ import path from "path";
 import {build} from "esbuild";
 
 describe("published content API", () => {
-    const projectDir = path.resolve(__dirname, "../../../..");
+    const projectDir = path.resolve(import.meta.dirname, "../../../..");
 
     test.each([
         {

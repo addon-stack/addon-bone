@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import type {AssetInfo, PathData} from "@rspack/core";
 
 import {appFilenameResolver} from "./app-filename";

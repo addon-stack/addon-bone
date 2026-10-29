@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {spawn, type ChildProcess} from "child_process";
 import {copyFile, readFile, readdir, rm, writeFile} from "fs/promises";
 import path from "path";
@@ -44,7 +46,7 @@ const inspect = async (directory: string) => {
 };
 
 test.each(["chrome", "firefox"])("%s build imports the catalogue and preserves the native JSON data", async browser => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
     try {
         const {catalogue, keys} = await inspect(await fixture.build({browser}));
         expect([...keys].sort()).toEqual([
@@ -72,7 +74,7 @@ test.each(["chrome", "firefox"])("%s build imports the catalogue and preserves t
 });
 
 test("exports the configured default language even when it is not the first catalogue language", async () => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
     try {
         // Give the new default the complete message contract, including own __proto__ keys.
         await copyFile(
@@ -93,7 +95,7 @@ test("exports the configured default language even when it is not the first cata
 });
 
 test("CLI watch discovers, edits and removes locales and recovers from invalid translations", async () => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
     let compilations = 0;
     const update = async (change: () => Promise<unknown>) => {
         const previous = compilations;
@@ -109,7 +111,7 @@ test("CLI watch discovers, edits and removes locales and recovers from invalid t
         update(async () =>
             writeFile(
                 path.join(fixture.directory, "src/locales", `${language}.json`),
-                await readFile(path.join(__dirname, "states", state))
+                await readFile(path.join(import.meta.dirname, "states", state))
             )
         );
     let watcher: ChildProcess | undefined;

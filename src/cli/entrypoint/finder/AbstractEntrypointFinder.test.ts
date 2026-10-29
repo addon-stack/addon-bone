@@ -63,7 +63,7 @@ const relativeFiles = (root: string, files: Set<EntrypointFile>): string[] => {
     return Array.from(files, ({file}) => toPosix(path.relative(root, file))).sort();
 };
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "discovery");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "discovery");
 
 describe("AbstractEntrypointFinder", () => {
     test.each([

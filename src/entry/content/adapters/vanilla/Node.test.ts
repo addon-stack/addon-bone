@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import VanillaNode from "./Node";
 
 import {ContentScriptShadowMode} from "@typing/content";

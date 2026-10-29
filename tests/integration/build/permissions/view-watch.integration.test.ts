@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {spawn, type ChildProcess} from "child_process";
 import {readFile, rm, writeFile} from "fs/promises";
 import path from "path";
@@ -8,8 +10,8 @@ import {stop, waitFor} from "../../browser/utils/browser";
 jest.setTimeout(90_000);
 
 test("CLI watch replaces page and offscreen permissions and a fresh build drops removed views", async () => {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = await createIntegrationFixture(root, path.join(__dirname, "views"));
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = await createIntegrationFixture(root, path.join(import.meta.dirname, "views"));
     let watcher: ChildProcess | undefined;
     let output = "";
 
@@ -78,7 +80,7 @@ test("CLI watch replaces page and offscreen permissions and a fresh build drops 
         );
 
         const beforeEdit = completedBuilds();
-        await writeFile(entry, await readFile(path.join(__dirname, "states", "reports.ts")));
+        await writeFile(entry, await readFile(path.join(import.meta.dirname, "states", "reports.ts")));
 
         const changed = await observe(
             "page edit",
@@ -94,7 +96,7 @@ test("CLI watch replaces page and offscreen permissions and a fresh build drops 
         expect(changed.content_security_policy.extension_pages).not.toContain("https://api.example.net");
 
         const beforeOffscreenEdit = completedBuilds();
-        await writeFile(offscreen, await readFile(path.join(__dirname, "states", "processor.ts")));
+        await writeFile(offscreen, await readFile(path.join(import.meta.dirname, "states", "processor.ts")));
 
         const changedOffscreen = await observe(
             "offscreen edit",

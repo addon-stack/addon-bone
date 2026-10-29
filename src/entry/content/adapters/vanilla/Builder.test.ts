@@ -1,7 +1,8 @@
-import Builder from "./Builder";
-import {waitFor} from "@testing-library/react";
-import {resolveDefinition} from "./definition";
-import {defineContentScript, defineContentScriptAppend} from "@main/content";
+import type {
+    ContentScriptContainerFactory,
+    ContentScriptPrepareHandler,
+    ContentScriptRenderHandler,
+} from "@typing/content";
 import {
     ContentScriptAppend,
     ContentScriptEvent,
@@ -10,16 +11,22 @@ import {
     type ContentScriptTargetProps,
     type ContentScriptMainFunction,
 } from "@typing/content";
+import {jest} from "@jest/globals";
 
-// Extend the shared random-ID mock for the builders' generated marker attribute.
-jest.mock("nanoid", () => ({
+// Keep the builders' generated marker attributes deterministic.
+jest.unstable_mockModule("nanoid", () => ({
     nanoid: jest.fn(() => "mocked-id"),
     customAlphabet: () => () => "contentmarker",
 }));
 
-jest.mock("../../lifecycle/nodes/isolated-styles", () => ({
+jest.unstable_mockModule("../../lifecycle/nodes/isolated-styles", () => ({
     getContentScriptStylesRuntime: () => ({add: jest.fn(), ready: jest.fn(async () => undefined), delete: jest.fn()}),
 }));
+
+const {default: Builder} = await import("./Builder");
+const {waitFor} = await import("@testing-library/react");
+const {resolveDefinition} = await import("./definition");
+const {defineContentScript, defineContentScriptAppend} = await import("@main/content");
 
 describe("Vanilla Builder", () => {
     afterEach(() => document.body.replaceChildren());
@@ -279,7 +286,7 @@ describe("Vanilla preparation and render props", () => {
         const calls: ContentScriptProps<{title: string}>[] = [];
         const events: ContentScriptEvent[] = [];
 
-        const container = jest.fn(({data}) => {
+        const container = jest.fn<ContentScriptContainerFactory<{title: string}>>(({data}) => {
             const element = document.createElement("section");
             element.title = data.title;
 
@@ -349,7 +356,7 @@ describe("Vanilla preparation and render props", () => {
         const rendered: ContentScriptProps<typeof data, "shadow">[] = [];
         const boundaries: (ShadowRoot | HTMLIFrameElement | undefined)[] = [];
 
-        const main = jest.fn<ReturnType<ContentScriptMainFunction>, Parameters<ContentScriptMainFunction>>(context => {
+        const main = jest.fn<ContentScriptMainFunction>(context => {
             context.watch((_event, node) => boundaries.push(node.boundary));
         });
 
@@ -444,9 +451,11 @@ describe("Vanilla preparation and render props", () => {
         const allowed = createAnchor();
         const denied = createAnchor();
         allowed.className = denied.className = "product";
-        const prepare = jest.fn(async ({anchor}) => (anchor === allowed ? {title: "Allowed"} : false));
+        const prepare = jest.fn<ContentScriptPrepareHandler<{title: string}>>(async ({anchor}) =>
+            anchor === allowed ? {title: "Allowed"} : false
+        );
         const container = jest.fn(() => document.createElement("section"));
-        const render = jest.fn(({data}) => data.title);
+        const render = jest.fn<ContentScriptRenderHandler<{title: string}>>(({data}) => data.title);
         const update = Promise.withResolvers<() => void>();
 
         const builder = new Builder(
@@ -487,7 +496,7 @@ describe("Vanilla preparation and render props", () => {
         const response = Promise.withResolvers<string>();
         let calls = 0;
         const container = jest.fn(() => document.createElement("section"));
-        const render = jest.fn(({data}) => data);
+        const render = jest.fn<ContentScriptRenderHandler<string>>(({data}) => data);
         const watch = jest.fn(() => () => {});
 
         const builder = new Builder(
@@ -736,7 +745,7 @@ test("does not mount a container whose async factory finishes after its anchor w
     const started = Promise.withResolvers<void>();
     const response = Promise.withResolvers<Element>();
     const render = jest.fn(() => "UI");
-    const mount = jest.fn();
+    const mount = jest.fn<() => void>();
 
     const builder = new Builder(
         defineContentScript({

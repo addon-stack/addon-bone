@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {startBrowserTest, stopBrowserTest} from "./browser-harness/session";
 
 beforeEach(startBrowserTest);

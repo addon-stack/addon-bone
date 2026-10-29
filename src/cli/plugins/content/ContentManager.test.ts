@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import ContentManager from "./ContentManager";
 
 import type {ContentDriver, ContentItems, ContentProvider} from "./types";

@@ -62,7 +62,9 @@ const addExternalUrlResolver = (target: Compiler): void => {
             return original.flatMap((item, index) => {
                 const entry = typeof item === "string" ? {loader: item} : item;
 
-                if (!/(?:^|[/\\])sass-loader(?:[/\\]|$)/.test(entry.loader)) {
+                // Rspack 2's RuleSetUseItem includes Falsy for conditional loaders (flag && loader).
+                // Preserve those entries while adapting only the existing Sass loader.
+                if (!entry || !/(?:^|[/\\])sass-loader(?:[/\\]|$)/.test(entry.loader)) {
                     return [item];
                 }
 
@@ -125,7 +127,7 @@ test("the production style pipeline loads its private ESM loader under native No
 
     const {stdout, stderr} = await promisify(execFile)(
         process.execPath,
-        [path.join(__dirname, "verify-native-consumer.mjs"), root],
+        [path.join(import.meta.dirname, "verify-native-consumer.mjs"), root],
         {timeout: 15_000, maxBuffer: 1024 * 1024}
     );
 

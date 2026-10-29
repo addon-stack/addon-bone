@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {runFramePagesIntegration} from "./frame-pages-utils";
 jest.setTimeout(90_000);
 test.each([2, 3] as const)(

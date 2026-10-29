@@ -4,8 +4,8 @@ import SandboxParser from "./SandboxParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "sandbox");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "sandbox");
 
 const parser = new SandboxParser({rootDir} as ReadonlyConfig);
 

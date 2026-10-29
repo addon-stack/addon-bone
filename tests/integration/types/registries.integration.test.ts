@@ -12,8 +12,8 @@ import TransportDeclaration, {
 import type {ReadonlyConfig} from "@typing/config";
 
 describe("shared registries", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixtureDir = path.join(__dirname, "fixtures/registries");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixtureDir = path.join(import.meta.dirname, "fixtures/registries");
     let rootDir: string;
     let filled: string;
     let empty: string;

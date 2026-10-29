@@ -5,7 +5,7 @@ import type {ViewItems} from "@cli/entrypoint/finder/AbstractViewFinder";
 import type {ReadonlyConfig} from "@typing/config";
 import type {PopupEntrypointOptions} from "@typing/popup";
 
-const rootDir = path.resolve(__dirname);
+const rootDir = path.resolve(import.meta.dirname);
 
 class TestPopup extends Popup {
     public constructor(private readonly entries: ViewItems<PopupEntrypointOptions>) {

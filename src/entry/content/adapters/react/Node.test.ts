@@ -1,16 +1,16 @@
-import {createElement} from "react";
-import {createRoot} from "react-dom/client";
-
-import ReactNode from "./Node";
-
 import {ContentScriptShadowMode} from "@typing/content";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("react-dom/client", () => ({
+    createRoot: jest.fn(),
+}));
+
+const {createElement} = await import("react");
+const {createRoot} = await import("react-dom/client");
+const {default: ReactNode} = await import("./Node");
 
 const render = jest.fn();
 const unmount = jest.fn();
-
-jest.mock("react-dom/client", () => ({
-    createRoot: jest.fn(),
-}));
 
 describe("ReactNode", () => {
     beforeEach(() => {
@@ -22,7 +22,7 @@ describe("ReactNode", () => {
         const anchor = document.createElement("article");
         const target = document.createElement("section");
         document.body.append(anchor);
-        const node = {anchor, target, mount: jest.fn(), unmount: jest.fn()};
+        const node = {anchor, target, mount: jest.fn<() => void>(), unmount: jest.fn<() => void>()};
         const renderer = new ReactNode(
             node,
             () => createElement("span"),

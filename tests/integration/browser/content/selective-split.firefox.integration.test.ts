@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {runSelectiveSplitProbe} from "./selective-split-utils";
 
 jest.setTimeout(90_000);

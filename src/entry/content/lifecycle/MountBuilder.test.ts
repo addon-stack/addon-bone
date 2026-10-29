@@ -1,18 +1,20 @@
-import MountBuilder from "./MountBuilder";
-import {resolveDefinition} from "../resolvers/definition";
-import {defineContentScript} from "@main/content";
 import {
     ContentScriptEvent,
     ContentScriptIsolation,
     ContentScriptMarker,
     type ContentScriptDefinition,
 } from "@typing/content";
+import {jest} from "@jest/globals";
 
-// Extend the shared random-ID mock for the builders' generated marker attribute.
-jest.mock("nanoid", () => ({
+// Keep the builders' generated marker attributes deterministic.
+jest.unstable_mockModule("nanoid", () => ({
     nanoid: jest.fn(() => "mocked-id"),
     customAlphabet: () => () => "contentmarker",
 }));
+
+const {default: MountBuilder} = await import("./MountBuilder");
+const {resolveDefinition} = await import("../resolvers/definition");
+const {defineContentScript} = await import("@main/content");
 
 describe("MountBuilder", () => {
     afterEach(() => document.body.replaceChildren());
@@ -240,7 +242,7 @@ describe("MountBuilder", () => {
     });
 
     test("Common runtime runs main without resolving a marker, creating nodes or starting a DOM watcher", async () => {
-        const main = jest.fn();
+        const main = jest.fn<() => void>();
         const marker = jest.fn(() => ContentScriptMarker.Weak);
         const anchor = jest.fn(() => document.body);
         const container = jest.fn(() => document.createElement("section"));
@@ -374,7 +376,7 @@ describe("MountBuilder", () => {
 
     test("rejects marker initialization after main has run without starting anchor processing", async () => {
         const error = new Error("Marker initialization failed");
-        const main = jest.fn();
+        const main = jest.fn<() => void>();
         const anchor = jest.fn(() => document.body);
         const watch = jest.fn(() => () => {});
 
@@ -474,8 +476,8 @@ describe("MountBuilder", () => {
             document.body.append(anchor);
             const prepare = jest.fn(async () => false as const);
             const container = jest.fn(() => document.createElement("section"));
-            const mount = jest.fn();
-            const boundary = jest.fn();
+            const mount = jest.fn<() => void>();
+            const boundary = jest.fn<() => void>();
 
             const builder = new MountBuilder(
                 defineContentScript({
@@ -569,7 +571,7 @@ test.each(["none", "shadow", "iframe"] as const)(
 );
 
 test.each([undefined, "none", {type: "none"}])("rejects boundary setup without isolation %p", isolation => {
-    const boundary = jest.fn();
+    const boundary = jest.fn<() => void>();
 
     expect(() => new MountBuilder(resolveDefinition({default: {isolation, boundary}}))).toThrow(
         "boundary requires Shadow DOM or an iframe"
@@ -608,7 +610,7 @@ test("rejects asynchronous boundary setup and removes a partially created iframe
 });
 
 test.each(["shadow", "iframe"] as const)("headless %s never invokes boundary setup", async isolation => {
-    const boundary = jest.fn();
+    const boundary = jest.fn<() => void>();
     const builder =
         isolation === "shadow"
             ? new MountBuilder(

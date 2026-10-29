@@ -1,9 +1,11 @@
-jest.mock("#adnbn/relay", () => ({options: {}}));
-
-import {getRelay} from "./relay";
-import {options} from "#adnbn/relay";
 import {RelayMethod} from "@typing/relay";
-import {RelayPermissionGlobalKey} from "@relay/RelayPermission";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/relay", () => ({options: {}}));
+
+const {getRelay} = await import("./relay");
+const {options} = await import("#adnbn/relay");
+const {RelayPermissionGlobalKey} = await import("@relay/RelayPermission");
 
 // Generated RelayRegistry typing is covered by RelayDeclaration tests; exercise arbitrary runtime maps here.
 const getFixtureRelay = getRelay as (name: string, tabId: number) => unknown;

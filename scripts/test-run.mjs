@@ -3,8 +3,13 @@ import {constants} from "node:os";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
+const flags = ["--experimental-vm-modules"];
+
 // Keep the workaround scoped to the environment where this project reproduces nodejs/node#62393.
-const flags = process.platform === "darwin" && process.arch === "arm64" ? ["--no-sparkplug"] : [];
+if (process.platform === "darwin" && process.arch === "arm64") {
+    flags.push("--no-sparkplug");
+}
+
 const child = spawn(
     process.execPath,
     [...flags, path.join(root, "node_modules/jest/bin/jest.js"), ...process.argv.slice(2)],

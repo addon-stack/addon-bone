@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {spawn, type ChildProcess} from "child_process";
 import {cp, copyFile, readFile, rm, writeFile} from "fs/promises";
 import path from "path";
@@ -8,7 +10,7 @@ import {waitFor, stop} from "../../browser/utils/browser";
 jest.setTimeout(90_000);
 
 test("real CLI watch changes isolation and page aliases and removes outdated WAR matches", async () => {
-    const root = path.resolve(__dirname, "../../../..");
+    const root = path.resolve(import.meta.dirname, "../../../..");
 
     const fixture = await createIntegrationFixture(
         root,
@@ -19,7 +21,10 @@ test("real CLI watch changes isolation and page aliases and removes outdated WAR
     let output = "";
 
     try {
-        await copyFile(path.join(__dirname, "states/background.ts"), path.join(fixture.directory, "src/background.ts"));
+        await copyFile(
+            path.join(import.meta.dirname, "states/background.ts"),
+            path.join(fixture.directory, "src/background.ts")
+        );
         await rm(path.join(fixture.directory, "src/source.content.ts"));
 
         await copyFile(
@@ -28,18 +33,25 @@ test("real CLI watch changes isolation and page aliases and removes outdated WAR
         );
 
         await writeFile(path.join(fixture.directory, "src/watch.css"), ".watch-ui { color: red; }\n");
-        await copyFile(path.join(__dirname, "states/fonts.css"), path.join(fixture.directory, "src/watch-fonts.css"));
-        await cp(path.join(__dirname, "states/shared-lazy"), path.join(fixture.directory, "src/shared-lazy"), {
-            recursive: true,
-        });
         await copyFile(
-            path.join(__dirname, "states/normal-shared.ts"),
+            path.join(import.meta.dirname, "states/fonts.css"),
+            path.join(fixture.directory, "src/watch-fonts.css")
+        );
+        await cp(
+            path.join(import.meta.dirname, "states/shared-lazy"),
+            path.join(fixture.directory, "src/shared-lazy"),
+            {
+                recursive: true,
+            }
+        );
+        await copyFile(
+            path.join(import.meta.dirname, "states/normal-shared.ts"),
             path.join(fixture.directory, "src/normal.content.ts")
         );
         const entry = path.join(fixture.directory, "src/page.content.ts");
         // Save like an editor: Windows copyFile preserves the fixture's old mtime, so watch can miss the edit.
         const setState = async (state: string) =>
-            writeFile(entry, await readFile(path.join(__dirname, "states", state + ".ts")));
+            writeFile(entry, await readFile(path.join(import.meta.dirname, "states", state + ".ts")));
 
         await setState("none");
         const directory = await fixture.build({browser: "chrome"});

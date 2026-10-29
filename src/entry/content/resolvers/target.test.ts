@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {createTargetResolver} from "./target";
 import type {ContentScriptTarget, ContentScriptTargetProps} from "@typing/content";
 

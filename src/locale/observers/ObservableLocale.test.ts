@@ -1,11 +1,13 @@
-jest.mock("#adnbn/locale", () => require("@locale/providers/tests/fixtures/dynamic"));
-
-import {Storage} from "@addon-core/storage";
-import {PackageName} from "@typing/app";
-import {getBrowserTest} from "@tests/browser-harness/session";
-import {ObservableLocale} from "./index";
-import {MemoryLocaleStorage} from "../tests/fixtures";
 import {Language, type LocaleDynamicProvider, type LocaleStorageDriver} from "@typing/locale";
+import {PackageName} from "@typing/app";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/locale", () => import("@locale/providers/tests/fixtures/dynamic"));
+
+const {Storage} = await import("@addon-core/storage");
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {ObservableLocale} = await import("./index");
+const {MemoryLocaleStorage} = await import("../tests/fixtures");
 
 import type {Structure} from "@locale/providers/tests/fixtures/dynamic";
 
@@ -261,7 +263,7 @@ test("validates selections and saved languages without publishing an invalid sna
     const storage = new MemoryLocaleStorage(Language.German);
     const locale = new ObservableLocale(storage);
     const snapshot = locale.snapshot();
-    const warn = jest.spyOn(console, "warn").mockImplementation();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     await locale.sync();
     expect(warn).toHaveBeenCalledWith('Incorrect language code in storage - "de"');
     await expect(locale.change(Language.German)).rejects.toThrow('Language "de" is not available');
@@ -288,7 +290,7 @@ test("an invalid choice neither writes nor invalidates a pending storage read", 
 
 test("snapshots treat missing prototype keys as missing messages", () => {
     const locale = new ObservableLocale<Record<string, {plural: false; substitutions: []}>>(false);
-    const warn = jest.spyOn(console, "warn").mockImplementation();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     expect(locale.snapshot().get("toString")).toBe("toString");
     expect(warn).toHaveBeenCalledWith('Locale key "toString" not found in "en" language.');
     expect(locale.snapshot().get("__proto__")).toBe("Ordinary message");
@@ -298,7 +300,7 @@ test("reports background synchronization errors and still releases the listener"
     const storage = new MemoryLocaleStorage();
     const failure = new Error("read failed");
     jest.spyOn(storage, "get").mockRejectedValue(failure);
-    const report = jest.spyOn(console, "error").mockImplementation();
+    const report = jest.spyOn(console, "error").mockImplementation(() => {});
     const locale = new ObservableLocale(storage);
     const stop = locale.subscribe(jest.fn());
     await Promise.resolve();

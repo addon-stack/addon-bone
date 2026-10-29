@@ -2,9 +2,9 @@ import path from "path";
 import ts from "typescript";
 
 describe("content contracts", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixture = path.join(__dirname, "fixtures/content/definition.tsx");
-    const watchFixture = path.join(__dirname, "fixtures/content/watch.ts");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixture = path.join(import.meta.dirname, "fixtures/content/definition.tsx");
+    const watchFixture = path.join(import.meta.dirname, "fixtures/content/watch.ts");
 
     test.each(["source", "package"])(
         "checks content definitions and watch strategies through the %s API",
@@ -31,11 +31,11 @@ describe("content contracts", () => {
             const program = ts.createProgram(
                 [
                     fixture,
-                    path.join(__dirname, "fixtures/content/styles.ts"),
+                    path.join(import.meta.dirname, "fixtures/content/styles.ts"),
                     watchFixture,
-                    path.join(__dirname, "fixtures/content/prepare.tsx"),
-                    path.join(__dirname, "fixtures/content/target.tsx"),
-                    path.join(__dirname, "fixtures/content/boundary.tsx"),
+                    path.join(import.meta.dirname, "fixtures/content/prepare.tsx"),
+                    path.join(import.meta.dirname, "fixtures/content/target.tsx"),
+                    path.join(import.meta.dirname, "fixtures/content/boundary.tsx"),
                 ],
                 options,
                 host

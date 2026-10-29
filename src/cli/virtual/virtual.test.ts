@@ -8,7 +8,7 @@ import {build} from "esbuild";
 type Generator = keyof typeof import("./index");
 
 describe("Built virtual modules", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
     const cases: {generator: Generator; imports: string[]}[] = [
         {
             generator: "virtualBackgroundModule",

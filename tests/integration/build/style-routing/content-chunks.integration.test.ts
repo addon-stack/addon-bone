@@ -15,7 +15,7 @@ import IsolatedStylesPlugin from "@cli/bundler/plugins/isolated-styles";
 import {ContentScriptStylesRuntimeProperty, ContentScriptWorld} from "@typing/content";
 import type {ReadonlyConfig} from "@typing/config";
 
-const root = path.resolve(__dirname, "../../../..");
+const root = path.resolve(import.meta.dirname, "../../../..");
 const require = createRequire(import.meta.url);
 
 test.each([true, false])(
@@ -23,7 +23,7 @@ test.each([true, false])(
     async commonChunks => {
         const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-content-chunks-"));
         const config = {
-            rootDir: __dirname,
+            rootDir: import.meta.dirname,
             srcDir: "src",
             sharedDir: ".",
             appsDir: "apps",
@@ -49,7 +49,7 @@ test.each([true, false])(
         const mainLayer = getContentLayer(ContentScriptWorld.Main);
         const compiler = rspack(
             merge(merge(settings), {
-                context: path.join(__dirname, "src"),
+                context: path.join(import.meta.dirname, "src"),
                 mode: "production",
                 devtool: false,
                 entry: {
@@ -67,7 +67,7 @@ test.each([true, false])(
                         adnbn$: path.join(root, "dist/index.js"),
                         "adnbn/entry/content/vanilla$": path.join(root, "dist/entry/content/adapters/vanilla/index.js"),
                     },
-                    modules: [path.join(__dirname, "src/vendor"), "node_modules"],
+                    modules: [path.join(import.meta.dirname, "src/vendor"), "node_modules"],
                 },
                 resolveLoader: {modules: [path.join(root, "node_modules")]},
                 optimization: {minimize: false, concatenateModules: false},
@@ -112,8 +112,10 @@ test.each([true, false])(
             }
 
             // User components and CSS-bearing libraries share JavaScript identity within the world too.
-            expect(layers(path.join(__dirname, "src/shared.js")).sort()).toEqual([worldLayer, mainLayer, null].sort());
-            expect(layers(path.join(__dirname, "src/vendor/fixture-styles/index.js")).sort()).toEqual(
+            expect(layers(path.join(import.meta.dirname, "src/shared.js")).sort()).toEqual(
+                [worldLayer, mainLayer, null].sort()
+            );
+            expect(layers(path.join(import.meta.dirname, "src/vendor/fixture-styles/index.js")).sort()).toEqual(
                 [worldLayer, mainLayer, null].sort()
             );
 

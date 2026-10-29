@@ -1,11 +1,13 @@
+import {jest} from "@jest/globals";
+
 import path from "path";
 
 import {startBrowserSession, type BrowserSession} from "../utils/session";
 import {waitFor} from "../utils/browser";
 import {createIntegrationFixture} from "../../utils/fixture";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
-const fixtureDir = path.resolve(__dirname, "..", "..", "build", "jsx", "fixture");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
+const fixtureDir = path.resolve(import.meta.dirname, "..", "..", "build", "jsx", "fixture");
 
 jest.setTimeout(90_000);
 

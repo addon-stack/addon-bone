@@ -4,8 +4,8 @@ import OptionsParser from "./OptionsParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "options");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "options");
 
 const parser = new OptionsParser({rootDir} as ReadonlyConfig);
 

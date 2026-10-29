@@ -14,6 +14,7 @@ interface IsolatedStylesRuntimeTemplateOptions extends RuntimePropertyOptions {
 interface IsolatedStylesCssLoaderTemplateOptions extends RuntimePropertyOptions {
     readonly isolatedChunks: Readonly<Record<string, boolean>>;
     readonly originalLoader: string;
+    readonly stylesheetLoader: string;
     readonly cssFilenameExpression: string;
     readonly originalRuntime: string;
     readonly publicPath: string;
@@ -34,6 +35,7 @@ export const renderIsolatedStylesCssLoader = (options: IsolatedStylesCssLoaderTe
     return renderRuntimeTemplate(cssLoaderTemplate, {
         __ADNBN_ISOLATED_CSS_CHUNKS__: JSON.stringify(options.isolatedChunks),
         __ADNBN_ORIGINAL_CSS_LOADER__: options.originalLoader,
+        __ADNBN_CSS_STYLESHEET_LOADER__: options.stylesheetLoader,
         __ADNBN_CSS_FILENAME_EXPRESSION__: options.cssFilenameExpression,
         __ADNBN_ORIGINAL_CSS_RUNTIME__: options.originalRuntime,
         __ADNBN_PUBLIC_PATH__: options.publicPath,

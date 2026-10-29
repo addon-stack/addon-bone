@@ -1,5 +1,7 @@
 /** @jest-environment node */
 
+import {jest} from "@jest/globals";
+
 import path from "path";
 
 import type {Compiler, EntryNormalized} from "@rspack/core";

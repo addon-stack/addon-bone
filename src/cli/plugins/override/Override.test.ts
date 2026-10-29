@@ -8,7 +8,7 @@ import {Browser} from "@typing/browser";
 import {EntrypointType} from "@typing/entrypoint";
 import type {ReadonlyConfig} from "@typing/config";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
 
 /** Wires the manager the way the plugin does: every override handler serves the workspace files. */
 const makeOverride = (fixture: string, config: Partial<ReadonlyConfig> = {}): Override => {

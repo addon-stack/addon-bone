@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {mergeDefinition} from "./definition";
 
 describe("Transport definitions", () => {

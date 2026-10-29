@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import fs from "fs";
 import path from "path";
 import sass from "sass";
@@ -6,7 +8,7 @@ import {pathToFileURL} from "url";
 import {prepareStyleSources} from "./prepare-style-sources";
 import type {StyleSource} from "./types";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
 
 const readSource = (...parts: string[]): StyleSource => {
     const filename = path.join(fixtures, ...parts);

@@ -32,7 +32,7 @@ test("terminates a wrapper and all descendants with inherited output on timeout"
     let pids: number[] = [];
     const outcome = run(
         process.execPath,
-        [path.join(__dirname, "fixtures/process-tree.cjs"), "2", marker],
+        [path.join(import.meta.dirname, "fixtures/process-tree.cjs"), "2", marker],
         ADNBN_TEST_ROOT,
         2000,
         {stdio: "inherit", killTree: true}

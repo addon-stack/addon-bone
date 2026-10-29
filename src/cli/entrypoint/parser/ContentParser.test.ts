@@ -5,8 +5,8 @@ import ContentParser from "./ContentParser";
 import type {ReadonlyConfig} from "@typing/config";
 import {ContentScriptShadowMode, ContentScriptWorld} from "@typing/content";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "content");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "content");
 
 const parser = new ContentParser({rootDir} as ReadonlyConfig);
 

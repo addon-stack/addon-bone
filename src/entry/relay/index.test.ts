@@ -1,14 +1,21 @@
-import relay, {resolveDefinition} from "./index";
-import VanillaBuilder from "../content/adapters/vanilla/Builder";
-import RelayManager from "@relay/RelayManager";
+import type {default as VanillaBuilderType} from "../content/adapters/vanilla/Builder";
 import {RelayMethod} from "@typing/relay";
-import type {ContentScriptDefinition} from "@typing/content";
+import {jest} from "@jest/globals";
 
-jest.mock("nanoid", () => ({nanoid: jest.fn(() => "mocked-id"), customAlphabet: () => () => "relaymarker"}));
+jest.unstable_mockModule("nanoid", () => ({
+    nanoid: jest.fn(() => "mocked-id"),
+    customAlphabet: () => () => "relaymarker",
+}));
+
+const {default: relay, resolveDefinition} = await import("./index");
+const {default: VanillaBuilder} = await import("../content/adapters/vanilla/Builder");
+const {default: RelayManager} = await import("@relay/RelayManager");
+
+import type {ContentScriptDefinition} from "@typing/content";
 
 describe("Relay startup", () => {
     let manager: ReturnType<typeof RelayManager.getInstance>;
-    let content: VanillaBuilder | undefined;
+    let content: VanillaBuilderType | undefined;
 
     class ContentBuilder extends VanillaBuilder {
         constructor(definition: ContentScriptDefinition) {

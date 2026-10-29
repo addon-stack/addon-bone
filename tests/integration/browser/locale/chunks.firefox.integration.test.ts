@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import path from "path";
 
 import {createIntegrationFixture} from "../../utils/fixture";

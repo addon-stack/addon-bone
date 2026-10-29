@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {spawn, spawnSync, type ChildProcess} from "node:child_process";
 import {mkdtempSync, rmSync} from "node:fs";
 import {cp, mkdir, readFile, readdir, symlink, writeFile} from "node:fs/promises";
@@ -8,7 +10,7 @@ import {stop, waitFor} from "../../browser/utils/browser";
 
 jest.setTimeout(90_000);
 
-const projectRoot = path.resolve(__dirname, "../../../..");
+const projectRoot = path.resolve(import.meta.dirname, "../../../..");
 const relativeForms = ["bare", "dot", "parent"];
 const buildCases = ["api", "cli"].flatMap(mode =>
     ["absolute", ...relativeForms].flatMap(form => ["vanilla", "react"].map(renderer => ({mode, form, renderer})))
@@ -22,7 +24,15 @@ test.each(buildCases)(
         try {
             const result = spawnSync(
                 process.execPath,
-                [path.join(__dirname, "scripts/verify-root-dir.mjs"), projectRoot, directory, mode, "", form, renderer],
+                [
+                    path.join(import.meta.dirname, "scripts/verify-root-dir.mjs"),
+                    projectRoot,
+                    directory,
+                    mode,
+                    "",
+                    form,
+                    renderer,
+                ],
                 {encoding: "utf8", timeout: 60_000, maxBuffer: 4 * 1024 * 1024}
             );
 
@@ -54,8 +64,11 @@ test.each(["absolute", ...relativeForms])(
         let output = "";
 
         try {
-            await cp(path.join(__dirname, "fixtures/root-dir"), root, {recursive: true});
-            await cp(path.join(__dirname, "fixtures/root-dir-watch.config.ts"), path.join(root, "adnbn.config.ts"));
+            await cp(path.join(import.meta.dirname, "fixtures/root-dir"), root, {recursive: true});
+            await cp(
+                path.join(import.meta.dirname, "fixtures/root-dir-watch.config.ts"),
+                path.join(root, "adnbn.config.ts")
+            );
             // Keep resolution inside the disposable project instead of watching missing packages up to the temp root.
             await writeFile(path.join(root, "package.json"), '{"private":true,"type":"module"}\n');
             await mkdir(cwd, {recursive: true});
@@ -117,7 +130,7 @@ test.each(["absolute", ...relativeForms])(
 
             await writeFile(
                 path.join(root, source),
-                await readFile(path.join(__dirname, "fixtures/root-dir-watch-values.ts"))
+                await readFile(path.join(import.meta.dirname, "fixtures/root-dir-watch-values.ts"))
             );
 
             const updated = await waitFor(

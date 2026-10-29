@@ -4,8 +4,8 @@ import PopupParser from "./PopupParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "popup");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "popup");
 
 const parser = new PopupParser({rootDir} as ReadonlyConfig);
 

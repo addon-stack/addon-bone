@@ -1,3 +1,4 @@
+import {createRequire} from "node:module";
 import {execFileSync} from "node:child_process";
 import path from "node:path";
 
@@ -10,6 +11,8 @@ type ReleaseCommit = {
 };
 
 type Bump = {level: 0 | 1 | 2} | null;
+
+const require = createRequire(import.meta.url);
 
 const {whatBump} = require("../.release-it.cjs") as {
     whatBump: (commits: ReleaseCommit[], currentVersion?: string) => Bump;
@@ -105,7 +108,7 @@ describe("release-it GitHub release notes", () => {
                     `,
                 ],
                 {
-                    cwd: path.resolve(__dirname, ".."),
+                    cwd: path.resolve(import.meta.dirname, ".."),
                     encoding: "utf8",
                     input: JSON.stringify({message, currentVersion}),
                     timeout: 10_000,

@@ -1,5 +1,5 @@
 import {Configuration as RspackConfig, RspackPluginInstance} from "@rspack/core";
-import {RsdoctorRspackPlugin} from "@rsdoctor/rspack-plugin";
+import {RsdoctorRspackPlugin} from "@rsdoctor/core";
 import {merge as mergeConfig} from "webpack-merge";
 import path from "node:path";
 
@@ -12,7 +12,7 @@ import ManifestPlugin from "@cli/bundler/plugins/manifest";
 import WatchPlugin from "@cli/bundler/plugins/watch";
 
 import {ReadonlyConfig} from "@typing/config";
-import {Command} from "@typing/app";
+import {Command, Mode} from "@typing/app";
 
 const getConfigFromPlugins = async (rspack: RspackConfig, config: ReadonlyConfig): Promise<RspackConfig> => {
     let mergedConfig: RspackConfig = {};
@@ -55,15 +55,28 @@ const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfi
 };
 
 export default async (config: ReadonlyConfig): Promise<RspackConfig> => {
+    const root = resolveRootPath(config);
+
     let rspack: RspackConfig = {
-        context: resolveRootPath(config),
+        context: root,
         entry: {},
         mode: config.mode,
+        // Extension CSP disallows eval-based source maps.
+        devtool: config.mode === Mode.Development ? "cheap-module-source-map" : false,
         cache: false,
+        module: {
+            parser: {
+                javascript: {
+                    exportsPresence: "error",
+                },
+            },
+        },
         resolve: {
+            // Preserve project-relative CSS URLs such as url(/images/icon.svg).
+            roots: [root],
             // Virtual entry modules may live outside the application. Keep issuer-local
             // lookup first, then resolve the consumer's packages from its project root.
-            modules: ["node_modules", path.join(resolveRootPath(config), "node_modules")],
+            modules: ["node_modules", path.join(root, "node_modules")],
         },
     };
 
@@ -94,9 +107,7 @@ export default async (config: ReadonlyConfig): Promise<RspackConfig> => {
                 plugins: [
                     new RsdoctorRspackPlugin({
                         supports: {
-                            banner: true,
                             parseBundle: true,
-                            generateTileGraph: true,
                         },
                     }),
                 ],

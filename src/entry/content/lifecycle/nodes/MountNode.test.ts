@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {ContainerRegistry} from "../context";
 import {MountNode, Node} from "./index";
 

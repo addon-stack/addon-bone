@@ -2,8 +2,8 @@ import path from "path";
 import ts from "typescript";
 
 describe("HTML contracts", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixture = path.join(__dirname, "fixtures/html/options.ts");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixture = path.join(import.meta.dirname, "fixtures/html/options.ts");
 
     test.each(["source", "package"])(
         "checks static entrypoint and full configuration options through the %s API",

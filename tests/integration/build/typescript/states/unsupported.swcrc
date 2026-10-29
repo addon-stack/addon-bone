@@ -1,0 +1,7 @@
+{
+  "jsc": {
+    "experimental": {
+      "plugins": [["adnbn-deliberately-missing-swc-plugin", {}]]
+    }
+  }
+}

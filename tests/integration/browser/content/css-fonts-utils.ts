@@ -15,8 +15,8 @@ interface CssFontsProbeState {
 }
 
 export const runCssFontsProbe = async (browser: "chrome" | "firefox", manifestVersion: 2 | 3) => {
-    const root = path.resolve(__dirname, "../../../..");
-    const fixture = path.join(__dirname, "css-fonts");
+    const root = path.resolve(import.meta.dirname, "../../../..");
+    const fixture = path.join(import.meta.dirname, "css-fonts");
     const cache = path.join(root, ".cache/integration");
     await mkdir(cache, {recursive: true});
     const extension = await mkdtemp(path.join(cache, "css-fonts-"));

@@ -239,7 +239,7 @@ test.each<{name: string; filename: Filename; cssFilename: Filename; commonChunks
 test("watch switches document/shadow/iframe delivery without changing JavaScript module identities", async () => {
     const output = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-delivery-watch-"));
     const selectionFile = path.join(output, "selection.json");
-    const states = path.join(__dirname, "delivery-spike/states");
+    const states = path.join(import.meta.dirname, "delivery-spike/states");
     fs.copyFileSync(path.join(states, "none.json"), selectionFile);
     const compiler = await createCompiler(path.join(output, "dist"), {selectionFile});
     let completion: ((error: Error | null, stats?: Stats) => void) | undefined;

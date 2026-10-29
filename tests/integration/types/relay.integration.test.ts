@@ -2,8 +2,8 @@ import path from "path";
 import ts from "typescript";
 
 describe("Relay entrypoint contracts", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixture = path.join(__dirname, "fixtures/relay/definition.ts");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixture = path.join(import.meta.dirname, "fixtures/relay/definition.ts");
 
     test.each(["source", "package"])(
         "checks Relay constructors and bootstrap through the %s API",
@@ -29,8 +29,8 @@ describe("Relay entrypoint contracts", () => {
 
             if (mode === "source") {
                 rootNames.push(
-                    path.join(__dirname, "fixtures/relay/register.ts"),
-                    path.join(__dirname, "fixtures/relay/virtual.ts"),
+                    path.join(import.meta.dirname, "fixtures/relay/register.ts"),
+                    path.join(import.meta.dirname, "fixtures/relay/virtual.ts"),
                     path.join(projectDir, "src/cli/virtual/relay.ts"),
                     path.join(projectDir, "src/cli/virtual/virtual.d.ts")
                 );

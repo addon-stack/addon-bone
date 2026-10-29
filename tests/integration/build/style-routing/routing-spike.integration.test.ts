@@ -4,8 +4,8 @@ import path from "path";
 import vm from "vm";
 import {rspack, CssExtractRspackPlugin, type Compiler, type Filename, type Stats} from "@rspack/core";
 
-const project = path.resolve(__dirname, "../../../..");
-const fixtures = path.join(__dirname, "src");
+const project = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.join(import.meta.dirname, "src");
 const layer = "adnbn:css:isolation";
 const boundary = "// object to store loaded CSS chunks";
 
@@ -116,11 +116,11 @@ const createCompiler = (output: string, filename: Filename, enabled: () => boole
 
                             source.source =
                                 source.source.slice(0, position) +
-                                `var loadPageStylesheet = loadStylesheet;
-                            loadStylesheet = function(id) {
+                                `var loadPageStylesheet = extractCssLoadStylesheet;
+                            extractCssLoadStylesheet = function(id, fetchPriority) {
                                 return ${JSON.stringify(ids)}[id]
                                     ? globalThis.loadIsolatedCss(__webpack_require__.p + __webpack_require__.miniCssF(id))
-                                    : loadPageStylesheet(id);
+                                    : loadPageStylesheet(id, fetchPriority);
                             };\n` +
                                 source.source.slice(position);
                         });

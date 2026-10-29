@@ -29,37 +29,30 @@ export const frameworkStateResetters = {
         // Browser event subscriptions are removed by harness.reset().
         Reflect.deleteProperty(globalThis, RelayPermissionGlobalKey);
     },
-    NativeLocale: () => {
-        const {default: NativeLocale} = jest.requireActual<typeof import("@locale/providers/NativeLocale")>(
-            "@locale/providers/NativeLocale"
-        );
+    NativeLocale: async () => {
+        const {default: NativeLocale} = await import("@locale/providers/NativeLocale");
 
         Reflect.deleteProperty(NativeLocale, "instance");
     },
-    Message: () => {
-        const {default: Message} =
-            jest.requireActual<typeof import("@message/providers/Message")>("@message/providers/Message");
+    Message: async () => {
+        const {default: Message} = await import("@message/providers/Message");
 
         Reflect.deleteProperty(Message, "instance");
     },
-    ObservableLocale: () => {
-        const {default: ObservableLocale} = jest.requireActual<typeof import("@locale/observers/ObservableLocale")>(
-            "@locale/observers/ObservableLocale"
-        );
+    ObservableLocale: async () => {
+        const {default: ObservableLocale} = await import("@locale/observers/ObservableLocale");
 
         Reflect.deleteProperty(ObservableLocale, "defaultInstance");
         Reflect.deleteProperty(ObservableLocale, "memoryInstance");
         Reflect.set(ObservableLocale, "drivers", new WeakMap());
     },
-    OffscreenBridge: () => {
-        const {default: OffscreenBridge} =
-            jest.requireActual<typeof import("@offscreen/OffscreenBridge")>("@offscreen/OffscreenBridge");
+    OffscreenBridge: async () => {
+        const {default: OffscreenBridge} = await import("@offscreen/OffscreenBridge");
 
         Reflect.deleteProperty(OffscreenBridge, "instance");
     },
-    SandboxMessage: () => {
-        const {default: SandboxMessage} =
-            jest.requireActual<typeof import("@sandbox/SandboxMessage")>("@sandbox/SandboxMessage");
+    SandboxMessage: async () => {
+        const {default: SandboxMessage} = await import("@sandbox/SandboxMessage");
         const hosts = Reflect.get(SandboxMessage, "hosts") as Map<string, InstanceType<typeof SandboxMessage>>;
         const errors: unknown[] = [];
 
@@ -79,12 +72,12 @@ export const frameworkStateResetters = {
     },
 };
 
-export function resetFrameworkState(): void {
+export async function resetFrameworkState(): Promise<void> {
     const errors: unknown[] = [];
 
     for (const reset of Object.values(frameworkStateResetters)) {
         try {
-            reset();
+            await reset();
         } catch (error) {
             errors.push(error);
         }

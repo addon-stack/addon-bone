@@ -4,8 +4,8 @@ import CommandParser from "./CommandParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "command");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "command");
 const parser = new CommandParser({rootDir} as ReadonlyConfig);
 
 const parseOptions = (...parts: string[]) => {

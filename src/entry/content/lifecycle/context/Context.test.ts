@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {ManagedContext, EventEmitter} from "./index";
 import {MountNode, Node} from "../nodes";
 import {ContentScriptEvent} from "@typing/content";

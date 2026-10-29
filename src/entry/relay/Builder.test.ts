@@ -1,12 +1,20 @@
-import Builder from "./Builder";
-import VanillaBuilder from "../content/adapters/vanilla/Builder";
-import MountBuilder from "../content/lifecycle/MountBuilder";
-import RelayManager from "@relay/RelayManager";
+import type {RelayMainHandler} from "@typing/relay";
+import type {TransportType} from "@typing/transport";
 import {RelayAllFrames, RelayMethod, type RelayOptions} from "@typing/relay";
-import type {ContentScriptDefinition} from "@typing/content";
+import {jest} from "@jest/globals";
 
 // Keep content marker IDs deterministic for lifecycle assertions.
-jest.mock("nanoid", () => ({nanoid: jest.fn(() => "mocked-id"), customAlphabet: () => () => "relaymarker"}));
+jest.unstable_mockModule("nanoid", () => ({
+    nanoid: jest.fn(() => "mocked-id"),
+    customAlphabet: () => () => "relaymarker",
+}));
+
+const {default: Builder} = await import("./Builder");
+const {default: VanillaBuilder} = await import("../content/adapters/vanilla/Builder");
+const {default: MountBuilder} = await import("../content/lifecycle/MountBuilder");
+const {default: RelayManager} = await import("@relay/RelayManager");
+
+import type {ContentScriptDefinition} from "@typing/content";
 
 describe("Relay Builder", () => {
     let manager: ReturnType<typeof RelayManager.getInstance>;
@@ -34,11 +42,11 @@ describe("Relay Builder", () => {
 
             const instance = {ready: true};
             const init = jest.fn((_options: RelayOptions) => instance);
-            const main = jest.fn();
+            const main = jest.fn<RelayMainHandler<TransportType>>();
             const render = true as const;
             const watch = () => () => {};
             const target = jest.fn(() => "span" as const);
-            const boundary = jest.fn();
+            const boundary = jest.fn<() => void>();
 
             const builder = new Builder(
                 {
@@ -134,7 +142,7 @@ describe("Relay Builder", () => {
 
         const instance = {ready: true};
 
-        const main = jest.fn(async (relay, context) => {
+        const main = jest.fn<RelayMainHandler<TransportType>>(async (relay, context) => {
             events.push("main");
             expect(relay).toBe(instance);
             expect(context.nodes.size).toBe(1);
@@ -207,7 +215,7 @@ describe("Relay Builder", () => {
         const error = new Error("Preparation failed");
         const report = jest.spyOn(console, "error").mockImplementation(() => {});
         const instance = {ready: true};
-        const main = jest.fn();
+        const main = jest.fn<RelayMainHandler<TransportType>>();
         const watch = jest.fn(() => () => {});
 
         const builder = new Builder(
@@ -259,7 +267,7 @@ describe("Relay Builder", () => {
                 expect(manager.has("rebuild")).toBe(false);
             });
 
-            const main = jest.fn();
+            const main = jest.fn<RelayMainHandler<TransportType>>();
 
             const builder = new Builder(
                 {
@@ -313,7 +321,7 @@ describe("Relay Builder", () => {
     );
 
     test("uses the common content builder for iframe navigation", async () => {
-        const main = jest.fn();
+        const main = jest.fn<RelayMainHandler<TransportType>>();
 
         const builder = new Builder(
             {
@@ -347,7 +355,7 @@ describe("Relay Builder", () => {
 test("Relay destruction invalidates pending preparation and prevents late main", async () => {
     const prepareStarted = Promise.withResolvers<void>();
     const response = Promise.withResolvers<string>();
-    const main = jest.fn();
+    const main = jest.fn<RelayMainHandler<TransportType>>();
     const render = jest.fn(() => "UI");
     const init = jest.fn((_options: RelayOptions) => ({ready: true}));
 

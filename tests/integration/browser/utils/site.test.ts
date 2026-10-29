@@ -5,7 +5,7 @@ import path from "path";
 import {startIntegrationSite} from "./site";
 
 test("closes speculative browser connections that have not sent an HTTP request", async () => {
-    const site = await startIntegrationSite(path.resolve(__dirname, "../content/isolation-shadow/site"));
+    const site = await startIntegrationSite(path.resolve(import.meta.dirname, "../content/isolation-shadow/site"));
     const socket = createConnection({host: "127.0.0.1", port: Number(new URL(site.origin).port)});
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let closing: Promise<void> | undefined;

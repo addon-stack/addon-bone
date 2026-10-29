@@ -1,9 +1,11 @@
-jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic"));
-
-import {getBrowserTest} from "@tests/browser-harness/session";
-import DynamicLocale from "./DynamicLocale";
-import {MemoryLocaleStorage} from "../tests/fixtures";
 import {Language} from "@typing/locale";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/locale", () => import("./tests/fixtures/dynamic"));
+
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {default: DynamicLocale} = await import("./DynamicLocale");
+const {MemoryLocaleStorage} = await import("../tests/fixtures");
 
 import type {Structure} from "./tests/fixtures/dynamic";
 
@@ -184,7 +186,7 @@ test("rejects write errors without rolling back a newer selection", async () => 
 
 test("ignores prototype properties and rejects languages absent from the application catalogue", async () => {
     const locale = new DynamicLocale<Record<string, {plural: false; substitutions: []}>>(false);
-    const warn = jest.spyOn(console, "warn").mockImplementation();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     expect(locale.trans("toString")).toBe("toString");
     expect(warn).toHaveBeenCalledWith('Locale key "toString" not found in "en" language.');
     await expect(locale.change(Language.German)).rejects.toThrow('Language "de" is not available');
@@ -205,7 +207,7 @@ test("restores the saved language only through explicit sync, without writing it
 
 test.each([undefined, "de"])("keeps the current language for invalid or absent storage: %s", async value => {
     await seed(value);
-    const warn = jest.spyOn(console, "warn").mockImplementation();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     const locale = new DynamicLocale();
     await expect(locale.sync()).resolves.toBe(Language.English);
     expect(storageHarness().local.set.calls).toHaveLength(0);
@@ -261,7 +263,7 @@ test("retains the single-listener contract and permits subscribing again after u
 
 test("reports invalid external changes without changing state or notifying the handler", async () => {
     const locale = new DynamicLocale();
-    const error = jest.spyOn(console, "error").mockImplementation();
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
     const handler = jest.fn();
     const stop = locale.watch(handler);
 

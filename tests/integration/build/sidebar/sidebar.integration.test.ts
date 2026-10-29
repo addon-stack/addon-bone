@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {copyFile, readFile, stat} from "fs/promises";
 import path from "path";
 
@@ -12,7 +14,7 @@ test.each([
     {browser: "opera", manifestVersion: 2},
     {browser: "opera", manifestVersion: 3},
 ] as const)("builds independent sidebar documents and labels for $browser MV$manifestVersion", async options => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
 
     try {
         const directory = await fixture.build(options);
@@ -59,7 +61,7 @@ test.each([
     {variant: "without-label", expected: "Sidebar contract test"},
     {variant: "empty-label", expected: ""},
 ])("keeps document titles out of the initial UI label: $variant", async ({variant, expected}) => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
 
     try {
         await copyFile(

@@ -1,3 +1,16 @@
+import type {EventNode as EventNodeType} from "./index";
+import {ContentScriptEvent} from "@typing/content";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/page", () => ({aliases: {panel: "panel.html"}}));
+
+jest.unstable_mockModule("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
+
+const {FrameNode, Node, MountNode, EventNode} = await import("./index");
+const {ContainerRegistry, EventEmitter} = await import("../context");
+const {default: IsolationSetup} = await import("../IsolationSetup");
+const {readContentStyles} = await import("#adnbn/runtime");
+
 import type {
     ContentScriptBoundaryHandler,
     ContentScriptBoundaryProps,
@@ -5,22 +18,13 @@ import type {
     ContentScriptIsolationFrameOptions,
 } from "@typing/content";
 
-import {ContentScriptEvent} from "@typing/content";
-import {FrameNode, Node, MountNode, EventNode} from "./index";
-import {ContainerRegistry, EventEmitter} from "../context";
-import IsolationSetup from "../IsolationSetup";
-import {readContentStyles} from "#adnbn/runtime";
-
-jest.mock("#adnbn/page", () => ({aliases: {panel: "panel.html"}}));
-jest.mock("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
-
 test("FrameNode explains a disconnected host and allows mounting again once the mounter connects it", () => {
     const runtime = {
         initialize: jest.fn(),
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
     jest.mocked(readContentStyles).mockReturnValue(runtime);
     const anchor = document.createElement("section");
@@ -104,7 +108,7 @@ test.each<ContentScriptIsolationFrameOptions>([
     const emitter = new EventEmitter();
     emitter.on(event => events.push(event));
     let cancel = true;
-    let node: EventNode;
+    let node: EventNodeType;
 
     const mounted = new MountNode(
         new Node(anchor, document.createElement("div")),
@@ -155,7 +159,7 @@ test("FrameNode replaces lost targets, unregisters old styles and releases its l
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
     jest.mocked(readContentStyles).mockReturnValue(runtime);
     const anchor = document.createElement("section");
@@ -243,7 +247,7 @@ test.each(["throw", "unmount"])("FrameNode cleans up when target creation trigge
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
     jest.mocked(readContentStyles).mockReturnValue(runtime);
     const anchor = document.createElement("section");
@@ -303,7 +307,7 @@ const createBoundaryNode = (
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
     jest.mocked(readContentStyles).mockReturnValue(runtime);
 

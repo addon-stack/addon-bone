@@ -1,4 +1,6 @@
-jest.mock("#adnbn/popup", () => ({
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/popup", () => ({
     aliases: {
         plain: {path: "plain.html", tooltip: "Open account", icon: "account"},
         localized: {path: "account.html", tooltip: "@popup.account"},
@@ -10,11 +12,11 @@ jest.mock("#adnbn/popup", () => ({
     },
 }));
 
-jest.mock("#adnbn/icon", () => ({groups: {account: {16: "account-16.png"}}}));
+jest.unstable_mockModule("#adnbn/icon", () => ({groups: {account: {16: "account-16.png"}}}));
 
-import {createTabFixture} from "@addon-core/browser/testing";
-import {getBrowserTest} from "@tests/browser-harness/session";
-import {changePopup, getPopups} from "./popup";
+const {createTabFixture} = await import("@addon-core/browser/testing");
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {changePopup, getPopups} = await import("./popup");
 
 describe("changePopup", () => {
     beforeEach(() => {

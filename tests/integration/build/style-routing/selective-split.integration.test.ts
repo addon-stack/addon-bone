@@ -1,4 +1,4 @@
-import {mkdtemp, readFile, rm, writeFile} from "fs/promises";
+import {mkdtemp, readFile, rename, rm, writeFile} from "fs/promises";
 import os from "os";
 import path from "path";
 import type {NormalModule, Stats} from "@rspack/core";
@@ -134,8 +134,18 @@ test("ordinary initial CSS stays named and mixed in import order beside isolated
 test("watch adds and removes the shared lazy split and restores the ordinary CSS runtime", async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), "adnbn-selective-watch-"));
     const selectionFile = path.join(output, "selection.json");
-    const setState = async (state: string) =>
-        writeFile(selectionFile, await readFile(path.join(__dirname, "delivery-spike/states", `${state}.json`)));
+    const setState = async (state: string) => {
+        const pendingFile = path.join(output, "selection-next.json");
+
+        await writeFile(
+            pendingFile,
+            await readFile(path.join(import.meta.dirname, "delivery-spike/states", `${state}.json`))
+        );
+
+        // Publish complete JSON so watchRun cannot read during writeFile's truncate/write interval.
+        await rename(pendingFile, selectionFile);
+    };
+
     await setState("none");
     const compiler = await createCompiler(output, false, {initial: true, selectionFile});
     let queuedState: string | undefined;

@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {testOverridePage} from "./override-utils";
 
 jest.setTimeout(90_000);

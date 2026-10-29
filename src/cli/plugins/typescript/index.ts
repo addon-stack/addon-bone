@@ -26,11 +26,19 @@ export default definePlugin(() => {
                     alias: typescript.aliases(),
                 },
                 module: {
+                    parser: {
+                        javascript: {
+                            typeReexportsPresence: "tolerant",
+                        },
+                    },
                     rules: [
                         {
                             test: /\.tsx?$/,
                             loader: "builtin:swc-loader",
                             options: {
+                                collectTypeScriptInfo: {
+                                    typeExports: true,
+                                },
                                 jsc: {
                                     parser: {
                                         syntax: "typescript",

@@ -120,7 +120,7 @@ describe("ManifestPlugin compilation hooks", () => {
                 .raw({web_accessible_resources: [{resources: ["pages/*"], matches: ["https://example.com/*"]}]})
         );
         return rspack({
-            context: path.join(__dirname, "tests/fixtures"),
+            context: path.join(import.meta.dirname, "tests/fixtures"),
             entry: {background: "./entry.js", content: "./entry.js"},
             mode: "production",
             devtool: false,

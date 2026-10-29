@@ -1,7 +1,15 @@
-jest.mock("#adnbn/locale", () => ({keys: ["demo.empty", "demo.title"], languages: ["en", "fr", "ru"]}));
+import type {default as NativeLocaleType} from "./NativeLocale";
+import {jest} from "@jest/globals";
 
-import {getBrowserTest} from "@tests/browser-harness/session";
-import NativeLocale from "./NativeLocale";
+jest.unstable_mockModule("#adnbn/locale", () => ({
+    default: {},
+    lang: "en",
+    keys: ["demo.empty", "demo.title"],
+    languages: ["en", "fr", "ru"],
+}));
+
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {default: NativeLocale} = await import("./NativeLocale");
 
 interface Structure {
     "demo.empty": {plural: false; substitutions: []};
@@ -9,17 +17,17 @@ interface Structure {
 }
 
 describe("NativeLocale", () => {
-    let locale: NativeLocale<Structure>;
-    let warn: jest.SpyInstance;
-    let error: jest.SpyInstance;
+    let locale: NativeLocaleType<Structure>;
+    let warn: jest.Spied<typeof console.warn>;
+    let error: jest.Spied<typeof console.error>;
 
     beforeEach(() => {
         getBrowserTest().harness.configurable.chrome.i18n.getMessage.setImplementation(key =>
             key === "locale" ? "ru" : ""
         );
 
-        warn = jest.spyOn(console, "warn").mockImplementation();
-        error = jest.spyOn(console, "error").mockImplementation();
+        warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        error = jest.spyOn(console, "error").mockImplementation(() => {});
         locale = new NativeLocale<Structure>();
     });
 

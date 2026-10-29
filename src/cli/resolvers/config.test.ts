@@ -1,4 +1,9 @@
-jest.mock("../plugins", () => {
+import {Language} from "@typing/locale";
+import {Browser} from "@typing/browser";
+import {Command, Mode, Workspace} from "@typing/app";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("../plugins", () => {
     const plugin = (name: string) => () => ({name});
 
     return {
@@ -31,18 +36,14 @@ jest.mock("../plugins", () => {
     };
 });
 
-jest.mock("c12", () => ({
+jest.unstable_mockModule("c12", () => ({
     loadConfig: jest.fn(),
 }));
 
-import {loadConfig} from "c12";
+const {loadConfig} = await import("c12");
+const {default: resolveConfig} = await import("./config");
 
-import resolveConfig from "./config";
-
-import {Command, Mode, Workspace} from "@typing/app";
-import {Browser} from "@typing/browser";
 import type {OptionalConfig, UserConfig} from "@typing/config";
-import {Language} from "@typing/locale";
 
 const mockedLoadConfig = jest.mocked(loadConfig);
 

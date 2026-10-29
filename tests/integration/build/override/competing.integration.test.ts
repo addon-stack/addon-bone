@@ -1,21 +1,23 @@
+import {jest} from "@jest/globals";
+
 import {readdir, readFile, writeFile} from "fs/promises";
 import path from "path";
 
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 import {readOverrideManifest} from "./override-utils";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
 
 jest.setTimeout(90_000);
 
 /** Adds the History entrypoint to a copy of the New Tab application, so two overrides compete. */
 const createCompetingFixture = async (): Promise<IntegrationFixture> => {
-    const fixture = await createIntegrationFixture(rootDir, path.join(__dirname, "newtab"));
+    const fixture = await createIntegrationFixture(rootDir, path.join(import.meta.dirname, "newtab"));
 
     try {
         await writeFile(
             path.join(fixture.directory, "src", "history.ts"),
-            await readFile(path.join(__dirname, "history", "src", "history.ts"))
+            await readFile(path.join(import.meta.dirname, "history", "src", "history.ts"))
         );
     } catch (error) {
         await fixture.dispose();

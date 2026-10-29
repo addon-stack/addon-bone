@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {copyFile, readFile} from "fs/promises";
 import path from "path";
 
@@ -6,7 +8,7 @@ import {createIntegrationFixture} from "../../utils/fixture";
 jest.setTimeout(90_000);
 
 test.each([2, 3] as const)("builds independent popup titles and tooltips in MV%i", async manifestVersion => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
 
     try {
         const directory = await fixture.build({manifestVersion});
@@ -31,7 +33,7 @@ test.each([2, 3] as const)("builds independent popup titles and tooltips in MV%i
 });
 
 test("builds an apply: false popup with a missing runtime translation without changing the initial tooltip", async () => {
-    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(__dirname, "fixture"));
+    const fixture = await createIntegrationFixture(ADNBN_TEST_ROOT, path.join(import.meta.dirname, "fixture"));
 
     try {
         await copyFile(

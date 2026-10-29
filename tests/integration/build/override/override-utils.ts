@@ -18,7 +18,7 @@ if (buildMode !== "cli" && buildMode !== "session") {
     throw new Error(`Unknown override build mode: ${buildMode}`);
 }
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
 
 export const readOverrideManifest = async (extensionDir: string) => {
     return JSON.parse(await readFile(path.join(extensionDir, "manifest.json"), "utf8"));
@@ -26,7 +26,7 @@ export const readOverrideManifest = async (extensionDir: string) => {
 
 export const testOverridePage = ({page, permission, supported, unsupported}: OverridePageScenario): void => {
     describe(`${page} override`, () => {
-        const fixtureDir = path.join(__dirname, page);
+        const fixtureDir = path.join(import.meta.dirname, page);
         const source = `https://${page}.example.com`;
         let session: BuildSession | undefined;
 

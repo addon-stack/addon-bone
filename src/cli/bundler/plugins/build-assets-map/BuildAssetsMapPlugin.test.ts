@@ -1,5 +1,7 @@
 /** @jest-environment node */
 
+import {jest} from "@jest/globals";
+
 import crypto from "crypto";
 import fs from "fs";
 import {readFile, writeFile} from "fs/promises";
@@ -35,8 +37,8 @@ const UnrelatedFile = "public/unrelated.txt";
 const FullMapPlaceholder = "__ADNBN_BUILD_ASSETS_FULL_MAP_PLACEHOLDER__";
 const ChunkLoadingGlobal = "buildAssetsFixtureChunks";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
-const projectRoot = path.resolve(__dirname, "../../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
+const projectRoot = path.resolve(import.meta.dirname, "../../../../..");
 
 interface BuildResult {
     readonly assets: EntrypointAssetsMap;

@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {expectRelayStyles} from "./relay-styles-utils";
 
 jest.setTimeout(90_000);

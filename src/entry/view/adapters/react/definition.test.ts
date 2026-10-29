@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {createElement} from "react";
 import {createPortal} from "react-dom";
 

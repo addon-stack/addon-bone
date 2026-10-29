@@ -1,4 +1,4 @@
-import {type Compiler} from "@rspack/core";
+import {type Compiler, sources} from "@rspack/core";
 
 interface ReplaceOptions {
     values: Record<string, string>;
@@ -21,22 +21,7 @@ export default class ReplacePlugin {
                 }
 
                 if (hasChanges) {
-                    const sourceMap = {
-                        version: 3,
-                        sources: [],
-                        names: [],
-                        mappings: "",
-                        file: filename,
-                    };
-
-                    compilation.assets[filename] = {
-                        source: () => content,
-                        size: () => content.length,
-                        buffer: () => Buffer.from(content),
-                        map: () => sourceMap,
-                        sourceAndMap: () => ({source: content, map: sourceMap}),
-                        updateHash: () => {},
-                    };
+                    compilation.updateAsset(filename, new sources.RawSource(content));
                 }
             }
         });

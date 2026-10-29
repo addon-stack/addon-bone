@@ -4,8 +4,8 @@ import RelayParser from "./RelayParser";
 
 import type {ReadonlyConfig} from "@typing/config";
 
-const rootDir = path.resolve(__dirname, "../../../..");
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "relay");
+const rootDir = path.resolve(import.meta.dirname, "../../../..");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "relay");
 
 const parser = new RelayParser({rootDir} as ReadonlyConfig);
 

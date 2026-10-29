@@ -9,7 +9,7 @@ import {toPosix} from "@cli/utils/path";
 import type {ReadonlyConfig} from "@typing/config";
 import type {EntrypointFile} from "@typing/entrypoint";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "override");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "override");
 const workspace = path.join(fixtures, "workspace");
 
 const makeConfig = (overrides: Partial<ReadonlyConfig> = {}): ReadonlyConfig => {

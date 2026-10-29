@@ -1,11 +1,12 @@
-import {getUrl} from "@addon-core/browser";
-import {readContentStyles} from "#adnbn/runtime";
+import {jest} from "@jest/globals";
+
+jest.unstable_mockModule("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
+
+const {getUrl} = await import("@addon-core/browser");
+const {readContentStyles} = await import("#adnbn/runtime");
+const {getContentScriptStylesRuntime} = await import("./isolated-styles");
 
 import type {ContentScriptStylesRuntime} from "@typing/content";
-
-import {getContentScriptStylesRuntime} from "./isolated-styles";
-
-jest.mock("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
 
 beforeEach(() => {
     jest.resetAllMocks();
@@ -23,7 +24,7 @@ test("initializes and returns the styles runtime supplied by the facade", () => 
         add: jest.fn(),
         ready: jest.fn(async () => undefined),
         delete: jest.fn(),
-        load: jest.fn(),
+        load: jest.fn<(url: string) => Promise<void>>(),
     };
 
     jest.mocked(readContentStyles).mockReturnValue(runtime);

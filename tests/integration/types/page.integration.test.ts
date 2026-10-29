@@ -2,8 +2,8 @@ import path from "path";
 import ts from "typescript";
 
 describe("page contracts", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixture = path.join(__dirname, "fixtures/page/definition.ts");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixture = path.join(import.meta.dirname, "fixtures/page/definition.ts");
 
     test.each(["source", "package"])(
         "checks page permissions, CSP and render props through the %s API",

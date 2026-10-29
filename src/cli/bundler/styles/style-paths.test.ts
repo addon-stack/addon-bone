@@ -7,7 +7,7 @@ const source = path.resolve("src");
 const from = path.join(source, "apps", "alpha", "content", "content.scss");
 const directory = path.dirname(from).split(path.sep).join("/");
 const moduleUrl = (request: string): string => pathToFileURL(path.resolve(path.dirname(from), request)).href;
-const fixtures = path.resolve(__dirname, "tests", "fixtures");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures");
 
 describe("prepareModuleRequests", () => {
     test.each(["tokens", "./tokens"])("reports every candidate for %s even after finding a stylesheet", request => {

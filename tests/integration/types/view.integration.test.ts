@@ -2,8 +2,8 @@ import path from "path";
 import ts from "typescript";
 
 describe("view contracts", () => {
-    const projectDir = path.resolve(__dirname, "../../..");
-    const fixture = path.join(__dirname, "fixtures/view/definition.tsx");
+    const projectDir = path.resolve(import.meta.dirname, "../../..");
+    const fixture = path.join(import.meta.dirname, "fixtures/view/definition.tsx");
 
     test.each(["source", "package"])(
         "checks synchronous view renders, asynchronous containers and entrypoint permissions through the %s API",

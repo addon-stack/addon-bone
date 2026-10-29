@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {DataCollectionPermission} from "@typing/browser";
 import SpecificSettings from "./SpecificSettings";
 

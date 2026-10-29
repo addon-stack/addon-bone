@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import {readFile} from "fs/promises";
 import path from "path";
 
@@ -7,7 +9,7 @@ import CdpClient from "../utils/CdpClient";
 import {waitFor} from "../utils/browser";
 import {createIntegrationFixture, type IntegrationFixture} from "../../utils/fixture";
 
-const rootDir = path.resolve(__dirname, "..", "..", "..", "..");
+const rootDir = path.resolve(import.meta.dirname, "..", "..", "..", "..");
 
 jest.setTimeout(90_000);
 
@@ -15,7 +17,7 @@ test.each([
     {adapter: "vanilla", page: "options.html", title: "Vanilla Options", help: "help.html"},
     {adapter: "react", page: "ui/preferences.options.html", title: "React Options", help: "ui/help.html"},
 ])("Chrome MV3 opens and renders $adapter options from the background", async ({adapter, page, title, help}) => {
-    const fixtureDir = path.join(__dirname, adapter);
+    const fixtureDir = path.join(import.meta.dirname, adapter);
     let session: BrowserSession | undefined;
     let browser: CdpClient | undefined;
     let fixture: IntegrationFixture | undefined;

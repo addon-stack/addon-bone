@@ -1,3 +1,5 @@
+import {jest} from "@jest/globals";
+
 import type {ContentScriptBoundaryHandler, ContentScriptTargetProps} from "@typing/content";
 
 import IsolationSetup from "./IsolationSetup";
@@ -8,7 +10,7 @@ test("IsolationSetup reads current props and the replacement container after rem
     const anchor = document.createElement("article");
     const node = new Node(anchor, document.createElement("section"));
     let data = {title: "First"};
-    const boundary = jest.fn();
+    const boundary = jest.fn<() => void>();
 
     const target = jest.fn(({document, data}: ContentScriptTargetProps<{title: string}>) => {
         const element = document.createElement("span");
@@ -74,7 +76,7 @@ test("IsolationSetup uses each supplied document without repeating boundary setu
 });
 
 test.each(["boundary", "target"] as const)("IsolationSetup rejects a missing container during %s", stage => {
-    const boundary = jest.fn();
+    const boundary = jest.fn<() => void>();
     const target = jest.fn(({document}: ContentScriptTargetProps) => document.createElement("div"));
 
     const setup = new IsolationSetup({

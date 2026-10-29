@@ -3,8 +3,8 @@ import {cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const fixtures = path.join(__dirname, "fixtures/dotenv");
-const resolver = path.resolve(__dirname, "../../../../dist/cli/resolvers/config.js");
+const fixtures = path.join(import.meta.dirname, "fixtures/dotenv");
+const resolver = path.resolve(import.meta.dirname, "../../../../dist/cli/resolvers/config.js");
 const filenames = [
     ".env.development.chrome.local",
     ".env.development.chrome",
@@ -39,7 +39,7 @@ describe("dotenv resolution through the built config loader", () => {
         );
         const result = spawnSync(
             process.execPath,
-            [path.join(__dirname, "scripts/inspect-dotenv.mjs"), resolver, root, configFile],
+            [path.join(import.meta.dirname, "scripts/inspect-dotenv.mjs"), resolver, root, configFile],
             {
                 cwd,
                 env: {...inherited, ...env},

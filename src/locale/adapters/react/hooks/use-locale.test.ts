@@ -1,14 +1,17 @@
-import {getBrowserTest} from "@tests/browser-harness/session";
-
-jest.mock("#adnbn/locale", () => require("./tests/fixtures/dynamic-locale"));
-
-import {createElement, StrictMode, useState} from "react";
-import {renderToString} from "react-dom/server";
-import {act, cleanup, fireEvent, render, renderHook, waitFor} from "@testing-library/react";
-import {useLocale, useNativeLocale, type LocaleReactDynamicContract} from "../index";
-import {ObservableLocale} from "@locale/observers";
-import {MemoryLocaleStorage} from "@locale/tests/fixtures";
 import {Language, LocaleDir, type LocaleStorageDriver} from "@typing/locale";
+import {jest} from "@jest/globals";
+
+import type {LocaleReactDynamicContract} from "../index";
+
+jest.unstable_mockModule("#adnbn/locale", () => import("./tests/fixtures/dynamic-locale"));
+
+const {getBrowserTest} = await import("@tests/browser-harness/session");
+const {createElement, StrictMode, useState} = await import("react");
+const {renderToString} = await import("react-dom/server.node");
+const {act, cleanup, fireEvent, render, renderHook, waitFor} = await import("@testing-library/react");
+const {useLocale, useNativeLocale} = await import("../index");
+const {ObservableLocale} = await import("@locale/observers");
+const {MemoryLocaleStorage} = await import("@locale/tests/fixtures");
 
 import type {Structure} from "./tests/fixtures/dynamic-locale";
 

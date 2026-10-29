@@ -1,15 +1,18 @@
-import {readContentStyles} from "#adnbn/runtime";
-import {renderIsolatedStylesRuntime} from "@cli/bundler/plugins/isolated-styles/templates";
+import type {EventNode as EventNodeType} from "./index";
 import {ContentScriptEvent, type ContentScriptStylesRuntime} from "@typing/content";
-import VanillaNode from "../../adapters/vanilla/Node";
-import ReactNode from "../../adapters/react/Node";
-import {act, waitFor} from "@testing-library/react";
-import {createElement, useEffect, useLayoutEffect} from "react";
-import IsolationSetup from "../IsolationSetup";
-import {ContainerRegistry, EventEmitter} from "../context";
-import {EventNode, FrameNode, MountNode, Node, ShadowNode} from "./index";
+import {jest} from "@jest/globals";
 
-jest.mock("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
+jest.unstable_mockModule("#adnbn/runtime", () => ({readContentStyles: jest.fn()}));
+
+const {readContentStyles} = await import("#adnbn/runtime");
+const {renderIsolatedStylesRuntime} = await import("@cli/bundler/plugins/isolated-styles/templates");
+const {default: VanillaNode} = await import("../../adapters/vanilla/Node");
+const {default: ReactNode} = await import("../../adapters/react/Node");
+const {act, waitFor} = await import("@testing-library/react");
+const {createElement, useEffect, useLayoutEffect} = await import("react");
+const {default: IsolationSetup} = await import("../IsolationSetup");
+const {ContainerRegistry, EventEmitter} = await import("../context");
+const {EventNode, FrameNode, MountNode, Node, ShadowNode} = await import("./index");
 
 const createRuntime = (files = ["first.css", "second.css"]): ContentScriptStylesRuntime => {
     const registry: Record<string, ContentScriptStylesRuntime> = {};
@@ -97,7 +100,7 @@ const createNode = (mode: "shadow" | "iframe" = "shadow") => {
     };
 };
 
-const links = (node: EventNode): HTMLLinkElement[] => {
+const links = (node: EventNodeType): HTMLLinkElement[] => {
     const root = node.target!.getRootNode() as ShadowRoot | Document;
 
     return Array.from(root.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
@@ -281,9 +284,9 @@ test("iframe recovery invalidates pending CSS and waits for the new target witho
 test("React component, layout effects and effects start only after CSS is ready", async () => {
     createRuntime(["initial.css"]);
     const {isolated, emitter, events, props, onError} = createNode();
-    const layout = jest.fn();
-    const effect = jest.fn();
-    const cleanup = jest.fn();
+    const layout = jest.fn<() => void>();
+    const effect = jest.fn<() => void>();
+    const cleanup = jest.fn<() => void>();
 
     const Panel = jest.fn(() => {
         useLayoutEffect(layout, []);

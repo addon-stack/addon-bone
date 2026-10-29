@@ -2,7 +2,7 @@ import path from "path";
 import ExpressionFile from "./ExpressionFile";
 import {ImportResolver, TsResolver} from "./resolvers";
 
-const fixtures = path.resolve(__dirname, "tests", "fixtures", "expression");
+const fixtures = path.resolve(import.meta.dirname, "tests", "fixtures", "expression");
 
 describe("ExpressionFile", () => {
     describe("Default export descriptions", () => {

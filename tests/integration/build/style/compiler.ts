@@ -8,8 +8,8 @@ import assetPlugin from "@cli/plugins/asset";
 import {Browser} from "@typing/browser";
 import type {ReadonlyConfig} from "@typing/config";
 
-const project = path.resolve(__dirname, "../../../..");
-export const fixtures = path.join(__dirname, "fixtures");
+const project = path.resolve(import.meta.dirname, "../../../..");
+export const fixtures = path.join(import.meta.dirname, "fixtures");
 export const entries = ["normal", "document", "asis"];
 
 export const createFixture = async (name = "multi-app"): Promise<string> => {
