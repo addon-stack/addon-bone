@@ -18,6 +18,7 @@ The observed Node 24 crashes contain `Builtins_BaselineOutOfLinePrologue` and `C
 | `npm run test:browser`         | Chrome and Firefox scenarios                                   | Once               |
 | `npm run test:browser:chrome`  | Chrome scenarios                                               | Once               |
 | `npm run test:browser:firefox` | Firefox scenarios                                              | Once               |
+| `npm run test:dev`             | `adnbn dev` platform probes and dev session scenarios          | Once               |
 | `npm run test:inventory`       | Test ownership, local mocks and framework reset inventory      | No                 |
 | `npm run test:run -- …`        | Direct Jest arguments; caller selects groups and prepares dist | No                 |
 
@@ -50,7 +51,7 @@ The [override scheduling follow-up](benchmarks/2026-09-25-override.md) compares 
 
 ## Groups and workers
 
-`jest.config.mjs` defines six projects: `unit-node`, `unit-dom`, `build`, `types`, `chrome` and `firefox`. The configuration is native JavaScript with JSDoc types so loading it does not require Node's TypeScript support. Put DOM tests in the `unit-dom` patterns. Tests that execute the built CLI, consume package declarations or compile imports from the built package belong to `build` or `types`. Keep unit tests runnable with no `dist` directory. Each browser file contains scenarios for one browser only.
+`jest.config.mjs` defines seven projects: `unit-node`, `unit-dom`, `build`, `types`, `chrome`, `firefox` and `dev`. The configuration is native JavaScript with JSDoc types so loading it does not require Node's TypeScript support. Put DOM tests in the `unit-dom` patterns. Tests that execute the built CLI, consume package declarations or compile imports from the built package belong to `build` or `types`. Keep unit tests runnable with no `dist` directory. Each browser file contains scenarios for one browser only.
 
 Relay declaration tests keep the source/package × POSIX/Windows matrix for the generated registry, selectors and exports.
 Constructor, prepared-data and bootstrap contracts live in `integration/types/relay.integration.test.ts`, checked against

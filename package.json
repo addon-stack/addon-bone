@@ -127,6 +127,7 @@
     "test:browser": "npm run build && node scripts/test-run.mjs --selectProjects chrome firefox --verbose=false",
     "test:browser:chrome": "npm run build && node scripts/test-run.mjs --selectProjects chrome --verbose=false",
     "test:browser:firefox": "npm run build && node scripts/test-run.mjs --selectProjects firefox --verbose=false",
+    "test:dev": "npm run build && node scripts/test-run.mjs --selectProjects dev --verbose=false",
     "test:inventory": "node scripts/test-inventory.mjs",
     "test:run": "node scripts/test-run.mjs",
     "release": "release-it",
@@ -187,6 +188,7 @@
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@types/semver": "^7.7.1",
+    "@types/ws": "^8.18.2",
     "chrome-launcher": "^1.2.1",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
@@ -210,7 +212,8 @@
     "tsc-alias": "^1.8.17",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
-    "uglify-js": "^3.19.3"
+    "uglify-js": "^3.19.3",
+    "ws": "^8.22.0"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "0.20.2"

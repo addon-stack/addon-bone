@@ -89,6 +89,7 @@ const config = {
                 "<rootDir>/tests/*.test.ts",
                 "<rootDir>/tests/integration/utils/**/*.test.ts",
                 "<rootDir>/tests/integration/browser/utils/**/*.test.ts",
+                "<rootDir>/tests/integration/dev/utils/**/*.test.ts",
                 ...exclude(buildTests),
                 ...exclude(domTests),
             ],
@@ -115,6 +116,12 @@ const config = {
             displayName: "firefox",
             setupFilesAfterEnv: [],
             testMatch: ["<rootDir>/tests/integration/browser/**/*.firefox.integration.test.ts"],
+        },
+        {
+            ...shared,
+            displayName: "dev",
+            setupFilesAfterEnv: [],
+            testMatch: ["<rootDir>/tests/integration/dev/**/*.integration.test.ts"],
         },
     ],
 };

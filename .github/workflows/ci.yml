@@ -186,6 +186,54 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  dev:
+    name: Dev session (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: compute-matrix
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+      - name: Use Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      # The dev session targets the user's installed browser, so this job uses the runner's branded Google Chrome
+      # instead of a Chrome for Testing download.
+      - name: Locate branded Google Chrome
+        id: chrome
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            chrome="C:/Program Files/Google/Chrome/Application/chrome.exe"
+            product="$(powershell -NoProfile -Command "\$info = (Get-Item '$chrome').VersionInfo; \"\$(\$info.ProductName) \$(\$info.ProductVersion)\"")"
+          else
+            chrome="$(command -v google-chrome)"
+            product="$("$chrome" --version)"
+          fi
+
+          echo "$product"
+
+          if [[ "$product" != "Google Chrome "* || "$product" == *"for Testing"* ]]; then
+            echo "::error::Expected branded Google Chrome, found: $product"
+            exit 1
+          fi
+
+          echo "path=$chrome" >> "$GITHUB_OUTPUT"
+      - name: Build package
+        run: npm run build
+      - name: Dev session integrations
+        run: npm run test:run -- --selectProjects dev --ci --maxWorkers=1
+        env:
+          ADNBN_CHROME_BIN: ${{ steps.chrome.outputs.path }}
+
   coverage:
     name: Coverage (ubuntu-24.04, Node 24)
     needs: [compute-matrix, unit, build]
@@ -224,7 +272,7 @@ jobs:
   build-and-test:
     name: Test and Build (${{ matrix.os == 'ubuntu-24.04' && 'ubuntu-latest' || matrix.os }}, Node ${{ matrix.node }}) ${{ needs.compute-matrix.outputs.name_suffix }}
     if: ${{ always() && needs.compute-matrix.result == 'success' }}
-    needs: [compute-matrix, unit, build, fixtures, browser, coverage]
+    needs: [compute-matrix, unit, build, fixtures, browser, dev, coverage]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false

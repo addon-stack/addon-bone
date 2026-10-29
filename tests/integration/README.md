@@ -1,6 +1,6 @@
 # Integration tests
 
-These tests cover application builds, browser execution, and generated TypeScript contracts. Build checks through the CLI and the built package live in `build`; tests that launch Chrome or Firefox live in `browser`; declaration and consumer type checks live in `types`. Each area keeps its tests beside their fixtures.
+These tests cover application builds, browser execution, and generated TypeScript contracts. Build checks through the CLI and the built package live in `build`; tests that launch Chrome or Firefox live in `browser`; `adnbn dev` platform probes and session scenarios live in `dev`; declaration and consumer type checks live in `types`. Each area keeps its tests beside their fixtures.
 
 ## Layout
 
@@ -174,9 +174,10 @@ npm run test:types
 npm run test:browser
 npm run test:browser:chrome
 npm run test:browser:firefox
+npm run test:dev
 ```
 
-These commands run build integrations, declaration tests, both browsers, or an individual browser respectively. Each command builds the framework first. Browser tests require Chrome with `Extensions.loadUnpacked` support and Firefox with WebDriver BiDi `webExtension.install` support. Set `ADNBN_CHROME_BIN` or `ADNBN_FIREFOX_BIN` to the browser's absolute executable path if automatic discovery selects the wrong browser. Node must provide the built-in `WebSocket` API. CI installs both browsers on Linux; Windows runs the non-browser suite.
+These commands run build integrations, declaration tests, both browsers, or an individual browser respectively. Each command builds the framework first. Browser tests require Chrome with `Extensions.loadUnpacked` support and Firefox with WebDriver BiDi `webExtension.install` support. Set `ADNBN_CHROME_BIN` or `ADNBN_FIREFOX_BIN` to the browser's absolute executable path if automatic discovery selects the wrong browser. Node must provide the built-in `WebSocket` API. CI installs both browsers on Linux; Windows runs the non-browser suite. `test:dev` launches the installed branded Chrome over `--remote-debugging-pipe`, the way `adnbn dev` does; CI runs it on Linux and Windows with the runner's Google Chrome.
 
 These groups run test files in parallel, with up to eight workers by default (one fewer than the available CPUs on smaller machines). Pass `-- --maxWorkers=N` to tune the pool. Preparation and fixture typechecks run up to four independent applications concurrently; `ADNBN_TEST_WORKERS` overrides that limit. See [the test guide](../README.md) for project selection, hooks, coverage and the complete validation commands.
 
@@ -273,6 +274,8 @@ Parallel test sessions use distinct working directories; production directory na
 In MV3, ISOLATED retains physical async chunks and MAIN includes dynamic dependencies in its initial graph. In Addon Bone's MV2 pipeline, every content entry uses ISOLATED, including entries requesting MAIN. Such requests emit a build warning before entrypoint grouping; the runtime test verifies async JS/CSS and the absence of page-visible globals for the downgraded entries. This is a framework policy, not a claim that all Firefox versions lack native MAIN support in MV2.
 
 Browser execution covers the installed Chrome in MV3 and Firefox in MV2/MV3. It does not certify older browser versions. Building other browser targets does not verify their runtime behavior.
+
+- `dev/probes/chrome-platform`: six Chrome MV3 checks of the platform behaviour the `adnbn dev` reload strategy relies on, using a hand-written extension rather than an adnbn build. Over `--remote-debugging-pipe`, `Extensions.loadUnpacked` reloads an extension in place with the same id and storage. Its service worker reaches a loopback WebSocket without host permissions, including under a `connect-src` that lists the endpoint, and the handshake carries the extension origin. Browser-level auto-attach reports a top-level service worker exception. A reload orphans open content scripts (`runtime.id` becomes undefined), injects nothing into open tabs and closes extension tabs, while `tabs.reload(tabId)` from the service worker needs no `tabs` permission. After a browser restart the profile no longer lists the extension, but loading the same path restores its id and storage. Closing the pipe ends Chrome. A failure here means Chrome changed one of these behaviours.
 
 ## The content test site
 
