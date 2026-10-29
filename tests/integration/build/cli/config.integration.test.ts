@@ -224,6 +224,14 @@ describe("user configuration through real c12", () => {
 
     test.each([
         {kind: "object", app: "reader", browser: "safari", name: "reader", readable: true, manifestVersion: 2},
+        {
+            kind: "disabled-source-maps",
+            app: "reader",
+            browser: "safari",
+            name: "reader",
+            readable: true,
+            manifestVersion: 2,
+        },
         {kind: "debug", app: "reader", browser: "chrome", name: "reader", readable: true, manifestVersion: 3},
         {kind: "explicit", app: "reader", browser: "safari", name: "addon", readable: false, manifestVersion: 3},
         {kind: "production", app: "addon", browser: "chrome", name: "addon", readable: false, manifestVersion: 3},
@@ -252,8 +260,23 @@ describe("user configuration through real c12", () => {
             const assets = await readdir(path.join(output, "assets"));
 
             expect(manifest).toMatchObject({name, version: "1.2.3", manifest_version: manifestVersion});
-            expect(js).toEqual([readable ? "probe.page.js" : expect.stringMatching(/^[a-f0-9]{5}\.js$/)]);
-            expect(css).toEqual([readable ? "probe.page.css" : expect.stringMatching(/^[a-f0-9]{5}\.css$/)]);
+
+            for (const [extension, files] of [
+                ["js", js],
+                ["css", css],
+            ] as const) {
+                const bundles = files.filter(file => file.endsWith(`.${extension}`));
+                const maps = files.filter(file => !file.endsWith(`.${extension}`));
+
+                expect(bundles).toEqual([
+                    readable
+                        ? `probe.page.${extension}`
+                        : expect.stringMatching(new RegExp(`^[a-f0-9]{5}\\.${extension}$`)),
+                ]);
+                // Framework development defaults emit external maps; plugins can explicitly disable them.
+                expect(maps).toEqual(kind === "object" || kind === "explicit" ? [`${bundles[0]}.map`] : []);
+            }
+
             expect(assets).toEqual([
                 expect.stringMatching(readable ? /^marker-[a-f0-9]{4}\.svg$/ : /^[a-f0-9]{4}\.svg$/),
             ]);

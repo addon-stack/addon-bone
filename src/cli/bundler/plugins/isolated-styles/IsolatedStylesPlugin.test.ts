@@ -195,6 +195,30 @@ const compile = async (options: CompileOptions = {}): Promise<BuildResult> => {
     }
 };
 
+test("rejects an unsupported CSS loader runtime before emitting a broken entrypoint", async () => {
+    const outputPath = fs.mkdtempSync(path.join(os.tmpdir(), "adnbn-isolated-styles-seam-"));
+    const compiler = createCompiler(outputPath);
+
+    compiler.hooks.thisCompilation.tap("ChangeCssLoaderRuntime", compilation => {
+        compilation.hooks.runtimeModule.tap({name: "ChangeCssLoaderRuntime", stage: -1}, runtimeModule => {
+            const source = runtimeModule.source;
+
+            if (source && typeof source.source === "string") {
+                source.source = source.source.replaceAll("extractCssLoadStylesheet", "changedStylesheet");
+            }
+        });
+    });
+
+    try {
+        await expect(runCompiler(compiler)).rejects.toThrow(
+            'CSS loading runtime seam for isolated entrypoint "shadow" is unavailable'
+        );
+    } finally {
+        await closeCompiler(compiler);
+        fs.rmSync(outputPath, {force: true, recursive: true});
+    }
+});
+
 test.each(["./shadow.js", "./shadow-async.js"])(
     "reports initial and async CSS using the entry delivery policy (%s)",
     async shadowEntry => {

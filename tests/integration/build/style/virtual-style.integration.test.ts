@@ -62,7 +62,9 @@ const addExternalUrlResolver = (target: Compiler): void => {
             return original.flatMap((item, index) => {
                 const entry = typeof item === "string" ? {loader: item} : item;
 
-                if (!/(?:^|[/\\])sass-loader(?:[/\\]|$)/.test(entry.loader)) {
+                // Rspack 2's RuleSetUseItem includes Falsy for conditional loaders (flag && loader).
+                // Preserve those entries while adapting only the existing Sass loader.
+                if (!entry || !/(?:^|[/\\])sass-loader(?:[/\\]|$)/.test(entry.loader)) {
                     return [item];
                 }
 

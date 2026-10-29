@@ -116,11 +116,11 @@ const createCompiler = (output: string, filename: Filename, enabled: () => boole
 
                             source.source =
                                 source.source.slice(0, position) +
-                                `var loadPageStylesheet = loadStylesheet;
-                            loadStylesheet = function(id) {
+                                `var loadPageStylesheet = extractCssLoadStylesheet;
+                            extractCssLoadStylesheet = function(id, fetchPriority) {
                                 return ${JSON.stringify(ids)}[id]
                                     ? globalThis.loadIsolatedCss(__webpack_require__.p + __webpack_require__.miniCssF(id))
-                                    : loadPageStylesheet(id);
+                                    : loadPageStylesheet(id, fetchPriority);
                             };\n` +
                                 source.source.slice(position);
                         });

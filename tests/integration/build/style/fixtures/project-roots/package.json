@@ -1,0 +1,6 @@
+{
+  "name": "adnbn-test-project-roots",
+  "private": true,
+  "type": "module",
+  "dependencies": {"adnbn": "file:../../../../../.."}
+}

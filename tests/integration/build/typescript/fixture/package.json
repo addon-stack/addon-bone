@@ -1,0 +1,8 @@
+{
+  "name": "adnbn-test-type-reexports",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "adnbn": "file:../../../../.."
+  }
+}
