@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   source-policy:
-    name: Main PR source (develop only)
+    name: Main PR source (develop or hotfix)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
