@@ -610,9 +610,11 @@ name: the document declaration is visible to the host page and outlives UI unmou
 }
 ```
 
-Both `?browser` and `?chrome` explicitly emit an extension URL for the build target, including
-`moz-extension://__MSG_@@extension_id__/` for Firefox and `chrome-extension://__MSG_@@extension_id__/`
-for Chromium targets. Without either query, assets retain normal bundler URL handling.
+Both `?browser` and `?chrome` explicitly emit an extension URL for the build target:
+`moz-extension://__MSG_@@extension_id__/` for Firefox,
+`safari-web-extension://__MSG_@@extension_id__/` for Safari, and
+`chrome-extension://__MSG_@@extension_id__/` for Chromium targets.
+Without either query, assets retain normal bundler URL handling.
 These queries support fonts, images, media,
 documents and explicitly imported binary files; `?base64` keeps inline asset delivery. Code, JSON,
 stylesheets and specialized `?react`/`?raw` imports retain their own loaders. The localization token

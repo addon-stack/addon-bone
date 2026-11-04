@@ -45,7 +45,7 @@ export {
     type ResourceAccessPluginRequirement,
 } from "./resource-access";
 
-export {default as ReplacePlugin} from "./replace";
+export {CssIdTokenPlugin, CssExtensionIdToken} from "./css-id-token";
 
 export {default as WatchPlugin} from "./watch";
 
