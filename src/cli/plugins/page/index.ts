@@ -34,7 +34,7 @@ export default definePlugin(() => {
 
             const modulePlugin = new GenerateModulePlugin(await getModules());
 
-            if (config.command === Command.Watch) {
+            if (config.command === Command.Watch || config.command === Command.Dev) {
                 modulePlugin.watch(getModules);
             }
 
@@ -49,7 +49,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await page.view().entries())
                     .virtual(file => virtualViewModule(file));
 
-                if (config.command === Command.Watch) {
+                if (config.command === Command.Watch || config.command === Command.Dev) {
                     plugin.watch(async () => {
                         declaration.setAlias(await page.clear().getAlias()).build();
 

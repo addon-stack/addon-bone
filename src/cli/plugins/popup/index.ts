@@ -43,7 +43,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await popup.view().entries())
                     .virtual(file => virtualViewModule(file));
 
-                if (config.command === Command.Watch) {
+                if (config.command === Command.Watch || config.command === Command.Dev) {
                     plugin.watch(async () => {
                         declaration.setAlias(await popup.clear().getAlias()).build();
 

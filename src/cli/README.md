@@ -11,17 +11,17 @@ must preserve the distinction between an explicitly supplied option and an absen
 
 ## Directories
 
-| Directory                  | Responsibility                                                                                                                                                                             |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [builders](./builders)     | Build orchestration and output data. `app` manages compiler startup, one-shot builds, and watch mode; `manifest`, `csp`, and `locale` produce their respective results from prepared data. |
-| [bundler](./bundler)       | Rspack integration: compiler plugins, loaders, asset processing, and build infrastructure.                                                                                                 |
-| [entrypoint](./entrypoint) | Entrypoint discovery, source reading, parsing, and naming; normalized descriptions for the rest of the CLI.                                                                                |
-| [handlers](./handlers)     | Handler execution. `plugin.ts` invokes plugin handlers sequentially, supports synchronous and asynchronous results, and yields them to the caller.                                         |
-| [plugins](./plugins)       | Framework features: interpreting entrypoint options, configuring builds, preparing data, and declaring manifest requirements. Examples include content, background, style, and locale.     |
-| [resolvers](./resolvers)   | Resolving one target result from input parameters. Each module exposes one function through `export default`.                                                                              |
-| [utils](./utils)           | Basic filesystem and path helpers. They do not own configuration rules, application layout, or plugin execution order.                                                                     |
-| [virtual](./virtual)       | Templates and generated modules that connect user entrypoints to the framework runtime.                                                                                                    |
-| [workspace](./workspace)   | Project, application, shared-source, and output paths based on configuration and workspace mode; artifact name resolution.                                                                 |
+| Directory                  | Responsibility                                                                                                                                                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [builders](./builders)     | Build orchestration and output data. `app` manages compiler startup, one-shot builds, watch mode, and the dev build process (`app/dev`); `manifest`, `csp`, and `locale` produce their respective results from prepared data. |
+| [bundler](./bundler)       | Rspack integration: compiler plugins, loaders, asset processing, and build infrastructure.                                                                                                                                    |
+| [entrypoint](./entrypoint) | Entrypoint discovery, source reading, parsing, and naming; normalized descriptions for the rest of the CLI.                                                                                                                   |
+| [handlers](./handlers)     | Handler execution. `plugin.ts` invokes plugin handlers sequentially, supports synchronous and asynchronous results, and yields them to the caller.                                                                            |
+| [plugins](./plugins)       | Framework features: interpreting entrypoint options, configuring builds, preparing data, and declaring manifest requirements. Examples include content, background, style, and locale.                                        |
+| [resolvers](./resolvers)   | Resolving one target result from input parameters. Each module exposes one function through `export default`.                                                                                                                 |
+| [utils](./utils)           | Basic filesystem and path helpers. They do not own configuration rules, application layout, or plugin execution order.                                                                                                        |
+| [virtual](./virtual)       | Templates and generated modules that connect user entrypoints to the framework runtime.                                                                                                                                       |
+| [workspace](./workspace)   | Project, application, shared-source, and output paths based on configuration and workspace mode; artifact name resolution.                                                                                                    |
 
 ### Entrypoint analysis
 

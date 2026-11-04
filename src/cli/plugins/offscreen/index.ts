@@ -54,7 +54,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await offscreen.view().entries())
                     .virtual(file => offscreen.virtual(file));
 
-                if (config.command === Command.Watch) {
+                if (config.command === Command.Watch || config.command === Command.Dev) {
                     plugin.watch(async () => {
                         declaration.dictionary(await offscreen.clear().dictionary()).build();
 

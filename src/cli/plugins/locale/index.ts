@@ -44,7 +44,7 @@ export default definePlugin(() => {
             });
             const plugins: RspackPluginInstance[] = [];
 
-            if (config.command === Command.Watch) {
+            if (config.command === Command.Watch || config.command === Command.Dev) {
                 plugins.push(
                     new WatchPlugin(async () => {
                         locale.clear();

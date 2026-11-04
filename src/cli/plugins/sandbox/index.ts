@@ -45,7 +45,7 @@ export default definePlugin(() => {
                     sandbox.virtual(file)
                 );
 
-                if (config.command === Command.Watch) {
+                if (config.command === Command.Watch || config.command === Command.Dev) {
                     plugin.watch(async () => {
                         declaration.dictionary(await sandbox.clear().dictionary()).build();
 

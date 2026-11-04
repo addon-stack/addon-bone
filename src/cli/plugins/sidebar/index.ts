@@ -59,7 +59,7 @@ export default definePlugin(() => {
                 const plugin = EntrypointPlugin.from(await sidebar.view().entries())
                     .virtual(file => virtualViewModule(file));
 
-                if (config.command === Command.Watch) {
+                if (config.command === Command.Watch || config.command === Command.Dev) {
                     plugin.watch(async () => {
                         declaration.setAlias(await sidebar.clear().getAlias()).build();
 

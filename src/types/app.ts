@@ -10,6 +10,7 @@ export enum Mode {
 export enum Command {
     Build = "build",
     Watch = "watch",
+    Dev = "dev",
 }
 
 export enum Workspace {

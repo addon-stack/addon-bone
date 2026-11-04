@@ -57,7 +57,7 @@ export default definePlugin(() => {
 
             const modulePlugin = new GenerateModulePlugin(await getModules());
 
-            if (config.command === Command.Watch) {
+            if (config.command === Command.Watch || config.command === Command.Dev) {
                 modulePlugin.watch(getModules);
             }
 
@@ -118,7 +118,7 @@ export default definePlugin(() => {
                     };
                 });
 
-            if (config.command === Command.Watch) {
+            if (config.command === Command.Watch || config.command === Command.Dev) {
                 entrypointPlugin.watch(async () => {
                     contentManager.clear();
 

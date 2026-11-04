@@ -29,7 +29,7 @@ export default definePlugin(() => {
 
             const plugin = EntrypointPlugin.from(await options.view().entries()).virtual(virtualViewModule);
 
-            if (config.command === Command.Watch) {
+            if (config.command === Command.Watch || config.command === Command.Dev) {
                 plugin.watch(async () => options.clear().view().entries());
             }
 

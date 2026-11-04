@@ -22,7 +22,7 @@ export type AppBuildConfig = Omit<OptionalConfig, "command">;
 
 let buildActive = false;
 
-const createCompiler = async (config: ReadonlyConfig): Promise<Compiler> => {
+export const createCompiler = async (config: ReadonlyConfig): Promise<Compiler> => {
     await startup(config);
 
     const rspackConfig = await bundlerResolver(config);

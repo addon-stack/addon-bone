@@ -55,7 +55,7 @@ export default definePlugin(() => {
             const servicePlugin = EntrypointPlugin.from(await service.entry().entries())
                 .virtual(file => service.virtual(file));
 
-            if (config.command === AppCommand.Watch) {
+            if (config.command === AppCommand.Watch || config.command === AppCommand.Dev) {
                 backgroundPlugin.watch(() => background.clear().entry().entries());
 
                 commandPlugin.watch(async () => {

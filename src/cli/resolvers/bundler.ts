@@ -41,7 +41,7 @@ const getConfigForManifest = async (config: ReadonlyConfig): Promise<RspackConfi
 
     const plugins: RspackPluginInstance[] = [];
 
-    if (config.command === Command.Watch) {
+    if (config.command === Command.Watch || config.command === Command.Dev) {
         plugins.push(
             new WatchPlugin(async () => {
                 await update();
@@ -98,6 +98,16 @@ export default async (config: ReadonlyConfig): Promise<RspackConfig> => {
     if (config.command === Command.Watch) {
         rspack = mergeConfig(rspack, {
             devtool: "inline-source-map",
+        });
+    }
+
+    if (config.command === Command.Dev) {
+        // The browser keeps running the last emitted build. A failed compilation must not replace it,
+        // so this is applied after plugin configs and cannot be re-enabled by a user `bundler` hook.
+        rspack = mergeConfig(rspack, {
+            optimization: {
+                emitOnErrors: false,
+            },
         });
     }
 

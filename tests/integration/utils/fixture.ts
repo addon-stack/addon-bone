@@ -12,6 +12,8 @@ export interface IntegrationFixtureBuildOptions {
 
 export interface IntegrationFixture {
     readonly directory: string;
+    /** Links the application's dependencies without building it; `build` links them too. */
+    link(): Promise<void>;
     build(options?: IntegrationFixtureBuildOptions): Promise<string>;
     dispose(): Promise<void>;
 }
@@ -40,12 +42,7 @@ const linkDependency = async (source: string, destination: string): Promise<void
     await symlink(target, destination, process.platform === "win32" ? "junction" : "dir");
 };
 
-export const prepareIntegrationFixture = async (
-    projectRoot: string,
-    directory: string,
-    {browser = "chrome", manifestVersion = 3, session}: IntegrationFixtureBuildOptions = {},
-    timeout?: number
-): Promise<string> => {
+export const linkIntegrationDependencies = async (projectRoot: string, directory: string): Promise<void> => {
     const manifest = JSON.parse(await readFile(path.join(directory, "package.json"), "utf8")) as {
         dependencies?: Record<string, string>;
     };
@@ -56,6 +53,15 @@ export const prepareIntegrationFixture = async (
             path.join(directory, "node_modules", dependency)
         );
     }
+};
+
+export const prepareIntegrationFixture = async (
+    projectRoot: string,
+    directory: string,
+    {browser = "chrome", manifestVersion = 3, session}: IntegrationFixtureBuildOptions = {},
+    timeout?: number
+): Promise<string> => {
+    await linkIntegrationDependencies(projectRoot, directory);
 
     if (session) {
         await session.build(directory, browser, manifestVersion, timeout);
@@ -102,6 +108,7 @@ export const createIntegrationFixture = async (
 
     return {
         directory,
+        link: () => linkIntegrationDependencies(projectRoot, directory),
         build: options => prepareIntegrationFixture(projectRoot, directory, {session, ...options}),
         dispose,
     };
