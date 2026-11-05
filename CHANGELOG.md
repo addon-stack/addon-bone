@@ -1,5 +1,20 @@
 # Changelog
 
+## 🚀 Release Addon Bone v0.16.2 (2026-11-05)
+
+
+### 🐛 Bug Fixed
+
+* **asset:** handle Safari URLs and restore CSS ID tokens ([f02c08b](https://github.com/addon-stack/addon-bone/commit/f02c08b9856c7a3096de5685f4b0ada2a20782c0))
+
+
+
+
+
+### 🙌 Contributors
+
+- [Anjey Tsibylskij](https://github.com/atldays) (@atldays) — commits: 3
+
 ## 🚀 Release Addon Bone v0.16.1 (2026-10-27)
 
 

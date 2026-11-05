@@ -1,0 +1,4 @@
+.restoredProbe {
+    background-image: url("./icon.svg?browser#changed");
+    mask-image: url("./icon.svg?browser");
+}

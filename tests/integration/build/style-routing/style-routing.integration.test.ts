@@ -239,7 +239,14 @@ test.each<{
                 .map(file => stats.compilation.getAsset(file)!.source.source())
                 .join("\n");
 
-            const scheme = browser === Browser.Firefox ? "moz-extension" : "chrome-extension";
+            const scheme = {
+                [Browser.Chrome]: "chrome-extension",
+                [Browser.Chromium]: "chrome-extension",
+                [Browser.Edge]: "chrome-extension",
+                [Browser.Firefox]: "moz-extension",
+                [Browser.Opera]: "chrome-extension",
+                [Browser.Safari]: "safari-web-extension",
+            }[browser];
 
             for (const name of ["css-font", "image", "movie"]) {
                 const file = map.assets.assets.find(file => file.startsWith(`assets/${name}.`))!;
@@ -248,6 +255,12 @@ test.each<{
             }
 
             expect(css).toContain("data:");
+
+            const documentFile = map.assets.assets.find(file => file.startsWith("assets/document."))!;
+
+            expect(execute(map.assets.initial.js).resources.documentFile).toBe(
+                `${scheme}://__MSG_@@extension_id__/${documentFile}`
+            );
 
             for (const entry of [map.content, map.relay]) {
                 expect(entry.initial.js.some(file => file.includes("common"))).toBe(commonChunks);
