@@ -18,17 +18,24 @@ const event = (head: unknown = {ref: "develop", repo: {id: 123}}, base: unknown 
 });
 
 describe("main pull request source policy", () => {
-    test("allows develop to main in the same repository", () => {
-        const result = runPolicy(JSON.stringify(event()));
+    test.each(["develop", "hotfix/0.16.2", "hotfix/safari-url"])("allows %s to main in the same repository", branch => {
+        const result = runPolicy(JSON.stringify(event({ref: branch, repo: {id: 123}})));
 
         expect(result.status).toBe(0);
-        expect(result.stdout).toContain("Source policy passed: develop -> main in the same repository.");
+        expect(result.stdout).toContain(`Source policy passed: ${branch} -> main in the same repository.`);
     });
 
     test.each([
         ["another source branch", event({ref: "feature/fix", repo: {id: 123}})],
         ["a differently cased source branch", event({ref: "Develop", repo: {id: 123}})],
+        ["a differently cased hotfix prefix", event({ref: "Hotfix/0.16.2", repo: {id: 123}})],
+        ["an empty hotfix name", event({ref: "hotfix/", repo: {id: 123}})],
+        ["a hotfix prefix without a name", event({ref: "hotfix", repo: {id: 123}})],
+        ["a nested hotfix name", event({ref: "hotfix/safari/urls", repo: {id: 123}})],
+        ["a hotfix-like branch", event({ref: "hotfix-other/0.16.2", repo: {id: 123}})],
         ["a fork's develop branch", event({ref: "develop", repo: {id: 456}})],
+        ["a fork's hotfix branch", event({ref: "hotfix/0.16.2", repo: {id: 456}})],
+        ["a non-string source branch", event({ref: ["hotfix/0.16.2"], repo: {id: 123}})],
         ["a different target branch", event(undefined, {ref: "develop", repo: {id: 123}})],
         ["missing head repository", event({ref: "develop"})],
         ["missing base repository", event(undefined, {ref: "main"})],
@@ -43,7 +50,9 @@ describe("main pull request source policy", () => {
         const result = runPolicy(JSON.stringify(payload));
 
         expect(result.status).toBe(1);
-        expect(result.stderr).toContain("Only pull requests from this repository's develop branch may target main.");
+        expect(result.stderr).toContain(
+            "Only pull requests from this repository's develop or hotfix/* branches may target main."
+        );
     });
 
     test("fails closed for invalid JSON", () => {
