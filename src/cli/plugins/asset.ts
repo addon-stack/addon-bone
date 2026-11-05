@@ -2,7 +2,7 @@ import {Configuration as RspackConfig} from "@rspack/core";
 
 import {definePlugin} from "@main/plugin";
 
-import {appFilenameResolver, ReplacePlugin} from "@cli/bundler";
+import {appFilenameResolver, CssIdTokenPlugin, CssExtensionIdToken} from "@cli/bundler";
 
 import {Browser} from "@typing/browser";
 
@@ -11,6 +11,14 @@ export default definePlugin(() => {
         name: "adnbn:asset",
         bundler: ({config}) => {
             const {app, browser, assetsDir, assetsFilename} = config;
+
+            let scheme = "chrome-extension";
+
+            if (browser === Browser.Firefox) {
+                scheme = "moz-extension";
+            } else if (browser === Browser.Safari) {
+                scheme = "safari-web-extension";
+            }
 
             return {
                 output: {
@@ -33,7 +41,7 @@ export default definePlugin(() => {
                                     // Both queries explicitly opt into an extension URL. Native CSS
                                     // localization substitutes the installed extension ID/UUID on load.
                                     generator: {
-                                        publicPath: `${browser === Browser.Firefox ? "moz" : "chrome"}-extension://__MSG_@@extension_id__/`,
+                                        publicPath: `${scheme}://${CssExtensionIdToken}/`,
                                     },
                                 },
                                 {
@@ -48,14 +56,7 @@ export default definePlugin(() => {
                         },
                     ],
                 },
-                plugins: [
-                    new ReplacePlugin({
-                        // Fix for asset/resource publicPath
-                        values: {
-                            "__MSG_%40@extension_id__": "__MSG_@@extension_id__",
-                        },
-                    }),
-                ],
+                plugins: [new CssIdTokenPlugin()],
             } satisfies RspackConfig;
         },
     };
