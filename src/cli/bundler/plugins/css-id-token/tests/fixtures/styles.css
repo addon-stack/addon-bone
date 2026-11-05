@@ -1,0 +1,8 @@
+.initialProbe {
+    background-image: url("./icon.svg?browser#first");
+    mask-image: url("./icon.svg?browser");
+}
+
+.unmodified {
+    content: "__MSG_@@extension_id__ __MSG_%40@ui_locale__";
+}
